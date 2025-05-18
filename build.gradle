@@ -3,7 +3,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.170'
+    id 'net.neoforged.gradle.userdev' version '7.0.165'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -165,7 +165,8 @@ dependencies {
     implementation jarJar(group: 'libs', name: 'mob_weapon_api', version: "[${mob_weapon_api_ver},)")
     implementation jarJar(group: 'libs', name: 'l2library', version: "[${l2library_ver},)")
     implementation jarJar(group: 'libs', name: 'l2complements', version: "[${l2complements_ver},)")
-    implementation "curse.maven:l2hostility-909207:6497976"
+    implementation jarJar(group: 'libs', name: 'l2hostility', version: "[3.0.9+5,)")
+    //implementation "curse.maven:l2hostility-909207:6497976"
     implementation "curse.maven:patchouli-306770:6164617"
 }
 

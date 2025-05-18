@@ -1,0 +1,15 @@
+{
+  "values": [
+    "arcane_hostility:fire_school_immunity",
+    "arcane_hostility:blood_school_immunity",
+    "arcane_hostility:eldritch_school_immunity",
+    "arcane_hostility:ender_school_immunity",
+    "arcane_hostility:evocation_school_immunity",
+    "arcane_hostility:holy_school_immunity",
+    "arcane_hostility:ice_school_immunity",
+    "arcane_hostility:lightning_school_immunity",
+    "arcane_hostility:nature_school_immunity",
+    "arcane_hostility:magic_rebound",
+    "arcane_hostility:anti_magic"
+  ]
+}

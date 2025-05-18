@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "arcane_hostility:item/bg",
+    "layer1": "arcane_hostility:item/trait/fire_school_immunity"
+  }
+}

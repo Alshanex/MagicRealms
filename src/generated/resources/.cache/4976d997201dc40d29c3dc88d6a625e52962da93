@@ -1,0 +1,16 @@
+// 1.21.1	2025-05-18T21:26:50.823921	Registrate Provider for arcane_hostility [Registries, Data Maps, Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider, Patchouli Provider, Tags (mob_effect), Tags (attribute), Tags (enchantment), Tags (damage_type), Tags (trait), Custom Registrate Provider]
+b884224e4d2258c1b4cadb11343795f45a4c47fd assets/arcane_hostility/lang/en_ud.json
+ce6a6cc342c6615523d7fe07995c1ca609e97fc1 assets/arcane_hostility/lang/en_us.json
+062e6c6653d2ce2861e26e2aefa447311aca0142 assets/arcane_hostility/models/item/anti_magic.json
+3889ebaafdf521effe59d2e3f2e75505243f63fd assets/arcane_hostility/models/item/blood_school_immunity.json
+47a08250670c24a98267030f1a739d2f2797ad0e assets/arcane_hostility/models/item/eldritch_school_immunity.json
+044d0db19efbea0f67f72476d7fcf978e71785be assets/arcane_hostility/models/item/ender_school_immunity.json
+aa59836ffa739fca3d29b4055915e7e916e474a7 assets/arcane_hostility/models/item/evocation_school_immunity.json
+c460cd350a68c49bb114fa934d7b70e14e50a029 assets/arcane_hostility/models/item/fire_school_immunity.json
+02e02d94d8e8312b19e37e62d76efa502e0468e6 assets/arcane_hostility/models/item/holy_school_immunity.json
+6ecd7d11feb494ca32d3ff2420d391fa772de366 assets/arcane_hostility/models/item/ice_school_immunity.json
+57fc08033eece78ef5cfc727fff36ec0e99f1fd5 assets/arcane_hostility/models/item/lightning_school_immunity.json
+1aaa3730971ee6801cdc95f3df4efb9e2618038a assets/arcane_hostility/models/item/magic_rebound.json
+e95b6c46b56c3d1ebf05042267e6977dd2907b37 assets/arcane_hostility/models/item/nature_school_immunity.json
+95d0d22821e700112e597380672a6a1bcaaf2bcc data/l2hostility/data_maps/l2hostility/trait/trait_data.json
+2f20b17ddf3fb081153fb5a170821b6ce32cacce data/l2hostility/tags/item/trait_item.json

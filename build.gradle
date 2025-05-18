@@ -3,7 +3,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.170'
+    id 'net.neoforged.gradle.userdev' version '7.0.165'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -155,17 +155,19 @@ dependencies {
 
     //L2
     implementation "com.tterrag.registrate:Registrate:${registrate_version}"
-    implementation jarJar(group: 'libs', name: 'l2core', version: "[${l2core_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2damagetracker', version: "[${l2damagetracker_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2itemselector', version: "[${l2itemselector_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2menustacker', version: "[${l2menustacker_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2modularblocks', version: "[${l2modularblocks_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2serial', version: "[${l2serial_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2tabs', version: "[${l2tabs_ver},)")
-    implementation jarJar(group: 'libs', name: 'mob_weapon_api', version: "[${mob_weapon_api_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2library', version: "[${l2library_ver},)")
-    implementation jarJar(group: 'libs', name: 'l2complements', version: "[${l2complements_ver},)")
-    implementation "curse.maven:l2hostility-909207:6497976"
+    implementation "libs:l2core:${l2core_ver}"
+    implementation "libs:l2damagetracker:${l2damagetracker_ver}"
+    implementation "libs:l2itemselector:${l2itemselector_ver}"
+    implementation "libs:l2menustacker:${l2menustacker_ver}"
+    implementation "libs:l2modularblocks:${l2modularblocks_ver}"
+    implementation "libs:l2serial:${l2serial_ver}"
+    implementation "libs:l2tabs:${l2tabs_ver}"
+    implementation "libs:mob_weapon_api:${mob_weapon_api_ver}"
+    implementation "libs:fast_projectile_api:${fast_projectile_api_ver}"
+    implementation "libs:l2magic:${l2magic_ver}"
+    implementation "libs:l2library:${l2library_ver}-slim"
+    implementation "libs:l2complements:${l2complements_ver}-slim"
+    implementation "libs:l2hostility:${l2hostility_ver}-slim"
     implementation "vazkii.patchouli:Patchouli:${patchouli_ver}"
 }
 

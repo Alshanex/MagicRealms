@@ -1,19 +1,10 @@
 package net.alshanex.arcane_hostility;
 
-import com.tterrag.registrate.providers.ProviderType;
-import dev.xkmc.l2core.init.reg.simple.Reg;
-import dev.xkmc.l2core.serial.config.RegistrateNestedProvider;
-import dev.xkmc.l2hostility.init.data.LHTagGen;
-import dev.xkmc.l2hostility.init.data.SlotGen;
-import dev.xkmc.l2hostility.init.entries.LHRegistrate;
-import dev.xkmc.l2hostility.init.loot.TraitGLMProvider;
-import net.alshanex.arcane_hostility.registry.TraitRegistry;
-import net.minecraft.data.PackOutput;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
-import org.slf4j.Logger;
-
 import com.mojang.logging.LogUtils;
+import dev.xkmc.l2hostility.init.L2Hostility;
+import net.alshanex.arcane_hostility.registry.AHRegistrate;
+import net.alshanex.arcane_hostility.registry.TraitRegistry;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,6 +17,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(ArcaneHostility.MODID)
@@ -36,7 +28,10 @@ public class ArcaneHostility
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final LHRegistrate AHREGISTRATE = new LHRegistrate(MODID);
+    // ensure L2H is loaded first
+    private static final ResourceLocation DUMMY = L2Hostility.loc("dummy");
+
+    public static final AHRegistrate AHREGISTRATE = new AHRegistrate(MODID);
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.

@@ -166,7 +166,7 @@ dependencies {
     implementation jarJar(group: 'libs', name: 'l2library', version: "[${l2library_ver},)")
     implementation jarJar(group: 'libs', name: 'l2complements', version: "[${l2complements_ver},)")
     implementation "curse.maven:l2hostility-909207:6497976"
-    implementation "vazkii.patchouli:Patchouli:${patchouli_ver}"
+    implementation "curse.maven:patchouli-306770:6164617"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

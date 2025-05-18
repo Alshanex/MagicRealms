@@ -1,13 +1,13 @@
 package net.alshanex.arcane_hostility.traits;
 
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
-import dev.xkmc.l2hostility.content.traits.legendary.LegendaryTrait;
+import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.LivingEntity;
 
-public class MagicSchoolImmunity extends LegendaryTrait {
+public class MagicSchoolImmunity extends MobTrait {
     private SchoolType school;
 
     public MagicSchoolImmunity(ChatFormatting format, SchoolType school) {

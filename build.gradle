@@ -153,11 +153,6 @@ dependencies {
     // Player Animator
     implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animator_version}"
 
-    // JEI ********************************************************************************************************
-    compileOnly "mezz.jei:jei-${jei_mc_version}-common-api:${jei_version}"
-    compileOnly "mezz.jei:jei-${jei_mc_version}-neoforge-api:${jei_version}"
-    runtimeOnly "mezz.jei:jei-${jei_mc_version}-neoforge:${jei_version}"
-
     //L2
     implementation "com.tterrag.registrate:Registrate:${registrate_version}"
     implementation jarJar(group: 'libs', name: 'l2core', version: "[${l2core_ver},)")

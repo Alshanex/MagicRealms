@@ -1,13 +1,13 @@
 package net.alshanex.arcane_hostility.traits;
 
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
-import dev.xkmc.l2hostility.content.traits.base.MobTrait;
+import dev.xkmc.l2hostility.content.traits.legendary.LegendaryTrait;
 import io.redspace.ironsspellbooks.entity.spells.AbstractMagicProjectile;
 import net.minecraft.ChatFormatting;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-public class MagicRebound extends MobTrait {
+public class MagicRebound extends LegendaryTrait {
     public MagicRebound(ChatFormatting format) {
         super(format);
     }

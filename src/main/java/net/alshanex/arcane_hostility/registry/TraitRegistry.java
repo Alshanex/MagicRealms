@@ -1,0 +1,93 @@
+package net.alshanex.arcane_hostility.registry;
+
+import dev.xkmc.l2hostility.content.config.TraitConfig;
+import dev.xkmc.l2hostility.init.entries.TraitEntry;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import net.alshanex.arcane_hostility.ArcaneHostility;
+import net.alshanex.arcane_hostility.traits.AntiMagic;
+import net.alshanex.arcane_hostility.traits.MagicRebound;
+import net.alshanex.arcane_hostility.traits.MagicSchoolImmunity;
+import net.minecraft.ChatFormatting;
+
+public class TraitRegistry {
+    public static final TraitEntry<MagicSchoolImmunity> FIRE_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> BLOOD_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> ELDRITCH_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> ENDER_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> EVOCATION_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> HOLY_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> ICE_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> LIGHTNING_SCHOOL_IMMUNITY;
+    public static final TraitEntry<MagicSchoolImmunity> NATURE_SCHOOL_IMMUNITY;
+
+    public static final TraitEntry<MagicRebound> MAGIC_REBOUND;
+
+    public static final TraitEntry<AntiMagic> ANTI_MAGIC;
+
+    static {
+        //no desc
+        {}
+        //common
+        {
+            FIRE_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("fire_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.RED, SchoolRegistry.FIRE.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by fire spells.")
+                    .lang("Fire Spells Immunity").register();
+
+            BLOOD_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("blood_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.DARK_RED, SchoolRegistry.BLOOD.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by blood spells.")
+                    .lang("Blood Spells Immunity").register();
+
+            ELDRITCH_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("eldritch_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.DARK_AQUA, SchoolRegistry.ELDRITCH.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by eldritch spells.")
+                    .lang("Eldritch Spells Immunity").register();
+
+            ENDER_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("ender_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.LIGHT_PURPLE, SchoolRegistry.ENDER.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by ender spells.")
+                    .lang("Ender Spells Immunity").register();
+
+            EVOCATION_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("evocation_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.GRAY, SchoolRegistry.EVOCATION.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by evocation spells.")
+                    .lang("Evocation Spells Immunity").register();
+
+            HOLY_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("holy_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.YELLOW, SchoolRegistry.HOLY.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by holy spells.")
+                    .lang("Holy Spells Immunity").register();
+
+            ICE_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("ice_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.AQUA, SchoolRegistry.ICE.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by ice spells.")
+                    .lang("Ice Spells Immunity").register();
+
+            LIGHTNING_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("lightning_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.BLUE, SchoolRegistry.LIGHTNING.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by lightning spells.")
+                    .lang("Lightning Spells Immunity").register();
+
+            NATURE_SCHOOL_IMMUNITY = ArcaneHostility.AHREGISTRATE.regTrait("nature_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.GREEN, SchoolRegistry.NATURE.get()),
+                            new TraitConfig(20, 100, 1, 20))
+                    .desc("Immune to all damage caused by nature spells.")
+                    .lang("Nature Spells Immunity").register();
+        }
+        //legendary
+        {
+            MAGIC_REBOUND = ArcaneHostility.AHREGISTRATE.regTrait("magic_rebound", () -> new MagicRebound(ChatFormatting.LIGHT_PURPLE),
+                            new TraitConfig(120, 50, 1, 100))
+                    .desc("All magic projectiles will bounce back.")
+                    .lang("Magic Rebound").register();
+
+            ANTI_MAGIC = ArcaneHostility.AHREGISTRATE.regTrait("anti_magic", () -> new AntiMagic(ChatFormatting.BLACK),
+                            new TraitConfig(120, 50, 1, 100))
+                    .desc("Being attacked by a magic summon will cancel their magic, getting them unsummoned.")
+                    .lang("Canceling Touch").register();
+        }
+    }
+
+    public static void register() {
+    }
+}

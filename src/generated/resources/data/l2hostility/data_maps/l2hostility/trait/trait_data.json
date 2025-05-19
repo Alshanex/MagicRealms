@@ -9,61 +9,61 @@
     "arcane_hostility:blood_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
     },
     "arcane_hostility:eldritch_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
     },
     "arcane_hostility:ender_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
     },
     "arcane_hostility:evocation_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
     },
     "arcane_hostility:fire_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
     },
     "arcane_hostility:holy_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
     },
     "arcane_hostility:ice_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
     },
     "arcane_hostility:lightning_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
       "weight": 100
-    },
-    "arcane_hostility:magic_rebound": {
-      "cost": 120,
-      "max_rank": 1,
-      "min_level": 100,
-      "weight": 50
     },
     "arcane_hostility:nature_school_immunity": {
       "cost": 20,
       "max_rank": 1,
-      "min_level": 20,
+      "min_level": 10,
+      "weight": 100
+    },
+    "arcane_hostility:vampiric": {
+      "cost": 20,
+      "max_rank": 1,
+      "min_level": 10,
       "weight": 100
     }
   }

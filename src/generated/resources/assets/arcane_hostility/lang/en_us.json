@@ -18,8 +18,8 @@
   "trait.arcane_hostility.ice_school_immunity.desc": "Immune to all damage caused by ice spells.",
   "trait.arcane_hostility.lightning_school_immunity": "Lightning Spells Immunity",
   "trait.arcane_hostility.lightning_school_immunity.desc": "Immune to all damage caused by lightning spells.",
-  "trait.arcane_hostility.magic_rebound": "Magic Rebound",
-  "trait.arcane_hostility.magic_rebound.desc": "All magic projectiles will bounce back.",
   "trait.arcane_hostility.nature_school_immunity": "Nature Spells Immunity",
-  "trait.arcane_hostility.nature_school_immunity.desc": "Immune to all damage caused by nature spells."
+  "trait.arcane_hostility.nature_school_immunity.desc": "Immune to all damage caused by nature spells.",
+  "trait.arcane_hostility.vampiric": "Vampiric",
+  "trait.arcane_hostility.vampiric.desc": "When attacked by blood spells, get healed instead of damaged."
 }

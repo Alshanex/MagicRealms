@@ -60,6 +60,12 @@
       "min_level": 10,
       "weight": 100
     },
+    "arcane_hostility:sneaky": {
+      "cost": 20,
+      "max_rank": 1,
+      "min_level": 10,
+      "weight": 100
+    },
     "arcane_hostility:vampiric": {
       "cost": 20,
       "max_rank": 1,

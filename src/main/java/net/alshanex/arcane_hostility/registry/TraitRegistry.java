@@ -5,6 +5,7 @@ import dev.xkmc.l2hostility.init.entries.TraitEntry;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import net.alshanex.arcane_hostility.ArcaneHostility;
 import net.alshanex.arcane_hostility.traits.AntiMagic;
+import net.alshanex.arcane_hostility.traits.Sneaky;
 import net.alshanex.arcane_hostility.traits.MagicSchoolImmunity;
 import net.alshanex.arcane_hostility.traits.Vampiric;
 import net.minecraft.ChatFormatting;
@@ -21,6 +22,8 @@ public class TraitRegistry {
     public static final TraitEntry<MagicSchoolImmunity> NATURE_SCHOOL_IMMUNITY;
 
     public static final TraitEntry<Vampiric> VAMPIRIC;
+
+    public static final TraitEntry<Sneaky> SNEAKY;
 
     public static final TraitEntry<AntiMagic> ANTI_MAGIC;
 
@@ -78,13 +81,18 @@ public class TraitRegistry {
                             new TraitConfig(20, 100, 1, 10))
                     .desc("When attacked by blood spells, get healed instead of damaged.")
                     .lang("Vampiric").register();
+
+            SNEAKY = ArcaneHostility.AHREGISTRATE.regTrait("sneaky", () -> new Sneaky(ChatFormatting.DARK_GREEN),
+                            new TraitConfig(20, 100, 1, 10))
+                    .desc("Dodges long range attacks, only receives damage from close range attacks.")
+                    .lang("Sneaky").register();
         }
         //legendary
         {
             ANTI_MAGIC = ArcaneHostility.AHREGISTRATE.regTrait("anti_magic", () -> new AntiMagic(ChatFormatting.BLACK),
                             new TraitConfig(120, 50, 1, 100))
                     .desc("Being attacked by a magic summon will cancel their magic, getting them unsummoned.")
-                    .lang("Canceling Touch").register();
+                    .lang("Antimagic Touch").register();
         }
     }
 

@@ -1,6 +1,6 @@
 {
   "arcane_hostility.title": "Arcane Hostility",
-  "trait.arcane_hostility.anti_magic": "Canceling Touch",
+  "trait.arcane_hostility.anti_magic": "Antimagic Touch",
   "trait.arcane_hostility.anti_magic.desc": "Being attacked by a magic summon will cancel their magic, getting them unsummoned.",
   "trait.arcane_hostility.blood_school_immunity": "Blood Spells Immunity",
   "trait.arcane_hostility.blood_school_immunity.desc": "Immune to all damage caused by blood spells.",
@@ -20,6 +20,8 @@
   "trait.arcane_hostility.lightning_school_immunity.desc": "Immune to all damage caused by lightning spells.",
   "trait.arcane_hostility.nature_school_immunity": "Nature Spells Immunity",
   "trait.arcane_hostility.nature_school_immunity.desc": "Immune to all damage caused by nature spells.",
+  "trait.arcane_hostility.sneaky": "Sneaky",
+  "trait.arcane_hostility.sneaky.desc": "Dodges long range attacks, only receives damage from close range attacks.",
   "trait.arcane_hostility.vampiric": "Vampiric",
   "trait.arcane_hostility.vampiric.desc": "When attacked by blood spells, get healed instead of damaged."
 }

@@ -4,10 +4,7 @@ import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.init.entries.TraitEntry;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import net.alshanex.arcane_hostility.ArcaneHostility;
-import net.alshanex.arcane_hostility.traits.AntiMagic;
-import net.alshanex.arcane_hostility.traits.Sneaky;
-import net.alshanex.arcane_hostility.traits.MagicSchoolImmunity;
-import net.alshanex.arcane_hostility.traits.Vampiric;
+import net.alshanex.arcane_hostility.traits.*;
 import net.minecraft.ChatFormatting;
 
 public class TraitRegistry {
@@ -26,6 +23,8 @@ public class TraitRegistry {
     public static final TraitEntry<Sneaky> SNEAKY;
 
     public static final TraitEntry<AntiMagic> ANTI_MAGIC;
+
+    public static final TraitEntry<ManaSyphon> MANA_SIPHON;
 
     static {
         //no desc
@@ -93,6 +92,11 @@ public class TraitRegistry {
                             new TraitConfig(120, 50, 1, 100))
                     .desc("Being attacked by a magic summon will cancel their magic, getting them unsummoned.")
                     .lang("Antimagic Touch").register();
+
+            MANA_SIPHON = ArcaneHostility.AHREGISTRATE.regTrait("mana_siphon", () -> new ManaSyphon(ChatFormatting.AQUA),
+                            new TraitConfig(100, 50, 3, 300))
+                    .desc("Drains 50 mana to players within %s blocks and apply trait effects for every %ss")
+                    .lang("Mana Siphon").register();
         }
     }
 

@@ -18,6 +18,8 @@
   "trait.arcane_hostility.ice_school_immunity.desc": "Immune to all damage caused by ice spells.",
   "trait.arcane_hostility.lightning_school_immunity": "Lightning Spells Immunity",
   "trait.arcane_hostility.lightning_school_immunity.desc": "Immune to all damage caused by lightning spells.",
+  "trait.arcane_hostility.mana_siphon": "Mana Siphon",
+  "trait.arcane_hostility.mana_siphon.desc": "Drains 50 mana to players within %s blocks and apply trait effects for every %ss",
   "trait.arcane_hostility.nature_school_immunity": "Nature Spells Immunity",
   "trait.arcane_hostility.nature_school_immunity.desc": "Immune to all damage caused by nature spells.",
   "trait.arcane_hostility.sneaky": "Sneaky",

@@ -54,6 +54,12 @@
       "min_level": 10,
       "weight": 100
     },
+    "arcane_hostility:mana_siphon": {
+      "cost": 100,
+      "max_rank": 3,
+      "min_level": 300,
+      "weight": 50
+    },
     "arcane_hostility:nature_school_immunity": {
       "cost": 20,
       "max_rank": 1,

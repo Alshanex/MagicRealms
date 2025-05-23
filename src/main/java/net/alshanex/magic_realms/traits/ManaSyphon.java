@@ -1,4 +1,4 @@
-package net.alshanex.arcane_hostility.traits;
+package net.alshanex.magic_realms.traits;
 
 import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
 import dev.xkmc.l2hostility.content.logic.TraitEffectCache;

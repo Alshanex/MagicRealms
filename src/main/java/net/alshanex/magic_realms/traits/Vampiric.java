@@ -1,9 +1,8 @@
-package net.alshanex.arcane_hostility.traits;
+package net.alshanex.magic_realms.traits;
 
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
-import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.LivingEntity;

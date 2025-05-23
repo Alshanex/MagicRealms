@@ -1,4 +1,4 @@
-package net.alshanex.arcane_hostility.registry;
+package net.alshanex.magic_realms.registry;
 
 import dev.xkmc.l2hostility.init.entries.LHRegistrate;
 import net.neoforged.neoforge.registries.RegisterEvent;

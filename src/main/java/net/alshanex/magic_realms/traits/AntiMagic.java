@@ -1,21 +1,21 @@
-package net.alshanex.arcane_hostility.traits;
+package net.alshanex.magic_realms.traits;
 
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
-import dev.xkmc.l2hostility.content.traits.base.MobTrait;
-import net.alshanex.arcane_hostility.Config;
+import dev.xkmc.l2hostility.content.traits.legendary.LegendaryTrait;
+import io.redspace.ironsspellbooks.entity.mobs.IMagicSummon;
 import net.minecraft.ChatFormatting;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.LivingEntity;
 
-public class Sneaky extends MobTrait {
-    public Sneaky(ChatFormatting format) {
+public class AntiMagic extends LegendaryTrait {
+    public AntiMagic(ChatFormatting format) {
         super(format);
     }
 
     @Override
     public boolean onAttackedByOthers(int level, LivingEntity entity, DamageData.Attack event) {
-        int distance = Config.distance;
-        if(event.getAttacker().distanceToSqr(event.getTarget()) > (distance * distance)){
+        if(event.getAttacker() instanceof IMagicSummon summon){
+            summon.onUnSummon();
             return !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) &&
                     !event.getSource().is(DamageTypeTags.BYPASSES_EFFECTS);
         }

@@ -1,9 +1,9 @@
-package net.alshanex.arcane_hostility;
+package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import dev.xkmc.l2hostility.init.L2Hostility;
-import net.alshanex.arcane_hostility.registry.AHRegistrate;
-import net.alshanex.arcane_hostility.registry.TraitRegistry;
+import net.alshanex.magic_realms.registry.AHRegistrate;
+import net.alshanex.magic_realms.registry.TraitRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -20,11 +20,11 @@ import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
-@Mod(ArcaneHostility.MODID)
-public class ArcaneHostility
+@Mod(MagicRealms.MODID)
+public class MagicRealms
 {
     // Define mod id in a common place for everything to reference
-    public static final String MODID = "arcane_hostility";
+    public static final String MODID = "magic_realms";
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -35,7 +35,7 @@ public class ArcaneHostility
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
-    public ArcaneHostility(IEventBus modEventBus, ModContainer modContainer)
+    public MagicRealms(IEventBus modEventBus, ModContainer modContainer)
     {
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);

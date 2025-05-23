@@ -1,4 +1,4 @@
-package net.alshanex.arcane_hostility.traits;
+package net.alshanex.magic_realms.traits;
 
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;

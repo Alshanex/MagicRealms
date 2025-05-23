@@ -88,8 +88,6 @@ public class MagicRealms
         {
             event.enqueueWork(() -> {
                 CombinedTextureManager.initializeDirectories();
-
-                CombinedTextureManager.cleanupOldTextures();
                 MagicRealms.LOGGER.info("Cleaned up orphaned textures from previous sessions");
             });
         }

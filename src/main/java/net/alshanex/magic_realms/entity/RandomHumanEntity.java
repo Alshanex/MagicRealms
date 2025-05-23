@@ -43,14 +43,15 @@ import java.util.Random;
 public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker {
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
     private EntityTextureConfig textureConfig;
+    private boolean appearanceGenerated = false;
 
     public RandomHumanEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
         this.lookControl = createLookControl();
         this.moveControl = createMoveControl();
-        initializeRandomAppearance();
     }
 
     protected LookControl createLookControl() {
@@ -99,6 +100,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData) {
         RandomSource randomsource = Utils.random;
         this.populateDefaultEquipmentSlots(randomsource, pDifficulty);
+
+        if (!this.entityData.get(INITIALIZED)) {
+            initializeRandomAppearance();
+            this.entityData.set(INITIALIZED, true);
+        }
+
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
     }
 
@@ -121,6 +128,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 .add(Attributes.ENTITY_INTERACTION_RANGE, 3)
                 .add(Attributes.MOVEMENT_SPEED, .25);
     }
+
     @Override
     public boolean shouldSheathSword() {
         return true;
@@ -131,9 +139,14 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         super.defineSynchedData(pBuilder);
         pBuilder.define(GENDER, 0);
         pBuilder.define(ENTITY_CLASS, 0);
+        pBuilder.define(INITIALIZED, false);
     }
 
     private void initializeRandomAppearance() {
+        if (appearanceGenerated) {
+            return;
+        }
+
         Random random = new Random();
         Gender gender = Gender.values()[random.nextInt(Gender.values().length)];
         EntityClass entityClass = EntityClass.values()[random.nextInt(EntityClass.values().length)];
@@ -142,6 +155,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
 
         this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
+        this.appearanceGenerated = true;
+
+        MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}",
+                this.getUUID().toString(), gender.getName(), entityClass.getName());
     }
 
     public Gender getGender() {
@@ -154,6 +171,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public EntityTextureConfig getTextureConfig() {
         if (textureConfig == null) {
+            if (!this.entityData.get(INITIALIZED)) {
+                MagicRealms.LOGGER.warn("Trying to get texture config before entity is initialized: {}", this.getUUID().toString());
+                return null;
+            }
             textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
         }
         return textureConfig;
@@ -164,6 +185,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         super.addAdditionalSaveData(compound);
         compound.putInt("Gender", this.entityData.get(GENDER));
         compound.putInt("EntityClass", this.entityData.get(ENTITY_CLASS));
+        compound.putBoolean("Initialized", this.entityData.get(INITIALIZED));
+        compound.putBoolean("AppearanceGenerated", this.appearanceGenerated);
+
+        MagicRealms.LOGGER.debug("Saving entity data for {}: Gender={}, Class={}, Initialized={}",
+                this.getUUID().toString(), this.entityData.get(GENDER), this.entityData.get(ENTITY_CLASS), this.entityData.get(INITIALIZED));
     }
 
     @Override
@@ -171,15 +197,48 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         super.readAdditionalSaveData(compound);
         this.entityData.set(GENDER, compound.getInt("Gender"));
         this.entityData.set(ENTITY_CLASS, compound.getInt("EntityClass"));
-        this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
+        this.entityData.set(INITIALIZED, compound.getBoolean("Initialized"));
+        this.appearanceGenerated = compound.getBoolean("AppearanceGenerated");
+
+        if (this.entityData.get(INITIALIZED)) {
+            this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
+        }
+
+        MagicRealms.LOGGER.debug("Loading entity data for {}: Gender={}, Class={}, Initialized={}",
+                this.getUUID().toString(), this.entityData.get(GENDER), this.entityData.get(ENTITY_CLASS), this.entityData.get(INITIALIZED));
     }
 
     @Override
     public void remove(RemovalReason reason) {
+        // Borrar en ambos lados para asegurar limpieza completa
+        String entityUUID = this.getUUID().toString();
+
         if (this.level().isClientSide) {
-            CombinedTextureManager.removeEntityTexture(this.getUUID().toString());
+            CombinedTextureManager.removeEntityTexture(entityUUID);
+            MagicRealms.LOGGER.debug("Client: Removed texture for entity {} due to: {}", entityUUID, reason);
+        } else {
+            MagicRealms.LOGGER.debug("Server: Entity {} removed due to: {}", entityUUID, reason);
         }
+
         super.remove(reason);
+    }
+
+    @Override
+    public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
+        String entityUUID = this.getUUID().toString();
+
+        if (this.level().isClientSide) {
+            CombinedTextureManager.removeEntityTexture(entityUUID);
+        }
+
+        super.die(damageSource);
+    }
+
+    public void forceInitializeAppearance() {
+        if (!this.entityData.get(INITIALIZED)) {
+            initializeRandomAppearance();
+            this.entityData.set(INITIALIZED, true);
+        }
     }
 
     RawAnimation animationToPlay = null;

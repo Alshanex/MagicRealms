@@ -21,12 +21,14 @@ public class DynamicTextureManager {
     private static final Map<String, ResourceLocation> REGISTERED_TEXTURES = new ConcurrentHashMap<>();
 
     public static ResourceLocation registerDynamicTexture(String entityUUID, BufferedImage combinedImage) {
-        String textureId = "dynamic_human_" + entityUUID;
-        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, textureId);
-
+        // Si ya existe, devolverla directamente
         if (REGISTERED_TEXTURES.containsKey(entityUUID)) {
+            MagicRealms.LOGGER.debug("Texture already registered for entity: " + entityUUID);
             return REGISTERED_TEXTURES.get(entityUUID);
         }
+
+        String textureId = "dynamic_human_" + entityUUID;
+        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, textureId);
 
         try {
             // Convertir BufferedImage a NativeImage
@@ -37,7 +39,7 @@ public class DynamicTextureManager {
             Minecraft.getInstance().getTextureManager().register(location, dynamicTexture);
 
             REGISTERED_TEXTURES.put(entityUUID, location);
-            MagicRealms.LOGGER.debug("Registered dynamic texture for entity: " + entityUUID);
+            MagicRealms.LOGGER.debug("Registered dynamic texture for entity: {} -> {}", entityUUID, location);
 
             return location;
 
@@ -60,6 +62,20 @@ public class DynamicTextureManager {
     }
 
     private static NativeImage bufferedImageToNativeImage(BufferedImage bufferedImage) throws IOException {
+        // Asegurar que la imagen tenga el formato correcto (ARGB)
+        if (bufferedImage.getType() != BufferedImage.TYPE_INT_ARGB) {
+            BufferedImage convertedImage = new BufferedImage(
+                    bufferedImage.getWidth(),
+                    bufferedImage.getHeight(),
+                    BufferedImage.TYPE_INT_ARGB
+            );
+            java.awt.Graphics2D g2d = convertedImage.createGraphics();
+            g2d.setComposite(java.awt.AlphaComposite.Src);
+            g2d.drawImage(bufferedImage, 0, 0, null);
+            g2d.dispose();
+            bufferedImage = convertedImage;
+        }
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(bufferedImage, "PNG", baos);
         byte[] bytes = baos.toByteArray();
@@ -73,9 +89,18 @@ public class DynamicTextureManager {
             unregisterTexture(entityUUID);
         }
         REGISTERED_TEXTURES.clear();
+        MagicRealms.LOGGER.debug("Cleared all dynamic textures");
     }
 
     public static boolean hasTexture(String entityUUID) {
         return REGISTERED_TEXTURES.containsKey(entityUUID);
+    }
+
+    public static int getRegisteredCount() {
+        return REGISTERED_TEXTURES.size();
+    }
+
+    public static ResourceLocation getTexture(String entityUUID) {
+        return REGISTERED_TEXTURES.get(entityUUID);
     }
 }

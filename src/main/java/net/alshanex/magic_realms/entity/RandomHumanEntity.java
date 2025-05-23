@@ -229,8 +229,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
         String entityUUID = this.getUUID().toString();
 
-        this.addEffect(new MobEffectInstance(MobEffectRegistry.TRUE_INVISIBILITY, 60, 0, false, false));
-
         if (this.level().isClientSide) {
             CombinedTextureManager.removeEntityTexture(entityUUID);
         }

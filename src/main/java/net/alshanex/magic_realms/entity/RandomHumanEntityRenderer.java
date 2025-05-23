@@ -18,8 +18,8 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
     public RandomHumanEntityRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new RandomHumanEntityModel());
 
-        addRenderLayer(new EyesLayer(this));
         addRenderLayer(new ClothesLayer(this));
+        addRenderLayer(new EyesLayer(this));
         addRenderLayer(new HairLayer(this));
     }
 
@@ -38,6 +38,7 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
         public void render(PoseStack poseStack, AbstractSpellCastingMob animatable, BakedGeoModel bakedModel, @Nullable RenderType renderType, MultiBufferSource bufferSource, @Nullable VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
             ResourceLocation eyesTexture = ((RandomHumanEntity)animatable).getTextureConfig().getEyesTexture();
             if (eyesTexture != null) {
+                poseStack.scale(1.002F, 1.002F, 1.002F);
                 VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(eyesTexture));
                 this.getRenderer().actuallyRender(poseStack, animatable, bakedModel, renderType, bufferSource, vertexConsumer, true, partialTick, packedLight,
                         OverlayTexture.NO_OVERLAY, 0xFFFFFFFF);
@@ -56,6 +57,7 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
 
             ResourceLocation clothesTexture = ((RandomHumanEntity)animatable).getTextureConfig().getClothesTexture();
             if (clothesTexture != null) {
+                poseStack.scale(1.01F, 1.01F, 1.01F);
                 VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(clothesTexture));
                 this.getRenderer().actuallyRender(poseStack, animatable, bakedModel, renderType, bufferSource, vertexConsumer, true, partialTick, packedLight,
                         OverlayTexture.NO_OVERLAY, 0xFFFFFFFF);
@@ -74,7 +76,8 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
 
             ResourceLocation hairTexture = ((RandomHumanEntity)animatable).getTextureConfig().getHairTexture();
             if (hairTexture != null) {
-                VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(hairTexture));
+                poseStack.scale(1.02F, 1.02F, 1.02F);
+                VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityTranslucent(hairTexture));
                 this.getRenderer().actuallyRender(poseStack, animatable, bakedModel, renderType, bufferSource, vertexConsumer, true, partialTick, packedLight,
                         OverlayTexture.NO_OVERLAY, 0xFFFFFFFF);
             }

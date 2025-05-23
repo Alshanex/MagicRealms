@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.util.humans;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.util.ArmBackTextureFixer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -113,11 +114,6 @@ public class CombinedTextureManager {
                 return null;
             }
 
-            if (skinImage == null) {
-                MagicRealms.LOGGER.error("Failed to fix skin texture");
-                return null;
-            }
-
             // Crear la imagen base con las dimensiones de la skin
             int width = skinImage.getWidth();
             int height = skinImage.getHeight();
@@ -128,7 +124,7 @@ public class CombinedTextureManager {
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
             g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
             g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
-            g2d.setComposite(AlphaComposite.SrcOver); // Composición correcta para transparencias
+            g2d.setComposite(AlphaComposite.SrcOver);
 
             // Dibujar las capas en orden: skin -> clothes -> eyes -> hair
             g2d.drawImage(skinImage, 0, 0, null);
@@ -162,8 +158,12 @@ public class CombinedTextureManager {
 
             g2d.dispose();
 
-            MagicRealms.LOGGER.debug("Successfully created combined texture with dimensions: {}x{}", width, height);
-            return combinedImage;
+            BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(combinedImage);
+
+            MagicRealms.LOGGER.debug("Successfully created and fixed combined texture with dimensions: {}x{}",
+                    finalTexture.getWidth(), finalTexture.getHeight());
+
+            return finalTexture;
 
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error creating combined texture", e);

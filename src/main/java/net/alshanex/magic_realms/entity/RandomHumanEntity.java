@@ -7,6 +7,7 @@ import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.Neutra
 import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
+import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
@@ -18,6 +19,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
@@ -226,6 +228,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
         String entityUUID = this.getUUID().toString();
+
+        this.addEffect(new MobEffectInstance(MobEffectRegistry.TRUE_INVISIBILITY, 60, 0, false, false));
 
         if (this.level().isClientSide) {
             CombinedTextureManager.removeEntityTexture(entityUUID);

@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.entity;
 
 import io.redspace.ironsspellbooks.api.util.Utils;
+import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
@@ -13,6 +14,7 @@ import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -228,6 +230,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
         String entityUUID = this.getUUID().toString();
+
+        if (!level().isClientSide) {
+            MagicManager.spawnParticles(level(), ParticleTypes.POOF, getX(), getY(), getZ(), 25, .4, .8, .4, .03, false);
+        }
+
+        this.moveTo(this.getX(), this.getY() + 300, this.getZ());
 
         if (this.level().isClientSide) {
             CombinedTextureManager.removeEntityTexture(entityUUID);

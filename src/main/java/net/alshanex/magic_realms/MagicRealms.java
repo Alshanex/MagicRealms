@@ -5,6 +5,7 @@ import dev.xkmc.l2hostility.init.L2Hostility;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRRegistrate;
 import net.alshanex.magic_realms.registry.TraitRegistry;
+import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.TextureEventHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -85,7 +86,12 @@ public class MagicRealms
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
         {
+            event.enqueueWork(() -> {
+                CombinedTextureManager.initializeDirectories();
 
+                CombinedTextureManager.cleanupOldTextures();
+                MagicRealms.LOGGER.info("Cleaned up orphaned textures from previous sessions");
+            });
         }
     }
 }

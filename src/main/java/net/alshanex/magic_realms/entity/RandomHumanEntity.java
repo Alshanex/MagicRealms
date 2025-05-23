@@ -8,6 +8,7 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
 import net.alshanex.magic_realms.util.humans.Gender;
@@ -140,7 +141,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(GENDER, gender.ordinal());
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
 
-        this.textureConfig = new EntityTextureConfig(gender, entityClass);
+        this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
     }
 
     public Gender getGender() {
@@ -153,7 +154,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public EntityTextureConfig getTextureConfig() {
         if (textureConfig == null) {
-            textureConfig = new EntityTextureConfig(getGender(), getEntityClass());
+            textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
         }
         return textureConfig;
     }
@@ -170,7 +171,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         super.readAdditionalSaveData(compound);
         this.entityData.set(GENDER, compound.getInt("Gender"));
         this.entityData.set(ENTITY_CLASS, compound.getInt("EntityClass"));
-        this.textureConfig = new EntityTextureConfig(getGender(), getEntityClass());
+        this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if (this.level().isClientSide) {
+            CombinedTextureManager.removeEntityTexture(this.getUUID().toString());
+        }
+        super.remove(reason);
     }
 
     RawAnimation animationToPlay = null;

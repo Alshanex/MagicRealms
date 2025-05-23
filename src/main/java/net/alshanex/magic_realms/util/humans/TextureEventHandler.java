@@ -13,6 +13,7 @@ public class TextureEventHandler {
     @OnlyIn(Dist.CLIENT)
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
+            CombinedTextureManager.initializeDirectories();
             LayeredTextureManager.loadTextures();
         });
     }
@@ -24,6 +25,7 @@ public class TextureEventHandler {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
                 MagicRealms.LOGGER.debug("Reloading textures due to resource pack reload...");
                 LayeredTextureManager.clearCache();
+                CombinedTextureManager.clearCache();
                 LayeredTextureManager.loadTextures();
             }, executor2);
         });

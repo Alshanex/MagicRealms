@@ -25,7 +25,7 @@
         {
           "free": 1,
           "min": 2,
-          "trait": "arcane_hostility:mana_siphon"
+          "trait": "magic_realms:mana_siphon"
         }
       ]
     }

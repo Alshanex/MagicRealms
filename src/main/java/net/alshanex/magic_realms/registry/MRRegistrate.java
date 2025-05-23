@@ -3,9 +3,9 @@ package net.alshanex.magic_realms.registry;
 import dev.xkmc.l2hostility.init.entries.LHRegistrate;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
-public class AHRegistrate extends LHRegistrate {
+public class MRRegistrate extends LHRegistrate {
 
-	public AHRegistrate(String modid) {
+	public MRRegistrate(String modid) {
 		super(modid);
 	}
 

@@ -31,69 +31,69 @@ public class TraitRegistry {
         {}
         //common
         {
-            FIRE_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("fire_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.RED, SchoolRegistry.FIRE.get()),
+            FIRE_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("fire_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.RED, SchoolRegistry.FIRE.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by fire spells.")
                     .lang("Fire Spells Immunity").register();
 
-            BLOOD_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("blood_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.DARK_RED, SchoolRegistry.BLOOD.get()),
+            BLOOD_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("blood_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.DARK_RED, SchoolRegistry.BLOOD.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by blood spells.")
                     .lang("Blood Spells Immunity").register();
 
-            ELDRITCH_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("eldritch_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.DARK_AQUA, SchoolRegistry.ELDRITCH.get()),
+            ELDRITCH_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("eldritch_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.DARK_AQUA, SchoolRegistry.ELDRITCH.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by eldritch spells.")
                     .lang("Eldritch Spells Immunity").register();
 
-            ENDER_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("ender_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.LIGHT_PURPLE, SchoolRegistry.ENDER.get()),
+            ENDER_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("ender_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.LIGHT_PURPLE, SchoolRegistry.ENDER.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by ender spells.")
                     .lang("Ender Spells Immunity").register();
 
-            EVOCATION_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("evocation_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.GRAY, SchoolRegistry.EVOCATION.get()),
+            EVOCATION_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("evocation_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.GRAY, SchoolRegistry.EVOCATION.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by evocation spells.")
                     .lang("Evocation Spells Immunity").register();
 
-            HOLY_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("holy_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.YELLOW, SchoolRegistry.HOLY.get()),
+            HOLY_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("holy_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.YELLOW, SchoolRegistry.HOLY.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by holy spells.")
                     .lang("Holy Spells Immunity").register();
 
-            ICE_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("ice_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.AQUA, SchoolRegistry.ICE.get()),
+            ICE_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("ice_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.AQUA, SchoolRegistry.ICE.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by ice spells.")
                     .lang("Ice Spells Immunity").register();
 
-            LIGHTNING_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("lightning_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.BLUE, SchoolRegistry.LIGHTNING.get()),
+            LIGHTNING_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("lightning_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.BLUE, SchoolRegistry.LIGHTNING.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by lightning spells.")
                     .lang("Lightning Spells Immunity").register();
 
-            NATURE_SCHOOL_IMMUNITY = MagicRealms.AHREGISTRATE.regTrait("nature_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.GREEN, SchoolRegistry.NATURE.get()),
+            NATURE_SCHOOL_IMMUNITY = MagicRealms.MRREGISTRATE.regTrait("nature_school_immunity", () -> new MagicSchoolImmunity(ChatFormatting.GREEN, SchoolRegistry.NATURE.get()),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Immune to all damage caused by nature spells.")
                     .lang("Nature Spells Immunity").register();
 
-            VAMPIRIC = MagicRealms.AHREGISTRATE.regTrait("vampiric", () -> new Vampiric(ChatFormatting.DARK_RED),
+            VAMPIRIC = MagicRealms.MRREGISTRATE.regTrait("vampiric", () -> new Vampiric(ChatFormatting.DARK_RED),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("When attacked by blood spells, get healed instead of damaged.")
                     .lang("Vampiric").register();
 
-            SNEAKY = MagicRealms.AHREGISTRATE.regTrait("sneaky", () -> new Sneaky(ChatFormatting.DARK_GREEN),
+            SNEAKY = MagicRealms.MRREGISTRATE.regTrait("sneaky", () -> new Sneaky(ChatFormatting.DARK_GREEN),
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Dodges long range attacks, only receives damage from close range attacks.")
                     .lang("Sneaky").register();
         }
         //legendary
         {
-            ANTI_MAGIC = MagicRealms.AHREGISTRATE.regTrait("anti_magic", () -> new AntiMagic(ChatFormatting.BLACK),
+            ANTI_MAGIC = MagicRealms.MRREGISTRATE.regTrait("anti_magic", () -> new AntiMagic(ChatFormatting.BLACK),
                             new TraitConfig(120, 50, 1, 100))
                     .desc("Being attacked by a magic summon will cancel their magic, getting them unsummoned.")
                     .lang("Antimagic Touch").register();
 
-            MANA_SIPHON = MagicRealms.AHREGISTRATE.regTrait("mana_siphon", () -> new ManaSyphon(ChatFormatting.AQUA),
+            MANA_SIPHON = MagicRealms.MRREGISTRATE.regTrait("mana_siphon", () -> new ManaSyphon(ChatFormatting.AQUA),
                             new TraitConfig(100, 50, 3, 300))
                     .desc("Drains 50 mana to players within %s blocks and apply trait effects for every %ss")
                     .lang("Mana Siphon").register();

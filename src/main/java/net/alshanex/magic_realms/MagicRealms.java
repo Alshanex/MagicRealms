@@ -2,8 +2,10 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import dev.xkmc.l2hostility.init.L2Hostility;
-import net.alshanex.magic_realms.registry.AHRegistrate;
+import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.registry.MRRegistrate;
 import net.alshanex.magic_realms.registry.TraitRegistry;
+import net.alshanex.magic_realms.util.humans.TextureEventHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -31,7 +33,7 @@ public class MagicRealms
     // ensure L2H is loaded first
     private static final ResourceLocation DUMMY = L2Hostility.loc("dummy");
 
-    public static final AHRegistrate AHREGISTRATE = new AHRegistrate(MODID);
+    public static final MRRegistrate MRREGISTRATE = new MRRegistrate(MODID);
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
@@ -42,6 +44,8 @@ public class MagicRealms
 
         TraitRegistry.register();
 
+        MREntityRegistry.register(modEventBus);
+
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
@@ -49,6 +53,8 @@ public class MagicRealms
 
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
+        modEventBus.addListener(TextureEventHandler::onClientSetup);
+        modEventBus.addListener(TextureEventHandler::onRegisterReloadListeners);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

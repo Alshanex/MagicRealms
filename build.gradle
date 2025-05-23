@@ -37,6 +37,10 @@ repositories {
     maven { // Registrate
         url "https://maven.ithundxr.dev/snapshots"
     }
+    maven {
+        // Shadows_of_Fire's Maven
+        url "https://maven.shadowsoffire.dev/releases"
+    }
     maven { url = "https://maven.theillusivec4.top" }
     maven { url = "https://cursemaven.com" }
     maven { url = "https://maven.blamejared.com" }
@@ -152,6 +156,12 @@ dependencies {
 
     // Player Animator
     implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animator_version}"
+
+    //Apothic Attributes
+    dependencies {
+        implementation "dev.shadowsoffire:Placebo:${minecraft_version}-${placeboVersion}"
+        implementation "dev.shadowsoffire:ApothicAttributes:${minecraft_version}-${attributesLibVersion}"
+    }
 
     //L2
     implementation "com.tterrag.registrate:Registrate:${registrate_version}"

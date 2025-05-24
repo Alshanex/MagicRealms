@@ -15,6 +15,8 @@ public class TextureEventHandler {
         event.enqueueWork(() -> {
             CombinedTextureManager.initializeDirectories();
             LayeredTextureManager.loadTextures();
+
+            AdvancedNameManager.loadNamesFromResources();
         });
     }
 
@@ -27,6 +29,8 @@ public class TextureEventHandler {
                 LayeredTextureManager.clearCache();
                 CombinedTextureManager.clearCache();
                 LayeredTextureManager.loadTextures();
+
+                AdvancedNameManager.reloadNames();
             }, executor2);
         });
     }

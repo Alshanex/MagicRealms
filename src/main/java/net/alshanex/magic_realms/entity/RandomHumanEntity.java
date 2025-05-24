@@ -10,12 +10,10 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
-import net.alshanex.magic_realms.util.humans.EntityClass;
-import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
-import net.alshanex.magic_realms.util.humans.Gender;
+import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -48,6 +46,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
 
     private EntityTextureConfig textureConfig;
     private boolean appearanceGenerated = false;
@@ -144,6 +143,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(GENDER, 0);
         pBuilder.define(ENTITY_CLASS, 0);
         pBuilder.define(INITIALIZED, false);
+        pBuilder.define(ENTITY_NAME, "");
     }
 
     private void initializeRandomAppearance() {
@@ -155,11 +155,17 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         Gender gender = Gender.values()[random.nextInt(Gender.values().length)];
         EntityClass entityClass = EntityClass.values()[random.nextInt(EntityClass.values().length)];
 
+        String randomName = AdvancedNameManager.getRandomName(gender);
+
         this.entityData.set(GENDER, gender.ordinal());
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
+        this.entityData.set(ENTITY_NAME, randomName);
 
         this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
         this.appearanceGenerated = true;
+
+        this.setCustomName(Component.literal(randomName));
+        this.setCustomNameVisible(true);
 
         MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}",
                 this.getUUID().toString(), gender.getName(), entityClass.getName());
@@ -167,6 +173,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public Gender getGender() {
         return Gender.values()[this.entityData.get(GENDER)];
+    }
+
+    public String getEntityName() {
+        return this.entityData.get(ENTITY_NAME);
     }
 
     public EntityClass getEntityClass() {
@@ -191,9 +201,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putInt("EntityClass", this.entityData.get(ENTITY_CLASS));
         compound.putBoolean("Initialized", this.entityData.get(INITIALIZED));
         compound.putBoolean("AppearanceGenerated", this.appearanceGenerated);
-
-        MagicRealms.LOGGER.debug("Saving entity data for {}: Gender={}, Class={}, Initialized={}",
-                this.getUUID().toString(), this.entityData.get(GENDER), this.entityData.get(ENTITY_CLASS), this.entityData.get(INITIALIZED));
+        compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
     }
 
     @Override
@@ -208,23 +216,13 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
         }
 
-        MagicRealms.LOGGER.debug("Loading entity data for {}: Gender={}, Class={}, Initialized={}",
-                this.getUUID().toString(), this.entityData.get(GENDER), this.entityData.get(ENTITY_CLASS), this.entityData.get(INITIALIZED));
-    }
+        String savedName = compound.getString("EntityName");
+        this.entityData.set(ENTITY_NAME, savedName);
 
-    @Override
-    public void remove(RemovalReason reason) {
-        // Borrar en ambos lados para asegurar limpieza completa
-        String entityUUID = this.getUUID().toString();
-
-        if (this.level().isClientSide) {
-            CombinedTextureManager.removeEntityTexture(entityUUID);
-            MagicRealms.LOGGER.debug("Client: Removed texture for entity {} due to: {}", entityUUID, reason);
-        } else {
-            MagicRealms.LOGGER.debug("Server: Entity {} removed due to: {}", entityUUID, reason);
+        if (!savedName.isEmpty()) {
+            this.setCustomName(Component.literal(savedName));
+            this.setCustomNameVisible(true);
         }
-
-        super.remove(reason);
     }
 
     @Override

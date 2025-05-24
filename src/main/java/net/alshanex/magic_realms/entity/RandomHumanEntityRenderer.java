@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.entity;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
@@ -35,10 +36,11 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
 
         @Override
         public void render(PoseStack poseStack, AbstractSpellCastingMob animatable, BakedGeoModel bakedModel, @Nullable RenderType renderType, MultiBufferSource bufferSource, @Nullable VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-
             ResourceLocation hairTexture = ((RandomHumanEntity)animatable).getHairTexture();
             if (hairTexture != null) {
-                VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(hairTexture));
+                RenderType hairRenderType = RenderType.entityTranslucentCull(hairTexture);
+                VertexConsumer vertexConsumer = bufferSource.getBuffer(hairRenderType);
+
                 this.getRenderer().actuallyRender(poseStack, animatable, bakedModel, renderType, bufferSource, vertexConsumer, true, partialTick, packedLight,
                         OverlayTexture.NO_OVERLAY, 0xFFFFFFFF);
             }

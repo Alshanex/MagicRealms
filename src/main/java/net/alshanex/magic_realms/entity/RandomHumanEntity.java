@@ -17,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -47,6 +48,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> HAIR_TEXTURE_INDEX = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
 
     private EntityTextureConfig textureConfig;
     private boolean appearanceGenerated = false;
@@ -144,6 +146,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(ENTITY_CLASS, 0);
         pBuilder.define(INITIALIZED, false);
         pBuilder.define(ENTITY_NAME, "");
+        pBuilder.define(HAIR_TEXTURE_INDEX, -1);
     }
 
     private void initializeRandomAppearance() {
@@ -156,10 +159,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         EntityClass entityClass = EntityClass.values()[random.nextInt(EntityClass.values().length)];
 
         String randomName = AdvancedNameManager.getRandomName(gender);
+        int hairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
 
         this.entityData.set(GENDER, gender.ordinal());
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
         this.entityData.set(ENTITY_NAME, randomName);
+        this.entityData.set(HAIR_TEXTURE_INDEX, hairTextureIndex);
 
         this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
         this.appearanceGenerated = true;
@@ -179,6 +184,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return this.entityData.get(ENTITY_NAME);
     }
 
+    public ResourceLocation getHairTexture() {
+        EntityTextureConfig config = getTextureConfig();
+        return config != null ? config.getHairTexture() : null;
+    }
+
+    public int getHairTextureIndex() {
+        return this.entityData.get(HAIR_TEXTURE_INDEX);
+    }
+
     public EntityClass getEntityClass() {
         return EntityClass.values()[this.entityData.get(ENTITY_CLASS)];
     }
@@ -189,7 +203,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 MagicRealms.LOGGER.warn("Trying to get texture config before entity is initialized: {}", this.getUUID().toString());
                 return null;
             }
-            textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
+            textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass(), getHairTextureIndex());
         }
         return textureConfig;
     }
@@ -202,6 +216,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putBoolean("Initialized", this.entityData.get(INITIALIZED));
         compound.putBoolean("AppearanceGenerated", this.appearanceGenerated);
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
+        compound.putInt("HairTextureIndex", this.entityData.get(HAIR_TEXTURE_INDEX));
     }
 
     @Override
@@ -212,8 +227,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(INITIALIZED, compound.getBoolean("Initialized"));
         this.appearanceGenerated = compound.getBoolean("AppearanceGenerated");
 
+        int hairIndex = compound.getInt("HairTextureIndex");
+        this.entityData.set(HAIR_TEXTURE_INDEX, hairIndex);
+
         if (this.entityData.get(INITIALIZED)) {
-            this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
+            this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass(), hairIndex);
         }
 
         String savedName = compound.getString("EntityName");

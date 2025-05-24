@@ -25,7 +25,6 @@ public class CombinedTextureManager {
 
     public static void initializeDirectories() {
         try {
-            // Crear el directorio de salida en el directorio del juego
             Path gameDir = Minecraft.getInstance().gameDirectory.toPath();
             textureOutputDir = gameDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
             Files.createDirectories(textureOutputDir);
@@ -35,55 +34,45 @@ public class CombinedTextureManager {
         }
     }
 
-    public static ResourceLocation getCombinedTexture(String entityUUID, Gender gender, EntityClass entityClass) {
-        // Verificar si ya tenemos la textura registrada dinámicamente
+    public static ResourceLocation getCombinedTextureWithoutHair(String entityUUID, Gender gender, EntityClass entityClass) {
         if (COMBINED_TEXTURE_CACHE.containsKey(entityUUID)) {
-            MagicRealms.LOGGER.debug("Using cached texture for entity: " + entityUUID);
+            MagicRealms.LOGGER.debug("Using cached base texture for entity: " + entityUUID);
             return COMBINED_TEXTURE_CACHE.get(entityUUID);
         }
 
-        // Verificar si el archivo ya existe en disco
+        // Verificar si existe en disco
         if (textureOutputDir != null) {
-            Path texturePath = textureOutputDir.resolve(entityUUID + ".png");
+            Path texturePath = textureOutputDir.resolve(entityUUID + "_base.png");
             if (Files.exists(texturePath)) {
                 try {
                     BufferedImage existingImage = ImageIO.read(texturePath.toFile());
                     ResourceLocation location = DynamicTextureManager.registerDynamicTexture(entityUUID, existingImage);
                     if (location != null) {
                         COMBINED_TEXTURE_CACHE.put(entityUUID, location);
-                        MagicRealms.LOGGER.debug("Loaded existing texture from disk for entity: " + entityUUID);
+                        MagicRealms.LOGGER.debug("Loaded existing base texture from disk for entity: " + entityUUID);
                         return location;
                     }
                 } catch (IOException e) {
-                    MagicRealms.LOGGER.error("Failed to load existing texture for entity " + entityUUID, e);
-                    // Si falla cargar, eliminar el archivo corrupto
-                    try {
-                        Files.delete(texturePath);
-                        MagicRealms.LOGGER.debug("Deleted corrupted texture file for entity: " + entityUUID);
-                    } catch (IOException deleteException) {
-                        MagicRealms.LOGGER.error("Failed to delete corrupted texture file", deleteException);
-                    }
+                    MagicRealms.LOGGER.error("Failed to load existing base texture for entity " + entityUUID, e);
                 }
             }
         }
 
-        // Crear la textura combinada
         try {
-            BufferedImage combinedImage = createCombinedTexture(gender, entityClass);
+            BufferedImage combinedImage = createBaseTexture(gender, entityClass);
             if (combinedImage != null) {
-                // Registrar la textura dinámicamente
                 ResourceLocation location = DynamicTextureManager.registerDynamicTexture(entityUUID, combinedImage);
                 if (location != null) {
                     COMBINED_TEXTURE_CACHE.put(entityUUID, location);
 
-                    // Guardar en disco para cache persistente
+                    // Guardar en disco
                     if (textureOutputDir != null) {
                         try {
-                            Path texturePath = textureOutputDir.resolve(entityUUID + ".png");
+                            Path texturePath = textureOutputDir.resolve(entityUUID + "_base.png");
                             ImageIO.write(combinedImage, "PNG", texturePath.toFile());
-                            MagicRealms.LOGGER.debug("Created and saved new texture for entity: " + entityUUID);
+                            MagicRealms.LOGGER.debug("Created and saved base texture for entity: " + entityUUID);
                         } catch (IOException e) {
-                            MagicRealms.LOGGER.error("Failed to save texture to disk for entity " + entityUUID, e);
+                            MagicRealms.LOGGER.error("Failed to save base texture to disk for entity " + entityUUID, e);
                         }
                     }
 
@@ -91,21 +80,18 @@ public class CombinedTextureManager {
                 }
             }
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to create combined texture for entity " + entityUUID, e);
+            MagicRealms.LOGGER.error("Failed to create base texture for entity " + entityUUID, e);
         }
 
-        // Si falla, devolver null (el renderer debería manejar esto)
-        MagicRealms.LOGGER.error("Failed to get texture for entity: " + entityUUID);
         return null;
     }
 
-    private static BufferedImage createCombinedTexture(Gender gender, EntityClass entityClass) {
+    private static BufferedImage createBaseTexture(Gender gender, EntityClass entityClass) {
         try {
-            // Obtener las texturas aleatorias
+            // Obtener texturas
             ResourceLocation skinTexture = LayeredTextureManager.getRandomTexture("skin");
             ResourceLocation clothesTexture = getRandomClothesTexture(gender, entityClass);
             ResourceLocation eyesTexture = LayeredTextureManager.getRandomTexture("eyes");
-            ResourceLocation hairTexture = LayeredTextureManager.getRandomTexture("hair_" + gender.getName());
 
             // Cargar las imágenes
             BufferedImage skinImage = loadImage(skinTexture);
@@ -114,27 +100,29 @@ public class CombinedTextureManager {
                 return null;
             }
 
-            // Crear la imagen base con las dimensiones de la skin
+            // Crear la imagen base
             int width = skinImage.getWidth();
             int height = skinImage.getHeight();
             BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = combinedImage.createGraphics();
 
-            // Configurar para mejor calidad y preservar transparencias
+            // Configurar para preservar transparencias
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
-            g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
             g2d.setComposite(AlphaComposite.SrcOver);
 
-            // Dibujar las capas en orden: skin -> clothes -> eyes -> hair
+            // Limpiar con transparente
+            g2d.setColor(new Color(0, 0, 0, 0));
+            g2d.fillRect(0, 0, width, height);
+
+            // Dibujar capas: skin -> clothes -> eyes
             g2d.drawImage(skinImage, 0, 0, null);
+            MagicRealms.LOGGER.debug("Drew skin layer");
 
             if (clothesTexture != null) {
                 BufferedImage clothesImage = loadImage(clothesTexture);
                 if (clothesImage != null) {
                     g2d.drawImage(clothesImage, 0, 0, null);
-                } else {
-                    MagicRealms.LOGGER.warn("Failed to load clothes texture: " + clothesTexture);
+                    MagicRealms.LOGGER.debug("Drew clothes layer");
                 }
             }
 
@@ -142,31 +130,20 @@ public class CombinedTextureManager {
                 BufferedImage eyesImage = loadImage(eyesTexture);
                 if (eyesImage != null) {
                     g2d.drawImage(eyesImage, 0, 0, null);
-                } else {
-                    MagicRealms.LOGGER.warn("Failed to load eyes texture: " + eyesTexture);
-                }
-            }
-
-            if (hairTexture != null) {
-                BufferedImage hairImage = loadImage(hairTexture);
-                if (hairImage != null) {
-                    g2d.drawImage(hairImage, 0, 0, null);
-                } else {
-                    MagicRealms.LOGGER.warn("Failed to load hair texture: " + hairTexture);
+                    MagicRealms.LOGGER.debug("Drew eyes layer");
                 }
             }
 
             g2d.dispose();
 
+            // Aplicar el fix de brazos
             BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(combinedImage);
-
-            MagicRealms.LOGGER.debug("Successfully created and fixed combined texture with dimensions: {}x{}",
-                    finalTexture.getWidth(), finalTexture.getHeight());
+            MagicRealms.LOGGER.debug("Successfully created base texture without hair");
 
             return finalTexture;
 
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Error creating combined texture", e);
+            MagicRealms.LOGGER.error("Error creating base texture", e);
             return null;
         }
     }
@@ -184,12 +161,8 @@ public class CombinedTextureManager {
                         if (image != null) {
                             MagicRealms.LOGGER.debug("Successfully loaded image: " + location);
                             return image;
-                        } else {
-                            MagicRealms.LOGGER.warn("ImageIO returned null for: " + location);
                         }
                     }
-                } else {
-                    MagicRealms.LOGGER.warn("Resource not found: " + location);
                 }
             }
         } catch (IOException e) {
@@ -201,13 +174,11 @@ public class CombinedTextureManager {
     private static ResourceLocation getRandomClothesTexture(Gender gender, EntityClass entityClass) {
         java.util.List<ResourceLocation> availableTextures = new java.util.ArrayList<>();
 
-        // Primero intentar conseguir texturas específicas de clase
         java.util.List<ResourceLocation> classTextures = LayeredTextureManager.TEXTURE_CACHE.get("clothes_" + entityClass.getName() + "_" + gender.getName());
         if (classTextures != null && !classTextures.isEmpty()) {
             availableTextures.addAll(classTextures);
         }
 
-        // Si no hay texturas específicas de clase, usar las comunes
         if (availableTextures.isEmpty()) {
             java.util.List<ResourceLocation> commonTextures = LayeredTextureManager.TEXTURE_CACHE.get("clothes_common_" + gender.getName());
             if (commonTextures != null) {
@@ -216,42 +187,32 @@ public class CombinedTextureManager {
         }
 
         if (availableTextures.isEmpty()) {
-            MagicRealms.LOGGER.warn("No clothes textures found for gender: {} and class: {}", gender.getName(), entityClass.getName());
             return null;
         }
 
-        ResourceLocation selected = availableTextures.get(new java.util.Random().nextInt(availableTextures.size()));
-        MagicRealms.LOGGER.debug("Selected clothes texture: {} for gender: {} and class: {}", selected, gender.getName(), entityClass.getName());
-        return selected;
+        return availableTextures.get(new java.util.Random().nextInt(availableTextures.size()));
     }
 
     public static void removeEntityTexture(String entityUUID) {
         try {
-            // Eliminar del caché local
+            // Solo remover la textura base
             COMBINED_TEXTURE_CACHE.remove(entityUUID);
-
-            // Desregistrar la textura dinámica
             DynamicTextureManager.unregisterTexture(entityUUID);
 
-            // Eliminar el archivo del disco si existe
             if (textureOutputDir != null) {
-                Path texturePath = textureOutputDir.resolve(entityUUID + ".png");
-                if (Files.exists(texturePath)) {
-                    Files.delete(texturePath);
-                    MagicRealms.LOGGER.debug("Deleted texture file for entity: " + entityUUID);
+                Path baseTexturePath = textureOutputDir.resolve(entityUUID + "_base.png");
+                if (Files.exists(baseTexturePath)) {
+                    Files.delete(baseTexturePath);
+                    MagicRealms.LOGGER.debug("Deleted base texture file for entity: " + entityUUID);
                 }
             }
         } catch (IOException e) {
-            MagicRealms.LOGGER.error("Failed to delete texture for entity " + entityUUID, e);
+            MagicRealms.LOGGER.error("Failed to delete base texture for entity " + entityUUID, e);
         }
     }
 
     public static void clearCache() {
         COMBINED_TEXTURE_CACHE.clear();
         DynamicTextureManager.clearAllTextures();
-    }
-
-    public static int getCachedTextureCount() {
-        return COMBINED_TEXTURE_CACHE.size();
     }
 }

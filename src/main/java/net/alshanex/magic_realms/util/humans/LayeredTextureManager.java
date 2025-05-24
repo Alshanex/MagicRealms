@@ -62,6 +62,32 @@ public class LayeredTextureManager {
         TEXTURE_CACHE.put(category, textures);
     }
 
+    public static int getRandomHairTextureIndex(String category) {
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No textures found for category: " + category);
+            return -1;
+        }
+        int index = new Random().nextInt(textures.size());
+        MagicRealms.LOGGER.debug("Selected hair texture index {} from {} options for category: {}",
+                index, textures.size(), category);
+        return index;
+    }
+
+    public static ResourceLocation getTextureByIndex(String category, int index) {
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No textures found for category: " + category);
+            return null;
+        }
+        if (index < 0 || index >= textures.size()) {
+            MagicRealms.LOGGER.warn("Invalid texture index {} for category {} (max: {})",
+                    index, category, textures.size() - 1);
+            return null;
+        }
+        return textures.get(index);
+    }
+
     public static ResourceLocation getRandomTexture(String category) {
         List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
         if (textures == null || textures.isEmpty()) {

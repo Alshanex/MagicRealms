@@ -51,6 +51,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> HAIR_TEXTURE_INDEX = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> STAR_LEVEL = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> MAGIC_ELEMENTS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> HAS_SHIELD = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_ARCHER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
     private EntityTextureConfig textureConfig;
     private boolean appearanceGenerated = false;
@@ -111,10 +114,61 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (!this.entityData.get(INITIALIZED)) {
             initializeStarLevel(randomsource);
             initializeRandomAppearance(randomsource);
+            initializeClassSpecifics(randomsource);
             this.entityData.set(INITIALIZED, true);
         }
 
+        HumanStatsManager.applyClassAttributes(this);
+
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
+    }
+
+    private void initializeClassSpecifics(RandomSource randomSource) {
+        EntityClass entityClass = getEntityClass();
+
+        switch (entityClass) {
+            case MAGE -> {
+                // Generar elementos mágicos
+                int elements = generateMagicElements(randomSource);
+                setMagicElements(elements);
+                MagicRealms.LOGGER.debug("Generated {} magic elements for mage", Integer.bitCount(elements));
+            }
+            case WARRIOR -> {
+                // 75% single weapon, 25% weapon + shield
+                boolean hasShield = randomSource.nextFloat() < 0.25f;
+                setHasShield(hasShield);
+                MagicRealms.LOGGER.debug("Warrior has shield: {}", hasShield);
+            }
+            case ROGUE -> {
+                // 75% assassin, 25% archer
+                boolean isArcher = randomSource.nextFloat() < 0.25f;
+                setIsArcher(isArcher);
+                MagicRealms.LOGGER.debug("Rogue is archer: {}", isArcher);
+            }
+        }
+    }
+
+    private int generateMagicElements(RandomSource random) {
+        double roll = random.nextDouble();
+        int elementCount;
+
+        if (roll < 0.65) {
+            elementCount = 1; // 65% single element
+        } else if (roll < 0.85) {
+            elementCount = 2; // 20% double element
+        } else if (roll < 0.95) {
+            elementCount = 3; // 10% triple element
+        } else {
+            elementCount = 4; // 5% quadruple element
+        }
+
+        int elements = 0;
+        while (Integer.bitCount(elements) < elementCount) {
+            int elementIndex = random.nextInt(9);
+            elements |= (1 << elementIndex);
+        }
+
+        return elements;
     }
 
     @Override
@@ -131,7 +185,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return LivingEntity.createLivingAttributes()
                 .add(Attributes.ATTACK_DAMAGE, 3.0)
                 .add(Attributes.ATTACK_KNOCKBACK, 0.0)
-                .add(Attributes.MAX_HEALTH, 60.0)
+                .add(Attributes.MAX_HEALTH, 1.0)
                 .add(Attributes.FOLLOW_RANGE, 24.0)
                 .add(Attributes.ENTITY_INTERACTION_RANGE, 3)
                 .add(Attributes.MOVEMENT_SPEED, .25);
@@ -151,6 +205,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(ENTITY_NAME, "");
         pBuilder.define(HAIR_TEXTURE_INDEX, -1);
         pBuilder.define(STAR_LEVEL, 1);
+        pBuilder.define(MAGIC_ELEMENTS, 0);
+        pBuilder.define(HAS_SHIELD, false);
+        pBuilder.define(IS_ARCHER, false);
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -234,6 +291,43 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return Gender.values()[this.entityData.get(GENDER)];
     }
 
+    public int getMagicElements() {
+        return this.entityData.get(MAGIC_ELEMENTS);
+    }
+
+    public void setMagicElements(int elements) {
+        this.entityData.set(MAGIC_ELEMENTS, elements);
+    }
+
+    public boolean hasElement(int elementIndex) {
+        int elements = getMagicElements();
+        return (elements & (1 << elementIndex)) != 0;
+    }
+
+    public int getElementCount() {
+        return Integer.bitCount(getMagicElements());
+    }
+
+    public boolean hasShield() {
+        return this.entityData.get(HAS_SHIELD);
+    }
+
+    public void setHasShield(boolean hasShield) {
+        this.entityData.set(HAS_SHIELD, hasShield);
+    }
+
+    public boolean isArcher() {
+        return this.entityData.get(IS_ARCHER);
+    }
+
+    public void setIsArcher(boolean isArcher) {
+        this.entityData.set(IS_ARCHER, isArcher);
+    }
+
+    public boolean isAssassin() {
+        return !isArcher();
+    }
+
     public String getEntityName() {
         return this.entityData.get(ENTITY_NAME);
     }
@@ -272,6 +366,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("HairTextureIndex", this.entityData.get(HAIR_TEXTURE_INDEX));
         compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
+        compound.putInt("MagicElements", this.entityData.get(MAGIC_ELEMENTS));
+        compound.putBoolean("HasShield", this.entityData.get(HAS_SHIELD));
+        compound.putBoolean("IsArcher", this.entityData.get(IS_ARCHER));
     }
 
     @Override
@@ -287,6 +384,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
         this.entityData.set(STAR_LEVEL, starLevel);
+
+        this.entityData.set(MAGIC_ELEMENTS, compound.getInt("MagicElements"));
+        this.entityData.set(HAS_SHIELD, compound.getBoolean("HasShield"));
+        this.entityData.set(IS_ARCHER, compound.getBoolean("IsArcher"));
 
         if (this.entityData.get(INITIALIZED)) {
             this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass(), hairIndex);

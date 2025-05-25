@@ -11,6 +11,7 @@ import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavig
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.util.humans.*;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -49,6 +50,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> HAIR_TEXTURE_INDEX = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> STAR_LEVEL = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
 
     private EntityTextureConfig textureConfig;
     private boolean appearanceGenerated = false;
@@ -107,7 +109,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.populateDefaultEquipmentSlots(randomsource, pDifficulty);
 
         if (!this.entityData.get(INITIALIZED)) {
-            initializeRandomAppearance();
+            initializeStarLevel(randomsource);
+            initializeRandomAppearance(randomsource);
             this.entityData.set(INITIALIZED, true);
         }
 
@@ -147,16 +150,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(INITIALIZED, false);
         pBuilder.define(ENTITY_NAME, "");
         pBuilder.define(HAIR_TEXTURE_INDEX, -1);
+        pBuilder.define(STAR_LEVEL, 1);
     }
 
-    private void initializeRandomAppearance() {
+    private void initializeRandomAppearance(RandomSource randomSource) {
         if (appearanceGenerated) {
             return;
         }
 
-        Random random = new Random();
-        Gender gender = Gender.values()[random.nextInt(Gender.values().length)];
-        EntityClass entityClass = EntityClass.values()[random.nextInt(EntityClass.values().length)];
+        Gender gender = Gender.values()[randomSource.nextInt(Gender.values().length)];
+        EntityClass entityClass = EntityClass.values()[randomSource.nextInt(EntityClass.values().length)];
 
         String randomName = AdvancedNameManager.getRandomName(gender);
         int hairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
@@ -169,11 +172,62 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
         this.appearanceGenerated = true;
 
-        this.setCustomName(Component.literal(randomName));
-        this.setCustomNameVisible(true);
+        updateCustomNameWithStars();
 
-        MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}",
-                this.getUUID().toString(), gender.getName(), entityClass.getName());
+        MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}, Stars={}",
+                this.getUUID().toString(), gender.getName(), entityClass.getName(), this.entityData.get(STAR_LEVEL));
+    }
+
+    private void initializeStarLevel(RandomSource randomSource) {
+        double roll = randomSource.nextDouble();
+
+        int starLevel;
+        if (roll < 0.6) {
+            starLevel = 1;
+        } else if (roll < 0.9) {
+            starLevel = 2;
+        } else {
+            starLevel = 3;
+        }
+
+        this.entityData.set(STAR_LEVEL, starLevel);
+    }
+
+    private void updateCustomNameWithStars() {
+        String entityName = this.entityData.get(ENTITY_NAME);
+        int starLevel = this.entityData.get(STAR_LEVEL);
+
+        if (!entityName.isEmpty()) {
+            ChatFormatting nameColor = getColorForStarLevel(starLevel);
+            String stars = getStarsDisplay(starLevel);
+
+            Component nameComponent = Component.literal(stars + " " + entityName).withStyle(nameColor);
+            this.setCustomName(nameComponent);
+            this.setCustomNameVisible(true);
+        }
+    }
+
+    private ChatFormatting getColorForStarLevel(int starLevel) {
+        return switch (starLevel) {
+            case 2 -> ChatFormatting.AQUA;
+            case 3 -> ChatFormatting.GOLD;
+            default -> ChatFormatting.WHITE;
+        };
+    }
+
+    private String getStarsDisplay(int starLevel) {
+        return "★".repeat(starLevel);
+    }
+
+    public int getStarLevel() {
+        return this.entityData.get(STAR_LEVEL);
+    }
+
+    public void setStarLevel(int starLevel) {
+        if (starLevel >= 1 && starLevel <= 3) {
+            this.entityData.set(STAR_LEVEL, starLevel);
+            updateCustomNameWithStars();
+        }
     }
 
     public Gender getGender() {
@@ -217,6 +271,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putBoolean("AppearanceGenerated", this.appearanceGenerated);
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("HairTextureIndex", this.entityData.get(HAIR_TEXTURE_INDEX));
+        compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
     }
 
     @Override
@@ -230,6 +285,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         int hairIndex = compound.getInt("HairTextureIndex");
         this.entityData.set(HAIR_TEXTURE_INDEX, hairIndex);
 
+        int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
+        this.entityData.set(STAR_LEVEL, starLevel);
+
         if (this.entityData.get(INITIALIZED)) {
             this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass(), hairIndex);
         }
@@ -238,8 +296,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(ENTITY_NAME, savedName);
 
         if (!savedName.isEmpty()) {
-            this.setCustomName(Component.literal(savedName));
-            this.setCustomNameVisible(true);
+            updateCustomNameWithStars();
         }
     }
 
@@ -262,7 +319,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public void forceInitializeAppearance() {
         if (!this.entityData.get(INITIALIZED)) {
-            initializeRandomAppearance();
+            RandomSource randomSource = this.level().getRandom();
+            initializeStarLevel(randomSource);
+            initializeRandomAppearance(randomSource);
             this.entityData.set(INITIALIZED, true);
         }
     }

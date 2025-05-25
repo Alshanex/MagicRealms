@@ -1,0 +1,11 @@
+{
+  "values": [
+    "irons_spellbooks:heartstop",
+    "irons_spellbooks:echoing_strikes",
+    "irons_spellbooks:raise_hell",
+    {
+      "id": "traveloptics:reversal",
+      "required": false
+    }
+  ]
+}

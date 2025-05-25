@@ -5,7 +5,9 @@ import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -231,7 +233,7 @@ public class HumanStatsManager {
         };
     }
 
-    private static void addAttributeModifier(RandomHumanEntity entity, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attributeHolder,
+    private static void addAttributeModifier(RandomHumanEntity entity, Holder<Attribute> attributeHolder,
                                              String modifierName, double amount, AttributeModifier.Operation operation) {
         AttributeInstance instance = entity.getAttribute(attributeHolder);
         if (instance != null) {

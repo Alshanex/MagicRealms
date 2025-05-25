@@ -1,5 +1,7 @@
 package net.alshanex.magic_realms.entity;
 
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
@@ -14,6 +16,8 @@ import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -42,6 +46,8 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import software.bernie.geckolib.animation.*;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker {
@@ -51,12 +57,14 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> HAIR_TEXTURE_INDEX = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> STAR_LEVEL = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> MAGIC_ELEMENTS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<String> MAGIC_SCHOOLS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> HAS_SHIELD = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_ARCHER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
     private EntityTextureConfig textureConfig;
     private boolean appearanceGenerated = false;
+
+    private List<SchoolType> magicSchools = new ArrayList<>();
 
     public RandomHumanEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -128,47 +136,98 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         switch (entityClass) {
             case MAGE -> {
-                // Generar elementos mágicos
-                int elements = generateMagicElements(randomSource);
-                setMagicElements(elements);
-                MagicRealms.LOGGER.debug("Generated {} magic elements for mage", Integer.bitCount(elements));
+                List<SchoolType> schools = generateMagicSchools(randomSource);
+                setMagicSchools(schools);
             }
             case WARRIOR -> {
                 // 75% single weapon, 25% weapon + shield
                 boolean hasShield = randomSource.nextFloat() < 0.25f;
                 setHasShield(hasShield);
-                MagicRealms.LOGGER.debug("Warrior has shield: {}", hasShield);
             }
             case ROGUE -> {
                 // 75% assassin, 25% archer
                 boolean isArcher = randomSource.nextFloat() < 0.25f;
                 setIsArcher(isArcher);
-                MagicRealms.LOGGER.debug("Rogue is archer: {}", isArcher);
             }
         }
     }
 
-    private int generateMagicElements(RandomSource random) {
+    private List<SchoolType> generateMagicSchools(RandomSource random) {
         double roll = random.nextDouble();
-        int elementCount;
+        int schoolCount;
 
         if (roll < 0.65) {
-            elementCount = 1; // 65% single element
+            schoolCount = 1; // 65% single school
         } else if (roll < 0.85) {
-            elementCount = 2; // 20% double element
+            schoolCount = 2; // 20% double school
         } else if (roll < 0.95) {
-            elementCount = 3; // 10% triple element
+            schoolCount = 3; // 10% triple school
         } else {
-            elementCount = 4; // 5% quadruple element
+            schoolCount = 4; // 5% quadruple school
         }
 
-        int elements = 0;
-        while (Integer.bitCount(elements) < elementCount) {
-            int elementIndex = random.nextInt(9);
-            elements |= (1 << elementIndex);
+        List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().toList();
+
+        List<SchoolType> selectedSchools = new ArrayList<>();
+        List<SchoolType> tempAvailable = new ArrayList<>(availableSchools);
+
+        while (selectedSchools.size() < schoolCount && !tempAvailable.isEmpty()) {
+            int index = random.nextInt(tempAvailable.size());
+            selectedSchools.add(tempAvailable.remove(index));
         }
 
-        return elements;
+        return selectedSchools;
+    }
+
+    public List<SchoolType> getMagicSchools() {
+        if (magicSchools.isEmpty()) {
+            String serialized = this.entityData.get(MAGIC_SCHOOLS);
+            if (!serialized.isEmpty()) {
+                magicSchools = deserializeSchools(serialized);
+            }
+        }
+        return new ArrayList<>(magicSchools);
+    }
+
+    public void setMagicSchools(List<SchoolType> schools) {
+        this.magicSchools = new ArrayList<>(schools);
+        String serialized = serializeSchools(schools);
+        this.entityData.set(MAGIC_SCHOOLS, serialized);
+    }
+
+    public boolean hasSchool(SchoolType school) {
+        return getMagicSchools().contains(school);
+    }
+
+    // 8. Métodos de serialización para sync
+    private String serializeSchools(List<SchoolType> schools) {
+        if (schools.isEmpty()) return "";
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < schools.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append(schools.get(i).getId().toString());
+        }
+        return sb.toString();
+    }
+
+    private List<SchoolType> deserializeSchools(String serialized) {
+        List<SchoolType> schools = new ArrayList<>();
+        if (serialized.isEmpty()) return schools;
+
+        String[] schoolIds = serialized.split(",");
+        for (String schoolId : schoolIds) {
+            try {
+                ResourceLocation location = ResourceLocation.parse(schoolId.trim());
+                SchoolType school = SchoolRegistry.getSchool(location);
+                if (school != null) {
+                    schools.add(school);
+                }
+            } catch (Exception e) {
+                MagicRealms.LOGGER.warn("Failed to parse school ID: {}", schoolId, e);
+            }
+        }
+        return schools;
     }
 
     @Override
@@ -205,7 +264,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(ENTITY_NAME, "");
         pBuilder.define(HAIR_TEXTURE_INDEX, -1);
         pBuilder.define(STAR_LEVEL, 1);
-        pBuilder.define(MAGIC_ELEMENTS, 0);
+        pBuilder.define(MAGIC_SCHOOLS, "");
         pBuilder.define(HAS_SHIELD, false);
         pBuilder.define(IS_ARCHER, false);
     }
@@ -291,23 +350,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return Gender.values()[this.entityData.get(GENDER)];
     }
 
-    public int getMagicElements() {
-        return this.entityData.get(MAGIC_ELEMENTS);
-    }
-
-    public void setMagicElements(int elements) {
-        this.entityData.set(MAGIC_ELEMENTS, elements);
-    }
-
-    public boolean hasElement(int elementIndex) {
-        int elements = getMagicElements();
-        return (elements & (1 << elementIndex)) != 0;
-    }
-
-    public int getElementCount() {
-        return Integer.bitCount(getMagicElements());
-    }
-
     public boolean hasShield() {
         return this.entityData.get(HAS_SHIELD);
     }
@@ -366,7 +408,13 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("HairTextureIndex", this.entityData.get(HAIR_TEXTURE_INDEX));
         compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
-        compound.putInt("MagicElements", this.entityData.get(MAGIC_ELEMENTS));
+
+        ListTag schoolsTag = new ListTag();
+        for (SchoolType school : getMagicSchools()) {
+            schoolsTag.add(StringTag.valueOf(school.getId().toString()));
+        }
+
+        compound.put("MagicSchools", schoolsTag);
         compound.putBoolean("HasShield", this.entityData.get(HAS_SHIELD));
         compound.putBoolean("IsArcher", this.entityData.get(IS_ARCHER));
     }
@@ -385,7 +433,23 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
         this.entityData.set(STAR_LEVEL, starLevel);
 
-        this.entityData.set(MAGIC_ELEMENTS, compound.getInt("MagicElements"));
+        List<SchoolType> schools = new ArrayList<>();
+        if (compound.contains("MagicSchools")) {
+            ListTag schoolsTag = compound.getList("MagicSchools", 8); // 8 = STRING_TAG
+            for (int i = 0; i < schoolsTag.size(); i++) {
+                try {
+                    ResourceLocation location = ResourceLocation.parse(schoolsTag.getString(i));
+                    SchoolType school = SchoolRegistry.getSchool(location);
+                    if (school != null) {
+                        schools.add(school);
+                    }
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Failed to parse school from NBT: {}", schoolsTag.getString(i), e);
+                }
+            }
+        }
+        setMagicSchools(schools);
+
         this.entityData.set(HAS_SHIELD, compound.getBoolean("HasShield"));
         this.entityData.set(IS_ARCHER, compound.getBoolean("IsArcher"));
 

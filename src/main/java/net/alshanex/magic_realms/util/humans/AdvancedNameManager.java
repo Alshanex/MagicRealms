@@ -6,9 +6,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +27,9 @@ public class AdvancedNameManager {
 
     static {
         initializeDefaultNames();
-        loadNamesFromResources();
+        if (FMLEnvironment.dist.isClient()) {
+            loadNamesFromResources();
+        }
     }
 
     private static void initializeDefaultNames() {
@@ -47,8 +52,10 @@ public class AdvancedNameManager {
         NAMES_BY_GENDER.put(Gender.FEMALE, new ArrayList<>(defaultFemaleNames));
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void loadNamesFromResources() {
         try {
+            // Cambiar la ruta para que apunte a assets en lugar de data
             loadNamesFromJson("names/male_names.json", Gender.MALE);
             loadNamesFromJson("names/female_names.json", Gender.FEMALE);
 
@@ -61,35 +68,44 @@ public class AdvancedNameManager {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     private static void loadNamesFromJson(String resourcePath, Gender gender) {
         try {
             ResourceLocation location = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, resourcePath);
 
-            if (Minecraft.getInstance() != null && Minecraft.getInstance().getResourceManager() != null) {
-                Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(location);
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getResourceManager() != null) {
+                ResourceManager resourceManager = mc.getResourceManager();
+                Optional<Resource> resource = resourceManager.getResource(location);
 
                 if (resource.isPresent()) {
                     try (InputStreamReader reader = new InputStreamReader(
                             resource.get().open(), StandardCharsets.UTF_8)) {
 
                         JsonObject jsonObject = GSON.fromJson(reader, JsonObject.class);
-                        JsonArray namesArray = jsonObject.getAsJsonArray("names");
+                        if (jsonObject != null && jsonObject.has("names")) {
+                            JsonArray namesArray = jsonObject.getAsJsonArray("names");
 
-                        List<String> loadedNames = new ArrayList<>();
-                        for (JsonElement element : namesArray) {
-                            loadedNames.add(element.getAsString());
-                        }
+                            List<String> loadedNames = new ArrayList<>();
+                            for (JsonElement element : namesArray) {
+                                loadedNames.add(element.getAsString());
+                            }
 
-                        if (!loadedNames.isEmpty()) {
-                            NAMES_BY_GENDER.get(gender).clear();
-                            NAMES_BY_GENDER.get(gender).addAll(loadedNames);
-                            MagicRealms.LOGGER.debug("Loaded {} names for {} from {}",
-                                    loadedNames.size(), gender.getName(), resourcePath);
+                            if (!loadedNames.isEmpty()) {
+                                NAMES_BY_GENDER.get(gender).clear();
+                                NAMES_BY_GENDER.get(gender).addAll(loadedNames);
+                                MagicRealms.LOGGER.debug("Loaded {} names for {} from {}",
+                                        loadedNames.size(), gender.getName(), resourcePath);
+                            }
+                        } else {
+                            MagicRealms.LOGGER.warn("Invalid JSON structure in {}", resourcePath);
                         }
                     }
                 } else {
                     MagicRealms.LOGGER.warn("Resource not found: {}", location);
                 }
+            } else {
+                MagicRealms.LOGGER.warn("Minecraft instance or ResourceManager is null");
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.warn("Could not load names from {}: {}", resourcePath, e.getMessage());
@@ -99,7 +115,6 @@ public class AdvancedNameManager {
     public static String getRandomName(Gender gender) {
         List<String> names = NAMES_BY_GENDER.get(gender);
         if (names == null || names.isEmpty()) {
-
             names = DEFAULT_NAMES.get(gender);
             MagicRealms.LOGGER.warn("Using default names for gender: {}", gender.getName());
         }
@@ -113,6 +128,7 @@ public class AdvancedNameManager {
         return selectedName;
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void reloadNames() {
         NAMES_BY_GENDER.clear();
         NAMES_BY_CULTURE.clear();

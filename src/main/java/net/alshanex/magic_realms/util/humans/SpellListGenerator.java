@@ -6,9 +6,6 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.util.ModTags;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 
@@ -20,11 +17,22 @@ public class SpellListGenerator {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
 
-        return switch (entityClass) {
+        MagicRealms.LOGGER.debug("Generating spells for entity {} (Class: {}, Stars: {})",
+                entity.getUUID(), entityClass.getName(), starLevel);
+
+        List<AbstractSpell> spells = switch (entityClass) {
             case MAGE -> generateMageSpells(entity, starLevel, random);
             case WARRIOR -> generateWarriorSpells(starLevel, random);
             case ROGUE -> generateRogueSpells(entity, starLevel, random);
         };
+
+        MagicRealms.LOGGER.debug("Generated {} spells for {} {}: [{}]",
+                spells.size(),
+                entityClass.getName(),
+                entity.getEntityName(),
+                spells.stream().map(spell -> spell.getSpellName()).collect(Collectors.joining(", ")));
+
+        return spells;
     }
 
     private static List<AbstractSpell> generateMageSpells(RandomHumanEntity entity, int starLevel, RandomSource random) {
@@ -38,14 +46,25 @@ public class SpellListGenerator {
         SpellRange range = getMageSpellRange(starLevel);
         int spellCount = range.getRandomCount(random);
 
+        MagicRealms.LOGGER.debug("Mage {} has schools: [{}], generating {} spells",
+                entity.getEntityName(),
+                magicSchools.stream().map(s -> s.getId().toString()).collect(Collectors.joining(", ")),
+                spellCount);
+
         List<AbstractSpell> availableSpells = new ArrayList<>();
 
         // Obtener spells de todas las escuelas del mage
         for (SchoolType school : magicSchools) {
             List<AbstractSpell> schoolSpells = SpellRegistry.getSpellsForSchool(school);
-            availableSpells.addAll(schoolSpells.stream()
+            List<AbstractSpell> enabledSchoolSpells = schoolSpells.stream()
                     .filter(AbstractSpell::isEnabled)
-                    .toList());
+                    .toList();
+            availableSpells.addAll(enabledSchoolSpells);
+
+            MagicRealms.LOGGER.debug("School {} has {} enabled spells: [{}]",
+                    school.getId(),
+                    enabledSchoolSpells.size(),
+                    enabledSchoolSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
         }
 
         if (availableSpells.isEmpty()) {
@@ -62,6 +81,8 @@ public class SpellListGenerator {
         SpellRange range = getWarriorSpellRange(starLevel);
         int spellCount = range.getRandomCount(random);
 
+        MagicRealms.LOGGER.debug("Generating {} spells for Warrior (Stars: {})", spellCount, starLevel);
+
         // Determinar probabilidades de rareza según estrellas
         SpellRarityChances chances = getWarriorRarityChances(starLevel);
 
@@ -71,14 +92,22 @@ public class SpellListGenerator {
             TagKey<AbstractSpell> selectedTag = selectWarriorSpellTag(chances, random);
             List<AbstractSpell> tagSpells = getSpellsFromTag(selectedTag);
 
+            MagicRealms.LOGGER.debug("Tag {} has {} spells available: [{}]",
+                    selectedTag.location(),
+                    tagSpells.size(),
+                    tagSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
+
             if (!tagSpells.isEmpty()) {
                 AbstractSpell spell = tagSpells.get(random.nextInt(tagSpells.size()));
                 if (!selectedSpells.contains(spell)) {
                     selectedSpells.add(spell);
+                    MagicRealms.LOGGER.debug("Selected spell: {}", spell.getSpellName());
                 } else {
                     // Si el spell ya está seleccionado, intentar con otro
                     i--;
                 }
+            } else {
+                MagicRealms.LOGGER.warn("No spells found for tag: {}", selectedTag.location());
             }
         }
 
@@ -90,6 +119,11 @@ public class SpellListGenerator {
         SpellRange range = getRogueSpellRange(starLevel);
         int spellCount = range.getRandomCount(random);
 
+        MagicRealms.LOGGER.debug("Generating {} spells for {} (Stars: {})",
+                spellCount,
+                isArcher ? "Archer" : "Assassin",
+                starLevel);
+
         // Determinar probabilidades de rareza según estrellas
         SpellRarityChances chances = getRogueRarityChances(starLevel);
 
@@ -99,14 +133,22 @@ public class SpellListGenerator {
             TagKey<AbstractSpell> selectedTag = selectRogueSpellTag(chances, isArcher, random);
             List<AbstractSpell> tagSpells = getSpellsFromTag(selectedTag);
 
+            MagicRealms.LOGGER.debug("Tag {} has {} spells available: [{}]",
+                    selectedTag.location(),
+                    tagSpells.size(),
+                    tagSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
+
             if (!tagSpells.isEmpty()) {
                 AbstractSpell spell = tagSpells.get(random.nextInt(tagSpells.size()));
                 if (!selectedSpells.contains(spell)) {
                     selectedSpells.add(spell);
+                    MagicRealms.LOGGER.debug("Selected spell: {}", spell.getSpellName());
                 } else {
                     // Si el spell ya está seleccionado, intentar con otro
                     i--;
                 }
+            } else {
+                MagicRealms.LOGGER.warn("No spells found for tag: {}", selectedTag.location());
             }
         }
 
@@ -210,6 +252,11 @@ public class SpellListGenerator {
                 }
             });
         }
+
+        if (list.isEmpty()) {
+            MagicRealms.LOGGER.warn("Tag {} contains no spells or doesn't exist", tag.location());
+        }
+
         return list;
     }
 

@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.entity;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
@@ -8,9 +9,12 @@ import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
 import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.melee.AttackAnimationData;
+import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
-import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
+import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
@@ -23,13 +27,11 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.LookControl;
@@ -41,14 +43,16 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import software.bernie.geckolib.animation.*;
+import software.bernie.geckolib.animation.AnimationState;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker {
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
@@ -124,6 +128,21 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeRandomAppearance(randomsource);
             initializeClassSpecifics(randomsource);
             this.entityData.set(INITIALIZED, true);
+
+            RandomSource randomSource = Utils.random;
+            List<AbstractSpell> spells = SpellListGenerator.generateSpellsForEntity(this, randomSource);
+
+            if(this.getEntityClass() == EntityClass.MAGE){
+                setMageGoal(spells);
+            } else if (this.getEntityClass() == EntityClass.WARRIOR){
+                setWarriorGoal(spells);
+            } else if(this.getEntityClass() == EntityClass.ROGUE){
+                if(isArcher()){
+                    setArcherGoal(spells);
+                } else {
+                    setAssassinGoal(spells);
+                }
+            }
         }
 
         HumanStatsManager.applyClassAttributes(this);
@@ -232,12 +251,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     protected void populateDefaultEquipmentSlots(RandomSource pRandom, DifficultyInstance pDifficulty) {
-        /*
-        this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ItemRegistry.PYROMANCER_HELMET.get()));
-        this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ItemRegistry.PYROMANCER_CHESTPLATE.get()));
-        this.setDropChance(EquipmentSlot.HEAD, 0.0F);
-        this.setDropChance(EquipmentSlot.CHEST, 0.0F);
-         */
+        if(isArcher()){
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+        }
+        if(hasShield()){
+            this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+        }
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {
@@ -482,6 +501,35 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         super.die(damageSource);
     }
 
+    @Override
+    public boolean hurt(DamageSource pSource, float pAmount) {
+        if (level().isClientSide) {
+            return false;
+        }
+        /*
+        can parry:
+        - serverside
+        - in combat
+        - we aren't in melee attack anim or spell cast
+        - the damage source is caused by an entity (ie not fall damage)
+        - the damage is caused within our rough field of vision (117 degrees)
+        - the damage is not /kill
+         */
+        boolean canParry = this.isAggressive() &&
+                !isImmobile() &&
+                !isAnimating() &&
+                pSource.getEntity() != null &&
+                pSource.getSourcePosition() != null && pSource.getSourcePosition().subtract(this.position()).normalize().dot(this.getForward()) >= 0.35
+                && !pSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
+        if (canParry && this.random.nextFloat() < 0.25) {
+            serverTriggerAnimation("offhand_parry");
+            this.playSound(SoundRegistry.FIRE_DAGGER_PARRY.get());
+            return false;
+        }
+
+        return super.hurt(pSource, pAmount);
+    }
+
     public void forceInitializeAppearance() {
         if (!this.entityData.get(INITIALIZED)) {
             RandomSource randomSource = this.level().getRandom();
@@ -490,6 +538,60 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             this.entityData.set(INITIALIZED, true);
         }
     }
+
+    //GOALS
+
+    private void setMageGoal(List<AbstractSpell> spells){
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
+        this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
+                .setSpells(spells, List.of(), List.of(), List.of())
+                .setDrinksPotions()
+        );
+    }
+
+    private void setArcherGoal(List<AbstractSpell> spells){
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
+        this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
+                .setSpells(spells, List.of(), List.of(), List.of())
+                .setDrinksPotions()
+        );
+    }
+
+    private void setAssassinGoal(List<AbstractSpell> spells){
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
+        this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.5f, 40, 60)
+                .setMoveset(List.of(
+                        new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
+                        new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
+                        new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
+                        new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
+                ))
+                .setComboChance(.4f)
+                .setMeleeAttackInverval(10, 20)
+                .setMeleeMovespeedModifier(1.8f)
+                .setSpells(spells, List.of(), List.of(), List.of())
+                .setDrinksPotions()
+        );
+    }
+
+    private void setWarriorGoal(List<AbstractSpell> spells){
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
+        this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.25f, 50, 75)
+                .setMoveset(List.of(
+                        new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
+                        new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
+                        new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
+                        new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
+                ))
+                .setComboChance(.4f)
+                .setMeleeAttackInverval(10, 30)
+                .setMeleeMovespeedModifier(1.5f)
+                .setSpells(spells, List.of(), List.of(), List.of())
+                .setDrinksPotions()
+        );
+    }
+
+    //GECKOLIB ANIMATIONS
 
     RawAnimation animationToPlay = null;
     private final AnimationController<RandomHumanEntity> meleeController = new AnimationController<>(this, "keeper_animations", 0, this::predicate);

@@ -37,6 +37,8 @@ public class HumanStatsManager {
         addAttributeModifier(entity, Attributes.MAX_HEALTH,
                 "mage_health", 15.0, AttributeModifier.Operation.ADD_VALUE);
 
+        entity.heal(entity.getMaxHealth());
+
         // Bonus mana según estrella
         double bonusMana = getStarBasedValue(starLevel, 10, 50, 30, 70, 50, 100, random);
         addAttributeModifier(entity, AttributeRegistry.MAX_MANA,
@@ -63,6 +65,8 @@ public class HumanStatsManager {
         addAttributeModifier(entity, Attributes.MAX_HEALTH,
                 "warrior_health", 20.0, AttributeModifier.Operation.ADD_VALUE);
 
+        entity.heal(entity.getMaxHealth());
+
         // Ghost health
         double ghostHealth = 0.1;
         addAttributeModifier(entity, ALObjects.Attributes.GHOST_HEALTH,
@@ -83,6 +87,8 @@ public class HumanStatsManager {
         // Health base: 10
         addAttributeModifier(entity, Attributes.MAX_HEALTH,
                 "rogue_health", 10.0, AttributeModifier.Operation.ADD_VALUE);
+
+        entity.heal(entity.getMaxHealth());
 
         // Aplicar atributos de archer solo si es archer
         if (entity.isArcher()) {

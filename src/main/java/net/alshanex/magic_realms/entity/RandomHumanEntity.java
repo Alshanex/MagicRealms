@@ -121,7 +121,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData) {
         RandomSource randomsource = Utils.random;
-        this.populateDefaultEquipmentSlots(randomsource, pDifficulty);
 
         if (!this.entityData.get(INITIALIZED)) {
             initializeStarLevel(randomsource);
@@ -146,6 +145,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         HumanStatsManager.applyClassAttributes(this);
+        this.populateDefaultEquipmentSlots(randomsource, pDifficulty);
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
     }
@@ -153,20 +153,29 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private void initializeClassSpecifics(RandomSource randomSource) {
         EntityClass entityClass = getEntityClass();
 
+        MagicRealms.LOGGER.debug("Initializing class specifics for {} (Class: {})",
+                getEntityName(), entityClass.getName());
+
         switch (entityClass) {
             case MAGE -> {
                 List<SchoolType> schools = generateMagicSchools(randomSource);
                 setMagicSchools(schools);
+                MagicRealms.LOGGER.debug("Mage {} assigned schools: [{}]",
+                        getEntityName(),
+                        schools.stream().map(s -> s.getId().toString()).collect(java.util.stream.Collectors.joining(", ")));
             }
             case WARRIOR -> {
                 // 75% single weapon, 25% weapon + shield
                 boolean hasShield = randomSource.nextFloat() < 0.25f;
                 setHasShield(hasShield);
+                MagicRealms.LOGGER.debug("Warrior {} has shield: {}", getEntityName(), hasShield);
             }
             case ROGUE -> {
                 // 75% assassin, 25% archer
                 boolean isArcher = randomSource.nextFloat() < 0.25f;
                 setIsArcher(isArcher);
+                MagicRealms.LOGGER.debug("Rogue {} is archer: {} (subclass: {})",
+                        getEntityName(), isArcher, isArcher ? "Archer" : "Assassin");
             }
         }
     }
@@ -491,13 +500,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (!level().isClientSide) {
             MagicManager.spawnParticles(level(), ParticleTypes.POOF, getX(), getY(), getZ(), 25, .4, .8, .4, .03, false);
         }
-
-        this.moveTo(this.getX(), this.getY() + 300, this.getZ());
-
+/*
         if (this.level().isClientSide) {
             CombinedTextureManager.removeEntityTexture(entityUUID);
         }
-
+*/
         super.die(damageSource);
     }
 

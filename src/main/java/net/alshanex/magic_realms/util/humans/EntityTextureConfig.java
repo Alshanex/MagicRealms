@@ -4,8 +4,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.resources.ResourceLocation;
 
 public class EntityTextureConfig {
-    private final ResourceLocation combinedTexture;
-    private final ResourceLocation hairTexture;
+    private final ResourceLocation completeTexture;
     private final Gender gender;
     private final EntityClass entityClass;
     private final String entityUUID;
@@ -18,28 +17,16 @@ public class EntityTextureConfig {
         this.hairTextureIndex = hairTextureIndex;
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-            this.combinedTexture = CombinedTextureManager.getCombinedTextureWithoutHair(entityUUID, gender, entityClass);
+            this.completeTexture = CombinedTextureManager.getCombinedTextureWithHair(entityUUID, gender, entityClass, hairTextureIndex);
 
-            if (hairTextureIndex >= 0) {
-                this.hairTexture = LayeredTextureManager.getTextureByIndex("hair_" + gender.getName(), hairTextureIndex);
+            if (this.completeTexture == null) {
+                MagicRealms.LOGGER.error("Failed to create complete texture for entity: {}", entityUUID);
             } else {
-                this.hairTexture = null;
+                MagicRealms.LOGGER.debug("Created complete texture config for entity: {} -> texture: {}, hair index: {}",
+                        entityUUID, this.completeTexture, hairTextureIndex);
             }
-
-            if (this.combinedTexture == null) {
-                MagicRealms.LOGGER.error("Failed to create base texture for entity: {}", entityUUID);
-            }
-
-            if (this.hairTexture == null && hairTextureIndex >= 0) {
-                MagicRealms.LOGGER.warn("Failed to load hair texture with index {} for entity: {} (gender: {})",
-                        hairTextureIndex, entityUUID, gender.getName());
-            }
-
-            MagicRealms.LOGGER.debug("Created texture config for entity: {} -> base: {}, hair: {} (index: {})",
-                    entityUUID, this.combinedTexture, this.hairTexture, hairTextureIndex);
         } else {
-            this.combinedTexture = null;
-            this.hairTexture = null;
+            this.completeTexture = null;
         }
     }
 
@@ -48,15 +35,11 @@ public class EntityTextureConfig {
     }
 
     public ResourceLocation getSkinTexture() {
-        if (combinedTexture == null) {
-            MagicRealms.LOGGER.warn("No combined texture available for entity: {}, using fallback", entityUUID);
+        if (completeTexture == null) {
+            MagicRealms.LOGGER.warn("No complete texture available for entity: {}, using fallback", entityUUID);
             return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
         }
-        return combinedTexture;
-    }
-
-    public ResourceLocation getHairTexture() {
-        return hairTexture;
+        return completeTexture;
     }
 
     public Gender getGender() {
@@ -76,10 +59,6 @@ public class EntityTextureConfig {
     }
 
     public boolean hasValidTexture() {
-        return combinedTexture != null;
-    }
-
-    public boolean hasHairTexture() {
-        return hairTexture != null;
+        return completeTexture != null;
     }
 }

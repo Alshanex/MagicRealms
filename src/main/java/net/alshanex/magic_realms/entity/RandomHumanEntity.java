@@ -69,7 +69,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Integer> HAIR_TEXTURE_INDEX = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> STAR_LEVEL = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> MAGIC_SCHOOLS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> HAS_SHIELD = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
@@ -330,7 +329,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(ENTITY_CLASS, 0);
         pBuilder.define(INITIALIZED, false);
         pBuilder.define(ENTITY_NAME, "");
-        pBuilder.define(HAIR_TEXTURE_INDEX, -1);
         pBuilder.define(STAR_LEVEL, 1);
         pBuilder.define(MAGIC_SCHOOLS, "");
         pBuilder.define(HAS_SHIELD, false);
@@ -346,12 +344,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         EntityClass entityClass = EntityClass.values()[randomSource.nextInt(EntityClass.values().length)];
 
         String randomName = AdvancedNameManager.getRandomName(gender);
-        int hairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
 
         this.entityData.set(GENDER, gender.ordinal());
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
         this.entityData.set(ENTITY_NAME, randomName);
-        this.entityData.set(HAIR_TEXTURE_INDEX, hairTextureIndex);
 
         this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
         this.appearanceGenerated = true;
@@ -442,15 +438,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return this.entityData.get(ENTITY_NAME);
     }
 
-    public ResourceLocation getHairTexture() {
-        EntityTextureConfig config = getTextureConfig();
-        return config != null ? config.getHairTexture() : null;
-    }
-
-    public int getHairTextureIndex() {
-        return this.entityData.get(HAIR_TEXTURE_INDEX);
-    }
-
     public EntityClass getEntityClass() {
         return EntityClass.values()[this.entityData.get(ENTITY_CLASS)];
     }
@@ -461,7 +448,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 MagicRealms.LOGGER.warn("Trying to get texture config before entity is initialized: {}", this.getUUID().toString());
                 return null;
             }
-            textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass(), getHairTextureIndex());
+            textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
         }
         return textureConfig;
     }
@@ -474,7 +461,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putBoolean("Initialized", this.entityData.get(INITIALIZED));
         compound.putBoolean("AppearanceGenerated", this.appearanceGenerated);
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
-        compound.putInt("HairTextureIndex", this.entityData.get(HAIR_TEXTURE_INDEX));
         compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
 
         ListTag schoolsTag = new ListTag();
@@ -494,9 +480,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(ENTITY_CLASS, compound.getInt("EntityClass"));
         this.entityData.set(INITIALIZED, compound.getBoolean("Initialized"));
         this.appearanceGenerated = compound.getBoolean("AppearanceGenerated");
-
-        int hairIndex = compound.getInt("HairTextureIndex");
-        this.entityData.set(HAIR_TEXTURE_INDEX, hairIndex);
 
         int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
         this.entityData.set(STAR_LEVEL, starLevel);
@@ -522,7 +505,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(IS_ARCHER, compound.getBoolean("IsArcher"));
 
         if (this.entityData.get(INITIALIZED)) {
-            this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass(), hairIndex);
+            this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
         }
 
         String savedName = compound.getString("EntityName");
@@ -535,16 +518,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
-        String entityUUID = this.getUUID().toString();
-
         if (!level().isClientSide) {
             MagicManager.spawnParticles(level(), ParticleTypes.POOF, getX(), getY(), getZ(), 25, .4, .8, .4, .03, false);
         }
-/*
-        if (this.level().isClientSide) {
-            CombinedTextureManager.removeEntityTexture(entityUUID);
-        }
-*/
         super.die(damageSource);
     }
 

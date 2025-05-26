@@ -7,7 +7,7 @@ import net.alshanex.magic_realms.registry.MRRegistrate;
 import net.alshanex.magic_realms.registry.TraitRegistry;
 import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
-import net.alshanex.magic_realms.util.humans.TextureEventHandler;
+import net.alshanex.magic_realms.events.TextureEventHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;

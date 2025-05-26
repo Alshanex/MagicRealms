@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.entity;
 
+import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
@@ -16,6 +17,7 @@ import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAtt
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -284,6 +286,18 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 .add(Attributes.FOLLOW_RANGE, 24.0)
                 .add(Attributes.ENTITY_INTERACTION_RANGE, 3)
                 .add(Attributes.MOVEMENT_SPEED, .25);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if(this.isCasting() && !level().isClientSide){
+            MagicData data = this.getMagicData();
+            if(data.getCastCompletionPercent() == 1){
+                AbstractSpell spell = data.getCastingSpell().getSpell();
+                MagicAttributeGainsHandler.handleSpellCast(this, spell.getSchoolType());
+            }
+        }
     }
 
     @Override

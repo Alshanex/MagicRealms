@@ -1,6 +1,9 @@
-package net.alshanex.magic_realms.util.humans;
+package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.util.humans.AdvancedNameManager;
+import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
+import net.alshanex.magic_realms.util.humans.LayeredTextureManager;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;

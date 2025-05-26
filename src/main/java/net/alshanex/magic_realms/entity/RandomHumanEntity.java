@@ -159,9 +159,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     }
                 }
             }
+
+            goalsInitialized = true;
         } else {
             if (spellsGenerated && !persistedSpells.isEmpty()) {
                 reapplyGoalsWithPersistedSpells();
+                goalsInitialized = true;
             }
         }
 
@@ -307,10 +310,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private AbstractSpell lastCastingSpell = null;
     private boolean wasCasting = false;
+    private boolean goalsInitialized = false;
 
     @Override
     public void tick() {
         super.tick();
+
+        if (!level().isClientSide && !goalsInitialized && this.entityData.get(INITIALIZED)) {
+            reinitializeGoalsAfterLoad();
+            goalsInitialized = true;
+        }
 
         if (!level().isClientSide) {
             MagicData data = this.getMagicData();
@@ -489,6 +498,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putBoolean("IsArcher", this.entityData.get(IS_ARCHER));
 
         compound.putBoolean("SpellsGenerated", this.spellsGenerated);
+        compound.putBoolean("GoalsInitialized", this.goalsInitialized);
+
         if (spellsGenerated && !persistedSpells.isEmpty()) {
             ListTag spellsTag = new ListTag();
             for (AbstractSpell spell : persistedSpells) {
@@ -549,7 +560,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.persistedSpells.clear();
 
         if (compound.contains("PersistedSpells")) {
-            ListTag spellsTag = compound.getList("PersistedSpells", 8); // 8 = STRING_TAG
+            ListTag spellsTag = compound.getList("PersistedSpells", 8);
             for (int i = 0; i < spellsTag.size(); i++) {
                 try {
                     ResourceLocation spellLocation = ResourceLocation.parse(spellsTag.getString(i));
@@ -568,6 +579,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     persistedSpells.size(),
                     getEntityName(),
                     persistedSpells.stream().map(AbstractSpell::getSpellName).collect(java.util.stream.Collectors.joining(", ")));
+        }
+
+        if (!goalsInitialized) {
+            MagicRealms.LOGGER.debug("Entity {} loaded from NBT, goals will be reinitialized", getEntityName());
         }
     }
 
@@ -679,15 +694,78 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         MagicRealms.LOGGER.debug("Re-applying goals with {} persisted spells for entity {}",
                 persistedSpells.size(), getEntityName());
 
-        if(this.getEntityClass() == EntityClass.MAGE){
-            setMageGoal(persistedSpells);
-        } else if (this.getEntityClass() == EntityClass.WARRIOR){
-            setWarriorGoal(persistedSpells);
-        } else if(this.getEntityClass() == EntityClass.ROGUE){
-            if(isArcher()){
-                setArcherGoal(persistedSpells);
-            } else {
-                setAssassinGoal(persistedSpells);
+        clearAttackGoals();
+
+        EntityClass entityClass = getEntityClass();
+        switch (entityClass) {
+            case MAGE -> setMageGoal(persistedSpells);
+            case WARRIOR -> setWarriorGoal(persistedSpells);
+            case ROGUE -> {
+                if (isArcher()) {
+                    setArcherGoal(persistedSpells);
+                } else {
+                    setAssassinGoal(persistedSpells);
+                }
+            }
+        }
+
+        MagicRealms.LOGGER.info("Successfully reapplied goals for {} {}", getEntityName(), entityClass.getName());
+    }
+
+    private void reinitializeGoalsAfterLoad() {
+        if (spellsGenerated && !persistedSpells.isEmpty()) {
+            MagicRealms.LOGGER.info("Reinitializing goals after world load for entity: {} with {} spells",
+                    getEntityName(), persistedSpells.size());
+
+            // Limpiar todos los goals de ataque existentes para evitar duplicados
+            clearAttackGoals();
+
+            // Reaplizar goals según la clase
+            EntityClass entityClass = getEntityClass();
+            switch (entityClass) {
+                case MAGE -> setMageGoal(persistedSpells);
+                case WARRIOR -> setWarriorGoal(persistedSpells);
+                case ROGUE -> {
+                    if (isArcher()) {
+                        setArcherGoal(persistedSpells);
+                    } else {
+                        setAssassinGoal(persistedSpells);
+                    }
+                }
+            }
+
+            MagicRealms.LOGGER.info("Successfully reinitialized goals for {} {} with class-specific attacks",
+                    getEntityName(), entityClass.getName());
+        } else if (this.entityData.get(INITIALIZED)) {
+            MagicRealms.LOGGER.warn("Entity {} was initialized but has no spells, regenerating...", getEntityName());
+            generateAndApplySpells();
+        }
+    }
+
+    private void clearAttackGoals() {
+        this.goalSelector.removeAllGoals(goal ->
+                goal instanceof WizardAttackGoal ||
+                        goal instanceof RangedBowAttackGoal ||
+                        goal instanceof GenericAnimatedWarlockAttackGoal
+        );
+    }
+
+    private void generateAndApplySpells() {
+        RandomSource randomSource = this.level().getRandom();
+        List<AbstractSpell> spells = SpellListGenerator.generateSpellsForEntity(this, randomSource);
+        this.persistedSpells = new ArrayList<>(spells);
+        this.spellsGenerated = true;
+
+        EntityClass entityClass = getEntityClass();
+        switch (entityClass) {
+            case MAGE -> setMageGoal(spells);
+            case WARRIOR -> setWarriorGoal(spells);
+            case ROGUE -> {
+                if (isArcher()) {
+                    setArcherGoal(spells);
+                } else {
+                    setAssassinGoal(spells);
+                }
             }
         }
     }
@@ -695,7 +773,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     public void performRangedAttack(LivingEntity pTarget, float pDistanceFactor) {
         // Crear flecha directamente sin necesidad de items en inventario
-        AbstractArrow abstractarrow = this.getArrow(ItemStack.EMPTY, pDistanceFactor);
+        AbstractArrow abstractarrow = this.getArrow();
 
         // Calcular trayectoria
         double d0 = pTarget.getX() - this.getX();
@@ -713,7 +791,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.level().addFreshEntity(abstractarrow);
     }
 
-    protected AbstractArrow getArrow(ItemStack pArrowStack, float pDistanceFactor) {
+    protected AbstractArrow getArrow() {
         AbstractArrow arrow = new Arrow(this.level(), this, new ItemStack(Items.ARROW), this.getMainHandItem());
         return arrow;
     }

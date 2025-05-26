@@ -273,9 +273,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if(isArcher()){
             this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
         }
+        /* Shields not showing properly
         if(hasShield()){
             this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
         }
+        */
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {
@@ -288,15 +290,31 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 .add(Attributes.MOVEMENT_SPEED, .25);
     }
 
+    private AbstractSpell lastCastingSpell = null;
+    private boolean wasCasting = false;
+
     @Override
     public void tick() {
         super.tick();
-        if(this.isCasting() && !level().isClientSide){
+
+        if (!level().isClientSide) {
             MagicData data = this.getMagicData();
-            if(data.getCastCompletionPercent() == 1){
-                AbstractSpell spell = data.getCastingSpell().getSpell();
-                MagicAttributeGainsHandler.handleSpellCast(this, spell.getSchoolType());
+            boolean isCasting = data.isCasting();
+
+            if (wasCasting && !isCasting && lastCastingSpell != null) {
+                MagicRealms.LOGGER.debug("Entity {} completed casting spell: {} (School: {})",
+                        getEntityName(), lastCastingSpell.getSpellName(), lastCastingSpell.getSchoolType().getId());
+
+                MagicAttributeGainsHandler.handleSpellCast(this, lastCastingSpell.getSchoolType());
+
+                lastCastingSpell = null;
             }
+
+            if (isCasting && data.getCastingSpell() != null) {
+                lastCastingSpell = data.getCastingSpell().getSpell();
+            }
+
+            wasCasting = isCasting;
         }
     }
 

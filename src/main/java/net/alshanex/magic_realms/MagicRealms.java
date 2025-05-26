@@ -5,6 +5,7 @@ import dev.xkmc.l2hostility.init.L2Hostility;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRRegistrate;
 import net.alshanex.magic_realms.registry.TraitRegistry;
+import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.TextureEventHandler;
 import net.minecraft.resources.ResourceLocation;
@@ -63,7 +64,13 @@ public class MagicRealms
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
+        event.enqueueWork(() -> {
+            // Inicializar el sistema de flechas después de que todos los mods hayan registrado sus items
+            ArrowTypeManager.initializeArrowTypes();
 
+            LOGGER.info("Magic Realms common setup completed. Available arrow types: {}",
+                    ArrowTypeManager.getAvailableArrowCount());
+        });
     }
 
     // Add the example block item to the building blocks tab

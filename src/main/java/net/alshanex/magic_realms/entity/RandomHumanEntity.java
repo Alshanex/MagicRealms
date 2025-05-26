@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.entity;
 
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
@@ -127,6 +128,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.targetSelector.addGoal(5, new ResetUniversalAngerTargetGoal<>(this, false));
     }
 
+    private List<AbstractSpell> persistedSpells = new ArrayList<>();
+    private boolean spellsGenerated = false;
+
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData) {
         RandomSource randomsource = Utils.random;
@@ -137,19 +141,27 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeClassSpecifics(randomsource);
             this.entityData.set(INITIALIZED, true);
 
-            RandomSource randomSource = Utils.random;
-            List<AbstractSpell> spells = SpellListGenerator.generateSpellsForEntity(this, randomSource);
+            if (!spellsGenerated) {
+                RandomSource randomSource = Utils.random;
+                List<AbstractSpell> spells = SpellListGenerator.generateSpellsForEntity(this, randomSource);
+                this.persistedSpells = new ArrayList<>(spells);
+                this.spellsGenerated = true;
 
-            if(this.getEntityClass() == EntityClass.MAGE){
-                setMageGoal(spells);
-            } else if (this.getEntityClass() == EntityClass.WARRIOR){
-                setWarriorGoal(spells);
-            } else if(this.getEntityClass() == EntityClass.ROGUE){
-                if(isArcher()){
-                    setArcherGoal(spells);
-                } else {
-                    setAssassinGoal(spells);
+                if (this.getEntityClass() == EntityClass.MAGE) {
+                    setMageGoal(spells);
+                } else if (this.getEntityClass() == EntityClass.WARRIOR) {
+                    setWarriorGoal(spells);
+                } else if (this.getEntityClass() == EntityClass.ROGUE) {
+                    if (isArcher()) {
+                        setArcherGoal(spells);
+                    } else {
+                        setAssassinGoal(spells);
+                    }
                 }
+            }
+        } else {
+            if (spellsGenerated && !persistedSpells.isEmpty()) {
+                reapplyGoalsWithPersistedSpells();
             }
         }
 
@@ -157,6 +169,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.populateDefaultEquipmentSlots(randomsource, pDifficulty);
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
+    }
+
+    public List<AbstractSpell> getPersistedSpells() {
+        return new ArrayList<>(persistedSpells);
     }
 
     private void initializeClassSpecifics(RandomSource randomSource) {
@@ -471,6 +487,20 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.put("MagicSchools", schoolsTag);
         compound.putBoolean("HasShield", this.entityData.get(HAS_SHIELD));
         compound.putBoolean("IsArcher", this.entityData.get(IS_ARCHER));
+
+        compound.putBoolean("SpellsGenerated", this.spellsGenerated);
+        if (spellsGenerated && !persistedSpells.isEmpty()) {
+            ListTag spellsTag = new ListTag();
+            for (AbstractSpell spell : persistedSpells) {
+                spellsTag.add(StringTag.valueOf(spell.getSpellResource().toString()));
+            }
+            compound.put("PersistedSpells", spellsTag);
+
+            MagicRealms.LOGGER.debug("Saved {} spells for entity {}: [{}]",
+                    persistedSpells.size(),
+                    getEntityName(),
+                    persistedSpells.stream().map(AbstractSpell::getSpellName).collect(java.util.stream.Collectors.joining(", ")));
+        }
     }
 
     @Override
@@ -513,6 +543,31 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         if (!savedName.isEmpty()) {
             updateCustomNameWithStars();
+        }
+
+        this.spellsGenerated = compound.getBoolean("SpellsGenerated");
+        this.persistedSpells.clear();
+
+        if (compound.contains("PersistedSpells")) {
+            ListTag spellsTag = compound.getList("PersistedSpells", 8); // 8 = STRING_TAG
+            for (int i = 0; i < spellsTag.size(); i++) {
+                try {
+                    ResourceLocation spellLocation = ResourceLocation.parse(spellsTag.getString(i));
+                    AbstractSpell spell = SpellRegistry.getSpell(spellLocation);
+                    if (spell != null) {
+                        persistedSpells.add(spell);
+                    } else {
+                        MagicRealms.LOGGER.warn("Failed to find spell: {}", spellLocation);
+                    }
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Failed to parse spell from NBT: {}", spellsTag.getString(i), e);
+                }
+            }
+
+            MagicRealms.LOGGER.debug("Loaded {} spells for entity {}: [{}]",
+                    persistedSpells.size(),
+                    getEntityName(),
+                    persistedSpells.stream().map(AbstractSpell::getSpellName).collect(java.util.stream.Collectors.joining(", ")));
         }
     }
 
@@ -618,6 +673,23 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 .setSpells(spells, List.of(), List.of(), List.of())
                 .setDrinksPotions()
         );
+    }
+
+    private void reapplyGoalsWithPersistedSpells() {
+        MagicRealms.LOGGER.debug("Re-applying goals with {} persisted spells for entity {}",
+                persistedSpells.size(), getEntityName());
+
+        if(this.getEntityClass() == EntityClass.MAGE){
+            setMageGoal(persistedSpells);
+        } else if (this.getEntityClass() == EntityClass.WARRIOR){
+            setWarriorGoal(persistedSpells);
+        } else if(this.getEntityClass() == EntityClass.ROGUE){
+            if(isArcher()){
+                setArcherGoal(persistedSpells);
+            } else {
+                setAssassinGoal(persistedSpells);
+            }
+        }
     }
 
     @Override

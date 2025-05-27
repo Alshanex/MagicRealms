@@ -123,7 +123,6 @@ public class ChargeArrowAttackGoal<T extends RandomHumanEntity & RangedAttackMob
                     int useTime = this.mob.getTicksUsingItem();
 
                     if (useTime == 1) {
-                        this.mob.triggerAnim("bow_controller", "charge_arrow");
                         this.isCharging = true;
                         this.chargingTime = 0;
                         this.mob.playSound(SoundEvents.CROSSBOW_LOADING_START.value(), 0.7F, 1.0F);

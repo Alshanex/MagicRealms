@@ -860,8 +860,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     //GECKOLIB ANIMATIONS
 
     RawAnimation animationToPlay = null;
-    protected final RawAnimation charge_arrow = RawAnimation.begin().thenPlay("charge_arrow");
     private final AnimationController<RandomHumanEntity> meleeController = new AnimationController<>(this, "keeper_animations", 0, this::predicate);
+    private final AnimationController<RandomHumanEntity> archerController = new AnimationController<>(this, "archer_animations", 0, this::predicateArcher);
 
     @Override
     public void playAnimation(String animationId) {
@@ -883,12 +883,29 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return PlayState.CONTINUE;
     }
 
+    private PlayState predicateArcher(AnimationState<RandomHumanEntity> animationEvent) {
+        var controller = animationEvent.getController();
+
+        if (this.isChargingArrow()) {
+            return PlayState.CONTINUE;
+        }
+
+        if (this.animationToPlay != null) {
+            controller.forceAnimationReset();
+            controller.setAnimation(animationToPlay);
+            animationToPlay = null;
+            return PlayState.CONTINUE;
+        }
+
+        return PlayState.STOP;
+    }
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
-        controllerRegistrar.add(meleeController);
         if (this.isArcher()) {
-            controllerRegistrar.add(new AnimationController<>(this, "bow_controller", state -> PlayState.STOP)
-                    .triggerableAnim("charge_arrow", charge_arrow));
+            controllerRegistrar.add(archerController);
+        } else {
+            controllerRegistrar.add(meleeController);
         }
         super.registerControllers(controllerRegistrar);
     }

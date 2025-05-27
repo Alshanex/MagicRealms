@@ -131,6 +131,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     @Override
+    public boolean isLeftHanded() {
+        return false;
+    }
+
+    @Override
+    public void setLeftHanded(boolean pLeftHanded) {
+        super.setLeftHanded(false);
+    }
+
+    @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 

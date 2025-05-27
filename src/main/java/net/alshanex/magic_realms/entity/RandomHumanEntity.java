@@ -19,9 +19,12 @@ import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavig
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
+import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -29,6 +32,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
@@ -56,6 +60,9 @@ import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import software.bernie.geckolib.animation.*;
@@ -772,28 +779,49 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void performRangedAttack(LivingEntity pTarget, float pDistanceFactor) {
-        // Crear flecha directamente sin necesidad de items en inventario
         AbstractArrow abstractarrow = this.getArrow();
 
-        // Calcular trayectoria
         double d0 = pTarget.getX() - this.getX();
         double d1 = pTarget.getY(0.3333333333333333D) - abstractarrow.getY();
         double d2 = pTarget.getZ() - this.getZ();
         double d3 = Math.sqrt(d0 * d0 + d2 * d2);
 
-        // Configurar velocidad y precisión
-        abstractarrow.shoot(d0, d1 + d3 * (double)0.2F, d2, 1.6F, (float)(14 - this.level().getDifficulty().getId() * 4));
+        float velocity = getArrowVelocity();
+        float inaccuracy = getArrowInaccuracy();
 
-        // Sonido de disparo
+        abstractarrow.shoot(d0, d1 + d3 * (double)0.2F, d2, velocity, inaccuracy);
+
         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
 
-        // Añadir flecha al mundo
         this.level().addFreshEntity(abstractarrow);
     }
 
     protected AbstractArrow getArrow() {
-        AbstractArrow arrow = new Arrow(this.level(), this, new ItemStack(Items.ARROW), this.getMainHandItem());
-        return arrow;
+        return ArrowTypeManager.createArrowByStarLevel(
+                getStarLevel(),
+                this.getRandom(),
+                this.level(),
+                this,
+                this.getMainHandItem()
+        );
+    }
+
+    private float getArrowVelocity() {
+        return switch (getStarLevel()) {
+            case 1 -> 1.4f;
+            case 2 -> 1.6f;
+            case 3 -> 1.8f;
+            default -> 1.6f;
+        };
+    }
+
+    private float getArrowInaccuracy() {
+        return switch (getStarLevel()) {
+            case 1 -> (float)(16 - this.level().getDifficulty().getId() * 4);
+            case 2 -> (float)(12 - this.level().getDifficulty().getId() * 3);
+            case 3 -> (float)(8 - this.level().getDifficulty().getId() * 2);
+            default -> (float)(14 - this.level().getDifficulty().getId() * 4);
+        };
     }
 
     //GECKOLIB ANIMATIONS

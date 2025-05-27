@@ -1,15 +1,21 @@
 package net.alshanex.magic_realms.util;
 
-import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ArrowItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +34,6 @@ public class ArrowTypeManager {
             try {
                 ItemStack stack = new ItemStack(item);
 
-                // Verificar si está en el tag de flechas de Minecraft
                 if (stack.is(ItemTags.ARROWS)) {
                     CACHED_ARROWS.add(item);
                     ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
@@ -36,7 +41,6 @@ public class ArrowTypeManager {
                     continue;
                 }
 
-                // Verificar si es una instancia de ArrowItem
                 if (item instanceof ArrowItem) {
                     CACHED_ARROWS.add(item);
                     ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
@@ -51,12 +55,10 @@ public class ArrowTypeManager {
                 }
 
             } catch (Exception e) {
-                // Ignorar errores al procesar items individuales
                 MagicRealms.LOGGER.debug("Error processing item for arrow detection: {}", e.getMessage());
             }
         }
 
-        // Asegurar que tengamos al menos las flechas vanilla
         if (!CACHED_ARROWS.contains(Items.ARROW)) {
             CACHED_ARROWS.add(Items.ARROW);
         }
@@ -67,34 +69,32 @@ public class ArrowTypeManager {
         initialized = true;
         MagicRealms.LOGGER.info("Initialized arrow types cache with {} arrow types", CACHED_ARROWS.size());
 
-        String arrowList = CACHED_ARROWS.stream()
-                .map(item -> BuiltInRegistries.ITEM.getKey(item).toString())
-                .collect(Collectors.joining(", "));
-        MagicRealms.LOGGER.debug("Available arrows: [{}]", arrowList);
+        if (MagicRealms.LOGGER.isDebugEnabled()) {
+            String arrowList = CACHED_ARROWS.stream()
+                    .map(item -> BuiltInRegistries.ITEM.getKey(item).toString())
+                    .collect(Collectors.joining(", "));
+            MagicRealms.LOGGER.debug("Available arrows: [{}]", arrowList);
+        }
     }
 
     private static boolean isArrowByName(ResourceLocation itemLocation) {
         String itemName = itemLocation.getPath().toLowerCase();
         String namespace = itemLocation.getNamespace();
 
-        // No procesar flechas vanilla aquí (ya las tenemos)
         if (namespace.equals("minecraft")) {
             return false;
         }
 
-        // Criterios para identificar flechas por nombre
         boolean nameContainsArrow = itemName.contains("arrow");
         boolean nameContainsBolt = itemName.contains("bolt");
         boolean nameContainsDart = itemName.contains("dart");
 
-        // Verificar si es de mods conocidos que añaden flechas
         boolean isKnownModArrow = isFromKnownArrowMod(namespace, itemName);
 
         return nameContainsArrow || nameContainsBolt || nameContainsDart || isKnownModArrow;
     }
 
     private static boolean isFromKnownArrowMod(String namespace, String itemName) {
-        // Lista de mods conocidos que añaden flechas
         List<String> knownArrowMods = List.of(
                 "supplementaries", "quark", "alexsmobs", "twilightforest",
                 "betterarchery", "spartan_weaponry", "tinkers_construct",
@@ -103,16 +103,7 @@ public class ArrowTypeManager {
                 "buzzier_bees", "enhanced_mushrooms", "windswept", "irons_spellbooks"
         );
 
-        if (knownArrowMods.contains(namespace)) {
-            return true;
-        }
-
-        // Palabras clave adicionales para detectar proyectiles
-        List<String> projectileKeywords = List.of(
-                "projectile", "ammunition", "ammo", "javelin", "spear"
-        );
-
-        return projectileKeywords.stream().anyMatch(itemName::contains);
+        return knownArrowMods.contains(namespace);
     }
 
     public static ItemStack getRandomArrow(RandomSource random) {
@@ -138,18 +129,14 @@ public class ArrowTypeManager {
             return new ItemStack(Items.ARROW);
         }
 
-        // Verificar configuración si está disponible
-        double vanillaChance = 0.6; // Por defecto 60%
+        double vanillaChance = 0.6;
         try {
-            // Usar la configuración integrada
-            if (Config.enableRandomArrows) {
-                vanillaChance = Config.vanillaArrowChance;
+            if (net.alshanex.magic_realms.Config.enableRandomArrows) {
+                vanillaChance = net.alshanex.magic_realms.Config.vanillaArrowChance;
             }
         } catch (Exception e) {
-            // Ignorar si Config no está disponible
         }
 
-        // Probabilidad de flecha vanilla
         if (random.nextFloat() < vanillaChance) {
             List<Item> vanillaArrows = CACHED_ARROWS.stream()
                     .filter(item -> BuiltInRegistries.ITEM.getKey(item).getNamespace().equals("minecraft"))
@@ -160,7 +147,6 @@ public class ArrowTypeManager {
             }
         }
 
-        // Probabilidad de flecha de mod
         List<Item> modArrows = CACHED_ARROWS.stream()
                 .filter(item -> !BuiltInRegistries.ITEM.getKey(item).getNamespace().equals("minecraft"))
                 .toList();
@@ -173,17 +159,13 @@ public class ArrowTypeManager {
         return new ItemStack(selectedArrow);
     }
 
-    /**
-     * Obtiene una flecha basada en el nivel de estrella de la entidad
-     */
     public static ItemStack getArrowByStarLevel(int starLevel, RandomSource random) {
         if (!initialized) {
             initializeArrowTypes();
         }
 
-        // Verificar si las flechas aleatorias están habilitadas
         try {
-            if (!Config.enableRandomArrows) {
+            if (!net.alshanex.magic_realms.Config.enableRandomArrows) {
                 return new ItemStack(Items.ARROW);
             }
 
@@ -191,7 +173,6 @@ public class ArrowTypeManager {
                 return getWeightedRandomArrow(random);
             }
         } catch (Exception e) {
-            // Ignorar si Config no está disponible
         }
 
         return switch (starLevel) {
@@ -223,46 +204,12 @@ public class ArrowTypeManager {
         };
     }
 
-    /**
-     * Verifica si un item específico está en la lista negra
-     */
-    private static boolean isBlacklisted(Item item) {
-        try {
-            ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
-            String itemId = itemLocation.toString();
-
-            List<? extends String> blacklist = net.alshanex.magic_realms.Config.blacklistedArrows;
-            return blacklist.contains(itemId);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /**
-     * Verifica si un mod está en la lista blanca
-     */
-    private static boolean isWhitelisted(String namespace) {
-        try {
-            List<? extends String> whitelist = net.alshanex.magic_realms.Config.whitelistedMods;
-            // Si la lista blanca está vacía, todos los mods están permitidos
-            return whitelist.isEmpty() || whitelist.contains(namespace);
-        } catch (Exception e) {
-            return true; // Por defecto permitir si hay error
-        }
-    }
-
-    /**
-     * Reinicia y recarga la cache de flechas
-     */
     public static void reloadArrowTypes() {
         initialized = false;
         CACHED_ARROWS.clear();
         initializeArrowTypes();
     }
 
-    /**
-     * Obtiene la lista de todas las flechas disponibles (para debug)
-     */
     public static List<Item> getAllAvailableArrows() {
         if (!initialized) {
             initializeArrowTypes();
@@ -270,9 +217,6 @@ public class ArrowTypeManager {
         return new ArrayList<>(CACHED_ARROWS);
     }
 
-    /**
-     * Obtiene el número de tipos de flecha disponibles
-     */
     public static int getAvailableArrowCount() {
         if (!initialized) {
             initializeArrowTypes();
@@ -280,31 +224,83 @@ public class ArrowTypeManager {
         return CACHED_ARROWS.size();
     }
 
-    /**
-     * Obtiene información detallada sobre las flechas disponibles (para debug)
-     */
-    public static String getArrowInfo() {
-        if (!initialized) {
-            initializeArrowTypes();
+    public static AbstractArrow createArrowByStarLevel(int starLevel, RandomSource random,
+                                                       net.minecraft.world.level.Level level, net.minecraft.world.entity.LivingEntity shooter,
+                                                       ItemStack weaponStack) {
+        ItemStack arrowStack = getArrowByStarLevel(starLevel, random);
+        return createArrowFromItemStack(arrowStack, level, shooter, weaponStack);
+    }
+
+    public static AbstractArrow createArrowFromItemStack(ItemStack arrowStack,
+                                                         net.minecraft.world.level.Level level, net.minecraft.world.entity.LivingEntity shooter,
+                                                         ItemStack weaponStack) {
+
+        if (arrowStack.getItem() instanceof net.minecraft.world.item.ArrowItem arrowItem) {
+            AbstractArrow arrow = arrowItem.createArrow(level, arrowStack, shooter, weaponStack);
+
+            applyBowEnchantments(arrow, weaponStack, shooter, level);
+            return arrow;
         }
 
-        StringBuilder info = new StringBuilder();
-        info.append("Arrow Types Available: ").append(CACHED_ARROWS.size()).append("\n");
+        MagicRealms.LOGGER.debug("Item {} is not an ArrowItem, creating default arrow",
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(arrowStack.getItem()));
 
-        // Agrupar por namespace
-        var arrowsByMod = CACHED_ARROWS.stream()
-                .collect(Collectors.groupingBy(
-                        item -> BuiltInRegistries.ITEM.getKey(item).getNamespace()
-                ));
+        AbstractArrow arrow = new net.minecraft.world.entity.projectile.Arrow(level, shooter, arrowStack, weaponStack);
+        applyBowEnchantments(arrow, weaponStack, shooter, level);
+        return arrow;
+    }
 
-        for (var entry : arrowsByMod.entrySet()) {
-            info.append("  ").append(entry.getKey()).append(": ");
-            info.append(entry.getValue().stream()
-                    .map(item -> BuiltInRegistries.ITEM.getKey(item).getPath())
-                    .collect(Collectors.joining(", ")));
-            info.append("\n");
+    public static void applyBowEnchantments(AbstractArrow arrow, ItemStack bow,
+                                            net.minecraft.world.entity.LivingEntity shooter, net.minecraft.world.level.Level level) {
+
+        if (bow.isEmpty() || !bow.isEnchanted()) {
+            return;
         }
 
-        return info.toString();
+        try {
+            applyPowerEnchantment(arrow, bow, level);
+            applyKnockbackEnchantment(arrow, bow, shooter, level);
+            applyFlameEnchantment(arrow, bow, level);
+
+            MagicRealms.LOGGER.debug("Applied bow enchantments to arrow. Final damage: {}", arrow.getBaseDamage());
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error applying bow enchantments to arrow", e);
+        }
+    }
+
+    private static void applyPowerEnchantment(AbstractArrow arrow, ItemStack bow, Level level) {
+        Holder<Enchantment> power = getEnchantmentHolder(level, Enchantments.POWER);
+        int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(power, bow);
+        if (powerLevel > 0) {
+            double extraDamage = 0.5 * powerLevel + 1.0;
+            arrow.setBaseDamage(arrow.getBaseDamage() + extraDamage);
+        }
+    }
+
+    private static void applyKnockbackEnchantment(AbstractArrow arrow, ItemStack bow, LivingEntity shooter, Level level) {
+        Holder<Enchantment> punch = getEnchantmentHolder(level, Enchantments.PUNCH);
+        int punchLevel = EnchantmentHelper.getItemEnchantmentLevel(punch, bow);
+        if (punchLevel > 0) {
+            double resistance = Math.max(0.0, 1.0 - shooter.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE));
+            net.minecraft.world.phys.Vec3 knockbackVec = arrow.getDeltaMovement().normalize().scale(punchLevel * 0.6 * resistance);
+            arrow.push(knockbackVec.x, 0.1, knockbackVec.z);
+        }
+    }
+
+    private static void applyFlameEnchantment(AbstractArrow arrow, ItemStack bow, Level level) {
+        Holder<Enchantment> flame = getEnchantmentHolder(level, Enchantments.FLAME);
+        int flameLevel = EnchantmentHelper.getItemEnchantmentLevel(flame, bow);
+        if (flameLevel > 0) {
+            arrow.igniteForSeconds(5);
+        }
+    }
+
+    private static net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> getEnchantmentHolder(
+            net.minecraft.world.level.Level level,
+            net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> enchantmentKey) {
+        return level.registryAccess()
+                .registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getHolderOrThrow(enchantmentKey);
     }
 }

@@ -306,14 +306,22 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     protected void populateDefaultEquipmentSlots(RandomSource pRandom, DifficultyInstance pDifficulty) {
-        if(isArcher()){
-            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+        if(getEntityClass() == EntityClass.ROGUE){
+            if(isArcher()){
+                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+            } else {
+                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_SWORD));
+            }
         }
-        /* Shields not showing properly
-        if(hasShield()){
-            this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+
+        if(getEntityClass() == EntityClass.WARRIOR){
+            if(hasShield()){
+                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_SWORD));
+                this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+            } else {
+                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_AXE));
+            }
         }
-        */
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {
@@ -643,6 +651,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         boolean canParry = this.isAggressive() &&
                 !isImmobile() &&
                 !isAnimating() &&
+                this.hasShield() &&
                 pSource.getEntity() != null &&
                 pSource.getSourcePosition() != null && pSource.getSourcePosition().subtract(this.position()).normalize().dot(this.getForward()) >= 0.35
                 && !pSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
@@ -669,7 +678,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private void setMageGoal(List<AbstractSpell> spells){
         this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
         this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
-                .setSpells(spells, List.of(), List.of(), List.of())
+                .setSpells(spells, spells, spells, spells)
                 .setDrinksPotions()
         );
     }
@@ -680,12 +689,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         this.goalSelector.addGoal(2, new ChargeArrowAttackGoal<>(this, 1.0D, 20, 15.0F));
 
-        if (!spells.isEmpty()) {
-            this.goalSelector.addGoal(4, new WizardAttackGoal(this, 1.0f, 60, 120)
-                    .setSpells(spells, List.of(), List.of(), List.of())
-                    .setDrinksPotions()
-            );
-        }
+        this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.0f, 60, 120)
+                .setSpells(spells, spells, spells, spells)
+                .setDrinksPotions()
+        );
     }
 
     private void setAssassinGoal(List<AbstractSpell> spells){
@@ -700,7 +707,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 .setComboChance(.4f)
                 .setMeleeAttackInverval(10, 20)
                 .setMeleeMovespeedModifier(1.8f)
-                .setSpells(spells, List.of(), List.of(), List.of())
+                .setSpells(spells, spells, spells, spells)
                 .setDrinksPotions()
         );
     }
@@ -717,7 +724,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 .setComboChance(.4f)
                 .setMeleeAttackInverval(10, 30)
                 .setMeleeMovespeedModifier(1.5f)
-                .setSpells(spells, List.of(), List.of(), List.of())
+                .setSpells(spells, spells, spells, spells)
                 .setDrinksPotions()
         );
     }

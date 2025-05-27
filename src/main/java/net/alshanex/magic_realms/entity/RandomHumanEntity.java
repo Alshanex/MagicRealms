@@ -126,6 +126,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     @Override
+    public HumanoidArm getMainArm() {
+        return HumanoidArm.RIGHT;
+    }
+
+    @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
@@ -324,6 +329,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private AbstractSpell lastCastingSpell = null;
     private boolean wasCasting = false;
     private boolean goalsInitialized = false;
+    private boolean wasChargingArrow = false;
+    private boolean shouldPlayChargeAnimation = false;
 
     @Override
     public void tick() {
@@ -332,6 +339,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (!level().isClientSide && !goalsInitialized && this.entityData.get(INITIALIZED)) {
             reinitializeGoalsAfterLoad();
             goalsInitialized = true;
+        }
+
+        if (this.isArcher()) {
+            handleArcherAnimations();
         }
 
         if (!level().isClientSide) {
@@ -886,7 +897,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private PlayState predicateArcher(AnimationState<RandomHumanEntity> animationEvent) {
         var controller = animationEvent.getController();
 
-        if (this.isChargingArrow()) {
+        if (this.shouldPlayChargeAnimation && this.isChargingArrow()) {
+            var currentAnim = controller.getCurrentAnimation();
+            boolean needsNewAnimation = currentAnim == null ||
+                    !currentAnim.animation().name().equals("charge_arrow");
+
+            if (needsNewAnimation) {
+                controller.forceAnimationReset();
+                controller.setAnimation(RawAnimation.begin().thenPlay("charge_arrow"));
+                MagicRealms.LOGGER.debug("Started charge_arrow animation for {}", getEntityName());
+            }
             return PlayState.CONTINUE;
         }
 
@@ -912,7 +932,27 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean isAnimating() {
-        return meleeController.getAnimationState() != AnimationController.State.STOPPED || super.isAnimating();
+        boolean meleeAnimating = meleeController.getAnimationState() != AnimationController.State.STOPPED;
+        boolean archerAnimating = false;
+
+        if (this.isArcher()) {
+            archerAnimating = archerController.getAnimationState() != AnimationController.State.STOPPED;
+        }
+
+        return meleeAnimating || archerAnimating || super.isAnimating();
+    }
+
+    private void handleArcherAnimations() {
+        boolean isCurrentlyCharging = this.isChargingArrow();
+
+        if (isCurrentlyCharging && !wasChargingArrow) {
+            shouldPlayChargeAnimation = true;
+            wasChargingArrow = true;
+        }
+        else if (!isCurrentlyCharging && wasChargingArrow) {
+            shouldPlayChargeAnimation = false;
+            wasChargingArrow = false;
+        }
     }
 
     @Override

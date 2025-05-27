@@ -8,23 +8,24 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
+import io.redspace.ironsspellbooks.entity.mobs.IMagicSummon;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
-import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
-import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
-import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.*;
 import io.redspace.ironsspellbooks.entity.mobs.goals.melee.AttackAnimationData;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
+import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
+import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
+import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ArrowTypeManager;
+import net.alshanex.magic_realms.util.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -32,12 +33,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -47,6 +48,7 @@ import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
@@ -54,15 +56,9 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
-import net.minecraft.world.entity.projectile.Arrow;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.ProjectileWeaponItem;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import software.bernie.geckolib.animation.*;
@@ -71,8 +67,9 @@ import software.bernie.geckolib.animation.AnimationState;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob {
+public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, IMagicSummon {
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
@@ -89,8 +86,14 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public RandomHumanEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
+        xpReward = 0;
         this.lookControl = createLookControl();
         this.moveControl = createMoveControl();
+    }
+
+    public RandomHumanEntity(Level level, LivingEntity owner) {
+        this(MREntityRegistry.HUMAN.get(), level);
+        setSummoner(owner);
     }
 
     protected LookControl createLookControl() {
@@ -126,13 +129,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
-        this.goalSelector.addGoal(4, new PatrolNearLocationGoal(this, 30, .75f));
-        this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(7, new GenericFollowOwnerGoal(this, this::getSummoner, 0.9f, 15, 5, false, 25));
+        this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.8D));
+        this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(10, new WizardRecoverGoal(this));
 
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isHostileTowards));
-        this.targetSelector.addGoal(5, new ResetUniversalAngerTargetGoal<>(this, false));
+        this.targetSelector.addGoal(1, new GenericOwnerHurtByTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(2, new GenericOwnerHurtTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(3, new GenericCopyOwnerTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(4, (new GenericHurtByTargetGoal(this, (entity) -> entity == getSummoner())).setAlertOthers());
+        this.targetSelector.addGoal(5, new GenericProtectOwnerTargetGoal(this, this::getSummoner));
     }
 
     private List<AbstractSpell> persistedSpells = new ArrayList<>();
@@ -519,6 +525,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     getEntityName(),
                     persistedSpells.stream().map(AbstractSpell::getSpellName).collect(java.util.stream.Collectors.joining(", ")));
         }
+
+        OwnerHelper.serializeOwner(compound, summonerUUID);
     }
 
     @Override
@@ -591,14 +599,20 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (!goalsInitialized) {
             MagicRealms.LOGGER.debug("Entity {} loaded from NBT, goals will be reinitialized", getEntityName());
         }
+
+        this.summonerUUID = OwnerHelper.deserializeOwner(compound);
     }
 
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
-        if (!level().isClientSide) {
-            MagicManager.spawnParticles(level(), ParticleTypes.POOF, getX(), getY(), getZ(), 25, .4, .8, .4, .03, false);
-        }
+        this.onDeathHelper();
         super.die(damageSource);
+    }
+
+    @Override
+    public void onRemovedFromLevel() {
+        this.onRemovedHelper(this, MobEffectRegistry.RAISE_DEAD_TIMER);
+        super.onRemovedFromLevel();
     }
 
     @Override
@@ -651,9 +665,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private void setArcherGoal(List<AbstractSpell> spells){
         this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
-        this.goalSelector.removeAllGoals((goal) -> goal instanceof RangedBowAttackGoal);
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof ChargeArrowAttackGoal);
 
-        this.goalSelector.addGoal(2, new RangedBowAttackGoal<>(this, 1.0D, 20, 15.0F));
+        this.goalSelector.addGoal(2, new ChargeArrowAttackGoal<>(this, 1.0D, 20, 15.0F));
 
         if (!spells.isEmpty()) {
             this.goalSelector.addGoal(4, new WizardAttackGoal(this, 1.0f, 60, 120)
@@ -724,7 +738,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             MagicRealms.LOGGER.info("Reinitializing goals after world load for entity: {} with {} spells",
                     getEntityName(), persistedSpells.size());
 
-            // Limpiar todos los goals de ataque existentes para evitar duplicados
             clearAttackGoals();
 
             // Reaplizar goals según la clase
@@ -791,7 +804,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         abstractarrow.shoot(d0, d1 + d3 * (double)0.2F, d2, velocity, inaccuracy);
 
-        this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+        this.playSound(SoundEvents.SKELETON_SHOOT, 0.8F, 1.2F);
 
         this.level().addFreshEntity(abstractarrow);
     }
@@ -824,9 +837,30 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         };
     }
 
+    public boolean isChargingArrow() {
+        return this.isUsingItem() && this.getMainHandItem().getItem() instanceof BowItem;
+    }
+
+    @Override
+    public void startUsingItem(InteractionHand pHand) {
+        super.startUsingItem(pHand);
+        if (pHand == InteractionHand.MAIN_HAND && this.getMainHandItem().getItem() instanceof BowItem) {
+            MagicRealms.LOGGER.debug("Archer {} started charging arrow", this.getEntityName());
+        }
+    }
+
+    @Override
+    public void stopUsingItem() {
+        if (this.isChargingArrow()) {
+            MagicRealms.LOGGER.debug("Archer {} stopped charging arrow", this.getEntityName());
+        }
+        super.stopUsingItem();
+    }
+
     //GECKOLIB ANIMATIONS
 
     RawAnimation animationToPlay = null;
+    protected final RawAnimation charge_arrow = RawAnimation.begin().thenPlay("charge_arrow");
     private final AnimationController<RandomHumanEntity> meleeController = new AnimationController<>(this, "keeper_animations", 0, this::predicate);
 
     @Override
@@ -852,6 +886,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
         controllerRegistrar.add(meleeController);
+        if (this.isArcher()) {
+            controllerRegistrar.add(new AnimationController<>(this, "bow_controller", state -> PlayState.STOP)
+                    .triggerableAnim("charge_arrow", charge_arrow));
+        }
         super.registerControllers(controllerRegistrar);
     }
 
@@ -873,5 +911,32 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     protected PathNavigation createNavigation(Level pLevel) {
         return new NotIdioticNavigation(this, pLevel);
+    }
+
+    //SUMMONING
+
+    protected LivingEntity cachedSummoner;
+    protected UUID summonerUUID;
+
+    @Override
+    public LivingEntity getSummoner() {
+        return OwnerHelper.getAndCacheOwner(level(), cachedSummoner, summonerUUID);
+    }
+
+    public void setSummoner(@Nullable LivingEntity owner) {
+        if (owner != null) {
+            this.summonerUUID = owner.getUUID();
+            this.cachedSummoner = owner;
+        }
+    }
+
+    @Override
+    public void onUnSummon() {
+
+    }
+
+    @Override
+    public boolean isAlliedTo(Entity pEntity) {
+        return super.isAlliedTo(pEntity) || this.isAlliedHelper(pEntity);
     }
 }

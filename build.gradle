@@ -178,6 +178,7 @@ dependencies {
     implementation "libs:l2library:${l2library_ver}-slim"
     implementation "libs:l2complements:${l2complements_ver}-slim"
     implementation "libs:l2hostility:${l2hostility_ver}-slim"
+    implementation "libs:pandora:${pandora_ver}"
     implementation "vazkii.patchouli:Patchouli:${patchouli_ver}"
 }
 

@@ -72,11 +72,6 @@ public class HumanStatsManager {
         addAttributeModifier(entity, ALObjects.Attributes.GHOST_HEALTH,
                 "warrior_ghost_health", ghostHealth, AttributeModifier.Operation.ADD_VALUE);
 
-        // Lifesteal
-        double lifesteal = roundToTwoDecimals(getRandomValue(0, 10, random) / 100.0);
-        addAttributeModifier(entity, ALObjects.Attributes.LIFE_STEAL,
-                "warrior_lifesteal", lifesteal, AttributeModifier.Operation.ADD_VALUE);
-
         // Overheal
         double overheal = roundToTwoDecimals(getRandomValue(5, 15, random) / 100.0);
         addAttributeModifier(entity, ALObjects.Attributes.OVERHEAL,
@@ -108,12 +103,12 @@ public class HumanStatsManager {
             double projectileDamage = roundToTwoDecimals(getRandomValue(100, 200, random) / 100.0);
             addAttributeModifier(entity, ALObjects.Attributes.PROJECTILE_DAMAGE,
                     "archer_projectile_damage", projectileDamage - 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        } else {
+            // Lifesteal para assassins
+            double lifesteal = roundToTwoDecimals(getRandomValue(0, 10, random) / 100.0);
+            addAttributeModifier(entity, ALObjects.Attributes.LIFE_STEAL,
+                    "assassin_lifesteal", lifesteal, AttributeModifier.Operation.ADD_VALUE);
         }
-
-        // Lifesteal para rogues
-        double lifesteal = roundToTwoDecimals(getRandomValue(0, 10, random) / 100.0);
-        addAttributeModifier(entity, ALObjects.Attributes.LIFE_STEAL,
-                "rogue_lifesteal", lifesteal, AttributeModifier.Operation.ADD_VALUE);
     }
 
     private static void applyCommonAttributes(RandomHumanEntity entity, int starLevel, RandomSource random) {

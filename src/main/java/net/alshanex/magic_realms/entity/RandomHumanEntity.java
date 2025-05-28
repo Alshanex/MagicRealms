@@ -736,19 +736,35 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private void setWarriorGoal(List<AbstractSpell> spells){
         this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
-        this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.25f, 50, 75)
-                .setMoveset(List.of(
-                        new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
-                        new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
-                        new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
-                        new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
-                ))
-                .setComboChance(.4f)
-                .setMeleeAttackInverval(10, 30)
-                .setMeleeMovespeedModifier(1.5f)
-                .setSpells(spells, spells, spells, spells)
-                .setDrinksPotions()
-        );
+        if(hasShield()){
+            this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1f, 70, 85)
+                    .setMoveset(List.of(
+                            new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
+                            new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
+                            new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
+                            new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
+                    ))
+                    .setComboChance(.4f)
+                    .setMeleeAttackInverval(20, 40)
+                    .setMeleeMovespeedModifier(1.3f)
+                    .setSpells(spells, spells, spells, spells)
+                    .setDrinksPotions()
+            );
+        } else {
+            this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.25f, 50, 75)
+                    .setMoveset(List.of(
+                            new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
+                            new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
+                            new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
+                            new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
+                    ))
+                    .setComboChance(.4f)
+                    .setMeleeAttackInverval(10, 30)
+                    .setMeleeMovespeedModifier(1.5f)
+                    .setSpells(spells, spells, spells, spells)
+                    .setDrinksPotions()
+            );
+        }
     }
 
     private void reapplyGoalsWithPersistedSpells() {

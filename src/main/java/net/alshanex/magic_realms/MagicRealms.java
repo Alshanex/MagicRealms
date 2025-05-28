@@ -2,6 +2,7 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import dev.xkmc.l2hostility.init.L2Hostility;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRRegistrate;
 import net.alshanex.magic_realms.registry.TraitRegistry;
@@ -48,6 +49,8 @@ public class MagicRealms
 
         MREntityRegistry.register(modEventBus);
 
+        MRDataAttachments.register(modEventBus);
+
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
@@ -65,7 +68,6 @@ public class MagicRealms
     private void commonSetup(final FMLCommonSetupEvent event)
     {
         event.enqueueWork(() -> {
-            // Inicializar el sistema de flechas después de que todos los mods hayan registrado sus items
             ArrowTypeManager.initializeArrowTypes();
 
             LOGGER.info("Magic Realms common setup completed. Available arrow types: {}",

@@ -645,6 +645,18 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     @Override
+    public boolean isInvulnerableTo(DamageSource source) {
+        if (source.getEntity() != null && source.getEntity().is(this.getSummoner())) {
+            return true;
+        } else if (source.getEntity() != null && source.getEntity() instanceof RandomHumanEntity human
+                && human.getSummoner() != null && human.getSummoner().is(this.getSummoner())){
+            return true;
+        } else {
+            return super.isInvulnerableTo(source);
+        }
+    }
+
+    @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
         if (level().isClientSide) {
             return false;

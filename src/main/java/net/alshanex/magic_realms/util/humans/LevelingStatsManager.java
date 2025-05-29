@@ -33,6 +33,8 @@ public class LevelingStatsManager {
 
     List<TraitEntry<?>> legendaryTraits = List.of(LHTraits.ADAPTIVE, LHTraits.KILLER_AURA, TraitRegistry.MANA_SIPHON);
 
+    List<TraitEntry<?>> specialConditionTraits = List.of(LHTraits.RAGNAROK, LHTraits.UNDYING, LHTraits.ENDER, LHTraits.DISPELL, LHTraits.DEMENTOR);
+
     public static void applyLevelBasedAttributes(RandomHumanEntity entity, int level) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();

@@ -24,8 +24,6 @@ import java.util.Random;
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class MagicAttributeGainsHandler {
 
-    List<TraitEntry<?>> specialConditionTraits = List.of(LHTraits.RAGNAROK, LHTraits.UNDYING, LHTraits.ENDER, LHTraits.DISPELL, LHTraits.DEMENTOR);
-
     private static final Random RANDOM = new Random();
 
     @SubscribeEvent

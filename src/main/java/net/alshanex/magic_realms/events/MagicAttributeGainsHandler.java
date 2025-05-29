@@ -125,7 +125,6 @@ public class MagicAttributeGainsHandler {
             return;
         }
 
-        // Generar ID único usando timestamp + random para evitar colisiones
         long timestamp = System.currentTimeMillis();
         int randomSuffix = RANDOM.nextInt(10000);
 

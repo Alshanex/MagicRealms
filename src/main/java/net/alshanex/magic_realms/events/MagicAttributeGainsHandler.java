@@ -1,5 +1,7 @@
 package net.alshanex.magic_realms.events;
 
+import dev.xkmc.l2hostility.init.entries.TraitEntry;
+import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
@@ -21,6 +23,8 @@ import java.util.Random;
 
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class MagicAttributeGainsHandler {
+
+    List<TraitEntry<?>> specialConditionTraits = List.of(LHTraits.RAGNAROK, LHTraits.UNDYING, LHTraits.ENDER, LHTraits.DISPELL, LHTraits.DEMENTOR);
 
     private static final Random RANDOM = new Random();
 

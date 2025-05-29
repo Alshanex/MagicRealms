@@ -298,7 +298,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return getMagicSchools().contains(school);
     }
 
-    // 8. Métodos de serialización para sync
     private String serializeSchools(List<SchoolType> schools) {
         if (schools.isEmpty()) return "";
 

@@ -1,9 +1,12 @@
 package net.alshanex.magic_realms.util.humans;
 
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
+import dev.xkmc.l2hostility.init.entries.TraitEntry;
+import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.registry.TraitRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -11,7 +14,25 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
+import java.util.List;
+
 public class LevelingStatsManager {
+    List<TraitEntry<?>> commonTraits = List.of(LHTraits.FIERY, LHTraits.PROTECTION, LHTraits.REGEN, LHTraits.SPEEDY, LHTraits.TANK, LHTraits.MOONWALK,
+            LHTraits.GRAVITY, TraitRegistry.SNEAKY);
+
+    List<TraitEntry<?>> warriorTraits = List.of(LHTraits.STRIKE);
+
+    List<TraitEntry<?>> archerTraits = List.of(LHTraits.GRENADE);
+
+    List<TraitEntry<?>> assassinTraits = List.of(LHTraits.INVISIBLE);
+
+    List<TraitEntry<?>> epicTraits = List.of(LHTraits.DRAIN, LHTraits.CORROSION, LHTraits.EROSION, TraitRegistry.BLOOD_SCHOOL_IMMUNITY, TraitRegistry.ELDRITCH_SCHOOL_IMMUNITY,
+            TraitRegistry.ENDER_SCHOOL_IMMUNITY, TraitRegistry.EVOCATION_SCHOOL_IMMUNITY, TraitRegistry.FIRE_SCHOOL_IMMUNITY, TraitRegistry.HOLY_SCHOOL_IMMUNITY,
+            TraitRegistry.ICE_SCHOOL_IMMUNITY, TraitRegistry.LIGHTNING_SCHOOL_IMMUNITY, TraitRegistry.NATURE_SCHOOL_IMMUNITY, TraitRegistry.VAMPIRIC, TraitRegistry.ANTI_MAGIC,
+            TraitRegistry.ANTI_MAGIC);
+
+    List<TraitEntry<?>> legendaryTraits = List.of(LHTraits.ADAPTIVE, LHTraits.KILLER_AURA, TraitRegistry.MANA_SIPHON);
+
     public static void applyLevelBasedAttributes(RandomHumanEntity entity, int level) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();

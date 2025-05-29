@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.events;
 
 import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
+import dev.xkmc.l2hostility.events.HostilityInitEvent;
 import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
@@ -11,6 +12,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.humans.LevelingStatsManager;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,6 +22,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class KillTrackingHandler {
+
+    @SubscribeEvent
+    public static void onL2HostilityInit(HostilityInitEvent.Pre event){
+        if(event.getEntity() instanceof RandomHumanEntity){
+            event.setCanceled(true);
+        }
+    }
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
@@ -44,6 +53,8 @@ public class KillTrackingHandler {
         if (newLevel > previousLevel) {
             applyL2HostilityLevel(humanEntity, newLevel);
 
+            LevelingStatsManager.applyLevelBasedAttributes(humanEntity, newLevel);
+
             MagicRealms.LOGGER.info("Entity {} leveled up! Level {} -> {} (Total kills: {})",
                     humanEntity.getEntityName(),
                     previousLevel,
@@ -58,6 +69,7 @@ public class KillTrackingHandler {
 
             if (cap != null) {
                 cap.setLevel(entity, level);
+                cap.syncToClient(entity);
 
                 if (!entity.level().isClientSide) {
                     entity.heal(entity.getMaxHealth());

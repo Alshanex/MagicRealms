@@ -1,5 +1,7 @@
 package net.alshanex.magic_realms.entity;
 
+import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
+import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
@@ -167,6 +169,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeStarLevel(randomsource);
             initializeRandomAppearance(randomsource);
             initializeClassSpecifics(randomsource);
+            initializeHostilityLevel();
             this.entityData.set(INITIALIZED, true);
 
             if (!spellsGenerated) {
@@ -200,6 +203,18 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.populateDefaultEquipmentSlots(randomsource, pDifficulty);
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
+    }
+
+    private void initializeHostilityLevel(){
+        MobTraitCap cap = LHMiscs.MOB.type().getOrCreate(this);
+
+        if (cap != null) {
+            cap.setLevel(this, 1);
+            cap.syncToClient(this);
+            this.heal(this.getMaxHealth());
+        } else {
+            MagicRealms.LOGGER.warn("Could not obtain MobTraitCap for entity {}", this.getEntityName());
+        }
     }
 
     public List<AbstractSpell> getPersistedSpells() {

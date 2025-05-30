@@ -9,6 +9,7 @@ import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.TraitRegistry;
+import net.alshanex.magic_realms.util.TraitExclusionManager;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -61,6 +62,8 @@ public class LevelingStatsManager {
             return;
         }
 
+        validateAndCleanExistingTraits(entity);
+
         Set<TraitEntry<?>> currentTraits = new HashSet<>();
         cap.traitEvent((trait, traitLevel) -> {
             TraitEntry<?> traitEntry = findTraitEntry(trait);
@@ -88,7 +91,6 @@ public class LevelingStatsManager {
     private static List<TraitEntry<?>> calculateExpectedTraits(RandomHumanEntity entity, int level) {
         List<TraitEntry<?>> expectedTraits = new ArrayList<>();
         EntityClass entityClass = entity.getEntityClass();
-        RandomSource random = entity.getRandom();
 
         // Niveles 0-200: cada 25 niveles
         int traitsFromEarlyLevels = Math.min(level, 200) / 25;
@@ -105,82 +107,103 @@ public class LevelingStatsManager {
 
         // Generar traits para niveles 0-200
         for (int i = 0; i < traitsFromEarlyLevels; i++) {
-            TraitEntry<?> trait = selectTraitForEarlyLevel(entityClass, expectedTraits, consistentRandom);
+            TraitEntry<?> trait = selectCompatibleTraitForEarlyLevel(entityClass, expectedTraits, consistentRandom);
             if (trait != null) {
                 expectedTraits.add(trait);
+                MagicRealms.LOGGER.debug("Added early level trait {} to entity {} (total: {})",
+                        trait.getId(), entity.getEntityName(), expectedTraits.size());
             }
         }
 
         // Generar traits para niveles 200-300
         for (int i = 0; i < traitsFromLateLevels; i++) {
-            TraitEntry<?> trait = selectTraitForLateLevel(entityClass, expectedTraits, consistentRandom);
+            TraitEntry<?> trait = selectCompatibleTraitForLateLevel(entityClass, expectedTraits, consistentRandom);
             if (trait != null) {
                 expectedTraits.add(trait);
+                MagicRealms.LOGGER.debug("Added late level trait {} to entity {} (total: {})",
+                        trait.getId(), entity.getEntityName(), expectedTraits.size());
             }
         }
 
-        return expectedTraits;
+        List<TraitEntry<?>> resolvedTraits = TraitExclusionManager.resolveConflicts(expectedTraits);
+        if (resolvedTraits.size() != expectedTraits.size()) {
+            MagicRealms.LOGGER.warn("Resolved trait conflicts for entity {}: {} -> {} traits",
+                    entity.getEntityName(), expectedTraits.size(), resolvedTraits.size());
+        }
+
+        return resolvedTraits;
     }
 
-    private static TraitEntry<?> selectTraitForEarlyLevel(EntityClass entityClass, List<TraitEntry<?>> alreadySelected, Random random) {
+    private static TraitEntry<?> selectCompatibleTraitForEarlyLevel(EntityClass entityClass,
+                                                                    List<TraitEntry<?>> alreadySelected,
+                                                                    Random random) {
         // Probabilidades para niveles 0-200: 75% common, 24% epic, 1% legendary
         int roll = random.nextInt(100);
 
         List<TraitEntry<?>> availableTraits = new ArrayList<>();
 
         if (roll < 75) {
-            // Common traits
             availableTraits.addAll(commonTraits);
         } else if (roll < 99) {
-            // Epic traits + class-specific traits
             availableTraits.addAll(epicTraits);
             availableTraits.addAll(getClassSpecificTraits(entityClass));
         } else {
-            // Legendary traits
             availableTraits.addAll(legendaryTraits);
         }
 
-        // Filtrar traits ya seleccionados
         availableTraits.removeAll(alreadySelected);
 
-        if (availableTraits.isEmpty()) {
-            MagicRealms.LOGGER.warn("No available traits for early level selection");
+        List<TraitEntry<?>> compatibleTraits = TraitExclusionManager.filterCompatibleTraits(
+                availableTraits, alreadySelected);
+
+        if (compatibleTraits.isEmpty()) {
+            MagicRealms.LOGGER.debug("No compatible traits available for early level selection. " +
+                    "Available: {}, Already selected: {}", availableTraits.size(), alreadySelected.size());
             return null;
         }
 
-        return availableTraits.get(random.nextInt(availableTraits.size()));
+        TraitEntry<?> selectedTrait = compatibleTraits.get(random.nextInt(compatibleTraits.size()));
+        MagicRealms.LOGGER.debug("Selected compatible early trait: {} (from {} options)",
+                selectedTrait.getId(), compatibleTraits.size());
+
+        return selectedTrait;
     }
 
-    private static TraitEntry<?> selectTraitForLateLevel(EntityClass entityClass, List<TraitEntry<?>> alreadySelected, Random random) {
+    private static TraitEntry<?> selectCompatibleTraitForLateLevel(EntityClass entityClass,
+                                                                   List<TraitEntry<?>> alreadySelected,
+                                                                   Random random) {
         // Probabilidades para niveles 200-300: 24% common, 70% epic, 5% legendary, 1% special
         int roll = random.nextInt(100);
 
         List<TraitEntry<?>> availableTraits = new ArrayList<>();
 
         if (roll < 24) {
-            // Common traits
             availableTraits.addAll(commonTraits);
         } else if (roll < 94) {
-            // Epic traits + class-specific traits
             availableTraits.addAll(epicTraits);
             availableTraits.addAll(getClassSpecificTraits(entityClass));
         } else if (roll < 99) {
-            // Legendary traits
             availableTraits.addAll(legendaryTraits);
         } else {
-            // Special condition traits
             availableTraits.addAll(specialConditionTraits);
         }
 
-        // Filtrar traits ya seleccionados
         availableTraits.removeAll(alreadySelected);
 
-        if (availableTraits.isEmpty()) {
-            MagicRealms.LOGGER.warn("No available traits for late level selection");
+        List<TraitEntry<?>> compatibleTraits = TraitExclusionManager.filterCompatibleTraits(
+                availableTraits, alreadySelected);
+
+        if (compatibleTraits.isEmpty()) {
+            MagicRealms.LOGGER.debug("No compatible traits available for late level selection. " +
+                    "Available: {}, Already selected: {}", availableTraits.size(), alreadySelected.size());
             return null;
         }
 
-        return availableTraits.get(random.nextInt(availableTraits.size()));
+        TraitEntry<?> selectedTrait = compatibleTraits.get(random.nextInt(compatibleTraits.size()));
+        MagicRealms.LOGGER.debug("Selected compatible late trait: {} (from {} options)",
+                selectedTrait.getId(), compatibleTraits.size());
+
+        return selectedTrait;
     }
 
     private static List<TraitEntry<?>> getClassSpecificTraits(EntityClass entityClass) {
@@ -307,5 +330,33 @@ public class LevelingStatsManager {
         instance.addPermanentModifier(modifier);
 
         MagicRealms.LOGGER.debug("Updated attribute modifier: {} = {} ({})", modifierName, roundedAmount, operation);
+    }
+
+    private static void validateAndCleanExistingTraits(RandomHumanEntity entity) {
+        MobTraitCap cap = LHMiscs.MOB.type().getOrCreate(entity);
+        if (cap == null) {
+            return;
+        }
+
+        List<TraitEntry<?>> currentTraits = new ArrayList<>();
+        List<dev.xkmc.l2hostility.content.traits.base.MobTrait> traitsToRemove = new ArrayList<>();
+
+        cap.traitEvent((trait, traitLevel) -> {
+            TraitEntry<?> traitEntry = findTraitEntry(trait);
+            if (traitEntry != null) {
+                if (TraitExclusionManager.isCompatible(traitEntry, currentTraits)) {
+                    currentTraits.add(traitEntry);
+                } else {
+                    traitsToRemove.add(trait);
+                    MagicRealms.LOGGER.warn("Found incompatible trait {} on entity {}, will remove",
+                            traitEntry.getId(), entity.getEntityName());
+                }
+            }
+        });
+
+        for (dev.xkmc.l2hostility.content.traits.base.MobTrait trait : traitsToRemove) {
+            cap.removeTrait(trait);
+            MagicRealms.LOGGER.info("Removed incompatible trait from entity {}", entity.getEntityName());
+        }
     }
 }

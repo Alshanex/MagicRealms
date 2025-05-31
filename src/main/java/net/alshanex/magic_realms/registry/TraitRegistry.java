@@ -23,6 +23,7 @@ public class TraitRegistry {
     public static final TraitEntry<AntiMagic> ANTI_MAGIC;
     public static final TraitEntry<ManaSyphon> MANA_SIPHON;
     public static final TraitEntry<DephtRuler> DEPHT_RULER;
+    public static final TraitEntry<Disrupt> DISRUPT;
 
     static {
         //no desc
@@ -95,6 +96,11 @@ public class TraitRegistry {
                             new TraitConfig(120, 50, 1, 100))
                     .desc("Being attacked by a magic summon will cancel their magic, getting them unsummoned.")
                     .lang("Antimagic Touch").register();
+
+            DISRUPT = MagicRealms.MRREGISTRATE.regTrait("disrupt", () -> new Disrupt(ChatFormatting.LIGHT_PURPLE),
+                            new TraitConfig(120, 50, 1, 50))
+                    .desc("There's a 50% chance for spells casted near the entity to backfire.")
+                    .lang("Disrupt").register();
 
             MANA_SIPHON = MagicRealms.MRREGISTRATE.regTrait("mana_siphon", () -> new ManaSyphon(ChatFormatting.AQUA),
                             new TraitConfig(100, 50, 3, 300))

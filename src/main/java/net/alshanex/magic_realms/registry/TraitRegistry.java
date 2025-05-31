@@ -25,6 +25,7 @@ public class TraitRegistry {
     public static final TraitEntry<DephtRuler> DEPHT_RULER;
     public static final TraitEntry<Disrupt> DISRUPT;
     public static final TraitEntry<Pickpocket> PICKPOCKET;
+    public static final TraitEntry<TrueEye> TRUE_EYE;
 
     static {
         //no desc
@@ -107,6 +108,11 @@ public class TraitRegistry {
                             new TraitConfig(120, 50, 1, 50))
                     .desc("There's a 50% chance for spells casted near the entity to backfire.")
                     .lang("Disrupt").register();
+
+            TRUE_EYE = MagicRealms.MRREGISTRATE.regTrait("true_eye", () -> new TrueEye(ChatFormatting.GOLD),
+                            new TraitConfig(120, 50, 1, 50))
+                    .desc("Can see through everything, cancels effects like invisibility or evasion.")
+                    .lang("True Eye").register();
 
             MANA_SIPHON = MagicRealms.MRREGISTRATE.regTrait("mana_siphon", () -> new ManaSyphon(ChatFormatting.AQUA),
                             new TraitConfig(100, 50, 3, 300))

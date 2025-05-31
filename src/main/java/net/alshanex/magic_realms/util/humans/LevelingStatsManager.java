@@ -33,7 +33,7 @@ public class LevelingStatsManager {
     private static final List<TraitEntry<?>> epicTraits = List.of(LHTraits.DRAIN, LHTraits.CORROSION, LHTraits.EROSION, TraitRegistry.BLOOD_SCHOOL_IMMUNITY, TraitRegistry.ELDRITCH_SCHOOL_IMMUNITY,
             TraitRegistry.ENDER_SCHOOL_IMMUNITY, TraitRegistry.EVOCATION_SCHOOL_IMMUNITY, TraitRegistry.FIRE_SCHOOL_IMMUNITY, TraitRegistry.HOLY_SCHOOL_IMMUNITY,
             TraitRegistry.ICE_SCHOOL_IMMUNITY, TraitRegistry.LIGHTNING_SCHOOL_IMMUNITY, TraitRegistry.NATURE_SCHOOL_IMMUNITY, TraitRegistry.VAMPIRIC, TraitRegistry.ANTI_MAGIC,
-            TraitRegistry.ANTI_MAGIC);
+            TraitRegistry.ANTI_MAGIC, TraitRegistry.DEPHT_RULER);
 
     private static final List<TraitEntry<?>> legendaryTraits = List.of(LHTraits.ADAPTIVE, LHTraits.KILLER_AURA, TraitRegistry.MANA_SIPHON);
 

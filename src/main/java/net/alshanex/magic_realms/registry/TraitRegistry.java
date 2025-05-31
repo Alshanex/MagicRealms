@@ -19,12 +19,10 @@ public class TraitRegistry {
     public static final TraitEntry<MagicSchoolImmunity> NATURE_SCHOOL_IMMUNITY;
 
     public static final TraitEntry<Vampiric> VAMPIRIC;
-
     public static final TraitEntry<Sneaky> SNEAKY;
-
     public static final TraitEntry<AntiMagic> ANTI_MAGIC;
-
     public static final TraitEntry<ManaSyphon> MANA_SIPHON;
+    public static final TraitEntry<DephtRuler> DEPHT_RULER;
 
     static {
         //no desc
@@ -85,6 +83,11 @@ public class TraitRegistry {
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Dodges long range attacks, only receives damage from close range attacks.")
                     .lang("Sneaky").register();
+
+            DEPHT_RULER = MagicRealms.MRREGISTRATE.regTrait("depht_ruler", () -> new DephtRuler(ChatFormatting.DARK_AQUA),
+                            new TraitConfig(20, 100, 1, 10))
+                    .desc("Cancels eldritch school casts and a sculk guardian will punish the caster.")
+                    .lang("Ruler of the Dephts").register();
         }
         //legendary
         {

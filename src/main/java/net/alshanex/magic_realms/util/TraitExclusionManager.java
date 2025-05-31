@@ -27,6 +27,8 @@ public class TraitExclusionManager {
 
         addMutualExclusion(LHTraits.ENDER, LHTraits.DISPELL);
 
+        addMutualExclusion(TraitRegistry.ELDRITCH_SCHOOL_IMMUNITY, TraitRegistry.DEPHT_RULER);
+
         MagicRealms.LOGGER.info("Initialized trait exclusions: {} exclusion rules", EXCLUSIONS.size());
     }
 

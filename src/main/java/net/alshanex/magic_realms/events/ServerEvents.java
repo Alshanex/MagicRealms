@@ -86,7 +86,7 @@ public class ServerEvents {
                 Random random = new Random();
                 int roll = random.nextInt(100);
 
-                if(roll < 50){
+                if(roll <= 50){
                     if(!caster.level().isClientSide){
                         DamageSources.applyDamage(caster, caster.getMaxHealth() * .1f, SpellRegistry.FIREBALL_SPELL.get().getDamageSource(target));
                         MagicManager.spawnParticles(caster.level(), new BlastwaveParticleOptions(SchoolRegistry.FIRE.get().getTargetingColor(), 3), caster.getX(), caster.getY() + .165f, caster.getZ(), 1, 0, 0, 0, 0, true);

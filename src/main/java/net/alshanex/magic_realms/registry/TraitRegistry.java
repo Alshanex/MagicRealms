@@ -24,6 +24,7 @@ public class TraitRegistry {
     public static final TraitEntry<ManaSyphon> MANA_SIPHON;
     public static final TraitEntry<DephtRuler> DEPHT_RULER;
     public static final TraitEntry<Disrupt> DISRUPT;
+    public static final TraitEntry<Pickpocket> PICKPOCKET;
 
     static {
         //no desc
@@ -89,6 +90,11 @@ public class TraitRegistry {
                             new TraitConfig(20, 100, 1, 10))
                     .desc("Cancels eldritch school casts and a sculk guardian will punish the caster.")
                     .lang("Ruler of the Dephts").register();
+
+            PICKPOCKET = MagicRealms.MRREGISTRATE.regTrait("pickpocket", () -> new Pickpocket(ChatFormatting.GRAY),
+                            new TraitConfig(20, 100, 1, 10))
+                    .desc("Has a 50% chance to steal a random effect from the attacker.")
+                    .lang("Pickpocket").register();
         }
         //legendary
         {

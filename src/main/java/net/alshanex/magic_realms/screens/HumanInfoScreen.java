@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
@@ -397,16 +398,40 @@ public class HumanInfoScreen extends Screen {
             // Armor
             CompoundTag chestTag = equipment.getCompound("chest");
             if (!chestTag.isEmpty()) {
-                ItemStack armorItem = ItemStack.parseOptional(net.minecraft.client.Minecraft.getInstance().level.registryAccess(), chestTag);
+                ItemStack armorItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), chestTag);
                 if (!armorItem.isEmpty()) {
                     guiGraphics.renderItem(armorItem, leftPos + ARMOR_SLOT_CHESTPLATE_X, topPos + ARMOR_SLOT_CHESTPLATE_Y);
+                }
+            }
+
+            CompoundTag helmetTag = equipment.getCompound("head");
+            if (!helmetTag.isEmpty()) {
+                ItemStack headItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), helmetTag);
+                if (!headItem.isEmpty()) {
+                    guiGraphics.renderItem(headItem, leftPos + ARMOR_SLOT_HEAD_X, topPos + ARMOR_SLOT_HEAD_Y);
+                }
+            }
+
+            CompoundTag legsTag = equipment.getCompound("legs");
+            if (!legsTag.isEmpty()) {
+                ItemStack legsItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), legsTag);
+                if (!legsItem.isEmpty()) {
+                    guiGraphics.renderItem(legsItem, leftPos + ARMOR_SLOT_LEGGINGS_X, topPos + ARMOR_SLOT_LEGGINGS_Y);
+                }
+            }
+
+            CompoundTag bootsTag = equipment.getCompound("boots");
+            if (!bootsTag.isEmpty()) {
+                ItemStack bootsItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), bootsTag);
+                if (!bootsItem.isEmpty()) {
+                    guiGraphics.renderItem(bootsItem, leftPos + ARMOR_SLOT_BOOTS_X, topPos + ARMOR_SLOT_BOOTS_Y);
                 }
             }
 
             // Main hand
             CompoundTag mainHandTag = equipment.getCompound("main_hand");
             if (!mainHandTag.isEmpty()) {
-                ItemStack mainHandItem = ItemStack.parseOptional(net.minecraft.client.Minecraft.getInstance().level.registryAccess(), mainHandTag);
+                ItemStack mainHandItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), mainHandTag);
                 if (!mainHandItem.isEmpty()) {
                     guiGraphics.renderItem(mainHandItem, leftPos + MAINHAND_SLOT_X, topPos + MAINHAND_SLOT_Y);
                 }
@@ -415,7 +440,7 @@ public class HumanInfoScreen extends Screen {
             // Off hand
             CompoundTag offHandTag = equipment.getCompound("off_hand");
             if (!offHandTag.isEmpty()) {
-                ItemStack offHandItem = ItemStack.parseOptional(net.minecraft.client.Minecraft.getInstance().level.registryAccess(), offHandTag);
+                ItemStack offHandItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), offHandTag);
                 if (!offHandItem.isEmpty()) {
                     guiGraphics.renderItem(offHandItem, leftPos + OFFHAND_SLOT_X, topPos + OFFHAND_SLOT_Y);
                 }

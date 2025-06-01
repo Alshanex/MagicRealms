@@ -18,6 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -287,12 +288,36 @@ public class EntitySnapshot {
             equipment.put("off_hand", offHand);
         }
 
+        // Head
+        ItemStack headItem = entity.getItemBySlot(EquipmentSlot.HEAD);
+        if (!headItem.isEmpty()) {
+            CompoundTag head = new CompoundTag();
+            headItem.save(entity.level().registryAccess(), head);
+            equipment.put("head", head);
+        }
+
         // Chest
-        ItemStack chestItem = entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+        ItemStack chestItem = entity.getItemBySlot(EquipmentSlot.CHEST);
         if (!chestItem.isEmpty()) {
             CompoundTag chest = new CompoundTag();
             chestItem.save(entity.level().registryAccess(), chest);
             equipment.put("chest", chest);
+        }
+
+        // Legs
+        ItemStack legsItem = entity.getItemBySlot(EquipmentSlot.LEGS);
+        if (!legsItem.isEmpty()) {
+            CompoundTag legs = new CompoundTag();
+            legsItem.save(entity.level().registryAccess(), legs);
+            equipment.put("legs", legs);
+        }
+
+        // Boots
+        ItemStack bootsItem = entity.getItemBySlot(EquipmentSlot.FEET);
+        if (!bootsItem.isEmpty()) {
+            CompoundTag boots = new CompoundTag();
+            bootsItem.save(entity.level().registryAccess(), boots);
+            equipment.put("boots", boots);
         }
     }
 

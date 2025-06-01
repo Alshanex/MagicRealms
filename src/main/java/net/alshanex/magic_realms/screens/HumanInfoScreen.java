@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.screens;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
@@ -10,12 +11,13 @@ import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -24,7 +26,7 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 
 @OnlyIn(Dist.CLIENT)
-public class HumanInfoScreen extends Screen {
+public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     private static final ResourceLocation IRON_SPELLS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_iron_spells.png");
     private static final ResourceLocation APOTHIC_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_apothic.png");
     private static final ResourceLocation TRAITS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_traits.png");
@@ -37,11 +39,7 @@ public class HumanInfoScreen extends Screen {
     private boolean isScrolling = false;
     private int lastMouseY = 0;
 
-    private final int imageWidth = 256;
-    private final int imageHeight = 250;
-    private int leftPos;
-    private int topPos;
-
+    // Tab coordinates
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
     private static final int TAB_2_X = 162;
@@ -51,24 +49,13 @@ public class HumanInfoScreen extends Screen {
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
 
+    // Entity render area
     private static final int ENTITY_RENDER_X = 13;
     private static final int ENTITY_RENDER_Y = 30;
     private static final int ENTITY_RENDER_WIDTH = 56;
     private static final int ENTITY_RENDER_HEIGHT = 83;
 
-    private static final int ARMOR_SLOT_HEAD_X = 73;
-    private static final int ARMOR_SLOT_HEAD_Y = 42;
-    private static final int ARMOR_SLOT_CHESTPLATE_X = 73;
-    private static final int ARMOR_SLOT_CHESTPLATE_Y = 60;
-    private static final int ARMOR_SLOT_LEGGINGS_X = 73;
-    private static final int ARMOR_SLOT_LEGGINGS_Y = 78;
-    private static final int ARMOR_SLOT_BOOTS_X = 73;
-    private static final int ARMOR_SLOT_BOOTS_Y = 96;
-    private static final int MAINHAND_SLOT_X = 91;
-    private static final int MAINHAND_SLOT_Y = 78;
-    private static final int OFFHAND_SLOT_X = 91;
-    private static final int OFFHAND_SLOT_Y = 96;
-
+    // Stats display
     private static final int HEALTH_X = 28;
     private static final int HEALTH_Y = 125;
     private static final int ARMOR_X = 28;
@@ -76,6 +63,7 @@ public class HumanInfoScreen extends Screen {
     private static final int DAMAGE_X = 85;
     private static final int DAMAGE_Y = 136;
 
+    // Attributes area
     private static final int ATTRIBUTES_X = 125;
     private static final int ATTRIBUTES_Y = 24;
     private static final int ATTRIBUTES_WIDTH = 120;
@@ -85,18 +73,83 @@ public class HumanInfoScreen extends Screen {
     private static final int LABEL_WIDTH = 70;
     private static final int VALUE_X_OFFSET = 72;
 
-    public HumanInfoScreen(EntitySnapshot snapshot) {
-        super(Component.translatable("gui.magic_realms.human_info.title"));
-        this.snapshot = snapshot;
+    public HumanInfoScreen(HumanInfoMenu menu, Inventory playerInventory, Component title) {
+        super(menu, playerInventory, title);
+        this.snapshot = menu.getSnapshot();
+
+        // Set the GUI size to match your texture
+        this.imageWidth = 256;
+        this.imageHeight = 250;
     }
 
     @Override
     protected void init() {
         super.init();
-        this.leftPos = (this.width - this.imageWidth) / 2;
-        this.topPos = (this.height - this.imageHeight) / 2;
+
+        // Hide default labels
+        this.inventoryLabelY = 10000;
+        this.titleLabelY = 10000;
+
         this.scrollOffset = 0;
         calculateMaxScroll();
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
+        ResourceLocation texture = getCurrentTexture();
+        RenderSystem.setShaderTexture(0, texture);
+
+        int x = (width - imageWidth) / 2;
+        int y = (height - imageHeight) / 2;
+
+        guiGraphics.blit(texture, x, y, 0, 0, imageWidth, imageHeight);
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // Render background first
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+
+        // Render the container (this handles slots automatically)
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        // Render additional UI elements
+        renderEntityPlaceholder(guiGraphics);
+        renderStats(guiGraphics);
+
+        // Render scrollable attributes with scissor
+        guiGraphics.enableScissor(
+                leftPos + ATTRIBUTES_X,
+                topPos + ATTRIBUTES_Y,
+                leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH,
+                topPos + ATTRIBUTES_Y + ATTRIBUTES_HEIGHT
+        );
+
+        switch (currentTab) {
+            case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
+            case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
+            case TRAITS -> renderTraitsScrollable(guiGraphics);
+        }
+
+        guiGraphics.disableScissor();
+
+        if (maxScroll > 0) {
+            renderScrollIndicator(guiGraphics);
+        }
+
+        // Render tooltips last
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private ResourceLocation getCurrentTexture() {
+        return switch (currentTab) {
+            case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
+            case APOTHIC -> APOTHIC_TEXTURE;
+            case TRAITS -> TRAITS_TEXTURE;
+        };
     }
 
     private void calculateMaxScroll() {
@@ -124,9 +177,7 @@ public class HumanInfoScreen extends Screen {
 
     private int getIronSpellsAttributeLines() {
         int lines = 2;
-
         lines += 8;
-
         lines += 2;
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
@@ -134,7 +185,6 @@ public class HumanInfoScreen extends Screen {
         } catch (Exception e) {
             lines += 9;
         }
-
         lines += 2;
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
@@ -142,41 +192,31 @@ public class HumanInfoScreen extends Screen {
         } catch (Exception e) {
             lines += 9;
         }
-
         if (snapshot.entityClass == EntityClass.MAGE) {
             lines += 2;
             lines += Math.max(1, snapshot.magicSchools.size());
         }
-
         return lines;
     }
 
     private int getApothicAttributeLines() {
         int lines = 2;
-
         lines += 3;
-
         lines += 2;
         lines += 4;
-
         lines += 2;
         lines += 3;
-
         lines += 2;
         lines += 4;
-
         lines += 2;
         lines += 4;
-
         lines += 2;
         lines += 3;
-
         return lines;
     }
 
     private int getTraitsLines() {
         int lines = 2;
-
         CompoundTag traits = snapshot.traits;
         if (traits.contains("trait_list")) {
             ListTag traitList = traits.getList("trait_list", 10);
@@ -184,39 +224,7 @@ public class HumanInfoScreen extends Screen {
         } else {
             lines += 1;
         }
-
         return lines;
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        ResourceLocation texture = getCurrentTexture();
-        guiGraphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
-
-        renderEntityPlaceholder(guiGraphics);
-        renderEquipmentSlots(guiGraphics);
-        renderStats(guiGraphics);
-
-        guiGraphics.enableScissor(
-                leftPos + ATTRIBUTES_X,
-                topPos + ATTRIBUTES_Y,
-                leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH,
-                topPos + ATTRIBUTES_Y + ATTRIBUTES_HEIGHT
-        );
-
-        switch (currentTab) {
-            case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
-            case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
-            case TRAITS -> renderTraitsScrollable(guiGraphics);
-        }
-
-        guiGraphics.disableScissor();
-
-        if (maxScroll > 0) {
-            renderScrollIndicator(guiGraphics);
-        }
     }
 
     private void renderScrollIndicator(GuiGraphics guiGraphics) {
@@ -233,14 +241,6 @@ public class HumanInfoScreen extends Screen {
             int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
             guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 3, thumbY + thumbHeight, 0xAA666666);
         }
-    }
-
-    private ResourceLocation getCurrentTexture() {
-        return switch (currentTab) {
-            case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
-            case APOTHIC -> APOTHIC_TEXTURE;
-            case TRAITS -> TRAITS_TEXTURE;
-        };
     }
 
     private void renderEntityPlaceholder(GuiGraphics guiGraphics) {
@@ -389,67 +389,6 @@ public class HumanInfoScreen extends Screen {
         }
     }
 
-    private void renderEquipmentSlots(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
-
-        try {
-            CompoundTag equipment = snapshot.equipment;
-
-            // Armor
-            CompoundTag chestTag = equipment.getCompound("chest");
-            if (!chestTag.isEmpty()) {
-                ItemStack armorItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), chestTag);
-                if (!armorItem.isEmpty()) {
-                    guiGraphics.renderItem(armorItem, leftPos + ARMOR_SLOT_CHESTPLATE_X, topPos + ARMOR_SLOT_CHESTPLATE_Y);
-                }
-            }
-
-            CompoundTag helmetTag = equipment.getCompound("head");
-            if (!helmetTag.isEmpty()) {
-                ItemStack headItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), helmetTag);
-                if (!headItem.isEmpty()) {
-                    guiGraphics.renderItem(headItem, leftPos + ARMOR_SLOT_HEAD_X, topPos + ARMOR_SLOT_HEAD_Y);
-                }
-            }
-
-            CompoundTag legsTag = equipment.getCompound("legs");
-            if (!legsTag.isEmpty()) {
-                ItemStack legsItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), legsTag);
-                if (!legsItem.isEmpty()) {
-                    guiGraphics.renderItem(legsItem, leftPos + ARMOR_SLOT_LEGGINGS_X, topPos + ARMOR_SLOT_LEGGINGS_Y);
-                }
-            }
-
-            CompoundTag bootsTag = equipment.getCompound("boots");
-            if (!bootsTag.isEmpty()) {
-                ItemStack bootsItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), bootsTag);
-                if (!bootsItem.isEmpty()) {
-                    guiGraphics.renderItem(bootsItem, leftPos + ARMOR_SLOT_BOOTS_X, topPos + ARMOR_SLOT_BOOTS_Y);
-                }
-            }
-
-            // Main hand
-            CompoundTag mainHandTag = equipment.getCompound("main_hand");
-            if (!mainHandTag.isEmpty()) {
-                ItemStack mainHandItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), mainHandTag);
-                if (!mainHandItem.isEmpty()) {
-                    guiGraphics.renderItem(mainHandItem, leftPos + MAINHAND_SLOT_X, topPos + MAINHAND_SLOT_Y);
-                }
-            }
-
-            // Off hand
-            CompoundTag offHandTag = equipment.getCompound("off_hand");
-            if (!offHandTag.isEmpty()) {
-                ItemStack offHandItem = ItemStack.parseOptional(Minecraft.getInstance().level.registryAccess(), offHandTag);
-                if (!offHandItem.isEmpty()) {
-                    guiGraphics.renderItem(offHandItem, leftPos + OFFHAND_SLOT_X, topPos + OFFHAND_SLOT_Y);
-                }
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not render equipment: {}", e.getMessage());
-        }
-    }
-
     private void renderStats(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
@@ -472,6 +411,7 @@ public class HumanInfoScreen extends Screen {
         guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
     }
 
+    // Keep your existing attribute rendering methods...
     private void renderIronSpellsAttributesScrollable(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 

@@ -1,24 +1,28 @@
 package net.alshanex.magic_realms.item;
 
 import net.alshanex.magic_realms.registry.MRItems;
-import net.alshanex.magic_realms.screens.HumanInfoScreen;
+import net.alshanex.magic_realms.screens.HumanInfoMenu;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.IContainerFactory;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class HumanInfoItem extends Item {
@@ -31,10 +35,13 @@ public class HumanInfoItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (level.isClientSide) {
+        if (!level.isClientSide) {
             EntitySnapshot snapshot = getEntitySnapshot(stack);
             if (snapshot != null) {
-                openInfoScreen(snapshot);
+                player.openMenu(new HumanInfoMenuProvider(snapshot, stack), buf -> {
+                    CompoundTag tag = snapshot.serialize();
+                    buf.writeNbt(tag);
+                });
             } else {
                 player.sendSystemMessage(Component.literal("No entity data found")
                         .withStyle(ChatFormatting.RED));
@@ -44,9 +51,25 @@ public class HumanInfoItem extends Item {
         return InteractionResultHolder.success(stack);
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private void openInfoScreen(EntitySnapshot snapshot) {
-        Minecraft.getInstance().setScreen(new HumanInfoScreen(snapshot));
+    private static class HumanInfoMenuProvider implements MenuProvider {
+        private final EntitySnapshot snapshot;
+        private final ItemStack itemStack;
+
+        public HumanInfoMenuProvider(EntitySnapshot snapshot, ItemStack itemStack) {
+            this.snapshot = snapshot;
+            this.itemStack = itemStack;
+        }
+
+        @Override
+        public Component getDisplayName() {
+            return Component.translatable("gui.magic_realms.human_info.title");
+        }
+
+        @Nullable
+        @Override
+        public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+            return new HumanInfoMenu(containerId, playerInventory, snapshot, itemStack);
+        }
     }
 
     public static ItemStack createVirtualItem(EntitySnapshot snapshot) {
@@ -90,7 +113,7 @@ public class HumanInfoItem extends Item {
                     .append(Component.literal("" + snapshot.currentLevel).withStyle(starColor)));
 
             tooltipComponents.add(Component.empty());
-            tooltipComponents.add(Component.literal("Right Click to see more info.").withStyle(ChatFormatting.YELLOW));
+            tooltipComponents.add(Component.literal("Right Click to open equipment interface.").withStyle(ChatFormatting.YELLOW));
         } else {
             tooltipComponents.add(Component.literal("No entity data").withStyle(ChatFormatting.RED));
         }

@@ -9,7 +9,6 @@ import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -75,12 +74,16 @@ public class HumanInfoScreen extends Screen {
     private static final int DAMAGE_X = 85;
     private static final int DAMAGE_Y = 136;
 
-    // Attributes area
+    // Attributes area - Ajustadas para evitar solapamiento
     private static final int ATTRIBUTES_X = 125;
     private static final int ATTRIBUTES_Y = 24;
-    private static final int ATTRIBUTES_WIDTH = 125;
+    private static final int ATTRIBUTES_WIDTH = 120; // Reducido para dejar espacio al scroll
     private static final int ATTRIBUTES_HEIGHT = 135;
-    private static final int LINE_HEIGHT = 10;
+    private static final int LINE_HEIGHT = 9; // Reducido para mejor espaciado
+
+    // Configuración de texto
+    private static final int LABEL_WIDTH = 70; // Ancho fijo para las etiquetas
+    private static final int VALUE_X_OFFSET = 72; // Posición X fija para los valores
 
     public HumanInfoScreen(EntitySnapshot snapshot) {
         super(Component.translatable("gui.magic_realms.human_info.title"));
@@ -120,28 +123,32 @@ public class HumanInfoScreen extends Screen {
     }
 
     private int getIronSpellsAttributeLines() {
-        int lines = 2;
+        int lines = 2; // Header + spacing
 
-        lines += 8;
+        // Basic Iron's Spells attributes
+        lines += 8; // Max Mana, Mana Regen, Spell Power, etc.
 
+        // Magic Resistances header + spacing
         lines += 2;
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
             lines += schools.size();
         } catch (Exception e) {
-            lines += 9;
+            lines += 9; // Fallback
         }
 
+        // School Power header + spacing
         lines += 2;
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
             lines += schools.size();
         } catch (Exception e) {
-            lines += 9;
+            lines += 9; // Fallback
         }
 
+        // Entity schools (only for mages)
         if (snapshot.entityClass == EntityClass.MAGE) {
-            lines += 2;
+            lines += 2; // Header + spacing
             lines += Math.max(1, snapshot.magicSchools.size());
         }
 
@@ -149,45 +156,46 @@ public class HumanInfoScreen extends Screen {
     }
 
     private int getApothicAttributeLines() {
-        int lines = 2;
+        int lines = 2; // Header
 
-        lines += 3;
+        // Combat Stats
+        lines += 3; // Crit Chance, Crit Damage, Dodge
 
-        lines += 2;
-        lines += 4;
+        // Armor Penetration
+        lines += 2; // Header
+        lines += 4; // Armor Pierce, Armor Shred, Prot Pierce, Prot Shred
 
-        lines += 2;
-        lines += 3;
+        // Elemental Damage
+        lines += 2; // Header
+        lines += 3; // Fire, Cold, Current HP
 
-        lines += 2;
-        lines += 4;
+        // Survival
+        lines += 2; // Header
+        lines += 4; // Life Steal, Ghost Health, Overheal, Healing Received
 
-        lines += 2;
-        lines += 4;
+        // Ranged Combat
+        lines += 2; // Header
+        lines += 4; // Arrow Damage, Arrow Velocity, Draw Speed, Projectile Damage
 
-        lines += 2;
-        lines += 3;
+        // Utility
+        lines += 2; // Header
+        lines += 3; // Mining Speed, Experience Gained, Elytra Flight
 
         return lines;
     }
 
     private int getTraitsLines() {
-        int lines = 2;
+        int lines = 2; // Header
 
         CompoundTag traits = snapshot.traits;
         if (traits.contains("trait_list")) {
             ListTag traitList = traits.getList("trait_list", 10);
-            lines += Math.max(1, traitList.size()); // Traits or "No traits"
+            lines += Math.max(1, traitList.size());
         } else {
-            lines += 1;
+            lines += 1; // "No trait data"
         }
 
         return lines;
-    }
-
-    private boolean hasApothicAttributeValue(String attributeName) {
-        CompoundTag attributes = snapshot.attributes;
-        return attributes.contains(attributeName) && attributes.getDouble(attributeName) > 0;
     }
 
     @Override
@@ -227,17 +235,19 @@ public class HumanInfoScreen extends Screen {
     }
 
     private void renderScrollIndicator(GuiGraphics guiGraphics) {
-        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 6;
+        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 4;
         int scrollBarY = topPos + ATTRIBUTES_Y;
         int scrollBarHeight = ATTRIBUTES_HEIGHT;
 
         // Background
-        guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + scrollBarHeight, 0x66000000);
+        guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0x66000000);
 
         // Thumb
-        int thumbHeight = Math.max(10, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
-        int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
-        guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 4, thumbY + thumbHeight, 0xAA666666);
+        if (maxScroll > 0) {
+            int thumbHeight = Math.max(8, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
+            int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
+            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 3, thumbY + thumbHeight, 0xAA666666);
+        }
     }
 
     private ResourceLocation getCurrentTexture() {
@@ -464,14 +474,15 @@ public class HumanInfoScreen extends Screen {
 
         CompoundTag attributes = snapshot.attributes;
 
-        y = renderAttributeWithDefault(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
-        y = renderAttributeWithDefault(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
-        y = renderAttributeWithDefault(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.2f", x, y, ChatFormatting.RED);
-        y = renderAttributeWithDefault(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.2f", x, y, ChatFormatting.LIGHT_PURPLE);
-        y = renderAttributeWithDefault(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.1f%%", x, y, ChatFormatting.GREEN, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.1f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.1f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.1f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
+        // Basic attributes
+        y = renderAttributeWithTruncation(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
+        y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
+        y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.0f%%", x, y, ChatFormatting.LIGHT_PURPLE, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
         y += 3;
         guiGraphics.drawString(font, Component.literal("Magic Resistances:").withStyle(ChatFormatting.LIGHT_PURPLE), x, y, 0xFFFFFF, false);
@@ -483,7 +494,7 @@ public class HumanInfoScreen extends Screen {
                 String resistKey = school.getId().getPath() + "_magic_resist";
                 String schoolName = capitalizeFirst(school.getId().getPath());
                 ChatFormatting color = getSchoolColor(school.getId().getPath());
-                y = renderAttributeWithDefault(guiGraphics, schoolName + " Resist", attributes, resistKey, 1.0, "%.1f%%", x, y, color, true, 1.0);
+                y = renderAttributeWithTruncation(guiGraphics, schoolName + " Resist", attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
@@ -499,7 +510,7 @@ public class HumanInfoScreen extends Screen {
                 String powerKey = school.getId().getPath() + "_spell_power";
                 String schoolName = capitalizeFirst(school.getId().getPath());
                 ChatFormatting color = getSchoolColor(school.getId().getPath());
-                y = renderAttributeWithDefault(guiGraphics, schoolName + " Power", attributes, powerKey, 1.0, "%.1f%%", x, y, color, true, 1.0);
+                y = renderAttributeWithTruncation(guiGraphics, schoolName + " Power", attributes, powerKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school powers: {}", e.getMessage());
@@ -555,53 +566,47 @@ public class HumanInfoScreen extends Screen {
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Atributos básicos de combate
-        y = renderAttributeWithDefault(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
-        y = renderAttributeWithDefault(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.GOLD, true);
-        y = renderAttributeWithDefault(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.GREEN, true);
+        // Combat stats
+        y = renderAttributeWithTruncation(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.GOLD, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.GREEN, true);
 
-        // Penetración de armadura
+        // Armor Penetration
         y += 3;
         guiGraphics.drawString(font, Component.literal("Armor Penetration:").withStyle(ChatFormatting.DARK_RED), x, y, 0xFFFFFF, false);
         y += 10;
-        y = renderAttributeWithDefault(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
-        y = renderAttributeWithDefault(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
-        y = renderAttributeWithDefault(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.LIGHT_PURPLE);
-        y = renderAttributeWithDefault(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_PURPLE, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
+        y = renderAttributeWithTruncation(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.LIGHT_PURPLE);
+        y = renderAttributeWithTruncation(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_PURPLE, true);
 
-        // Daño elemental
+        // Elemental Damage
         y += 3;
         guiGraphics.drawString(font, Component.literal("Elemental Damage:").withStyle(ChatFormatting.AQUA), x, y, 0xFFFFFF, false);
         y += 10;
-        y = renderAttributeWithDefault(guiGraphics, "Fire Damage", attributes, "fire_damage", 0.0, "%.1f", x, y, ChatFormatting.RED);
-        y = renderAttributeWithDefault(guiGraphics, "Cold Damage", attributes, "cold_damage", 0.0, "%.1f", x, y, ChatFormatting.AQUA);
-        y = renderAttributeWithDefault(guiGraphics, "Current HP Dmg", attributes, "current_hp_damage", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Fire Damage", attributes, "fire_damage", 0.0, "%.1f", x, y, ChatFormatting.RED);
+        y = renderAttributeWithTruncation(guiGraphics, "Cold Damage", attributes, "cold_damage", 0.0, "%.1f", x, y, ChatFormatting.AQUA);
+        y = renderAttributeWithTruncation(guiGraphics, "Current HP Dmg", attributes, "current_hp_damage", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
 
-        // Supervivencia
+        // Survival
         y += 3;
         guiGraphics.drawString(font, Component.literal("Survival:").withStyle(ChatFormatting.GREEN), x, y, 0xFFFFFF, false);
         y += 10;
-        y = renderAttributeWithDefault(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
-        y = renderAttributeWithDefault(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
-        y = renderAttributeWithDefault(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.LIGHT_PURPLE, true);
-        y = renderAttributeWithDefault(guiGraphics, "Healing Received", attributes, "healing_received", 1.0, "%.1f%%", x, y, ChatFormatting.GREEN, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
+        y = renderAttributeWithTruncation(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.LIGHT_PURPLE, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Healing Received", attributes, "healing_received", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
 
-        // Proyectiles y arcos
+        // Ranged Combat
         y += 3;
         guiGraphics.drawString(font, Component.literal("Ranged Combat:").withStyle(ChatFormatting.BLUE), x, y, 0xFFFFFF, false);
         y += 10;
-        y = renderAttributeWithDefault(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_GREEN, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.BLUE, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.AQUA, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Projectile Damage", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_BLUE, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_GREEN, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.BLUE, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.AQUA, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Projectile Damage", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_BLUE, true, 1.0);
 
-        // Utilidad
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("Utility:").withStyle(ChatFormatting.YELLOW), x, y, 0xFFFFFF, false);
-        y += 10;
-        y = renderAttributeWithDefault(guiGraphics, "Mining Speed", attributes, "mining_speed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Experience Gained", attributes, "experience_gained", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
-        y = renderAttributeWithDefault(guiGraphics, "Elytra Flight", attributes, "elytra_flight", 0.0, "%.0f", x, y, ChatFormatting.LIGHT_PURPLE);
+        y += 1;
     }
 
     private void renderTraitsScrollable(GuiGraphics guiGraphics) {
@@ -632,7 +637,7 @@ public class HumanInfoScreen extends Screen {
 
                     Component traitComponent = Component.literal(displayText).withStyle(ChatFormatting.WHITE);
                     guiGraphics.drawString(font, traitComponent, x, y, 0xFFFFFF, false);
-                    y += 10;
+                    y += LINE_HEIGHT;
                 }
             }
         } else {
@@ -640,28 +645,29 @@ public class HumanInfoScreen extends Screen {
         }
     }
 
-    private int renderAttributeWithDefault(GuiGraphics guiGraphics, String name, CompoundTag attributes,
-                                           String attributeKey, double defaultValue, String format,
-                                           int x, int y, ChatFormatting color) {
-        return renderAttributeWithDefault(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, false, 0.0);
+    // Nuevo método mejorado para renderizar atributos con truncación de texto
+    private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                              String attributeKey, double defaultValue, String format,
+                                              int x, int y, ChatFormatting color) {
+        return renderAttributeWithTruncation(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, false, 0.0);
     }
 
-    private int renderAttributeWithDefault(GuiGraphics guiGraphics, String name, CompoundTag attributes,
-                                           String attributeKey, double defaultValue, String format,
-                                           int x, int y, ChatFormatting color, boolean isPercentage) {
-        return renderAttributeWithDefault(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, isPercentage, 0.0);
+    private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                              String attributeKey, double defaultValue, String format,
+                                              int x, int y, ChatFormatting color, boolean isPercentage) {
+        return renderAttributeWithTruncation(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, isPercentage, 0.0);
     }
 
-    private int renderAttributeWithDefault(GuiGraphics guiGraphics, String name, CompoundTag attributes,
-                                           String attributeKey, double defaultValue, String format,
-                                           int x, int y, ChatFormatting color, boolean isPercentage, double baseOffset) {
+    private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                              String attributeKey, double defaultValue, String format,
+                                              int x, int y, ChatFormatting color, boolean isPercentage, double baseOffset) {
         double value = attributes.contains(attributeKey) ? attributes.getDouble(attributeKey) : defaultValue;
 
-        // Para porcentajes, convertir correctamente
+        // Corrección de cálculo para porcentajes
         if (isPercentage) {
             if (baseOffset > 0) {
                 // Para atributos como crit damage que tienen un offset base
-                value = (value + baseOffset) * 100.0;
+                value = (value - baseOffset) * 100.0;
             } else {
                 value = value * 100.0;
             }
@@ -669,9 +675,31 @@ public class HumanInfoScreen extends Screen {
 
         String formattedValue = String.format(format, value);
 
-        guiGraphics.drawString(font, Component.literal(name + ":").withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
-        guiGraphics.drawString(font, Component.literal(formattedValue).withStyle(color), x + 90, y, 0xFFFFFF, false);
+        // Truncar el nombre si es muy largo
+        String displayName = truncateText(name, LABEL_WIDTH - 5); // -5 para el ":"
+
+        // Renderizar la etiqueta
+        Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE);
+        guiGraphics.drawString(font, labelComponent, x, y, 0xFFFFFF, false);
+
+        // Renderizar el valor en posición fija
+        Component valueComponent = Component.literal(formattedValue).withStyle(color);
+        guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, 0xFFFFFF, false);
+
         return y + LINE_HEIGHT;
+    }
+
+    private String truncateText(String text, int maxWidth) {
+        if (font.width(text) <= maxWidth) {
+            return text;
+        }
+
+        String truncated = text;
+        while (font.width(truncated + "...") > maxWidth && truncated.length() > 1) {
+            truncated = truncated.substring(0, truncated.length() - 1);
+        }
+
+        return truncated + "...";
     }
 
     private String extractSchoolName(String schoolId) {

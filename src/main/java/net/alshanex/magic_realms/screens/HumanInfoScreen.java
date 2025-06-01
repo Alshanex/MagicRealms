@@ -1,5 +1,7 @@
 package net.alshanex.magic_realms.screens;
 
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
@@ -7,6 +9,7 @@ import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -18,7 +21,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-
+import java.util.*;
 
 @OnlyIn(Dist.CLIENT)
 public class HumanInfoScreen extends Screen {
@@ -28,6 +31,12 @@ public class HumanInfoScreen extends Screen {
 
     private final EntitySnapshot snapshot;
     private Tab currentTab = Tab.IRON_SPELLS;
+
+    // Scroll variables
+    private int scrollOffset = 0;
+    private int maxScroll = 0;
+    private boolean isScrolling = false;
+    private int lastMouseY = 0;
 
     private final int imageWidth = 256;
     private final int imageHeight = 166;
@@ -69,6 +78,9 @@ public class HumanInfoScreen extends Screen {
     // Attributes area
     private static final int ATTRIBUTES_X = 125;
     private static final int ATTRIBUTES_Y = 24;
+    private static final int ATTRIBUTES_WIDTH = 125;
+    private static final int ATTRIBUTES_HEIGHT = 135;
+    private static final int LINE_HEIGHT = 10;
 
     public HumanInfoScreen(EntitySnapshot snapshot) {
         super(Component.translatable("gui.magic_realms.human_info.title"));
@@ -80,6 +92,102 @@ public class HumanInfoScreen extends Screen {
         super.init();
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
+        this.scrollOffset = 0;
+        calculateMaxScroll();
+    }
+
+    private void calculateMaxScroll() {
+        int totalLines = getTotalAttributeLines();
+        int visibleLines = ATTRIBUTES_HEIGHT / LINE_HEIGHT;
+        this.maxScroll = Math.max(0, (totalLines - visibleLines) * LINE_HEIGHT);
+    }
+
+    private int getTotalAttributeLines() {
+        switch (currentTab) {
+            case IRON_SPELLS -> {
+                return getIronSpellsAttributeLines();
+            }
+            case APOTHIC -> {
+                return getApothicAttributeLines();
+            }
+            case TRAITS -> {
+                return getTraitsLines();
+            }
+            default -> {
+                return 0;
+            }
+        }
+    }
+
+    private int getIronSpellsAttributeLines() {
+        int lines = 2;
+
+        lines += 8;
+
+        lines += 2;
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            lines += schools.size();
+        } catch (Exception e) {
+            lines += 9;
+        }
+
+        lines += 2;
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            lines += schools.size();
+        } catch (Exception e) {
+            lines += 9;
+        }
+
+        if (snapshot.entityClass == EntityClass.MAGE) {
+            lines += 2;
+            lines += Math.max(1, snapshot.magicSchools.size());
+        }
+
+        return lines;
+    }
+
+    private int getApothicAttributeLines() {
+        int lines = 2;
+
+        lines += 3;
+
+        lines += 2;
+        lines += 4;
+
+        lines += 2;
+        lines += 3;
+
+        lines += 2;
+        lines += 4;
+
+        lines += 2;
+        lines += 4;
+
+        lines += 2;
+        lines += 3;
+
+        return lines;
+    }
+
+    private int getTraitsLines() {
+        int lines = 2;
+
+        CompoundTag traits = snapshot.traits;
+        if (traits.contains("trait_list")) {
+            ListTag traitList = traits.getList("trait_list", 10);
+            lines += Math.max(1, traitList.size()); // Traits or "No traits"
+        } else {
+            lines += 1;
+        }
+
+        return lines;
+    }
+
+    private boolean hasApothicAttributeValue(String attributeName) {
+        CompoundTag attributes = snapshot.attributes;
+        return attributes.contains(attributeName) && attributes.getDouble(attributeName) > 0;
     }
 
     @Override
@@ -95,12 +203,41 @@ public class HumanInfoScreen extends Screen {
         renderEquipmentSlots(guiGraphics);
         renderStats(guiGraphics);
 
-        // Render attributes based on current tab
+        // Setup clipping for scrollable area
+        guiGraphics.enableScissor(
+                leftPos + ATTRIBUTES_X,
+                topPos + ATTRIBUTES_Y,
+                leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH,
+                topPos + ATTRIBUTES_Y + ATTRIBUTES_HEIGHT
+        );
+
+        // Render attributes based on current tab with scroll offset
         switch (currentTab) {
-            case IRON_SPELLS -> renderIronSpellsAttributes(guiGraphics);
-            case APOTHIC -> renderApothicAttributes(guiGraphics);
-            case TRAITS -> renderTraits(guiGraphics);
+            case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
+            case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
+            case TRAITS -> renderTraitsScrollable(guiGraphics);
         }
+
+        guiGraphics.disableScissor();
+
+        // Render scroll indicator if needed
+        if (maxScroll > 0) {
+            renderScrollIndicator(guiGraphics);
+        }
+    }
+
+    private void renderScrollIndicator(GuiGraphics guiGraphics) {
+        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 6;
+        int scrollBarY = topPos + ATTRIBUTES_Y;
+        int scrollBarHeight = ATTRIBUTES_HEIGHT;
+
+        // Background
+        guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + scrollBarHeight, 0x66000000);
+
+        // Thumb
+        int thumbHeight = Math.max(10, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
+        int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
+        guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 4, thumbY + thumbHeight, 0xAA666666);
     }
 
     private ResourceLocation getCurrentTexture() {
@@ -136,10 +273,8 @@ public class HumanInfoScreen extends Screen {
     }
 
     private void renderFullMinecraftSkin(GuiGraphics guiGraphics, ResourceLocation texture, int x, int y, int width, int height) {
-        // Configuración de tamaños más apropiada para el área disponible
         int scale = Math.max(1, Math.min(width / 16, height / 32));
 
-        // Tamaños de cada parte
         int headSize = 8 * scale;
         int bodyWidth = 8 * scale;
         int bodyHeight = 12 * scale;
@@ -156,46 +291,35 @@ public class HumanInfoScreen extends Screen {
 
         int currentY = startY;
 
-        // 1. Cabeza
+        // Head
         int headX = startX + (totalWidth - headSize) / 2;
         guiGraphics.blit(texture, headX, currentY, headSize, headSize, 8, 8, 8, 8, 64, 64);
-        // Overlay de la cabeza
         guiGraphics.blit(texture, headX, currentY, headSize, headSize, 40, 8, 8, 8, 64, 64);
         currentY += headSize;
 
-        // 2. Cuerpo y brazos
+        // Body and arms
         int bodyX = startX + (totalWidth - bodyWidth) / 2;
 
-        // Torso
         guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 20, 8, 12, 64, 64);
-        // Overlay del torso
         guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 36, 8, 12, 64, 64);
 
-        // Brazo derecho (a la izquierda del torso desde nuestra perspectiva)
         int rightArmX = bodyX - armWidth;
         guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 20, 4, 12, 64, 64);
-        // Overlay brazo derecho
         guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 36, 4, 12, 64, 64);
 
-        // Brazo izquierdo (a la derecha del torso desde nuestra perspectiva)
         int leftArmX = bodyX + bodyWidth;
         guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 36, 52, 4, 12, 64, 64);
-        // Overlay brazo izquierdo
         guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 52, 52, 4, 12, 64, 64);
 
         currentY += bodyHeight;
 
-        // 3. Piernas
+        // Legs
         int legsX = bodyX + (bodyWidth - (legWidth * 2)) / 2;
 
-        // Pierna derecha
         guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 20, 4, 12, 64, 64);
-        // Overlay pierna derecha
         guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 36, 4, 12, 64, 64);
 
-        // Pierna izquierda
         guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 20, 52, 4, 12, 64, 64);
-        // Overlay pierna izquierda
         guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 4, 52, 4, 12, 64, 64);
     }
 
@@ -204,16 +328,13 @@ public class HumanInfoScreen extends Screen {
     }
 
     private ResourceLocation getEntityTexture() {
-        // Primero intentar obtener la textura dinámica existente
         if (snapshot.textureUUID != null) {
             try {
-                // Verificar si la textura ya está registrada dinámicamente
                 ResourceLocation dynamicTexture = getDynamicTextureIfExists(snapshot.textureUUID);
                 if (dynamicTexture != null) {
                     return dynamicTexture;
                 }
 
-                // Si hay una textura guardada, intentar cargarla
                 if (snapshot.savedTexturePath != null) {
                     ResourceLocation savedTexture = loadSavedTexture(snapshot.savedTexturePath);
                     if (savedTexture != null) {
@@ -221,7 +342,6 @@ public class HumanInfoScreen extends Screen {
                     }
                 }
 
-                // Como último recurso, generar una textura básica para esta entidad virtual
                 if (snapshot.entityUUID != null) {
                     ResourceLocation generatedTexture = generateVirtualEntityTexture();
                     if (generatedTexture != null) {
@@ -248,10 +368,8 @@ public class HumanInfoScreen extends Screen {
         try {
             java.nio.file.Path path = java.nio.file.Paths.get(texturePath);
             if (java.nio.file.Files.exists(path)) {
-                // Cargar la imagen guardada
                 BufferedImage image = ImageIO.read(path.toFile());
                 if (image != null) {
-                    // Registrar como textura dinámica
                     return DynamicTextureManager.registerDynamicTexture(
                             snapshot.textureUUID, image);
                 }
@@ -318,85 +436,78 @@ public class HumanInfoScreen extends Screen {
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Health
-        if (attributes.contains("health")) {
-            float health = (float) attributes.getDouble("health");
-            Component healthComponent = Component.literal(String.format("%.0f", health));
-            guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false);
-        }
+        // Health - mostrar actual/máxima
+        float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
+        float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
+        Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
+        guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false);
 
         // Armor
-        if (attributes.contains("armor")) {
-            double armor = attributes.getDouble("armor");
-            Component armorComponent = Component.literal(String.format("%.0f", armor));
-            guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false);
-        }
+        double armor = attributes.contains("armor") ? attributes.getDouble("armor") : 0.0;
+        Component armorComponent = Component.literal(String.format("%.1f", armor));
+        guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false);
 
-        // Damage
-        if (attributes.contains("attack_damage")) {
-            double damage = attributes.getDouble("attack_damage");
-            Component damageComponent = Component.literal(String.format("%.1f", damage));
-            guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
-        }
+        // Attack Damage
+        double damage = attributes.contains("attack_damage") ? attributes.getDouble("attack_damage") : 1.0;
+        Component damageComponent = Component.literal(String.format("%.1f", damage));
+        guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
     }
 
-    private void renderIronSpellsAttributes(GuiGraphics guiGraphics) {
+    private void renderIronSpellsAttributesScrollable(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
         int x = leftPos + ATTRIBUTES_X;
-        int y = topPos + ATTRIBUTES_Y;
+        int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
         guiGraphics.drawString(font, Component.literal("Iron's Spells").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 12;
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Mana
-        if (attributes.contains("max_mana")) {
-            renderAttribute(guiGraphics, "Max Mana", String.format("%.0f", attributes.getDouble("max_mana")), x, y, ChatFormatting.BLUE);
-            y += 10;
+        y = renderAttributeWithDefault(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
+        y = renderAttributeWithDefault(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
+        y = renderAttributeWithDefault(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.2f", x, y, ChatFormatting.RED);
+        y = renderAttributeWithDefault(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.2f", x, y, ChatFormatting.LIGHT_PURPLE);
+        y = renderAttributeWithDefault(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.1f%%", x, y, ChatFormatting.GREEN, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.1f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.1f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.1f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
+
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("Magic Resistances:").withStyle(ChatFormatting.LIGHT_PURPLE), x, y, 0xFFFFFF, false);
+        y += 10;
+
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            for (SchoolType school : schools) {
+                String resistKey = school.getId().getPath() + "_magic_resist";
+                String schoolName = capitalizeFirst(school.getId().getPath());
+                ChatFormatting color = getSchoolColor(school.getId().getPath());
+                y = renderAttributeWithDefault(guiGraphics, schoolName + " Resist", attributes, resistKey, 1.0, "%.1f%%", x, y, color, true, 1.0);
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
 
-        // Mana Regen
-        if (attributes.contains("mana_regen")) {
-            renderAttribute(guiGraphics, "Mana Regen", String.format("%.2f", attributes.getDouble("mana_regen")), x, y, ChatFormatting.AQUA);
-            y += 10;
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("School Power:").withStyle(ChatFormatting.RED), x, y, 0xFFFFFF, false);
+        y += 10;
+
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            for (SchoolType school : schools) {
+                String powerKey = school.getId().getPath() + "_spell_power";
+                String schoolName = capitalizeFirst(school.getId().getPath());
+                ChatFormatting color = getSchoolColor(school.getId().getPath());
+                y = renderAttributeWithDefault(guiGraphics, schoolName + " Power", attributes, powerKey, 1.0, "%.1f%%", x, y, color, true, 1.0);
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Error rendering school powers: {}", e.getMessage());
         }
 
-        // Spell Power
-        if (attributes.contains("spell_power")) {
-            renderAttribute(guiGraphics, "Spell Power", String.format("%.2f", attributes.getDouble("spell_power")), x, y, ChatFormatting.RED);
-            y += 10;
-        }
-
-        // Spell Resistance
-        if (attributes.contains("spell_resist")) {
-            renderAttribute(guiGraphics, "Spell Resist", String.format("%.2f", attributes.getDouble("spell_resist")), x, y, ChatFormatting.LIGHT_PURPLE);
-            y += 10;
-        }
-
-        // Cooldown Reduction
-        if (attributes.contains("cooldown_reduction")) {
-            renderAttribute(guiGraphics, "Cooldown Red.", String.format("%.1f%%", attributes.getDouble("cooldown_reduction") * 100), x, y, ChatFormatting.GREEN);
-            y += 10;
-        }
-
-        // Casting Movespeed
-        if (attributes.contains("casting_movespeed")) {
-            renderAttribute(guiGraphics, "Cast Speed", String.format("%.1f%%", attributes.getDouble("casting_movespeed") * 100), x, y, ChatFormatting.YELLOW);
-            y += 10;
-        }
-
-        // Summon Damage (para mages)
-        if (snapshot.entityClass == EntityClass.MAGE && attributes.contains("summon_damage")) {
-            renderAttribute(guiGraphics, "Summon Dmg", String.format("%.1f%%", attributes.getDouble("summon_damage") * 100), x, y, ChatFormatting.DARK_PURPLE);
-            y += 10;
-        }
-
-        // Magic Schools para mages
         if (snapshot.entityClass == EntityClass.MAGE) {
             y += 3;
-            guiGraphics.drawString(font, Component.literal("Schools:").withStyle(ChatFormatting.YELLOW), x, y, 0xFFFFFF, false);
+            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.YELLOW), x, y, 0xFFFFFF, false);
             y += 10;
 
             if (snapshot.magicSchools.isEmpty()) {
@@ -404,114 +515,107 @@ public class HumanInfoScreen extends Screen {
             } else {
                 for (String schoolId : snapshot.magicSchools) {
                     String schoolName = extractSchoolName(schoolId);
-                    schoolName = schoolName.substring(0, 1).toUpperCase() + schoolName.substring(1);
-                    guiGraphics.drawString(font, Component.literal("• " + schoolName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
+                    schoolName = capitalizeFirst(schoolName);
+                    ChatFormatting color = getSchoolColor(extractSchoolName(schoolId));
+                    guiGraphics.drawString(font, Component.literal("• " + schoolName).withStyle(color), x, y, 0xFFFFFF, false);
                     y += 9;
                 }
             }
         }
     }
 
-    private void renderApothicAttributes(GuiGraphics guiGraphics) {
+    private String capitalizeFirst(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
+    }
+
+    private ChatFormatting getSchoolColor(String schoolName) {
+        return switch (schoolName.toLowerCase()) {
+            case "fire" -> ChatFormatting.RED;
+            case "ice" -> ChatFormatting.AQUA;
+            case "lightning" -> ChatFormatting.BLUE;
+            case "holy" -> ChatFormatting.YELLOW;
+            case "ender" -> ChatFormatting.DARK_PURPLE;
+            case "blood" -> ChatFormatting.DARK_RED;
+            case "evocation" -> ChatFormatting.GRAY;
+            case "nature" -> ChatFormatting.GREEN;
+            case "eldritch" -> ChatFormatting.DARK_AQUA;
+            default -> ChatFormatting.WHITE;
+        };
+    }
+
+    private void renderApothicAttributesScrollable(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
         int x = leftPos + ATTRIBUTES_X;
-        int y = topPos + ATTRIBUTES_Y;
+        int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
         guiGraphics.drawString(font, Component.literal("Combat Stats").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 12;
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Crit Chance
-        if (attributes.contains("crit_chance")) {
-            renderAttribute(guiGraphics, "Crit Chance", String.format("%.1f%%", attributes.getDouble("crit_chance") * 100), x, y, ChatFormatting.YELLOW);
-            y += 10;
-        }
+        // Atributos básicos de combate
+        y = renderAttributeWithDefault(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
+        y = renderAttributeWithDefault(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.GOLD, true);
+        y = renderAttributeWithDefault(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.GREEN, true);
 
-        // Crit Damage
-        if (attributes.contains("crit_damage")) {
-            renderAttribute(guiGraphics, "Crit Damage", String.format("%.0f%%", (attributes.getDouble("crit_damage") + 1.5) * 100), x, y, ChatFormatting.GOLD);
-            y += 10;
-        }
+        // Penetración de armadura
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("Armor Penetration:").withStyle(ChatFormatting.DARK_RED), x, y, 0xFFFFFF, false);
+        y += 10;
+        y = renderAttributeWithDefault(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
+        y = renderAttributeWithDefault(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
+        y = renderAttributeWithDefault(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.LIGHT_PURPLE);
+        y = renderAttributeWithDefault(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_PURPLE, true);
 
-        // Dodge Chance
-        if (attributes.contains("dodge_chance")) {
-            renderAttribute(guiGraphics, "Dodge", String.format("%.1f%%", attributes.getDouble("dodge_chance") * 100), x, y, ChatFormatting.GREEN);
-            y += 10;
-        }
+        // Daño elemental
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("Elemental Damage:").withStyle(ChatFormatting.AQUA), x, y, 0xFFFFFF, false);
+        y += 10;
+        y = renderAttributeWithDefault(guiGraphics, "Fire Damage", attributes, "fire_damage", 0.0, "%.1f", x, y, ChatFormatting.RED);
+        y = renderAttributeWithDefault(guiGraphics, "Cold Damage", attributes, "cold_damage", 0.0, "%.1f", x, y, ChatFormatting.AQUA);
+        y = renderAttributeWithDefault(guiGraphics, "Current HP Dmg", attributes, "current_hp_damage", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
 
-        // Armor Shred
-        if (attributes.contains("armor_shred") && attributes.getDouble("armor_shred") > 0) {
-            renderAttribute(guiGraphics, "Armor Shred", String.format("%.1f%%", attributes.getDouble("armor_shred") * 100), x, y, ChatFormatting.DARK_RED);
-            y += 10;
-        }
+        // Supervivencia
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("Survival:").withStyle(ChatFormatting.GREEN), x, y, 0xFFFFFF, false);
+        y += 10;
+        y = renderAttributeWithDefault(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
+        y = renderAttributeWithDefault(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
+        y = renderAttributeWithDefault(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.LIGHT_PURPLE, true);
+        y = renderAttributeWithDefault(guiGraphics, "Healing Received", attributes, "healing_received", 1.0, "%.1f%%", x, y, ChatFormatting.GREEN, true, 1.0);
 
-        // Armor Pierce
-        if (attributes.contains("armor_pierce") && attributes.getDouble("armor_pierce") > 0) {
-            renderAttribute(guiGraphics, "Armor Pierce", String.format("%.1f", attributes.getDouble("armor_pierce")), x, y, ChatFormatting.RED);
-            y += 10;
-        }
+        // Proyectiles y arcos
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("Ranged Combat:").withStyle(ChatFormatting.BLUE), x, y, 0xFFFFFF, false);
+        y += 10;
+        y = renderAttributeWithDefault(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_GREEN, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.BLUE, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.AQUA, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Projectile Damage", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_BLUE, true, 1.0);
 
-        // Class-specific attributes
-        if (snapshot.entityClass == EntityClass.ROGUE) {
-            if (!snapshot.isArcher) {
-                // Life Steal for assassins
-                if (attributes.contains("life_steal")) {
-                    renderAttribute(guiGraphics, "Life Steal", String.format("%.1f%%", attributes.getDouble("life_steal") * 100), x, y, ChatFormatting.DARK_RED);
-                    y += 10;
-                }
-            } else {
-                // Arrow attributes for archers
-                if (attributes.contains("arrow_damage")) {
-                    renderAttribute(guiGraphics, "Arrow Dmg", String.format("%.0f%%", (attributes.getDouble("arrow_damage") + 1.0) * 100), x, y, ChatFormatting.DARK_GREEN);
-                    y += 10;
-                }
-
-                if (attributes.contains("arrow_velocity")) {
-                    renderAttribute(guiGraphics, "Arrow Vel", String.format("%.0f%%", (attributes.getDouble("arrow_velocity") + 1.0) * 100), x, y, ChatFormatting.BLUE);
-                    y += 10;
-                }
-
-                if (attributes.contains("draw_speed")) {
-                    renderAttribute(guiGraphics, "Draw Speed", String.format("%.0f%%", (attributes.getDouble("draw_speed") + 1.0) * 100), x, y, ChatFormatting.AQUA);
-                    y += 10;
-                }
-            }
-        } else if (snapshot.entityClass == EntityClass.WARRIOR) {
-            // Ghost Health for warriors
-            if (attributes.contains("ghost_health")) {
-                renderAttribute(guiGraphics, "Ghost Health", String.format("%.1f", attributes.getDouble("ghost_health")), x, y, ChatFormatting.GRAY);
-                y += 10;
-            }
-
-            // Overheal
-            if (attributes.contains("overheal")) {
-                renderAttribute(guiGraphics, "Overheal", String.format("%.1f%%", attributes.getDouble("overheal") * 100), x, y, ChatFormatting.LIGHT_PURPLE);
-                y += 10;
-            }
-        }
-
-        // Si no hay atributos de Apothic disponibles
-        if (!hasApothicAttributes(attributes)) {
-            guiGraphics.drawString(font, Component.literal("Apothic Attributes").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
-            y += 10;
-            guiGraphics.drawString(font, Component.literal("not available").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
-        }
+        // Utilidad
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("Utility:").withStyle(ChatFormatting.YELLOW), x, y, 0xFFFFFF, false);
+        y += 10;
+        y = renderAttributeWithDefault(guiGraphics, "Mining Speed", attributes, "mining_speed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Experience Gained", attributes, "experience_gained", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
+        y = renderAttributeWithDefault(guiGraphics, "Elytra Flight", attributes, "elytra_flight", 0.0, "%.0f", x, y, ChatFormatting.LIGHT_PURPLE);
     }
 
-    private void renderTraits(GuiGraphics guiGraphics) {
+    private void renderTraitsScrollable(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
         int x = leftPos + ATTRIBUTES_X;
-        int y = topPos + ATTRIBUTES_Y;
+        int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
         guiGraphics.drawString(font, Component.literal("Traits").withStyle(ChatFormatting.RED, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 15;
 
         CompoundTag traits = snapshot.traits;
         if (traits.contains("trait_list")) {
-            ListTag traitList = traits.getList("trait_list", 10); // 10 = COMPOUND_TAG
+            ListTag traitList = traits.getList("trait_list", 10);
 
             if (traitList.isEmpty()) {
                 guiGraphics.drawString(font, Component.literal("No traits").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
@@ -536,17 +640,38 @@ public class HumanInfoScreen extends Screen {
         }
     }
 
-    private void renderAttribute(GuiGraphics guiGraphics, String name, String value, int x, int y, ChatFormatting color) {
-        guiGraphics.drawString(font, Component.literal(name + ":").withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
-        guiGraphics.drawString(font, Component.literal(value).withStyle(color), x + 90, y, 0xFFFFFF, false);
+    private int renderAttributeWithDefault(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                           String attributeKey, double defaultValue, String format,
+                                           int x, int y, ChatFormatting color) {
+        return renderAttributeWithDefault(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, false, 0.0);
     }
 
-    private boolean hasApothicAttributes(CompoundTag attributes) {
-        return attributes.contains("crit_chance") || attributes.contains("crit_damage") ||
-                attributes.contains("dodge_chance") || attributes.contains("armor_shred") ||
-                attributes.contains("armor_pierce") || attributes.contains("life_steal") ||
-                attributes.contains("arrow_damage") || attributes.contains("ghost_health") ||
-                attributes.contains("overheal");
+    private int renderAttributeWithDefault(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                           String attributeKey, double defaultValue, String format,
+                                           int x, int y, ChatFormatting color, boolean isPercentage) {
+        return renderAttributeWithDefault(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, isPercentage, 0.0);
+    }
+
+    private int renderAttributeWithDefault(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                           String attributeKey, double defaultValue, String format,
+                                           int x, int y, ChatFormatting color, boolean isPercentage, double baseOffset) {
+        double value = attributes.contains(attributeKey) ? attributes.getDouble(attributeKey) : defaultValue;
+
+        // Para porcentajes, convertir correctamente
+        if (isPercentage) {
+            if (baseOffset > 0) {
+                // Para atributos como crit damage que tienen un offset base
+                value = (value + baseOffset) * 100.0;
+            } else {
+                value = value * 100.0;
+            }
+        }
+
+        String formattedValue = String.format(format, value);
+
+        guiGraphics.drawString(font, Component.literal(name + ":").withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal(formattedValue).withStyle(color), x + 90, y, 0xFFFFFF, false);
+        return y + LINE_HEIGHT;
     }
 
     private String extractSchoolName(String schoolId) {
@@ -566,40 +691,85 @@ public class HumanInfoScreen extends Screen {
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
-        MagicRealms.LOGGER.info("Click at relative: {}, {} | Current tab: {}", relativeX, relativeY, currentTab);
-
-        // Tab 1 - Iron Spells
+        // Tab clicking
         if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
             if (currentTab != Tab.IRON_SPELLS) {
                 currentTab = Tab.IRON_SPELLS;
-                MagicRealms.LOGGER.info("Switched to Iron Spells tab");
+                scrollOffset = 0;
+                calculateMaxScroll();
             }
             return true;
         }
 
-        // Tab 2 - Apothic
         if (relativeX >= TAB_2_X - 2 && relativeX < TAB_2_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_2_Y - 2 && relativeY < TAB_2_Y + TAB_HEIGHT + 2) {
             if (currentTab != Tab.APOTHIC) {
                 currentTab = Tab.APOTHIC;
-                MagicRealms.LOGGER.info("Switched to Apothic tab");
+                scrollOffset = 0;
+                calculateMaxScroll();
             }
             return true;
         }
 
-        // Tab 3 - Traits
         if (relativeX >= TAB_3_X - 2 && relativeX < TAB_3_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_3_Y - 2 && relativeY < TAB_3_Y + TAB_HEIGHT + 2) {
             if (currentTab != Tab.TRAITS) {
                 currentTab = Tab.TRAITS;
-                MagicRealms.LOGGER.info("Switched to Traits tab");
+                scrollOffset = 0;
+                calculateMaxScroll();
             }
             return true;
         }
 
-        MagicRealms.LOGGER.info("Click not in any tab area");
+        // Scroll area clicking for dragging
+        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
+                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
+            isScrolling = true;
+            lastMouseY = (int) mouseY;
+            return true;
+        }
+
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            isScrolling = false;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (isScrolling && button == 0) {
+            int currentMouseY = (int) mouseY;
+            int deltaScrollY = lastMouseY - currentMouseY;
+
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + deltaScrollY));
+            lastMouseY = currentMouseY;
+
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        double relativeX = mouseX - leftPos;
+        double relativeY = mouseY - topPos;
+
+        // Check if mouse is over the attributes area
+        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
+                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
+
+            int scrollAmount = (int) (deltaY * -10); // Negative to make scroll feel natural
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + scrollAmount));
+            return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override

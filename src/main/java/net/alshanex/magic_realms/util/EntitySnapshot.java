@@ -1,14 +1,26 @@
 package net.alshanex.magic_realms.util;
 
+import dev.shadowsoffire.apothic_attributes.api.ALObjects;
+import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
+import dev.xkmc.l2hostility.init.registrate.LHMiscs;
+import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
@@ -119,83 +131,130 @@ public class EntitySnapshot {
     }
 
     private static void captureAttributes(RandomHumanEntity entity, CompoundTag attributes) {
-        // Capturar atributos básicos
+        // Capturar atributos básicos de Minecraft (siempre presentes)
         attributes.putDouble("health", entity.getHealth());
         attributes.putDouble("max_health", entity.getMaxHealth());
-        attributes.putDouble("armor", entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR));
-        attributes.putDouble("attack_damage", entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE));
+        attributes.putDouble("armor", entity.getAttributeValue(Attributes.ARMOR));
+        attributes.putDouble("attack_damage", entity.getAttributeValue(Attributes.ATTACK_DAMAGE));
 
         try {
-            // Iron's Spells attributes
-            if (entity.getAttribute(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MAX_MANA) != null) {
-                attributes.putDouble("max_mana", entity.getAttributeValue(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MAX_MANA));
+            // Iron's Spells - Atributos básicos
+            captureAttributeValue(entity, attributes, AttributeRegistry.MAX_MANA, "max_mana", 100.0);
+            captureAttributeValue(entity, attributes, AttributeRegistry.MANA_REGEN, "mana_regen", 1.0);
+            captureAttributeValue(entity, attributes, AttributeRegistry.SPELL_POWER, "spell_power", 1.0);
+            captureAttributeValue(entity, attributes, AttributeRegistry.SPELL_RESIST, "spell_resist", 1.0);
+            captureAttributeValue(entity, attributes, AttributeRegistry.COOLDOWN_REDUCTION, "cooldown_reduction", 1.0);
+            captureAttributeValue(entity, attributes, AttributeRegistry.CAST_TIME_REDUCTION, "cast_time_reduction", 1.0);
+            captureAttributeValue(entity, attributes, AttributeRegistry.CASTING_MOVESPEED, "casting_movespeed", 1.0);
+            captureAttributeValue(entity, attributes, AttributeRegistry.SUMMON_DAMAGE, "summon_damage", 1.0);
+
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+
+            for (SchoolType school : schools) {
+                Holder<Attribute> resistanceAttribute = getResistanceAttributeForSchool(school);
+                if (resistanceAttribute != null) {
+                    String resistKey = school.getId().getPath() + "_magic_resist";
+                    captureAttributeValue(entity, attributes, resistanceAttribute, resistKey, 1.0);
+                }
+
+                Holder<Attribute> powerAttribute = getPowerAttributeForSchool(school);
+                if (powerAttribute != null) {
+                    String powerKey = school.getId().getPath() + "_spell_power";
+                    captureAttributeValue(entity, attributes, powerAttribute, powerKey, 1.0);
+                }
             }
-            if (entity.getAttribute(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MANA_REGEN) != null) {
-                attributes.putDouble("mana_regen", entity.getAttributeValue(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MANA_REGEN));
-            }
-            if (entity.getAttribute(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.SPELL_POWER) != null) {
-                attributes.putDouble("spell_power", entity.getAttributeValue(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.SPELL_POWER));
-            }
-            if (entity.getAttribute(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.SPELL_RESIST) != null) {
-                attributes.putDouble("spell_resist", entity.getAttributeValue(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.SPELL_RESIST));
-            }
-            if (entity.getAttribute(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.COOLDOWN_REDUCTION) != null) {
-                attributes.putDouble("cooldown_reduction", entity.getAttributeValue(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.COOLDOWN_REDUCTION));
-            }
-            if (entity.getAttribute(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.CASTING_MOVESPEED) != null) {
-                attributes.putDouble("casting_movespeed", entity.getAttributeValue(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.CASTING_MOVESPEED));
-            }
-            if (entity.getAttribute(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.SUMMON_DAMAGE) != null) {
-                attributes.putDouble("summon_damage", entity.getAttributeValue(io.redspace.ironsspellbooks.api.registry.AttributeRegistry.SUMMON_DAMAGE));
-            }
+
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Could not capture Iron's Spells attributes: {}", e.getMessage());
         }
 
         try {
-            // Apothic attributes
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.CRIT_CHANCE) != null) {
-                attributes.putDouble("crit_chance", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.CRIT_CHANCE));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.CRIT_DAMAGE) != null) {
-                attributes.putDouble("crit_damage", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.CRIT_DAMAGE));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.DODGE_CHANCE) != null) {
-                attributes.putDouble("dodge_chance", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.DODGE_CHANCE));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARMOR_SHRED) != null) {
-                attributes.putDouble("armor_shred", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARMOR_SHRED));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARMOR_PIERCE) != null) {
-                attributes.putDouble("armor_pierce", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARMOR_PIERCE));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.LIFE_STEAL) != null) {
-                attributes.putDouble("life_steal", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.LIFE_STEAL));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARROW_DAMAGE) != null) {
-                attributes.putDouble("arrow_damage", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARROW_DAMAGE));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARROW_VELOCITY) != null) {
-                attributes.putDouble("arrow_velocity", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.ARROW_VELOCITY));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.DRAW_SPEED) != null) {
-                attributes.putDouble("draw_speed", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.DRAW_SPEED));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.GHOST_HEALTH) != null) {
-                attributes.putDouble("ghost_health", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.GHOST_HEALTH));
-            }
-            if (entity.getAttribute(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.OVERHEAL) != null) {
-                attributes.putDouble("overheal", entity.getAttributeValue(dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes.OVERHEAL));
-            }
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_PIERCE, "armor_pierce", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_SHRED, "armor_shred", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_DAMAGE, "arrow_damage", 1.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_VELOCITY, "arrow_velocity", 1.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.COLD_DAMAGE, "cold_damage", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_CHANCE, "crit_chance", 0.05);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_DAMAGE, "crit_damage", 1.5);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.CURRENT_HP_DAMAGE, "current_hp_damage", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.DODGE_CHANCE, "dodge_chance", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.DRAW_SPEED, "draw_speed", 1.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.EXPERIENCE_GAINED, "experience_gained", 1.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.FIRE_DAMAGE, "fire_damage", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.GHOST_HEALTH, "ghost_health", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.HEALING_RECEIVED, "healing_received", 1.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.LIFE_STEAL, "life_steal", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.MINING_SPEED, "mining_speed", 1.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.OVERHEAL, "overheal", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.PROJECTILE_DAMAGE, "projectile_damage", 1.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_PIERCE, "prot_pierce", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_SHRED, "prot_shred", 0.0);
+            captureAttributeValue(entity, attributes, ALObjects.Attributes.ELYTRA_FLIGHT, "elytra_flight", 0.0);
+
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Could not capture Apothic attributes: {}", e.getMessage());
         }
     }
 
+    private static void captureAttributeValue(RandomHumanEntity entity, CompoundTag attributes, Holder<Attribute> attributeHolder, String key, double defaultValue) {
+        try {
+            AttributeInstance instance = entity.getAttribute(attributeHolder);
+            if (instance != null) {
+                double value = instance.getValue();
+                attributes.putDouble(key, value);
+                MagicRealms.LOGGER.debug("Captured attribute {}: {}", key, value);
+            } else {
+                attributes.putDouble(key, defaultValue);
+                MagicRealms.LOGGER.debug("Used default value for attribute {}: {}", key, defaultValue);
+            }
+        } catch (Exception e) {
+            attributes.putDouble(key, defaultValue);
+            MagicRealms.LOGGER.debug("Error capturing attribute {}, using default: {}", key, defaultValue);
+        }
+    }
+
+    private static Holder<Attribute> getPowerAttributeForSchool(SchoolType school) {
+
+        ResourceLocation powerAttributeId = ResourceLocation.fromNamespaceAndPath(
+                school.getId().getNamespace(),
+                school.getId().getPath() + "_spell_power"
+        );
+
+        var attributeHolder = BuiltInRegistries.ATTRIBUTE.getHolder(powerAttributeId).orElse(null);
+
+        if (attributeHolder == null) {
+            MagicRealms.LOGGER.debug("Power attribute not found for school {}: {}",
+                    school.getId(), powerAttributeId);
+        } else {
+            MagicRealms.LOGGER.debug("Found power attribute for school {}: {}",
+                    school.getId(), powerAttributeId);
+        }
+
+        return attributeHolder;
+    }
+
+    private static Holder<Attribute> getResistanceAttributeForSchool(SchoolType school) {
+        ResourceLocation resistAttributeId = ResourceLocation.fromNamespaceAndPath(
+                school.getId().getNamespace(),
+                school.getId().getPath() + "_magic_resist"
+        );
+
+        var attributeHolder = BuiltInRegistries.ATTRIBUTE.getHolder(resistAttributeId).orElse(null);
+
+        if (attributeHolder == null) {
+            MagicRealms.LOGGER.debug("Resistance attribute not found for school {}: {}",
+                    school.getId(), resistAttributeId);
+        } else {
+            MagicRealms.LOGGER.debug("Found resistance attribute for school {}: {}",
+                    school.getId(), resistAttributeId);
+        }
+
+        return attributeHolder;
+    }
+
     private static void captureTraits(RandomHumanEntity entity, CompoundTag traits) {
         try {
-            dev.xkmc.l2hostility.content.capability.mob.MobTraitCap cap =
-                    dev.xkmc.l2hostility.init.registrate.LHMiscs.MOB.type().getOrCreate(entity);
+            MobTraitCap cap = LHMiscs.MOB.type().getOrCreate(entity);
             if (cap != null) {
                 ListTag traitList = new ListTag();
                 cap.traitEvent((trait, level) -> {

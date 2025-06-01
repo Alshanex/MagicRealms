@@ -31,7 +31,6 @@ public class HumanInfoScreen extends Screen {
     private final EntitySnapshot snapshot;
     private Tab currentTab = Tab.IRON_SPELLS;
 
-    // Scroll variables
     private int scrollOffset = 0;
     private int maxScroll = 0;
     private boolean isScrolling = false;
@@ -42,7 +41,6 @@ public class HumanInfoScreen extends Screen {
     private int leftPos;
     private int topPos;
 
-    // Tab positions
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
     private static final int TAB_2_X = 162;
@@ -52,13 +50,11 @@ public class HumanInfoScreen extends Screen {
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
 
-    // Entity rendering area
     private static final int ENTITY_RENDER_X = 13;
     private static final int ENTITY_RENDER_Y = 30;
     private static final int ENTITY_RENDER_WIDTH = 56;
     private static final int ENTITY_RENDER_HEIGHT = 83;
 
-    // Equipment slots
     private static final int ARMOR_SLOT_X = 73;
     private static final int ARMOR_SLOT_Y = 42;
     private static final int MAINHAND_SLOT_X = 91;
@@ -66,7 +62,6 @@ public class HumanInfoScreen extends Screen {
     private static final int OFFHAND_SLOT_X = 91;
     private static final int OFFHAND_SLOT_Y = 96;
 
-    // Info display areas
     private static final int HEALTH_X = 28;
     private static final int HEALTH_Y = 125;
     private static final int ARMOR_X = 28;
@@ -74,16 +69,14 @@ public class HumanInfoScreen extends Screen {
     private static final int DAMAGE_X = 85;
     private static final int DAMAGE_Y = 136;
 
-    // Attributes area - Ajustadas para evitar solapamiento
     private static final int ATTRIBUTES_X = 125;
     private static final int ATTRIBUTES_Y = 24;
-    private static final int ATTRIBUTES_WIDTH = 120; // Reducido para dejar espacio al scroll
+    private static final int ATTRIBUTES_WIDTH = 120;
     private static final int ATTRIBUTES_HEIGHT = 135;
-    private static final int LINE_HEIGHT = 9; // Reducido para mejor espaciado
+    private static final int LINE_HEIGHT = 9;
 
-    // Configuración de texto
-    private static final int LABEL_WIDTH = 70; // Ancho fijo para las etiquetas
-    private static final int VALUE_X_OFFSET = 72; // Posición X fija para los valores
+    private static final int LABEL_WIDTH = 70;
+    private static final int VALUE_X_OFFSET = 72;
 
     public HumanInfoScreen(EntitySnapshot snapshot) {
         super(Component.translatable("gui.magic_realms.human_info.title"));
@@ -123,32 +116,28 @@ public class HumanInfoScreen extends Screen {
     }
 
     private int getIronSpellsAttributeLines() {
-        int lines = 2; // Header + spacing
+        int lines = 2;
 
-        // Basic Iron's Spells attributes
-        lines += 8; // Max Mana, Mana Regen, Spell Power, etc.
+        lines += 8;
 
-        // Magic Resistances header + spacing
         lines += 2;
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
             lines += schools.size();
         } catch (Exception e) {
-            lines += 9; // Fallback
+            lines += 9;
         }
 
-        // School Power header + spacing
         lines += 2;
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
             lines += schools.size();
         } catch (Exception e) {
-            lines += 9; // Fallback
+            lines += 9;
         }
 
-        // Entity schools (only for mages)
         if (snapshot.entityClass == EntityClass.MAGE) {
-            lines += 2; // Header + spacing
+            lines += 2;
             lines += Math.max(1, snapshot.magicSchools.size());
         }
 
@@ -156,43 +145,37 @@ public class HumanInfoScreen extends Screen {
     }
 
     private int getApothicAttributeLines() {
-        int lines = 2; // Header
+        int lines = 2;
 
-        // Combat Stats
-        lines += 3; // Crit Chance, Crit Damage, Dodge
+        lines += 3;
 
-        // Armor Penetration
-        lines += 2; // Header
-        lines += 4; // Armor Pierce, Armor Shred, Prot Pierce, Prot Shred
+        lines += 2;
+        lines += 4;
 
-        // Elemental Damage
-        lines += 2; // Header
-        lines += 3; // Fire, Cold, Current HP
+        lines += 2;
+        lines += 3;
 
-        // Survival
-        lines += 2; // Header
-        lines += 4; // Life Steal, Ghost Health, Overheal, Healing Received
+        lines += 2;
+        lines += 4;
 
-        // Ranged Combat
-        lines += 2; // Header
-        lines += 4; // Arrow Damage, Arrow Velocity, Draw Speed, Projectile Damage
+        lines += 2;
+        lines += 4;
 
-        // Utility
-        lines += 2; // Header
-        lines += 3; // Mining Speed, Experience Gained, Elytra Flight
+        lines += 2;
+        lines += 3;
 
         return lines;
     }
 
     private int getTraitsLines() {
-        int lines = 2; // Header
+        int lines = 2;
 
         CompoundTag traits = snapshot.traits;
         if (traits.contains("trait_list")) {
             ListTag traitList = traits.getList("trait_list", 10);
             lines += Math.max(1, traitList.size());
         } else {
-            lines += 1; // "No trait data"
+            lines += 1;
         }
 
         return lines;
@@ -202,16 +185,13 @@ public class HumanInfoScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // Render main GUI texture
         ResourceLocation texture = getCurrentTexture();
         guiGraphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
-        // Render all content
         renderEntityPlaceholder(guiGraphics);
         renderEquipmentSlots(guiGraphics);
         renderStats(guiGraphics);
 
-        // Setup clipping for scrollable area
         guiGraphics.enableScissor(
                 leftPos + ATTRIBUTES_X,
                 topPos + ATTRIBUTES_Y,
@@ -219,7 +199,6 @@ public class HumanInfoScreen extends Screen {
                 topPos + ATTRIBUTES_Y + ATTRIBUTES_HEIGHT
         );
 
-        // Render attributes based on current tab with scroll offset
         switch (currentTab) {
             case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
             case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
@@ -228,7 +207,6 @@ public class HumanInfoScreen extends Screen {
 
         guiGraphics.disableScissor();
 
-        // Render scroll indicator if needed
         if (maxScroll > 0) {
             renderScrollIndicator(guiGraphics);
         }
@@ -446,7 +424,7 @@ public class HumanInfoScreen extends Screen {
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Health - mostrar actual/máxima
+        // Health
         float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
         float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
         Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
@@ -479,13 +457,13 @@ public class HumanInfoScreen extends Screen {
         y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
         y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.0f%%", x, y, ChatFormatting.LIGHT_PURPLE, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
         y += 3;
-        guiGraphics.drawString(font, Component.literal("Magic Resistances:").withStyle(ChatFormatting.LIGHT_PURPLE), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("Magic Resistances:").withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
 
         try {
@@ -501,7 +479,7 @@ public class HumanInfoScreen extends Screen {
         }
 
         y += 3;
-        guiGraphics.drawString(font, Component.literal("School Power:").withStyle(ChatFormatting.RED), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("School Power:").withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
 
         try {
@@ -518,7 +496,7 @@ public class HumanInfoScreen extends Screen {
 
         if (snapshot.entityClass == EntityClass.MAGE) {
             y += 3;
-            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.YELLOW), x, y, 0xFFFFFF, false);
+            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
             y += 10;
 
             if (snapshot.magicSchools.isEmpty()) {
@@ -561,52 +539,36 @@ public class HumanInfoScreen extends Screen {
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        guiGraphics.drawString(font, Component.literal("Combat Stats").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("Combat Stats").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 12;
 
         CompoundTag attributes = snapshot.attributes;
 
         // Combat stats
-        y = renderAttributeWithTruncation(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.GOLD, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.GREEN, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.RED, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.RED, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.BLUE, true);
 
-        // Armor Penetration
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("Armor Penetration:").withStyle(ChatFormatting.DARK_RED), x, y, 0xFFFFFF, false);
         y += 10;
         y = renderAttributeWithTruncation(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
-        y = renderAttributeWithTruncation(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.LIGHT_PURPLE);
-        y = renderAttributeWithTruncation(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_PURPLE, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
+        y = renderAttributeWithTruncation(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
 
-        // Elemental Damage
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("Elemental Damage:").withStyle(ChatFormatting.AQUA), x, y, 0xFFFFFF, false);
-        y += 10;
-        y = renderAttributeWithTruncation(guiGraphics, "Fire Damage", attributes, "fire_damage", 0.0, "%.1f", x, y, ChatFormatting.RED);
-        y = renderAttributeWithTruncation(guiGraphics, "Cold Damage", attributes, "cold_damage", 0.0, "%.1f", x, y, ChatFormatting.AQUA);
-        y = renderAttributeWithTruncation(guiGraphics, "Current HP Dmg", attributes, "current_hp_damage", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
-
-        // Survival
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("Survival:").withStyle(ChatFormatting.GREEN), x, y, 0xFFFFFF, false);
         y += 10;
         y = renderAttributeWithTruncation(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
-        y = renderAttributeWithTruncation(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.LIGHT_PURPLE, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Healing Received", attributes, "healing_received", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.GRAY, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Healing Received", attributes, "healing_received", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
 
         // Ranged Combat
         y += 3;
         guiGraphics.drawString(font, Component.literal("Ranged Combat:").withStyle(ChatFormatting.BLUE), x, y, 0xFFFFFF, false);
         y += 10;
-        y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_GREEN, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.BLUE, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.AQUA, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Projectile Damage", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_BLUE, true, 1.0);
-
-        y += 1;
+        y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Projectile Damage", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
     }
 
     private void renderTraitsScrollable(GuiGraphics guiGraphics) {
@@ -615,7 +577,7 @@ public class HumanInfoScreen extends Screen {
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        guiGraphics.drawString(font, Component.literal("Traits").withStyle(ChatFormatting.RED, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("Traits").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 15;
 
         CompoundTag traits = snapshot.traits;
@@ -645,7 +607,6 @@ public class HumanInfoScreen extends Screen {
         }
     }
 
-    // Nuevo método mejorado para renderizar atributos con truncación de texto
     private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
                                               String attributeKey, double defaultValue, String format,
                                               int x, int y, ChatFormatting color) {
@@ -663,10 +624,8 @@ public class HumanInfoScreen extends Screen {
                                               int x, int y, ChatFormatting color, boolean isPercentage, double baseOffset) {
         double value = attributes.contains(attributeKey) ? attributes.getDouble(attributeKey) : defaultValue;
 
-        // Corrección de cálculo para porcentajes
         if (isPercentage) {
             if (baseOffset > 0) {
-                // Para atributos como crit damage que tienen un offset base
                 value = (value - baseOffset) * 100.0;
             } else {
                 value = value * 100.0;
@@ -675,14 +634,11 @@ public class HumanInfoScreen extends Screen {
 
         String formattedValue = String.format(format, value);
 
-        // Truncar el nombre si es muy largo
-        String displayName = truncateText(name, LABEL_WIDTH - 5); // -5 para el ":"
+        String displayName = truncateText(name, LABEL_WIDTH - 5);
 
-        // Renderizar la etiqueta
         Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE);
         guiGraphics.drawString(font, labelComponent, x, y, 0xFFFFFF, false);
 
-        // Renderizar el valor en posición fija
         Component valueComponent = Component.literal(formattedValue).withStyle(color);
         guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, 0xFFFFFF, false);
 
@@ -792,7 +748,7 @@ public class HumanInfoScreen extends Screen {
         if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
                 relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
 
-            int scrollAmount = (int) (deltaY * -10); // Negative to make scroll feel natural
+            int scrollAmount = (int) (deltaY * -10);
             scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + scrollAmount));
             return true;
         }

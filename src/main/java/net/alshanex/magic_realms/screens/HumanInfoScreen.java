@@ -55,8 +55,14 @@ public class HumanInfoScreen extends Screen {
     private static final int ENTITY_RENDER_WIDTH = 56;
     private static final int ENTITY_RENDER_HEIGHT = 83;
 
-    private static final int ARMOR_SLOT_X = 73;
-    private static final int ARMOR_SLOT_Y = 42;
+    private static final int ARMOR_SLOT_HEAD_X = 73;
+    private static final int ARMOR_SLOT_HEAD_Y = 42;
+    private static final int ARMOR_SLOT_CHESTPLATE_X = 73;
+    private static final int ARMOR_SLOT_CHESTPLATE_Y = 60;
+    private static final int ARMOR_SLOT_LEGGINGS_X = 73;
+    private static final int ARMOR_SLOT_LEGGINGS_Y = 78;
+    private static final int ARMOR_SLOT_BOOTS_X = 73;
+    private static final int ARMOR_SLOT_BOOTS_Y = 96;
     private static final int MAINHAND_SLOT_X = 91;
     private static final int MAINHAND_SLOT_Y = 78;
     private static final int OFFHAND_SLOT_X = 91;
@@ -393,7 +399,7 @@ public class HumanInfoScreen extends Screen {
             if (!chestTag.isEmpty()) {
                 ItemStack armorItem = ItemStack.parseOptional(net.minecraft.client.Minecraft.getInstance().level.registryAccess(), chestTag);
                 if (!armorItem.isEmpty()) {
-                    guiGraphics.renderItem(armorItem, leftPos + ARMOR_SLOT_X, topPos + ARMOR_SLOT_Y);
+                    guiGraphics.renderItem(armorItem, leftPos + ARMOR_SLOT_CHESTPLATE_X, topPos + ARMOR_SLOT_CHESTPLATE_Y);
                 }
             }
 

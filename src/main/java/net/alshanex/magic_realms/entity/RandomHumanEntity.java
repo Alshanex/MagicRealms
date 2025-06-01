@@ -142,6 +142,23 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         super.setLeftHanded(false);
     }
 
+    public void setGender(Gender gender) {
+        this.entityData.set(GENDER, gender.ordinal());
+    }
+
+    public void setEntityClass(EntityClass entityClass) {
+        this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
+    }
+
+    public void setEntityName(String name) {
+        this.entityData.set(ENTITY_NAME, name);
+        updateCustomNameWithStars();
+    }
+
+    public void setInitialized(boolean initialized) {
+        this.entityData.set(INITIALIZED, initialized);
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));

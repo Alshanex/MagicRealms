@@ -602,14 +602,6 @@ public class HumanInfoScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    private ChatFormatting getColorForStarLevel(int starLevel) {
-        return switch (starLevel) {
-            case 2 -> ChatFormatting.AQUA;
-            case 3 -> ChatFormatting.GOLD;
-            default -> ChatFormatting.WHITE;
-        };
-    }
-
     @Override
     public boolean isPauseScreen() {
         return false;

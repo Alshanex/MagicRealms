@@ -1,8 +1,11 @@
 package net.alshanex.magic_realms.item;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
+import net.alshanex.magic_realms.screens.HumanInfoScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
@@ -42,11 +45,11 @@ public class HumanInfoItem extends Item {
                 if (entity != null) {
                     openInfoScreen(entity);
                 } else {
-                    player.sendSystemMessage(Component.literal("La entidad ligada no se encuentra en el mundo")
+                    player.sendSystemMessage(Component.literal("Couldn't find entity")
                             .withStyle(ChatFormatting.RED));
                 }
             } else {
-                player.sendSystemMessage(Component.literal("Este item no está ligado a ninguna entidad")
+                player.sendSystemMessage(Component.literal("No entity is linked to this item")
                         .withStyle(ChatFormatting.RED));
             }
         }
@@ -67,7 +70,7 @@ public class HumanInfoItem extends Item {
             }
         } else {
             // Cliente: buscar en entidades cargadas usando un área muy amplia
-            AABB searchBox = new AABB(-30000000, -512, -30000000, 30000000, 512, 30000000);
+            AABB searchBox = new AABB(-3000, -52, -3000, 3000, 52, 3000);
 
             List<Entity> entities = level.getEntities((Entity)null, searchBox, (entity) ->
                     entity instanceof RandomHumanEntity && entity.getUUID().equals(uuid));
@@ -91,6 +94,9 @@ public class HumanInfoItem extends Item {
         tag.putString("EntityName", entity.getEntityName());
         tag.putString("EntityClass", entity.getEntityClass().getName());
         tag.putInt("StarLevel", entity.getStarLevel());
+
+        KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
+        tag.putInt("Level", killData.getCurrentLevel());
 
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
@@ -137,6 +143,15 @@ public class HumanInfoItem extends Item {
         return 1;
     }
 
+    public static int getLinkedEntityLevel(ItemStack stack) {
+        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+        if (customData != null) {
+            CompoundTag tag = customData.copyTag();
+            return tag.getInt("Level");
+        }
+        return 1;
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
@@ -146,11 +161,12 @@ public class HumanInfoItem extends Item {
             String entityName = getLinkedEntityName(stack);
             String entityClass = getLinkedEntityClass(stack);
             int starLevel = getLinkedEntityStarLevel(stack);
+            int level = getLinkedEntityLevel(stack);
 
-            tooltipComponents.add(Component.literal("Entidad: ").withStyle(ChatFormatting.GRAY)
+            tooltipComponents.add(Component.literal("Name: ").withStyle(ChatFormatting.GRAY)
                     .append(Component.literal(entityName).withStyle(ChatFormatting.WHITE)));
 
-            tooltipComponents.add(Component.literal("Clase: ").withStyle(ChatFormatting.GRAY)
+            tooltipComponents.add(Component.literal("Class: ").withStyle(ChatFormatting.GRAY)
                     .append(Component.literal(entityClass).withStyle(ChatFormatting.AQUA)));
 
             String stars = "★".repeat(starLevel);
@@ -159,13 +175,16 @@ public class HumanInfoItem extends Item {
                 case 3 -> ChatFormatting.GOLD;
                 default -> ChatFormatting.WHITE;
             };
-            tooltipComponents.add(Component.literal("Estrellas: ").withStyle(ChatFormatting.GRAY)
+            tooltipComponents.add(Component.literal("Stars: ").withStyle(ChatFormatting.GRAY)
                     .append(Component.literal(stars).withStyle(starColor)));
 
+            tooltipComponents.add(Component.literal("Level: ").withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal("" + level).withStyle(starColor)));
+
             tooltipComponents.add(Component.empty());
-            tooltipComponents.add(Component.literal("Click derecho para ver información").withStyle(ChatFormatting.YELLOW));
+            tooltipComponents.add(Component.literal("Right Click to see more info.").withStyle(ChatFormatting.YELLOW));
         } else {
-            tooltipComponents.add(Component.literal("No ligado a ninguna entidad").withStyle(ChatFormatting.RED));
+            tooltipComponents.add(Component.literal("No entity linked").withStyle(ChatFormatting.RED));
         }
     }
 

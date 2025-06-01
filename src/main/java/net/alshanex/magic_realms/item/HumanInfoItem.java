@@ -6,10 +6,15 @@ import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.screens.HumanInfoScreen;
+import net.alshanex.magic_realms.util.EntitySnapshot;
+import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.alshanex.magic_realms.util.humans.Gender;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -39,17 +44,11 @@ public class HumanInfoItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
 
         if (level.isClientSide) {
-            UUID entityUUID = getLinkedEntityUUID(stack);
-            if (entityUUID != null) {
-                RandomHumanEntity entity = findEntityByUUID(level, entityUUID);
-                if (entity != null) {
-                    openInfoScreen(entity);
-                } else {
-                    player.sendSystemMessage(Component.literal("Couldn't find entity")
-                            .withStyle(ChatFormatting.RED));
-                }
+            EntitySnapshot snapshot = getEntitySnapshot(stack);
+            if (snapshot != null) {
+                openInfoScreen(snapshot);
             } else {
-                player.sendSystemMessage(Component.literal("No entity is linked to this item")
+                player.sendSystemMessage(Component.literal("No entity data found")
                         .withStyle(ChatFormatting.RED));
             }
         }
@@ -58,28 +57,8 @@ public class HumanInfoItem extends Item {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void openInfoScreen(RandomHumanEntity entity) {
-        Minecraft.getInstance().setScreen(new HumanInfoScreen(entity));
-    }
-
-    private RandomHumanEntity findEntityByUUID(Level level, UUID uuid) {
-        if (level instanceof ServerLevel serverLevel) {
-            Entity entity = serverLevel.getEntity(uuid);
-            if (entity instanceof RandomHumanEntity humanEntity) {
-                return humanEntity;
-            }
-        } else {
-            // Cliente: buscar en entidades cargadas usando un área muy amplia
-            AABB searchBox = new AABB(-3000, -52, -3000, 3000, 52, 3000);
-
-            List<Entity> entities = level.getEntities((Entity)null, searchBox, (entity) ->
-                    entity instanceof RandomHumanEntity && entity.getUUID().equals(uuid));
-
-            if (!entities.isEmpty()) {
-                return (RandomHumanEntity) entities.get(0);
-            }
-        }
-        return null;
+    private void openInfoScreen(EntitySnapshot snapshot) {
+        Minecraft.getInstance().setScreen(new HumanInfoScreen(snapshot));
     }
 
     public static ItemStack createLinkedItem(RandomHumanEntity entity) {
@@ -88,89 +67,68 @@ public class HumanInfoItem extends Item {
         return stack;
     }
 
+    public static ItemStack createVirtualItem(EntitySnapshot snapshot) {
+        ItemStack stack = new ItemStack(MRItems.HUMAN_INFO_ITEM.get());
+        CompoundTag tag = snapshot.serialize();
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        return stack;
+    }
+
     public static void setLinkedEntity(ItemStack stack, RandomHumanEntity entity) {
-        CompoundTag tag = new CompoundTag();
-        tag.putString("LinkedEntityUUID", entity.getUUID().toString());
-        tag.putString("EntityName", entity.getEntityName());
-        tag.putString("EntityClass", entity.getEntityClass().getName());
-        tag.putInt("StarLevel", entity.getStarLevel());
-
-        KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
-        tag.putInt("Level", killData.getCurrentLevel());
-
+        EntitySnapshot snapshot = EntitySnapshot.fromEntity(entity);
+        CompoundTag tag = snapshot.serialize();
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
-    public static UUID getLinkedEntityUUID(ItemStack stack) {
+    public static EntitySnapshot getEntitySnapshot(ItemStack stack) {
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
         if (customData != null) {
             CompoundTag tag = customData.copyTag();
-            if (tag.contains("LinkedEntityUUID")) {
-                try {
-                    return UUID.fromString(tag.getString("LinkedEntityUUID"));
-                } catch (IllegalArgumentException e) {
-                    MagicRealms.LOGGER.warn("Invalid UUID in HumanInfoItem: {}", tag.getString("LinkedEntityUUID"));
-                }
-            }
+            return EntitySnapshot.deserialize(tag);
         }
         return null;
     }
 
+    // Métodos legacy para compatibilidad con comandos existentes
+    public static UUID getLinkedEntityUUID(ItemStack stack) {
+        EntitySnapshot snapshot = getEntitySnapshot(stack);
+        return snapshot != null ? snapshot.entityUUID : null;
+    }
+
     public static String getLinkedEntityName(ItemStack stack) {
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag tag = customData.copyTag();
-            return tag.getString("EntityName");
-        }
-        return "Unknown";
+        EntitySnapshot snapshot = getEntitySnapshot(stack);
+        return snapshot != null ? snapshot.entityName : "Unknown";
     }
 
     public static String getLinkedEntityClass(ItemStack stack) {
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag tag = customData.copyTag();
-            return tag.getString("EntityClass");
-        }
-        return "Unknown";
+        EntitySnapshot snapshot = getEntitySnapshot(stack);
+        return snapshot != null ? snapshot.entityClass.getName() : "Unknown";
     }
 
     public static int getLinkedEntityStarLevel(ItemStack stack) {
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag tag = customData.copyTag();
-            return tag.getInt("StarLevel");
-        }
-        return 1;
+        EntitySnapshot snapshot = getEntitySnapshot(stack);
+        return snapshot != null ? snapshot.starLevel : 1;
     }
 
     public static int getLinkedEntityLevel(ItemStack stack) {
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag tag = customData.copyTag();
-            return tag.getInt("Level");
-        }
-        return 1;
+        EntitySnapshot snapshot = getEntitySnapshot(stack);
+        return snapshot != null ? snapshot.currentLevel : 1;
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
-        UUID entityUUID = getLinkedEntityUUID(stack);
-        if (entityUUID != null) {
-            String entityName = getLinkedEntityName(stack);
-            String entityClass = getLinkedEntityClass(stack);
-            int starLevel = getLinkedEntityStarLevel(stack);
-            int level = getLinkedEntityLevel(stack);
-
+        EntitySnapshot snapshot = getEntitySnapshot(stack);
+        if (snapshot != null) {
             tooltipComponents.add(Component.literal("Name: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(entityName).withStyle(ChatFormatting.WHITE)));
+                    .append(Component.literal(snapshot.entityName).withStyle(ChatFormatting.WHITE)));
 
             tooltipComponents.add(Component.literal("Class: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(entityClass).withStyle(ChatFormatting.AQUA)));
+                    .append(Component.literal(snapshot.entityClass.getName()).withStyle(ChatFormatting.AQUA)));
 
-            String stars = "★".repeat(starLevel);
-            ChatFormatting starColor = switch (starLevel) {
+            String stars = "★".repeat(snapshot.starLevel);
+            ChatFormatting starColor = switch (snapshot.starLevel) {
                 case 2 -> ChatFormatting.AQUA;
                 case 3 -> ChatFormatting.GOLD;
                 default -> ChatFormatting.WHITE;
@@ -179,17 +137,17 @@ public class HumanInfoItem extends Item {
                     .append(Component.literal(stars).withStyle(starColor)));
 
             tooltipComponents.add(Component.literal("Level: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal("" + level).withStyle(starColor)));
+                    .append(Component.literal("" + snapshot.currentLevel).withStyle(starColor)));
 
             tooltipComponents.add(Component.empty());
             tooltipComponents.add(Component.literal("Right Click to see more info.").withStyle(ChatFormatting.YELLOW));
         } else {
-            tooltipComponents.add(Component.literal("No entity linked").withStyle(ChatFormatting.RED));
+            tooltipComponents.add(Component.literal("No entity data").withStyle(ChatFormatting.RED));
         }
     }
 
     @Override
     public boolean isFoil(ItemStack stack) {
-        return getLinkedEntityUUID(stack) != null;
+        return getEntitySnapshot(stack) != null;
     }
 }

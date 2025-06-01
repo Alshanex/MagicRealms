@@ -7,12 +7,15 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.events.KillTrackingHandler;
+import net.alshanex.magic_realms.item.HumanInfoItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public class HumanEntityCommands {
 
@@ -32,7 +35,10 @@ public class HumanEntityCommands {
                                 .executes(HumanEntityCommands::showInfo)))
                 .then(Commands.literal("reset")
                         .then(Commands.argument("target", EntityArgument.entity())
-                                .executes(HumanEntityCommands::resetLevel))));
+                                .executes(HumanEntityCommands::resetLevel)))
+                .then(Commands.literal("infoitem")
+                        .then(Commands.argument("target", EntityArgument.entity())
+                                .executes(HumanEntityCommands::createInfoItem))));
     }
 
     private static int setLevel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -147,6 +153,42 @@ public class HumanEntityCommands {
 
         } catch (Exception e) {
             source.sendFailure(Component.literal("Failed to reset level: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    private static int createInfoItem(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity target = EntityArgument.getEntity(context, "target");
+        CommandSourceStack source = context.getSource();
+
+        if (!(target instanceof RandomHumanEntity humanEntity)) {
+            source.sendFailure(Component.literal("Target must be a RandomHumanEntity!"));
+            return 0;
+        }
+
+        if (!(source.getEntity() instanceof Player player)) {
+            source.sendFailure(Component.literal("Only players can use this command!"));
+            return 0;
+        }
+
+        try {
+            ItemStack infoItem = HumanInfoItem.createLinkedItem(humanEntity);
+
+            // Dar el item al jugador
+            if (player.getInventory().add(infoItem)) {
+                source.sendSuccess(() -> Component.literal(
+                        String.format("Created info item for %s", humanEntity.getEntityName())), true);
+            } else {
+                // Si el inventario está lleno, dropear el item
+                player.drop(infoItem, false);
+                source.sendSuccess(() -> Component.literal(
+                        String.format("Created and dropped info item for %s", humanEntity.getEntityName())), true);
+            }
+
+            return 1;
+
+        } catch (Exception e) {
+            source.sendFailure(Component.literal("Failed to create info item: " + e.getMessage()));
             return 0;
         }
     }

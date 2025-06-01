@@ -2,14 +2,12 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import dev.xkmc.l2hostility.init.L2Hostility;
-import net.alshanex.magic_realms.registry.MRDataAttachments;
-import net.alshanex.magic_realms.registry.MREntityRegistry;
-import net.alshanex.magic_realms.registry.MRRegistrate;
-import net.alshanex.magic_realms.registry.TraitRegistry;
+import net.alshanex.magic_realms.registry.*;
 import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.events.TextureEventHandler;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -51,6 +49,8 @@ public class MagicRealms
 
         MRDataAttachments.register(modEventBus);
 
+        MRItems.register(modEventBus);
+
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
@@ -78,7 +78,9 @@ public class MagicRealms
     // Add the example block item to the building blocks tab
     private void addCreative(BuildCreativeModeTabContentsEvent event)
     {
-
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(MRItems.HUMAN_INFO_ITEM.get());
+        }
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

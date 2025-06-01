@@ -38,7 +38,7 @@ public class HumanInfoScreen extends Screen {
     private int lastMouseY = 0;
 
     private final int imageWidth = 256;
-    private final int imageHeight = 166;
+    private final int imageHeight = 250;
     private int leftPos;
     private int topPos;
 
@@ -493,8 +493,8 @@ public class HumanInfoScreen extends Screen {
         y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("Magic Resistances:").withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        y += 6;
+        guiGraphics.drawString(font, Component.literal("Magic Resistances:").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
 
         try {
@@ -509,8 +509,8 @@ public class HumanInfoScreen extends Screen {
             MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
 
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("School Power:").withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        y += 6;
+        guiGraphics.drawString(font, Component.literal("School Power:").withStyle(ChatFormatting.RED, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
 
         try {
@@ -580,21 +580,22 @@ public class HumanInfoScreen extends Screen {
         y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.BLUE, true);
 
-        y += 10;
+        y += 5;
         y = renderAttributeWithTruncation(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
         y = renderAttributeWithTruncation(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
         y = renderAttributeWithTruncation(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
 
-        y += 10;
+        y += 5;
         y = renderAttributeWithTruncation(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
         y = renderAttributeWithTruncation(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.GRAY, true);
         y = renderAttributeWithTruncation(guiGraphics, "Healing Received", attributes, "healing_received", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y += 5;
 
         // Ranged Combat
         y += 3;
-        guiGraphics.drawString(font, Component.literal("Ranged Combat:").withStyle(ChatFormatting.BLUE), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("Ranged Combat:").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);

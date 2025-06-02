@@ -214,7 +214,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         HumanStatsManager.applyClassAttributes(this);
-        this.populateDefaultEquipmentSlots(randomsource, pDifficulty);
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
     }
@@ -328,11 +327,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             }
         }
         return schools;
-    }
-
-    @Override
-    protected void populateDefaultEquipmentSlots(RandomSource pRandom, DifficultyInstance pDifficulty) {
-
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {

@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.item.HumanInfoItem;
+import net.alshanex.magic_realms.item.HumanTeamItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -17,6 +18,13 @@ public class MRItems {
 
     public static final DeferredHolder<Item, HumanInfoItem> HUMAN_INFO_ITEM =
             ITEMS.register("human_info_item", () -> new HumanInfoItem(
+                    new Item.Properties()
+                            .stacksTo(1)
+                            .fireResistant()
+            ));
+
+    public static final DeferredHolder<Item, HumanTeamItem> HUMAN_TEAM_ITEM =
+            ITEMS.register("human_team_item", () -> new HumanTeamItem(
                     new Item.Properties()
                             .stacksTo(1)
                             .fireResistant()

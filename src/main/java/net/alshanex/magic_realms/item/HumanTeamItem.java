@@ -9,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.MenuProvider;
@@ -21,11 +22,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+import top.theillusivec4.curios.api.type.capability.ICurioItem;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class HumanTeamItem extends Item {
+public class HumanTeamItem extends Item implements ICurioItem {
 
     public HumanTeamItem(Properties properties) {
         super(properties);
@@ -179,6 +181,7 @@ public class HumanTeamItem extends Item {
 
         tooltipComponents.add(Component.empty());
         tooltipComponents.add(Component.literal("Right Click to manage team.").withStyle(ChatFormatting.YELLOW));
+        tooltipComponents.add(Component.literal("Equip in Curio slot and press the corresponding keybind to summon allies.").withStyle(ChatFormatting.GREEN));
     }
 
     private String extractMemberInfo(ItemStack humanInfoItem) {

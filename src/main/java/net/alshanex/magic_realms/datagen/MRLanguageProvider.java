@@ -40,5 +40,9 @@ public class MRLanguageProvider extends LanguageProvider {
         //Curios
         add("curios.identifier.tablet", "Summoning Tablet");
         add("curios.modifiers.tablet", "When equipped as Tablet:");
+
+        //Keybinds
+        add("key.magic_realms.tablet_keys", "Magic Realms");
+        add("key.magic_realms.tablet_key", "Summon tablet formation");
     }
 }

@@ -104,7 +104,7 @@ public class KillTrackerData {
 
 
     private int getMaxLevel() {
-        return 300;
+        return 100;
     }
 
     // Getters

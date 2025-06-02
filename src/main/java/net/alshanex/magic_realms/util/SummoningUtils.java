@@ -1,12 +1,16 @@
 package net.alshanex.magic_realms.util;
 
+import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
+import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.item.HumanInfoItem;
 import net.alshanex.magic_realms.item.HumanTeamItem;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -130,6 +134,17 @@ public class SummoningUtils {
 
                 //Añadir como summoner
                 entity.setSummoner(player);
+
+                //Setear nivel
+                MobTraitCap cap = LHMiscs.MOB.type().getOrCreate(entity);
+                KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
+
+                if (cap != null) {
+                    cap.setLevel(entity, killData.getCurrentLevel());
+                    cap.syncToClient(entity);
+                } else {
+                    MagicRealms.LOGGER.warn("Could not obtain MobTraitCap for entity {}", entity.getEntityName());
+                }
 
                 // Añadir al mundo
                 level.addFreshEntity(entity);

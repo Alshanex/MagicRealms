@@ -21,6 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 
@@ -132,68 +133,86 @@ public class EntitySnapshot {
     }
 
     private static void captureAttributes(RandomHumanEntity entity, CompoundTag attributes) {
-        // Capturar atributos básicos de Minecraft (siempre presentes)
-        attributes.putDouble("health", entity.getHealth());
-        attributes.putDouble("max_health", entity.getMaxHealth());
-        attributes.putDouble("armor", entity.getAttributeValue(Attributes.ARMOR));
-        attributes.putDouble("attack_damage", entity.getAttributeValue(Attributes.ATTACK_DAMAGE));
-
         try {
+            // Capturar atributos básicos de Minecraft (siempre presentes)
+            attributes.putDouble("health", entity.getHealth());
+            attributes.putDouble("max_health", entity.getMaxHealth());
+            attributes.putDouble("armor", entity.getAttributeValue(Attributes.ARMOR));
+            attributes.putDouble("attack_damage", entity.getAttributeValue(Attributes.ATTACK_DAMAGE));
+            attributes.putDouble("movement_speed", entity.getAttributeValue(Attributes.MOVEMENT_SPEED));
+            attributes.putDouble("knockback_resistance", entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+
+            MagicRealms.LOGGER.debug("Captured basic attributes for entity: {}", entity.getEntityName());
+
             // Iron's Spells - Atributos básicos
-            captureAttributeValue(entity, attributes, AttributeRegistry.MAX_MANA, "max_mana", 100.0);
-            captureAttributeValue(entity, attributes, AttributeRegistry.MANA_REGEN, "mana_regen", 1.0);
-            captureAttributeValue(entity, attributes, AttributeRegistry.SPELL_POWER, "spell_power", 1.0);
-            captureAttributeValue(entity, attributes, AttributeRegistry.SPELL_RESIST, "spell_resist", 1.0);
-            captureAttributeValue(entity, attributes, AttributeRegistry.COOLDOWN_REDUCTION, "cooldown_reduction", 1.0);
-            captureAttributeValue(entity, attributes, AttributeRegistry.CAST_TIME_REDUCTION, "cast_time_reduction", 1.0);
-            captureAttributeValue(entity, attributes, AttributeRegistry.CASTING_MOVESPEED, "casting_movespeed", 1.0);
-            captureAttributeValue(entity, attributes, AttributeRegistry.SUMMON_DAMAGE, "summon_damage", 1.0);
+            try {
+                captureAttributeValue(entity, attributes, AttributeRegistry.MAX_MANA, "max_mana", 100.0);
+                captureAttributeValue(entity, attributes, AttributeRegistry.MANA_REGEN, "mana_regen", 1.0);
+                captureAttributeValue(entity, attributes, AttributeRegistry.SPELL_POWER, "spell_power", 1.0);
+                captureAttributeValue(entity, attributes, AttributeRegistry.SPELL_RESIST, "spell_resist", 1.0);
+                captureAttributeValue(entity, attributes, AttributeRegistry.COOLDOWN_REDUCTION, "cooldown_reduction", 1.0);
+                captureAttributeValue(entity, attributes, AttributeRegistry.CAST_TIME_REDUCTION, "cast_time_reduction", 1.0);
+                captureAttributeValue(entity, attributes, AttributeRegistry.CASTING_MOVESPEED, "casting_movespeed", 1.0);
+                captureAttributeValue(entity, attributes, AttributeRegistry.SUMMON_DAMAGE, "summon_damage", 1.0);
 
-            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+                // Capturar atributos por escuela
+                List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+                for (SchoolType school : schools) {
+                    // Resistencias
+                    Holder<Attribute> resistanceAttribute = getResistanceAttributeForSchool(school);
+                    if (resistanceAttribute != null) {
+                        String resistKey = school.getId().getPath() + "_magic_resist";
+                        captureAttributeValue(entity, attributes, resistanceAttribute, resistKey, 1.0);
+                    }
 
-            for (SchoolType school : schools) {
-                Holder<Attribute> resistanceAttribute = getResistanceAttributeForSchool(school);
-                if (resistanceAttribute != null) {
-                    String resistKey = school.getId().getPath() + "_magic_resist";
-                    captureAttributeValue(entity, attributes, resistanceAttribute, resistKey, 1.0);
+                    // Poderes
+                    Holder<Attribute> powerAttribute = getPowerAttributeForSchool(school);
+                    if (powerAttribute != null) {
+                        String powerKey = school.getId().getPath() + "_spell_power";
+                        captureAttributeValue(entity, attributes, powerAttribute, powerKey, 1.0);
+                    }
                 }
 
-                Holder<Attribute> powerAttribute = getPowerAttributeForSchool(school);
-                if (powerAttribute != null) {
-                    String powerKey = school.getId().getPath() + "_spell_power";
-                    captureAttributeValue(entity, attributes, powerAttribute, powerKey, 1.0);
-                }
+                MagicRealms.LOGGER.debug("Captured Iron's Spells attributes for entity: {}", entity.getEntityName());
+
+            } catch (Exception e) {
+                MagicRealms.LOGGER.debug("Could not capture Iron's Spells attributes: {}", e.getMessage());
             }
 
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not capture Iron's Spells attributes: {}", e.getMessage());
-        }
+            // Apothic Attributes
+            try {
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_PIERCE, "armor_pierce", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_SHRED, "armor_shred", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_DAMAGE, "arrow_damage", 1.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_VELOCITY, "arrow_velocity", 1.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.COLD_DAMAGE, "cold_damage", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_CHANCE, "crit_chance", 0.05);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_DAMAGE, "crit_damage", 1.5);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.CURRENT_HP_DAMAGE, "current_hp_damage", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.DODGE_CHANCE, "dodge_chance", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.DRAW_SPEED, "draw_speed", 1.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.EXPERIENCE_GAINED, "experience_gained", 1.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.FIRE_DAMAGE, "fire_damage", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.GHOST_HEALTH, "ghost_health", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.HEALING_RECEIVED, "healing_received", 1.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.LIFE_STEAL, "life_steal", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.MINING_SPEED, "mining_speed", 1.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.OVERHEAL, "overheal", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.PROJECTILE_DAMAGE, "projectile_damage", 1.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_PIERCE, "prot_pierce", 0.0);
+                captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_SHRED, "prot_shred", 0.0);
 
-        try {
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_PIERCE, "armor_pierce", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_SHRED, "armor_shred", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_DAMAGE, "arrow_damage", 1.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_VELOCITY, "arrow_velocity", 1.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.COLD_DAMAGE, "cold_damage", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_CHANCE, "crit_chance", 0.05);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_DAMAGE, "crit_damage", 1.5);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.CURRENT_HP_DAMAGE, "current_hp_damage", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.DODGE_CHANCE, "dodge_chance", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.DRAW_SPEED, "draw_speed", 1.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.EXPERIENCE_GAINED, "experience_gained", 1.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.FIRE_DAMAGE, "fire_damage", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.GHOST_HEALTH, "ghost_health", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.HEALING_RECEIVED, "healing_received", 1.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.LIFE_STEAL, "life_steal", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.MINING_SPEED, "mining_speed", 1.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.OVERHEAL, "overheal", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.PROJECTILE_DAMAGE, "projectile_damage", 1.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_PIERCE, "prot_pierce", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_SHRED, "prot_shred", 0.0);
-            captureAttributeValue(entity, attributes, ALObjects.Attributes.ELYTRA_FLIGHT, "elytra_flight", 0.0);
+                MagicRealms.LOGGER.debug("Captured Apothic attributes for entity: {}", entity.getEntityName());
+
+            } catch (Exception e) {
+                MagicRealms.LOGGER.debug("Could not capture Apothic attributes: {}", e.getMessage());
+            }
+
+            // Capturar todos los modificadores de atributos aplicados
+            captureAllAttributeModifiers(entity, attributes);
 
         } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not capture Apothic attributes: {}", e.getMessage());
+            MagicRealms.LOGGER.error("Error capturing attributes for entity {}: {}", entity.getEntityName(), e.getMessage());
         }
     }
 
@@ -211,6 +230,41 @@ public class EntitySnapshot {
         } catch (Exception e) {
             attributes.putDouble(key, defaultValue);
             MagicRealms.LOGGER.debug("Error capturing attribute {}, using default: {}", key, defaultValue);
+        }
+    }
+
+    private static void captureAllAttributeModifiers(RandomHumanEntity entity, CompoundTag attributes) {
+        try {
+            CompoundTag modifiersTag = new CompoundTag();
+
+            // Iterar sobre todos los atributos de la entidad
+            for (AttributeInstance instance : entity.getAttributes().getSyncableAttributes()) {
+                Attribute attribute = instance.getAttribute().value();
+                String attributeName = BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString();
+
+                CompoundTag attributeModifiers = new CompoundTag();
+                attributeModifiers.putDouble("base_value", instance.getBaseValue());
+                attributeModifiers.putDouble("current_value", instance.getValue());
+
+                // Capturar todos los modificadores
+                ListTag modifiersList = new ListTag();
+                for (AttributeModifier modifier : instance.getModifiers()) {
+                    CompoundTag modifierTag = new CompoundTag();
+                    modifierTag.putString("id", modifier.id().toString());
+                    modifierTag.putDouble("amount", modifier.amount());
+                    modifierTag.putString("operation", modifier.operation().toString());
+                    modifiersList.add(modifierTag);
+                }
+                attributeModifiers.put("modifiers", modifiersList);
+
+                modifiersTag.put(attributeName, attributeModifiers);
+            }
+
+            attributes.put("all_attribute_modifiers", modifiersTag);
+            MagicRealms.LOGGER.debug("Captured all attribute modifiers for entity: {}", entity.getEntityName());
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Could not capture attribute modifiers: {}", e.getMessage());
         }
     }
 

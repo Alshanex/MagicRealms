@@ -76,7 +76,17 @@ public class HumanTeamItem extends Item implements ICurioItem {
         }
 
         tag.put("team_members", teamList);
+        tag.putLong("last_updated", System.currentTimeMillis());
+
         teamItem.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+
+        // Log para debug
+        int memberCount = 0;
+        for (ItemStack member : teamMembers) {
+            if (!member.isEmpty()) memberCount++;
+        }
+
+        net.alshanex.magic_realms.MagicRealms.LOGGER.debug("Saved team to item: {} members", memberCount);
     }
 
     public static ItemStack[] loadTeamFromItem(ItemStack teamItem) {

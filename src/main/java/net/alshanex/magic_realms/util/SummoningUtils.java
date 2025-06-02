@@ -18,6 +18,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -267,13 +268,19 @@ public class SummoningUtils {
 
     public static void cleanupSummons(ServerPlayer player, SummonSession session, boolean immediate) {
         try {
-            // Actualizar los items con el estado actual de las entidades
+            MagicRealms.LOGGER.debug("Starting cleanup for player: {} (immediate: {})",
+                    player.getName().getString(), immediate);
+
+            // Actualizar los items con el estado actual de las entidades ANTES de despawnearlas
             updateItemsFromEntities(session);
 
             // Despawnear las entidades
+            int despawnedCount = 0;
             for (RandomHumanEntity entity : session.getSummonedEntities()) {
                 if (entity.isAlive()) {
                     entity.discard();
+                    despawnedCount++;
+                    MagicRealms.LOGGER.debug("Despawned entity: {}", entity.getEntityName());
                 }
             }
 
@@ -284,11 +291,15 @@ public class SummoningUtils {
             if (!immediate) {
                 PLAYER_COOLDOWNS.put(player.getUUID(), System.currentTimeMillis() + COOLDOWN_DURATION);
 
-                player.sendSystemMessage(Component.literal("Allies have been recalled. Cooldown: 30 seconds.")
+                player.sendSystemMessage(Component.literal("Allies have been recalled (" + despawnedCount + " entities). Cooldown: 30 seconds.")
                         .withStyle(ChatFormatting.YELLOW));
+            } else {
+                player.sendSystemMessage(Component.literal("All summoned allies have been dismissed (" + despawnedCount + " entities).")
+                        .withStyle(ChatFormatting.GRAY));
             }
 
-            MagicRealms.LOGGER.info("Cleaned up summons for player: {}", player.getName().getString());
+            MagicRealms.LOGGER.info("Successfully cleaned up {} summons for player: {}",
+                    despawnedCount, player.getName().getString());
 
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error during summon cleanup for player {}: {}",
@@ -297,43 +308,57 @@ public class SummoningUtils {
     }
 
     private static void updateItemsFromEntities(SummonSession session) {
-        Map<RandomHumanEntity, ItemStack> entityItemMap = session.getEntityItemMap();
-        ItemStack tabletItem = session.getTabletItem();
-        ItemStack[] teamMembers = HumanTeamItem.loadTeamFromItem(tabletItem);
+        try {
+            Map<RandomHumanEntity, ItemStack> entityItemMap = session.getEntityItemMap();
+            ItemStack tabletItem = session.getTabletItem();
+            ItemStack[] teamMembers = HumanTeamItem.loadTeamFromItem(tabletItem);
 
-        for (Map.Entry<RandomHumanEntity, ItemStack> entry : entityItemMap.entrySet()) {
-            RandomHumanEntity entity = entry.getKey();
-            ItemStack originalItem = entry.getValue();
+            MagicRealms.LOGGER.debug("Updating {} items from entities", entityItemMap.size());
 
-            if (entity.isAlive()) {
-                // Actualizar el snapshot con el estado actual de la entidad
-                EntitySnapshot updatedSnapshot = EntitySnapshot.fromEntity(entity);
-                ItemStack updatedItem = HumanInfoItem.createVirtualItem(updatedSnapshot);
+            for (Map.Entry<RandomHumanEntity, ItemStack> entry : entityItemMap.entrySet()) {
+                RandomHumanEntity entity = entry.getKey();
+                ItemStack originalItem = entry.getValue();
 
-                // Encontrar y reemplazar el item en el array de team members
+                // Encontrar el índice del item en el array
+                int itemIndex = -1;
                 for (int i = 0; i < teamMembers.length; i++) {
                     if (teamMembers[i] == originalItem) {
-                        teamMembers[i] = updatedItem;
+                        itemIndex = i;
                         break;
                     }
                 }
 
-                MagicRealms.LOGGER.debug("Updated item for entity: {}", entity.getEntityName());
-            } else {
-                // Si la entidad murió, remover el item del equipo
-                for (int i = 0; i < teamMembers.length; i++) {
-                    if (teamMembers[i] == originalItem) {
-                        teamMembers[i] = ItemStack.EMPTY;
-                        break;
-                    }
+                if (itemIndex == -1) {
+                    MagicRealms.LOGGER.warn("Could not find original item index for entity: {}", entity.getEntityName());
+                    continue;
                 }
 
-                MagicRealms.LOGGER.info("Removed item for dead entity: {}", entity.getEntityName());
+                if (entity.isAlive()) {
+                    // Actualizar el snapshot con el estado actual de la entidad
+                    EntitySnapshot updatedSnapshot = EntitySnapshot.fromEntity(entity);
+                    ItemStack updatedItem = HumanInfoItem.createVirtualItem(updatedSnapshot);
+
+                    teamMembers[itemIndex] = updatedItem;
+
+                    MagicRealms.LOGGER.debug("Updated item for living entity: {} at index: {}",
+                            entity.getEntityName(), itemIndex);
+                } else {
+                    // Si la entidad murió, el slot ya debería estar vacío por onSummonedEntityDeath
+                    // Pero por seguridad, asegurémonos
+                    teamMembers[itemIndex] = ItemStack.EMPTY;
+
+                    MagicRealms.LOGGER.debug("Ensured empty slot for dead entity: {} at index: {}",
+                            entity.getEntityName(), itemIndex);
+                }
             }
-        }
 
-        // Guardar el equipo actualizado en el tablet
-        HumanTeamItem.saveTeamToItem(tabletItem, teamMembers);
+            updateEquippedTablet(session.getPlayer(), teamMembers);
+
+            MagicRealms.LOGGER.debug("Successfully updated all team member items");
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error updating items from entities: {}", e.getMessage(), e);
+        }
     }
 
     public static void onSummonedEntityDeath(RandomHumanEntity entity) {
@@ -343,35 +368,86 @@ public class SummoningUtils {
             if (session.getSummonedEntities().contains(entity)) {
                 ServerPlayer player = session.getPlayer();
 
-                // Actualizar inmediatamente el item correspondiente (marcarlo como muerto/vacío)
-                updateSingleEntityItem(session, entity);
+                // Actualizar el item con el estado final de la entidad antes de eliminarlo
+                updateEntityItemBeforeDeath(session, entity);
+
+                // Eliminar la entidad de la sesión
+                session.getSummonedEntities().remove(entity);
+                session.getEntityItemMap().remove(entity);
 
                 player.sendSystemMessage(Component.literal("One of your allies has fallen!")
                         .withStyle(ChatFormatting.RED));
 
-                MagicRealms.LOGGER.info("Summoned entity {} died for player {}",
+                MagicRealms.LOGGER.info("Summoned entity {} died for player {}, item removed from team",
                         entity.getEntityName(), player.getName().getString());
                 break;
             }
         }
     }
 
-    private static void updateSingleEntityItem(SummonSession session, RandomHumanEntity deadEntity) {
-        ItemStack correspondingItem = session.getEntityItemMap().get(deadEntity);
-        if (correspondingItem != null) {
+    private static void updateEntityItemBeforeDeath(SummonSession session, RandomHumanEntity dyingEntity) {
+        try {
+            ItemStack correspondingItem = session.getEntityItemMap().get(dyingEntity);
+            if (correspondingItem == null) {
+                MagicRealms.LOGGER.warn("No corresponding item found for dying entity: {}", dyingEntity.getEntityName());
+                return;
+            }
+
             ItemStack tabletItem = session.getTabletItem();
             ItemStack[] teamMembers = HumanTeamItem.loadTeamFromItem(tabletItem);
 
-            // Encontrar y remover el item del equipo
+            // Encontrar el índice del item en el array
+            int itemIndex = -1;
             for (int i = 0; i < teamMembers.length; i++) {
                 if (teamMembers[i] == correspondingItem) {
-                    teamMembers[i] = ItemStack.EMPTY;
+                    itemIndex = i;
                     break;
                 }
             }
 
-            // Guardar el cambio
-            HumanTeamItem.saveTeamToItem(tabletItem, teamMembers);
+            if (itemIndex != -1) {
+                // Actualizar el item con el estado final de la entidad
+                EntitySnapshot finalSnapshot = EntitySnapshot.fromEntity(dyingEntity);
+                ItemStack updatedItem = HumanInfoItem.createVirtualItem(finalSnapshot);
+                teamMembers[itemIndex] = updatedItem;
+
+                // Luego eliminarlo (marcarlo como vacío)
+                teamMembers[itemIndex] = ItemStack.EMPTY;
+
+                updateEquippedTablet(session.getPlayer(), teamMembers);
+
+                MagicRealms.LOGGER.debug("Updated and removed item for dead entity: {} at index: {}",
+                        dyingEntity.getEntityName(), itemIndex);
+            } else {
+                MagicRealms.LOGGER.warn("Could not find item index for dying entity: {}", dyingEntity.getEntityName());
+            }
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error updating item before entity death: {}", e.getMessage(), e);
+        }
+    }
+
+    private static void updateEquippedTablet(ServerPlayer player, ItemStack[] newTeamMembers) {
+        try {
+            if (!CurioUtils.isWearingTablet(player)) {
+                MagicRealms.LOGGER.warn("Player {} is not wearing a tablet", player.getName().getString());
+                return;
+            }
+
+            ItemStack equippedTablet = CurioUtils.getTablet(player);
+            if (equippedTablet.isEmpty()) {
+                MagicRealms.LOGGER.warn("Could not get equipped tablet for player: {}", player.getName().getString());
+                return;
+            }
+
+            // Actualizar directamente la tablet equipada
+            HumanTeamItem.saveTeamToItem(equippedTablet, newTeamMembers);
+
+            MagicRealms.LOGGER.debug("Updated equipped tablet directly for player: {}", player.getName().getString());
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error updating equipped tablet for player {}: {}",
+                    player.getName().getString(), e.getMessage(), e);
         }
     }
 

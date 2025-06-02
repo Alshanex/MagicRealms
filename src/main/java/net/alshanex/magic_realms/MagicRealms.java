@@ -1,7 +1,6 @@
 package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
-import dev.xkmc.l2hostility.init.L2Hostility;
 import net.alshanex.magic_realms.registry.*;
 import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
@@ -31,19 +30,12 @@ public class MagicRealms
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // ensure L2H is loaded first
-    private static final ResourceLocation DUMMY = L2Hostility.loc("dummy");
-
-    public static final MRRegistrate MRREGISTRATE = new MRRegistrate(MODID);
-
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public MagicRealms(IEventBus modEventBus, ModContainer modContainer)
     {
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
-
-        TraitRegistry.register();
 
         MREntityRegistry.register(modEventBus);
 

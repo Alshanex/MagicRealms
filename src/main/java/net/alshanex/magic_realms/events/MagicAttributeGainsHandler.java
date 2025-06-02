@@ -1,7 +1,5 @@
 package net.alshanex.magic_realms.events;
 
-import dev.xkmc.l2hostility.init.entries.TraitEntry;
-import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;

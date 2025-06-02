@@ -1,7 +1,5 @@
 package net.alshanex.magic_realms.util;
 
-import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
-import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
@@ -135,17 +133,6 @@ public class SummoningUtils {
                 //Añadir como summoner
                 entity.setSummoner(player);
 
-                //Setear nivel
-                MobTraitCap cap = LHMiscs.MOB.type().getOrCreate(entity);
-                KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
-
-                if (cap != null) {
-                    cap.setLevel(entity, killData.getCurrentLevel());
-                    cap.syncToClient(entity);
-                } else {
-                    MagicRealms.LOGGER.warn("Could not obtain MobTraitCap for entity {}", entity.getEntityName());
-                }
-
                 // Añadir al mundo
                 level.addFreshEntity(entity);
                 if(!entity.level().isClientSide){
@@ -193,7 +180,6 @@ public class SummoningUtils {
                     oldSnapshot.isArcher,
                     oldSnapshot.magicSchools,
                     oldSnapshot.attributes,
-                    oldSnapshot.traits,
                     oldSnapshot.equipment,
                     entity.getUUID().toString(), // Actualizar también el textureUUID
                     oldSnapshot.savedTexturePath
@@ -251,7 +237,6 @@ public class SummoningUtils {
                                 snapshot.isArcher,
                                 snapshot.magicSchools,
                                 snapshot.attributes,
-                                snapshot.traits,
                                 snapshot.equipment,
                                 newUUID.toString(), // Actualizar también textureUUID
                                 snapshot.savedTexturePath

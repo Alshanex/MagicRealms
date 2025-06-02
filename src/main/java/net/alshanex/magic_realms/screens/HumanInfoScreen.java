@@ -29,7 +29,6 @@ import java.util.*;
 public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     private static final ResourceLocation IRON_SPELLS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_iron_spells.png");
     private static final ResourceLocation APOTHIC_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_apothic.png");
-    private static final ResourceLocation TRAITS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_traits.png");
 
     private final EntitySnapshot snapshot;
     private Tab currentTab = Tab.IRON_SPELLS;
@@ -44,8 +43,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     private static final int TAB_1_Y = 3;
     private static final int TAB_2_X = 162;
     private static final int TAB_2_Y = 3;
-    private static final int TAB_3_X = 204;
-    private static final int TAB_3_Y = 3;
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
 
@@ -131,7 +128,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
         switch (currentTab) {
             case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
             case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
-            case TRAITS -> renderTraitsScrollable(guiGraphics);
         }
 
         guiGraphics.disableScissor();
@@ -148,7 +144,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
         return switch (currentTab) {
             case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
             case APOTHIC -> APOTHIC_TEXTURE;
-            case TRAITS -> TRAITS_TEXTURE;
         };
     }
 
@@ -165,9 +160,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
             }
             case APOTHIC -> {
                 return getApothicAttributeLines();
-            }
-            case TRAITS -> {
-                return getTraitsLines();
             }
             default -> {
                 return 0;
@@ -212,18 +204,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
         lines += 4;
         lines += 2;
         lines += 3;
-        return lines;
-    }
-
-    private int getTraitsLines() {
-        int lines = 2;
-        CompoundTag traits = snapshot.traits;
-        if (traits.contains("trait_list")) {
-            ListTag traitList = traits.getList("trait_list", 10);
-            lines += Math.max(1, traitList.size());
-        } else {
-            lines += 1;
-        }
         return lines;
     }
 
@@ -543,42 +523,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
         y = renderAttributeWithTruncation(guiGraphics, "Projectile Damage", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
     }
 
-    private void renderTraitsScrollable(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
-
-        int x = leftPos + ATTRIBUTES_X;
-        int y = topPos + ATTRIBUTES_Y - scrollOffset;
-
-        guiGraphics.drawString(font, Component.literal("Traits").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-        y += 15;
-
-        CompoundTag traits = snapshot.traits;
-        if (traits.contains("trait_list")) {
-            ListTag traitList = traits.getList("trait_list", 10);
-
-            if (traitList.isEmpty()) {
-                guiGraphics.drawString(font, Component.literal("No traits").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
-            } else {
-                for (int i = 0; i < traitList.size(); i++) {
-                    CompoundTag traitTag = traitList.getCompound(i);
-                    String traitName = traitTag.getString("name");
-                    int traitLevel = traitTag.getInt("level");
-
-                    String displayText = "• " + traitName;
-                    if (traitLevel > 1) {
-                        displayText += " " + traitLevel;
-                    }
-
-                    Component traitComponent = Component.literal(displayText).withStyle(ChatFormatting.WHITE);
-                    guiGraphics.drawString(font, traitComponent, x, y, 0xFFFFFF, false);
-                    y += LINE_HEIGHT;
-                }
-            }
-        } else {
-            guiGraphics.drawString(font, Component.literal("No trait data").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
-        }
-    }
-
     private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
                                               String attributeKey, double defaultValue, String format,
                                               int x, int y, ChatFormatting color) {
@@ -668,16 +612,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
             return true;
         }
 
-        if (relativeX >= TAB_3_X - 2 && relativeX < TAB_3_X + TAB_WIDTH + 2 &&
-                relativeY >= TAB_3_Y - 2 && relativeY < TAB_3_Y + TAB_HEIGHT + 2) {
-            if (currentTab != Tab.TRAITS) {
-                currentTab = Tab.TRAITS;
-                scrollOffset = 0;
-                calculateMaxScroll();
-            }
-            return true;
-        }
-
         // Scroll area clicking for dragging
         if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
                 relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
@@ -735,7 +669,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
 
     public enum Tab {
         IRON_SPELLS,
-        APOTHIC,
-        TRAITS
+        APOTHIC
     }
 }

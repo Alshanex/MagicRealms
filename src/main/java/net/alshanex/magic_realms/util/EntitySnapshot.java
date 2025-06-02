@@ -1,8 +1,6 @@
 package net.alshanex.magic_realms.util;
 
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
-import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
-import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
@@ -41,7 +39,6 @@ public class EntitySnapshot {
     public final boolean isArcher;
     public final List<String> magicSchools;
     public final CompoundTag attributes;
-    public final CompoundTag traits;
     public final CompoundTag equipment;
     public final String textureUUID;
     public final String savedTexturePath;
@@ -49,15 +46,15 @@ public class EntitySnapshot {
     private EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
                            int starLevel, int currentLevel, int totalKills, int experiencePoints,
                            boolean hasShield, boolean isArcher, List<String> magicSchools,
-                           CompoundTag attributes, CompoundTag traits, CompoundTag equipment) {
+                           CompoundTag attributes, CompoundTag equipment) {
         this(entityUUID, entityName, gender, entityClass, starLevel, currentLevel, totalKills,
-                experiencePoints, hasShield, isArcher, magicSchools, attributes, traits, equipment, null, null);
+                experiencePoints, hasShield, isArcher, magicSchools, attributes, equipment, null, null);
     }
 
     public EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
                           int starLevel, int currentLevel, int totalKills, int experiencePoints,
                           boolean hasShield, boolean isArcher, List<String> magicSchools,
-                          CompoundTag attributes, CompoundTag traits, CompoundTag equipment,
+                          CompoundTag attributes, CompoundTag equipment,
                           String textureUUID, String savedTexturePath) {
         this.entityUUID = entityUUID;
         this.entityName = entityName;
@@ -71,7 +68,6 @@ public class EntitySnapshot {
         this.isArcher = isArcher;
         this.magicSchools = magicSchools;
         this.attributes = attributes;
-        this.traits = traits;
         this.equipment = equipment;
         this.textureUUID = textureUUID != null ? textureUUID : entityUUID.toString();
         this.savedTexturePath = savedTexturePath;
@@ -87,10 +83,6 @@ public class EntitySnapshot {
         // Capturar atributos actuales
         CompoundTag attributes = new CompoundTag();
         captureAttributes(entity, attributes);
-
-        // Capturar traits actuales
-        CompoundTag traits = new CompoundTag();
-        captureTraits(entity, traits);
 
         // Capturar equipamiento
         CompoundTag equipment = new CompoundTag();
@@ -125,7 +117,6 @@ public class EntitySnapshot {
                 entity.isArcher(),
                 schools,
                 attributes,
-                traits,
                 equipment,
                 entity.getUUID().toString(),
                 savedTexturePath
@@ -307,24 +298,6 @@ public class EntitySnapshot {
         return attributeHolder;
     }
 
-    private static void captureTraits(RandomHumanEntity entity, CompoundTag traits) {
-        try {
-            MobTraitCap cap = LHMiscs.MOB.type().getOrCreate(entity);
-            if (cap != null) {
-                ListTag traitList = new ListTag();
-                cap.traitEvent((trait, level) -> {
-                    CompoundTag traitTag = new CompoundTag();
-                    traitTag.putString("name", trait.getClass().getSimpleName());
-                    traitTag.putInt("level", level);
-                    traitList.add(traitTag);
-                });
-                traits.put("trait_list", traitList);
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not capture traits: {}", e.getMessage());
-        }
-    }
-
     private static void captureEquipment(RandomHumanEntity entity, CompoundTag equipment) {
         // Main hand
         ItemStack mainHandItem = entity.getMainHandItem();
@@ -395,7 +368,6 @@ public class EntitySnapshot {
         tag.put("magic_schools", schoolsTag);
 
         tag.put("attributes", attributes);
-        tag.put("traits", traits);
         tag.put("equipment", equipment);
         tag.putString("texture_uuid", textureUUID);
         if (savedTexturePath != null) {
@@ -432,7 +404,7 @@ public class EntitySnapshot {
 
             return new EntitySnapshot(entityUUID, entityName, gender, entityClass, starLevel,
                     currentLevel, totalKills, experiencePoints, hasShield, isArcher,
-                    schools, attributes, traits, equipment, textureUUID, savedTexturePath);
+                    schools, attributes, equipment, textureUUID, savedTexturePath);
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to deserialize EntitySnapshot: {}", e.getMessage());
             return null;

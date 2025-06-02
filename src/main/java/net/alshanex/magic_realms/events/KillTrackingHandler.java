@@ -1,8 +1,5 @@
 package net.alshanex.magic_realms.events;
 
-import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
-import dev.xkmc.l2hostility.events.HostilityInitEvent;
-import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
@@ -22,13 +19,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class KillTrackingHandler {
-
-    @SubscribeEvent
-    public static void onL2HostilityInit(HostilityInitEvent.Pre event){
-        if(event.getEntity() instanceof RandomHumanEntity){
-            event.setCanceled(true);
-        }
-    }
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
@@ -51,8 +41,6 @@ public class KillTrackingHandler {
                 killData.getExperienceToNextLevel());
 
         if (newLevel > previousLevel) {
-            applyL2HostilityLevel(humanEntity, newLevel);
-
             LevelingStatsManager.applyLevelBasedAttributes(humanEntity, newLevel);
 
             MagicRealms.LOGGER.info("Entity {} leveled up! Level {} -> {} (Total kills: {})",
@@ -60,30 +48,6 @@ public class KillTrackingHandler {
                     previousLevel,
                     newLevel,
                     killData.getTotalKills());
-        }
-    }
-
-    private static void applyL2HostilityLevel(RandomHumanEntity entity, int level) {
-        try {
-            MobTraitCap cap = LHMiscs.MOB.type().getOrCreate(entity);
-
-            if (cap != null) {
-                cap.setLevel(entity, level);
-                cap.syncToClient(entity);
-
-                if (!entity.level().isClientSide) {
-                    entity.heal(entity.getMaxHealth());
-
-                    spawnLevelUpEffects(entity);
-                }
-
-            } else {
-                MagicRealms.LOGGER.warn("Could not obtain MobTraitCap for entity {}", entity.getEntityName());
-            }
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to apply L2Hostility level to entity {}: {}",
-                    entity.getEntityName(), e.getMessage(), e);
         }
     }
 
@@ -111,7 +75,6 @@ public class KillTrackingHandler {
     public static void setEntityLevel(RandomHumanEntity entity, int level) {
         KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
         killData.setLevel(level);
-        applyL2HostilityLevel(entity, level);
 
         MagicRealms.LOGGER.info("Manually set entity {} to level {}", entity.getEntityName(), level);
     }
@@ -123,7 +86,7 @@ public class KillTrackingHandler {
         int newLevel = killData.getCurrentLevel();
 
         if (newLevel > previousLevel) {
-            applyL2HostilityLevel(entity, newLevel);
+            spawnLevelUpEffects(entity);
         }
 
         MagicRealms.LOGGER.debug("Added {} experience to entity {} (Level: {})",

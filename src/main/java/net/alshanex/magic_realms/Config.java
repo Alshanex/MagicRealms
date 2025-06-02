@@ -15,11 +15,6 @@ public class Config
 {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    // Existing config
-    private static final ModConfigSpec.IntValue DISTANCE_NUMBER = BUILDER
-            .comment("Distance range from where sneaky trait starts dodging attacks.")
-            .defineInRange("distance", 6, 0, Integer.MAX_VALUE);
-
     // Arrow system configuration
 
     private static final ModConfigSpec.BooleanValue ENABLE_RANDOM_ARROWS = BUILDER
@@ -48,9 +43,6 @@ public class Config
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
-    // Existing config values
-    public static int distance;
-
     // Arrow config values
     public static boolean enableRandomArrows;
     public static double vanillaArrowChance;
@@ -61,8 +53,6 @@ public class Config
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
     {
-        // Load existing config
-        distance = DISTANCE_NUMBER.get();
 
         // Load arrow config
         enableRandomArrows = ENABLE_RANDOM_ARROWS.get();
@@ -71,8 +61,8 @@ public class Config
         blacklistedArrows = BLACKLISTED_ARROWS.get();
         whitelistedMods = WHITELISTED_MODS.get();
 
-        MagicRealms.LOGGER.info("Config loaded - Distance: {}, Random arrows: {}, Vanilla chance: {}",
-                distance, enableRandomArrows, vanillaArrowChance);
+        MagicRealms.LOGGER.info("Config loaded - Random arrows: {}, Vanilla chance: {}",
+                enableRandomArrows, vanillaArrowChance);
 
         // Reload arrow types when config changes
         try {

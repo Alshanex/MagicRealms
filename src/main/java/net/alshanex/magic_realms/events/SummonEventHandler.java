@@ -19,6 +19,7 @@ public class SummonEventHandler {
             // Verificar si tiene un summoner (es una entidad invocada)
             if (humanEntity.getSummoner() != null) {
                 MagicRealms.LOGGER.debug("Summoned entity {} died", humanEntity.getEntityName());
+
                 SummoningUtils.onSummonedEntityDeath(humanEntity);
             }
         }

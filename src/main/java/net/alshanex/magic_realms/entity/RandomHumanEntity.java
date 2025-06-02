@@ -347,22 +347,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     protected void populateDefaultEquipmentSlots(RandomSource pRandom, DifficultyInstance pDifficulty) {
-        if(getEntityClass() == EntityClass.ROGUE){
-            if(isArcher()){
-                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
-            } else {
-                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_SWORD));
-            }
-        }
 
-        if(getEntityClass() == EntityClass.WARRIOR){
-            if(hasShield()){
-                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_SWORD));
-                this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
-            } else {
-                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_AXE));
-            }
-        }
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {

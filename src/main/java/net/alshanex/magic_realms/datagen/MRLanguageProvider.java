@@ -14,7 +14,16 @@ public class MRLanguageProvider extends LanguageProvider {
     @Override
     protected void addTranslations() {
         // Items
-        add(MRItems.HUMAN_INFO_ITEM.get(), "Contract");
+        add(MRItems.CONTRACT_NOVICE.get(), "Novice Contract");
+        add(MRItems.CONTRACT_APPRENTICE.get(), "Apprentice Contract");
+        add(MRItems.CONTRACT_JOURNEYMAN.get(), "Journeyman Contract");
+        add(MRItems.CONTRACT_EXPERT.get(), "Expert Contract");
+        add(MRItems.CONTRACT_MASTER.get(), "Master Contract");
+
+        // Contract tooltips
+        add("tooltip.magic_realms.contract.level_range", "Entity Level Range:");
+        add("tooltip.magic_realms.contract.usage", "Usage:");
+        add("tooltip.magic_realms.contract.usage_desc", "Right-click on entities to hire them");
 
         // GUI translations
         add("gui.magic_realms.human_info.title", "Entity Information");
@@ -37,5 +46,9 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.contract_time_remaining", "Contract time remaining: %d:%02d");
         add("ui.magic_realms.contract_time_remaining_with_extension", "Time remaining: %d:%02d (Use contract item to add %d more minutes)");
         add("ui.magic_realms.contract_expired", "Contract with %s has expired!");
+        add("ui.magic_realms.wrong_contract_tier", "This entity (Level %d) requires a %s contract!");
+        add("ui.magic_realms.entity_level_too_high", "This entity (Level %d) is too powerful for this contract!");
+        add("ui.magic_realms.entity_level_too_low", "This entity (Level %d) doesn't require such a powerful contract!");
+        add("ui.magic_realms.contract_tier_mismatch", "Level %d entities need %s (Level %d-%d)");
     }
 }

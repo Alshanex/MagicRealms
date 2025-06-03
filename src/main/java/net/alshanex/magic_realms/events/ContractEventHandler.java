@@ -2,10 +2,12 @@ package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.item.HumanInfoItem;
+import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
+import net.alshanex.magic_realms.util.ContractTier;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -49,9 +51,9 @@ public class ContractEventHandler {
                 return;
             }
 
-            // Si el jugador tiene un HumanInfoItem en la mano
-            if (heldItem.getItem() instanceof HumanInfoItem) {
-                handleContractCreation(event, player, humanEntity, contractData, heldItem);
+            // Si el jugador tiene un contrato (nuevo o viejo) en la mano
+            if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
+                handleTieredContractCreation(event, player, humanEntity, contractData, heldItem, tieredContract);
                 return;
             }
 
@@ -63,11 +65,42 @@ public class ContractEventHandler {
         }
     }
 
-    private static void handleContractCreation(PlayerInteractEvent.EntityInteract event,
-                                               Player player,
-                                               RandomHumanEntity humanEntity,
-                                               ContractData contractData,
-                                               ItemStack heldItem) {
+    private static void handleTieredContractCreation(PlayerInteractEvent.EntityInteract event,
+                                                     Player player,
+                                                     RandomHumanEntity humanEntity,
+                                                     ContractData contractData,
+                                                     ItemStack heldItem,
+                                                     TieredContractItem contractItem) {
+
+        // Obtener el nivel de la entidad
+        KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
+        int entityLevel = killTracker.getCurrentLevel();
+        ContractTier contractTier = contractItem.getTier();
+        ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
+
+        // Verificar si el contrato es apropiado para el nivel de la entidad
+        if (!contractTier.canContractLevel(entityLevel)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                Component message;
+                if (contractTier.getMinLevel() > entityLevel) {
+                    // El contrato es demasiado poderoso
+                    message = Component.translatable("ui.magic_realms.entity_level_too_low", entityLevel)
+                            .withStyle(ChatFormatting.RED);
+                } else {
+                    // El contrato no es lo suficientemente poderoso
+                    message = Component.translatable("ui.magic_realms.contract_tier_mismatch",
+                                    entityLevel,
+                                    requiredTier.getDisplayName().getString(),
+                                    requiredTier.getMinLevel(),
+                                    requiredTier.getMaxLevel())
+                            .withStyle(ChatFormatting.RED);
+                }
+
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+            }
+            event.setCanceled(true);
+            return;
+        }
 
         int starLevel = humanEntity.getStarLevel();
         int additionalMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
@@ -104,10 +137,12 @@ public class ContractEventHandler {
                 ));
             }
 
-            MagicRealms.LOGGER.info("Player {} extended contract with entity {} ({}) by {} minutes. Total remaining: {}:{}",
+            MagicRealms.LOGGER.info("Player {} extended contract with Level {} entity {} ({}) using {} contract by {} minutes. Total remaining: {}:{}",
                     player.getName().getString(),
+                    entityLevel,
                     humanEntity.getEntityName(),
                     humanEntity.getUUID(),
+                    contractTier.getName(),
                     additionalMinutes,
                     contractData.getRemainingMinutes(),
                     contractData.getRemainingSeconds());
@@ -125,10 +160,12 @@ public class ContractEventHandler {
                 ));
             }
 
-            MagicRealms.LOGGER.info("Player {} established new contract with entity {} ({}) for {} minutes",
+            MagicRealms.LOGGER.info("Player {} established new contract with Level {} entity {} ({}) using {} contract for {} minutes",
                     player.getName().getString(),
+                    entityLevel,
                     humanEntity.getEntityName(),
                     humanEntity.getUUID(),
+                    contractTier.getName(),
                     additionalMinutes);
         }
 
@@ -156,13 +193,20 @@ public class ContractEventHandler {
                 }
             } else {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    int starLevel = humanEntity.getStarLevel();
-                    int contractMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+                    // Obtener información del nivel y mostrar qué contrato necesita
+                    KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
+                    int entityLevel = killTracker.getCurrentLevel();
+                    ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
+                    int contractMinutes = contractData.getAdditionalMinutesForStarLevel(humanEntity.getStarLevel());
 
-                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
-                            Component.translatable("ui.magic_realms.need_contract_item", contractMinutes)
-                                    .withStyle(ChatFormatting.YELLOW)
-                    ));
+                    Component message = Component.translatable("ui.magic_realms.need_contract_item", contractMinutes)
+                            .append(" ")
+                            .append(Component.translatable("ui.magic_realms.wrong_contract_tier",
+                                    entityLevel,
+                                    requiredTier.getDisplayName().getString()))
+                            .withStyle(ChatFormatting.YELLOW);
+
+                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
                 }
             }
             event.setCanceled(true);

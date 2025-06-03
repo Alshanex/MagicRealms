@@ -1,7 +1,8 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.item.HumanInfoItem;
+import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.util.ContractTier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -15,10 +16,43 @@ public class MRItems {
         ITEMS.register(eventBus);
     }
 
-    public static final DeferredHolder<Item, HumanInfoItem> HUMAN_INFO_ITEM =
-            ITEMS.register("human_info_item", () -> new HumanInfoItem(
+    public static final DeferredHolder<Item, TieredContractItem> CONTRACT_NOVICE =
+            ITEMS.register("contract_novice", () -> new TieredContractItem(
                     new Item.Properties()
                             .stacksTo(64)
-                            .fireResistant()
+                            .fireResistant(),
+                    ContractTier.NOVICE
+            ));
+
+    public static final DeferredHolder<Item, TieredContractItem> CONTRACT_APPRENTICE =
+            ITEMS.register("contract_apprentice", () -> new TieredContractItem(
+                    new Item.Properties()
+                            .stacksTo(64)
+                            .fireResistant(),
+                    ContractTier.APPRENTICE
+            ));
+
+    public static final DeferredHolder<Item, TieredContractItem> CONTRACT_JOURNEYMAN =
+            ITEMS.register("contract_journeyman", () -> new TieredContractItem(
+                    new Item.Properties()
+                            .stacksTo(64)
+                            .fireResistant(),
+                    ContractTier.JOURNEYMAN
+            ));
+
+    public static final DeferredHolder<Item, TieredContractItem> CONTRACT_EXPERT =
+            ITEMS.register("contract_expert", () -> new TieredContractItem(
+                    new Item.Properties()
+                            .stacksTo(64)
+                            .fireResistant(),
+                    ContractTier.EXPERT
+            ));
+
+    public static final DeferredHolder<Item, TieredContractItem> CONTRACT_MASTER =
+            ITEMS.register("contract_master", () -> new TieredContractItem(
+                    new Item.Properties()
+                            .stacksTo(64)
+                            .fireResistant(),
+                    ContractTier.MASTER
             ));
 }

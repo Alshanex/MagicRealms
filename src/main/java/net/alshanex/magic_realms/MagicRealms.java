@@ -73,7 +73,11 @@ public class MagicRealms
     private void addCreative(BuildCreativeModeTabContentsEvent event)
     {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(MRItems.HUMAN_INFO_ITEM.get());
+            event.accept(MRItems.CONTRACT_APPRENTICE.get());
+            event.accept(MRItems.CONTRACT_EXPERT.get());
+            event.accept(MRItems.CONTRACT_JOURNEYMAN.get());
+            event.accept(MRItems.CONTRACT_MASTER.get());
+            event.accept(MRItems.CONTRACT_NOVICE.get());
         }
     }
 

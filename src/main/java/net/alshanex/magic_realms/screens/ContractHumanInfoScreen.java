@@ -182,6 +182,9 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             lines += 2;
             lines += Math.max(1, snapshot.magicSchools.size());
         }
+        // Añadir líneas para los spells
+        lines += 2; // Header
+        lines += Math.max(1, snapshot.entitySpells.size()); // Spells list
         return lines;
     }
 
@@ -380,10 +383,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
     }
 
-    // Aquí irían los métodos renderIronSpellsAttributesScrollable, renderApothicAttributesScrollable
-    // y todos los métodos de manejo de eventos (mouseClicked, mouseScrolled, etc.)
-    // Son idénticos a los del HumanInfoScreen original, así que los omito por brevedad
-
     private void renderIronSpellsAttributesScrollable(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
@@ -439,7 +438,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         if (snapshot.entityClass == EntityClass.MAGE) {
             y += 3;
-            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.BLACK, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
             y += 10;
 
             if (snapshot.magicSchools.isEmpty()) {
@@ -452,6 +451,20 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                     guiGraphics.drawString(font, Component.literal("• " + schoolName).withStyle(color), x, y, 0xFFFFFF, false);
                     y += 9;
                 }
+            }
+        }
+
+        y += 3;
+        guiGraphics.drawString(font, Component.literal("Entity Spells:").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        y += 10;
+
+        if (snapshot.entitySpells.isEmpty()) {
+            guiGraphics.drawString(font, Component.literal("No spells").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
+        } else {
+            for (String spellName : snapshot.entitySpells) {
+                String displayName = truncateText(spellName, ATTRIBUTES_WIDTH - 10);
+                guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
+                y += 9;
             }
         }
     }

@@ -23,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,19 +44,21 @@ public class EntitySnapshot {
     public final String textureUUID;
     public final String savedTexturePath;
 
+    public final List<String> entitySpells;
+
     private EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
                            int starLevel, int currentLevel, int totalKills, int experiencePoints,
                            boolean hasShield, boolean isArcher, List<String> magicSchools,
-                           CompoundTag attributes, CompoundTag equipment) {
+                           CompoundTag attributes, CompoundTag equipment, List<String> entitySpells) {
         this(entityUUID, entityName, gender, entityClass, starLevel, currentLevel, totalKills,
-                experiencePoints, hasShield, isArcher, magicSchools, attributes, equipment, null, null);
+                experiencePoints, hasShield, isArcher, magicSchools, attributes, equipment, null, null, entitySpells);
     }
 
     public EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
                           int starLevel, int currentLevel, int totalKills, int experiencePoints,
                           boolean hasShield, boolean isArcher, List<String> magicSchools,
                           CompoundTag attributes, CompoundTag equipment,
-                          String textureUUID, String savedTexturePath) {
+                          String textureUUID, String savedTexturePath, List<String> entitySpells) {
         this.entityUUID = entityUUID;
         this.entityName = entityName;
         this.gender = gender;
@@ -71,6 +74,7 @@ public class EntitySnapshot {
         this.equipment = equipment;
         this.textureUUID = textureUUID != null ? textureUUID : entityUUID.toString();
         this.savedTexturePath = savedTexturePath;
+        this.entitySpells = entitySpells != null ? new ArrayList<>(entitySpells) : new ArrayList<>();
     }
 
     public static EntitySnapshot fromEntity(RandomHumanEntity entity) {
@@ -78,6 +82,11 @@ public class EntitySnapshot {
 
         List<String> schools = entity.getMagicSchools().stream()
                 .map(school -> school.getId().toString())
+                .toList();
+
+        // Capturar spells de la entidad
+        List<String> spells = entity.getPersistedSpells().stream()
+                .map(spell -> spell.getSpellName())
                 .toList();
 
         // Capturar atributos actuales
@@ -119,7 +128,8 @@ public class EntitySnapshot {
                 attributes,
                 equipment,
                 entity.getUUID().toString(),
-                savedTexturePath
+                savedTexturePath,
+                spells
         );
     }
 
@@ -367,6 +377,12 @@ public class EntitySnapshot {
         }
         tag.put("magic_schools", schoolsTag);
 
+        ListTag spellsTag = new ListTag();
+        for (String spell : entitySpells) {
+            spellsTag.add(StringTag.valueOf(spell));
+        }
+        tag.put("entity_spells", spellsTag);
+
         tag.put("attributes", attributes);
         tag.put("equipment", equipment);
         tag.putString("texture_uuid", textureUUID);
@@ -396,15 +412,22 @@ public class EntitySnapshot {
                 schools.add(schoolsTag.getString(i));
             }
 
+            List<String> spells = new java.util.ArrayList<>();
+            if (tag.contains("entity_spells")) {
+                ListTag spellsTag = tag.getList("entity_spells", 8);
+                for (int i = 0; i < spellsTag.size(); i++) {
+                    spells.add(spellsTag.getString(i));
+                }
+            }
+
             CompoundTag attributes = tag.getCompound("attributes");
-            CompoundTag traits = tag.getCompound("traits");
             CompoundTag equipment = tag.getCompound("equipment");
             String textureUUID = tag.getString("texture_uuid");
             String savedTexturePath = tag.contains("saved_texture_path") ? tag.getString("saved_texture_path") : null;
 
             return new EntitySnapshot(entityUUID, entityName, gender, entityClass, starLevel,
                     currentLevel, totalKills, experiencePoints, hasShield, isArcher,
-                    schools, attributes, equipment, textureUUID, savedTexturePath);
+                    schools, attributes, equipment, textureUUID, savedTexturePath, spells);
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to deserialize EntitySnapshot: {}", e.getMessage());
             return null;

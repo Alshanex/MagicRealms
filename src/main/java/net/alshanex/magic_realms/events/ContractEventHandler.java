@@ -9,6 +9,9 @@ import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -25,13 +28,25 @@ public class ContractEventHandler {
 
     @SubscribeEvent
     public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
+        // Solo procesar en el servidor para evitar mensajes duplicados
         if (event.getLevel().isClientSide()) return;
 
         Player player = event.getEntity();
 
+        // Verificación adicional para asegurar que estamos en el servidor
+        if (player.level().isClientSide()) return;
+
+        // Solo procesar si es un servidor real (no integrado en single player)
+        if (!(player.level() instanceof net.minecraft.server.level.ServerLevel)) return;
+
         if (event.getTarget() instanceof RandomHumanEntity humanEntity) {
             ItemStack heldItem = player.getItemInHand(event.getHand());
             ContractData contractData = humanEntity.getData(MRDataAttachments.CONTRACT_DATA);
+
+            // Solo procesar con la mano principal para evitar duplicaciones
+            if (event.getHand() != InteractionHand.MAIN_HAND) {
+                return;
+            }
 
             // Si el jugador tiene un HumanInfoItem en la mano
             if (heldItem.getItem() instanceof HumanInfoItem) {
@@ -55,10 +70,12 @@ public class ContractEventHandler {
 
         // Verificar si ya tiene un contrato activo con otro jugador
         if (contractData.hasActiveContract() && !contractData.isContractor(player.getUUID())) {
-            player.sendSystemMessage(
-                    Component.literal("This entity is already under contract with another player!")
-                            .withStyle(ChatFormatting.RED)
-            );
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.already_have_contract")
+                                .withStyle(ChatFormatting.RED)
+                ));
+            }
             event.setCanceled(true);
             return;
         }
@@ -73,14 +90,12 @@ public class ContractEventHandler {
         }
 
         // Mensaje de confirmación
-        player.sendSystemMessage(
-                Component.literal("Contract established with ")
-                        .withStyle(ChatFormatting.GREEN)
-                        .append(Component.literal(humanEntity.getEntityName())
-                                .withStyle(ChatFormatting.AQUA))
-                        .append(Component.literal(" for 5 minutes!")
-                                .withStyle(ChatFormatting.GREEN))
-        );
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                    Component.translatable("ui.magic_realms.contract_established", humanEntity.getEntityName())
+                            .withStyle(ChatFormatting.GREEN)
+            ));
+        }
 
         MagicRealms.LOGGER.info("Player {} established contract with entity {} ({})",
                 player.getName().getString(),
@@ -98,30 +113,34 @@ public class ContractEventHandler {
         // Verificar si el jugador tiene un contrato activo
         if (!contractData.isContractor(player.getUUID())) {
             if (contractData.hasActiveContract()) {
-                player.sendSystemMessage(
-                        Component.literal("This entity is under contract with another player!")
-                                .withStyle(ChatFormatting.RED)
-                );
+                if (player instanceof ServerPlayer serverPlayer) {
+                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                            Component.translatable("ui.magic_realms.contract_other_player")
+                                    .withStyle(ChatFormatting.RED)
+                    ));
+                }
             } else {
-                player.sendSystemMessage(
-                        Component.literal("You need a Human Info Item to establish a contract with this entity!")
-                                .withStyle(ChatFormatting.YELLOW)
-                );
+                if (player instanceof ServerPlayer serverPlayer) {
+                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                            Component.translatable("ui.magic_realms.need_contract_item")
+                                    .withStyle(ChatFormatting.YELLOW)
+                    ));
+                }
             }
             event.setCanceled(true);
             return;
         }
 
-        // Mostrar tiempo restante y abrir menú
+        // Mostrar tiempo restante
         int minutes = contractData.getRemainingMinutes();
         int seconds = contractData.getRemainingSeconds();
 
-        player.sendSystemMessage(
-                Component.literal("Contract time remaining: ")
-                        .withStyle(ChatFormatting.GRAY)
-                        .append(Component.literal(String.format("%d:%02d", minutes, seconds))
-                                .withStyle(ChatFormatting.AQUA))
-        );
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                    Component.translatable("ui.magic_realms.contract_time_remaining", minutes, seconds)
+                            .withStyle(ChatFormatting.AQUA)
+            ));
+        }
 
         // Crear snapshot actualizado y abrir el menú
         EntitySnapshot snapshot = EntitySnapshot.fromEntity(humanEntity);

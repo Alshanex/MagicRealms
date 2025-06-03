@@ -27,5 +27,13 @@ public class MRLanguageProvider extends LanguageProvider {
         add("gui.magic_realms.human_info.armor", "Armor");
         add("gui.magic_realms.human_info.damage", "Damage");
         add("gui.magic_realms.human_info.no_attributes", "No attributes");
+
+        // Contract messages (Action Bar)
+        add("ui.magic_realms.already_have_contract", "This entity is already under contract with another player!");
+        add("ui.magic_realms.contract_established", "Contract established with %s for 5 minutes!");
+        add("ui.magic_realms.contract_other_player", "This entity is under contract with another player!");
+        add("ui.magic_realms.need_contract_item", "You need a Contract to establish a contract with this entity!");
+        add("ui.magic_realms.contract_time_remaining", "Contract time remaining: %d:%02d");
+        add("ui.magic_realms.contract_expired", "Contract with %s has expired!");
     }
 }

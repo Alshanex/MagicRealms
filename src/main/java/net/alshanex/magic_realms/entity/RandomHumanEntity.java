@@ -36,6 +36,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.RandomSource;
@@ -385,15 +386,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     UUID contractorUUID = contractData.getContractorUUID();
                     if (contractorUUID != null) {
                         Player contractor = this.level().getPlayerByUUID(contractorUUID);
-                        if (contractor != null && contractor.distanceToSqr(this) <= 64) { // Dentro de 8 bloques
-                            contractor.sendSystemMessage(
-                                    Component.literal("Contract with ")
-                                            .withStyle(ChatFormatting.YELLOW)
-                                            .append(Component.literal(this.getEntityName())
-                                                    .withStyle(ChatFormatting.AQUA))
-                                            .append(Component.literal(" has expired!")
-                                                    .withStyle(ChatFormatting.YELLOW))
-                            );
+                        if (contractor instanceof ServerPlayer serverPlayer && contractor.distanceToSqr(this) <= 64) { // Dentro de 8 bloques
+                            serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(
+                                    Component.translatable("ui.magic_realms.contract_expired", this.getEntityName())
+                                            .withStyle(ChatFormatting.RED)
+                            ));
                         }
                     }
                 }

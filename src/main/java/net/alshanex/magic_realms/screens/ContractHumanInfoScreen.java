@@ -4,6 +4,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.ContractData;
+import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
@@ -14,7 +17,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -23,14 +25,15 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
+public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHumanInfoMenu> {
     private static final ResourceLocation IRON_SPELLS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_iron_spells.png");
     private static final ResourceLocation APOTHIC_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_apothic.png");
 
     private final EntitySnapshot snapshot;
+    private final RandomHumanEntity entity;
     private Tab currentTab = Tab.IRON_SPELLS;
 
     private int scrollOffset = 0;
@@ -38,7 +41,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     private boolean isScrolling = false;
     private int lastMouseY = 0;
 
-    // Tab coordinates
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
     private static final int TAB_2_X = 162;
@@ -46,13 +48,11 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
 
-    // Entity render area
     private static final int ENTITY_RENDER_X = 13;
     private static final int ENTITY_RENDER_Y = 30;
     private static final int ENTITY_RENDER_WIDTH = 56;
     private static final int ENTITY_RENDER_HEIGHT = 83;
 
-    // Stats display
     private static final int HEALTH_X = 28;
     private static final int HEALTH_Y = 125;
     private static final int ARMOR_X = 28;
@@ -60,7 +60,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     private static final int DAMAGE_X = 85;
     private static final int DAMAGE_Y = 136;
 
-    // Attributes area
     private static final int ATTRIBUTES_X = 125;
     private static final int ATTRIBUTES_Y = 24;
     private static final int ATTRIBUTES_WIDTH = 120;
@@ -70,11 +69,11 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     private static final int LABEL_WIDTH = 70;
     private static final int VALUE_X_OFFSET = 72;
 
-    public HumanInfoScreen(HumanInfoMenu menu, Inventory playerInventory, Component title) {
+    public ContractHumanInfoScreen(ContractHumanInfoMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.snapshot = menu.getSnapshot();
+        this.entity = menu.getEntity();
 
-        // Set the GUI size to match your texture
         this.imageWidth = 256;
         this.imageHeight = 250;
     }
@@ -83,7 +82,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
     protected void init() {
         super.init();
 
-        // Hide default labels
         this.inventoryLabelY = 10000;
         this.titleLabelY = 10000;
 
@@ -107,17 +105,13 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // Render background first
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
-        // Render the container (this handles slots automatically)
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // Render additional UI elements
         renderEntityPlaceholder(guiGraphics);
         renderStats(guiGraphics);
 
-        // Render scrollable attributes with scissor
         guiGraphics.enableScissor(
                 leftPos + ATTRIBUTES_X,
                 topPos + ATTRIBUTES_Y,
@@ -136,10 +130,10 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
             renderScrollIndicator(guiGraphics);
         }
 
-        // Render tooltips last
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
+    // Resto de métodos copiados del HumanInfoScreen original
     private ResourceLocation getCurrentTexture() {
         return switch (currentTab) {
             case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
@@ -212,10 +206,8 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
         int scrollBarY = topPos + ATTRIBUTES_Y;
         int scrollBarHeight = ATTRIBUTES_HEIGHT;
 
-        // Background
         guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0x66000000);
 
-        // Thumb
         if (maxScroll > 0) {
             int thumbHeight = Math.max(8, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
             int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
@@ -374,24 +366,24 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Health
         float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
         float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
         Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
         guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false);
 
-        // Armor
         double armor = attributes.contains("armor") ? attributes.getDouble("armor") : 0.0;
         Component armorComponent = Component.literal(String.format("%.1f", armor));
         guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false);
 
-        // Attack Damage
         double damage = attributes.contains("attack_damage") ? attributes.getDouble("attack_damage") : 1.0;
         Component damageComponent = Component.literal(String.format("%.1f", damage));
         guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
     }
 
-    // Keep your existing attribute rendering methods...
+    // Aquí irían los métodos renderIronSpellsAttributesScrollable, renderApothicAttributesScrollable
+    // y todos los métodos de manejo de eventos (mouseClicked, mouseScrolled, etc.)
+    // Son idénticos a los del HumanInfoScreen original, así que los omito por brevedad
+
     private void renderIronSpellsAttributesScrollable(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
@@ -462,26 +454,6 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
                 }
             }
         }
-    }
-
-    private String capitalizeFirst(String str) {
-        if (str == null || str.isEmpty()) return str;
-        return str.substring(0, 1).toUpperCase() + str.substring(1);
-    }
-
-    private ChatFormatting getSchoolColor(String schoolName) {
-        return switch (schoolName.toLowerCase()) {
-            case "fire" -> ChatFormatting.RED;
-            case "ice" -> ChatFormatting.AQUA;
-            case "lightning" -> ChatFormatting.BLUE;
-            case "holy" -> ChatFormatting.YELLOW;
-            case "ender" -> ChatFormatting.DARK_PURPLE;
-            case "blood" -> ChatFormatting.DARK_RED;
-            case "evocation" -> ChatFormatting.GRAY;
-            case "nature" -> ChatFormatting.GREEN;
-            case "eldritch" -> ChatFormatting.DARK_AQUA;
-            default -> ChatFormatting.WHITE;
-        };
     }
 
     private void renderApothicAttributesScrollable(GuiGraphics guiGraphics) {
@@ -572,6 +544,26 @@ public class HumanInfoScreen extends AbstractContainerScreen<HumanInfoMenu> {
         }
 
         return truncated + "...";
+    }
+
+    private String capitalizeFirst(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
+    }
+
+    private ChatFormatting getSchoolColor(String schoolName) {
+        return switch (schoolName.toLowerCase()) {
+            case "fire" -> ChatFormatting.RED;
+            case "ice" -> ChatFormatting.AQUA;
+            case "lightning" -> ChatFormatting.BLUE;
+            case "holy" -> ChatFormatting.YELLOW;
+            case "ender" -> ChatFormatting.DARK_PURPLE;
+            case "blood" -> ChatFormatting.DARK_RED;
+            case "evocation" -> ChatFormatting.GRAY;
+            case "nature" -> ChatFormatting.GREEN;
+            case "eldritch" -> ChatFormatting.DARK_AQUA;
+            default -> ChatFormatting.WHITE;
+        };
     }
 
     private String extractSchoolName(String schoolId) {

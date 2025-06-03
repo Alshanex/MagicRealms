@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -17,6 +18,10 @@ public class MRDataAttachments {
             () -> AttachmentType.builder(KillTrackerData::new)
                     .serialize(KillTrackerData.CODEC)
                     .build()
+    );
+
+    public static final Supplier<AttachmentType<ContractData>> CONTRACT_DATA = ATTACHMENT_TYPES.register(
+            "contract_data", () -> AttachmentType.builder(() -> new ContractData()).serialize(new ContractData.Serializer()).build()
     );
 
     public static void register(net.neoforged.bus.api.IEventBus eventBus) {

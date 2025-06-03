@@ -19,7 +19,9 @@ import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.ChargeArrowAttackGoal;
@@ -354,6 +356,50 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             goalsInitialized = true;
         }
 
+        // Verificar contrato y limpiar si ha expirado
+        if (!level().isClientSide) {
+            ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
+            if (contractData.hasActiveContract()) {
+                // El contrato sigue activo, mantener al jugador como summoner
+                if (this.getSummoner() == null) {
+                    // Buscar al jugador contratista en el mundo
+                    UUID contractorUUID = contractData.getContractorUUID();
+                    if (contractorUUID != null) {
+                        Player contractor = this.level().getPlayerByUUID(contractorUUID);
+                        if (contractor != null) {
+                            this.setSummoner(contractor);
+                            MagicRealms.LOGGER.debug("Restored summoner relationship for contracted entity {}", this.getEntityName());
+                        }
+                    }
+                }
+            } else {
+                // El contrato ha expirado, limpiar datos
+                if (contractData.getContractorUUID() != null) {
+                    MagicRealms.LOGGER.info("Contract expired for entity {} with player {}",
+                            this.getEntityName(), contractData.getContractorUUID());
+                    contractData.clearContract();
+
+                    this.setSummoner(null);
+
+                    // Notificar al jugador si está cerca
+                    UUID contractorUUID = contractData.getContractorUUID();
+                    if (contractorUUID != null) {
+                        Player contractor = this.level().getPlayerByUUID(contractorUUID);
+                        if (contractor != null && contractor.distanceToSqr(this) <= 64) { // Dentro de 8 bloques
+                            contractor.sendSystemMessage(
+                                    Component.literal("Contract with ")
+                                            .withStyle(ChatFormatting.YELLOW)
+                                            .append(Component.literal(this.getEntityName())
+                                                    .withStyle(ChatFormatting.AQUA))
+                                            .append(Component.literal(" has expired!")
+                                                    .withStyle(ChatFormatting.YELLOW))
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
         if (this.isArcher()) {
             handleArcherAnimations();
         }
@@ -377,6 +423,36 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
             wasCasting = isCasting;
         }
+    }
+
+    public boolean canBeContractedBy(Player player) {
+        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
+
+        // Si no hay contrato activo, cualquiera puede contratar
+        if (!contractData.hasActiveContract()) {
+            return true;
+        }
+
+        // Si hay contrato activo, solo el contratista actual puede renovar
+        return contractData.isContractor(player.getUUID());
+    }
+
+    public String getContractInfo() {
+        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
+
+        if (!contractData.hasActiveContract()) {
+            return "No active contract";
+        }
+
+        int minutes = contractData.getRemainingMinutes();
+        int seconds = contractData.getRemainingSeconds();
+        return String.format("Contract expires in %d:%02d", minutes, seconds);
+    }
+
+    public void clearContract() {
+        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
+        contractData.clearContract();
+        MagicRealms.LOGGER.info("Contract manually cleared for entity {}", this.getEntityName());
     }
 
     @Override

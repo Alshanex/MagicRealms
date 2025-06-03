@@ -20,16 +20,12 @@ public class MRLanguageProvider extends LanguageProvider {
         add("gui.magic_realms.human_info.title", "Entity Information");
         add("gui.magic_realms.human_info.tab.iron_spells", "Iron Spells");
         add("gui.magic_realms.human_info.tab.apothic", "Apothic");
-        add("gui.magic_realms.human_info.tab.traits", "Traits");
         add("gui.magic_realms.human_info.level", "Level");
         add("gui.magic_realms.human_info.class", "Class");
         add("gui.magic_realms.human_info.stars", "Stars");
         add("gui.magic_realms.human_info.health", "Health");
         add("gui.magic_realms.human_info.armor", "Armor");
         add("gui.magic_realms.human_info.damage", "Damage");
-        add("gui.magic_realms.human_info.no_traits", "No traits");
         add("gui.magic_realms.human_info.no_attributes", "No attributes");
-        add("gui.magic_realms.human_info.entity_not_found", "Entity not found");
-        add("gui.magic_realms.human_info.not_linked", "Not linked to entity");
     }
 }

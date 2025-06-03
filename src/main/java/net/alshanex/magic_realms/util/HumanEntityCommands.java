@@ -57,9 +57,7 @@ public class HumanEntityCommands {
                 .then(Commands.literal("reset")
                         .then(Commands.argument("target", EntityArgument.entity())
                                 .executes(HumanEntityCommands::resetLevel)))
-                .then(Commands.literal("createitem")
-                        .then(Commands.argument("summoner", EntityArgument.entity())
-                                .executes(HumanEntityCommands::createRandomVirtualItem))));
+                .then(Commands.literal("createitem")));
     }
 
     private static int setLevel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -175,80 +173,6 @@ public class HumanEntityCommands {
         } catch (Exception e) {
             source.sendFailure(Component.literal("Failed to reset level: " + e.getMessage()));
             return 0;
-        }
-    }
-
-    private static int createRandomVirtualItem(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        CommandSourceStack source = context.getSource();
-
-        if (!(source.getEntity() instanceof Player player)) {
-            source.sendFailure(Component.literal("Only players can use this command!"));
-            return 0;
-        }
-
-        try {
-            Entity summoner = EntityArgument.getEntity(context, "summoner");
-
-            if (!(summoner instanceof LivingEntity livingSummoner)) {
-                source.sendFailure(Component.literal("Summoner must be a living entity!"));
-                return 0;
-            }
-
-            RandomHumanEntity virtualEntity = new RandomHumanEntity(source.getLevel(), livingSummoner);
-
-            initializeVirtualEntity(virtualEntity, source.getLevel());
-
-            EntitySnapshot virtualSnapshot = EntitySnapshot.fromEntity(virtualEntity);
-
-            ItemStack infoItem = HumanInfoItem.createVirtualItem(virtualSnapshot);
-
-            if (player.getInventory().add(infoItem)) {
-                source.sendSuccess(() -> Component.literal(
-                        String.format("Created random virtual info item: %s %s %s (%d★)",
-                                virtualSnapshot.gender.getName(),
-                                virtualSnapshot.entityClass.getName(),
-                                virtualSnapshot.entityName,
-                                virtualSnapshot.starLevel)), true);
-            } else {
-                // Si el inventario está lleno, dropear el item
-                player.drop(infoItem, false);
-                source.sendSuccess(() -> Component.literal(
-                        String.format("Created and dropped random virtual info item: %s %s %s (%d★)",
-                                virtualSnapshot.gender.getName(),
-                                virtualSnapshot.entityClass.getName(),
-                                virtualSnapshot.entityName,
-                                virtualSnapshot.starLevel)), true);
-            }
-
-            return 1;
-
-        } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to create random virtual info item: " + e.getMessage()));
-            MagicRealms.LOGGER.error("Error creating random virtual item", e);
-            return 0;
-        }
-    }
-
-    private static void initializeVirtualEntity(RandomHumanEntity entity, Level level) {
-        try {
-            DifficultyInstance difficulty = level.getCurrentDifficultyAt(entity.blockPosition());
-
-            entity.finalizeSpawn(
-                    (ServerLevelAccessor) level,
-                    difficulty,
-                    MobSpawnType.COMMAND,
-                    null
-            );
-
-            MagicRealms.LOGGER.debug("Successfully initialized virtual entity: {} {} {} ({}★)",
-                    entity.getGender().getName(),
-                    entity.getEntityClass().getName(),
-                    entity.getEntityName(),
-                    entity.getStarLevel());
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to initialize virtual entity: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize virtual entity", e);
         }
     }
 }

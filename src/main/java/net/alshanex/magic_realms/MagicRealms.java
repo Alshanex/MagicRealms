@@ -74,7 +74,6 @@ public class MagicRealms
     {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(MRItems.HUMAN_INFO_ITEM.get());
-            event.accept(MRItems.HUMAN_TEAM_ITEM.get());
         }
     }
 

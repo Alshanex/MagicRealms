@@ -14,8 +14,7 @@ public class MRLanguageProvider extends LanguageProvider {
     @Override
     protected void addTranslations() {
         // Items
-        add(MRItems.HUMAN_TEAM_ITEM.get(), "Summoning Tablet");
-        add(MRItems.HUMAN_INFO_ITEM.get(), "Human Information Scroll");
+        add(MRItems.HUMAN_INFO_ITEM.get(), "Contract");
 
         // GUI translations
         add("gui.magic_realms.human_info.title", "Entity Information");
@@ -32,17 +31,5 @@ public class MRLanguageProvider extends LanguageProvider {
         add("gui.magic_realms.human_info.no_attributes", "No attributes");
         add("gui.magic_realms.human_info.entity_not_found", "Entity not found");
         add("gui.magic_realms.human_info.not_linked", "Not linked to entity");
-        add("gui.magic_realms.human_team.title", "Summoning Tablet");
-
-        //Entities
-        add("entity.magic_realms.warden_clone", "Sculk Guardian");
-
-        //Curios
-        add("curios.identifier.tablet", "Summoning Tablet");
-        add("curios.modifiers.tablet", "When equipped as Tablet:");
-
-        //Keybinds
-        add("key.magic_realms.tablet_keys", "Magic Realms");
-        add("key.magic_realms.tablet_key", "Summon tablet formation");
     }
 }

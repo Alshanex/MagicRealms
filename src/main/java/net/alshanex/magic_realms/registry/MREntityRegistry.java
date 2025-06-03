@@ -2,7 +2,6 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.entity.WardenCloneEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -23,10 +22,4 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "human_entity").toString()));
-
-    public static final DeferredHolder<EntityType<?>, EntityType<WardenCloneEntity>> ELDRITCH_CLONE =
-            ENTITIES.register("warden_clone", () -> EntityType.Builder.<WardenCloneEntity>of(WardenCloneEntity::new, MobCategory.MONSTER)
-                    .sized(.6f, 1.8f)
-                    .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "warden_clone").toString()));
 }

@@ -18,7 +18,7 @@ public class MRItems {
     public static final DeferredHolder<Item, HumanInfoItem> HUMAN_INFO_ITEM =
             ITEMS.register("human_info_item", () -> new HumanInfoItem(
                     new Item.Properties()
-                            .stacksTo(1)
+                            .stacksTo(64)
                             .fireResistant()
             ));
 }

@@ -375,23 +375,21 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 }
             } else {
                 // El contrato ha expirado, limpiar datos
-                if (contractData.getContractorUUID() != null) {
-                    MagicRealms.LOGGER.info("Contract expired for entity {} with player {}",
-                            this.getEntityName(), contractData.getContractorUUID());
-                    contractData.clearContract();
+                UUID previousContractorUUID = contractData.getContractorUUID();
+                if (previousContractorUUID != null) {
+                    MagicRealms.LOGGER.info("Contract expired for {} star entity {} with player {}",
+                            this.getStarLevel(), this.getEntityName(), previousContractorUUID);
 
+                    contractData.clearContract();
                     this.setSummoner(null);
 
                     // Notificar al jugador si está cerca
-                    UUID contractorUUID = contractData.getContractorUUID();
-                    if (contractorUUID != null) {
-                        Player contractor = this.level().getPlayerByUUID(contractorUUID);
-                        if (contractor instanceof ServerPlayer serverPlayer && contractor.distanceToSqr(this) <= 64) { // Dentro de 8 bloques
-                            serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(
-                                    Component.translatable("ui.magic_realms.contract_expired", this.getEntityName())
-                                            .withStyle(ChatFormatting.RED)
-                            ));
-                        }
+                    Player contractor = this.level().getPlayerByUUID(previousContractorUUID);
+                    if (contractor instanceof ServerPlayer serverPlayer && contractor.distanceToSqr(this) <= 64) { // Dentro de 8 bloques
+                        serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(
+                                Component.translatable("ui.magic_realms.contract_expired", this.getEntityName())
+                                        .withStyle(ChatFormatting.RED)
+                        ));
                     }
                 }
             }
@@ -438,12 +436,19 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
 
         if (!contractData.hasActiveContract()) {
-            return "No active contract";
+            int starLevel = this.getStarLevel();
+            int potentialMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+            return String.format("No active contract (Would last %d minutes for %d stars)",
+                    potentialMinutes, starLevel);
         }
 
         int minutes = contractData.getRemainingMinutes();
         int seconds = contractData.getRemainingSeconds();
-        return String.format("Contract expires in %d:%02d", minutes, seconds);
+        int starLevel = this.getStarLevel();
+        int extensionMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+
+        return String.format("Contract expires in %d:%02d (Extensions add %d min for %d stars)",
+                minutes, seconds, extensionMinutes, starLevel);
     }
 
     public void clearContract() {

@@ -69,6 +69,9 @@ public class ContractEventHandler {
                                                ContractData contractData,
                                                ItemStack heldItem) {
 
+        int starLevel = humanEntity.getStarLevel();
+        int additionalMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+
         // Verificar si ya tiene un contrato activo con otro jugador
         if (contractData.hasActiveContract() && !contractData.isContractor(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
@@ -81,27 +84,58 @@ public class ContractEventHandler {
             return;
         }
 
-        // Crear o renovar el contrato
-        contractData.setContract(player.getUUID());
-        humanEntity.setSummoner(player);
+        boolean isRenewal = contractData.isContractor(player.getUUID());
+
+        if (isRenewal) {
+            // Extender contrato existente
+            contractData.renewContract(player.getUUID(), starLevel);
+
+            if (player instanceof ServerPlayer serverPlayer) {
+                int remainingMinutes = contractData.getRemainingMinutes();
+                int remainingSeconds = contractData.getRemainingSeconds();
+
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.contract_extended",
+                                        humanEntity.getEntityName(),
+                                        additionalMinutes,
+                                        remainingMinutes,
+                                        remainingSeconds)
+                                .withStyle(ChatFormatting.GREEN)
+                ));
+            }
+
+            MagicRealms.LOGGER.info("Player {} extended contract with entity {} ({}) by {} minutes. Total remaining: {}:{}",
+                    player.getName().getString(),
+                    humanEntity.getEntityName(),
+                    humanEntity.getUUID(),
+                    additionalMinutes,
+                    contractData.getRemainingMinutes(),
+                    contractData.getRemainingSeconds());
+        } else {
+            // Crear nuevo contrato
+            contractData.setContract(player.getUUID(), starLevel);
+            humanEntity.setSummoner(player);
+
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.contract_established",
+                                        humanEntity.getEntityName(),
+                                        additionalMinutes)
+                                .withStyle(ChatFormatting.GREEN)
+                ));
+            }
+
+            MagicRealms.LOGGER.info("Player {} established new contract with entity {} ({}) for {} minutes",
+                    player.getName().getString(),
+                    humanEntity.getEntityName(),
+                    humanEntity.getUUID(),
+                    additionalMinutes);
+        }
 
         // Consumir el item
         if (!player.getAbilities().instabuild) {
             heldItem.shrink(1);
         }
-
-        // Mensaje de confirmación
-        if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
-                    Component.translatable("ui.magic_realms.contract_established", humanEntity.getEntityName())
-                            .withStyle(ChatFormatting.GREEN)
-            ));
-        }
-
-        MagicRealms.LOGGER.info("Player {} established contract with entity {} ({})",
-                player.getName().getString(),
-                humanEntity.getEntityName(),
-                humanEntity.getUUID());
 
         event.setCanceled(true);
     }
@@ -122,8 +156,11 @@ public class ContractEventHandler {
                 }
             } else {
                 if (player instanceof ServerPlayer serverPlayer) {
+                    int starLevel = humanEntity.getStarLevel();
+                    int contractMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+
                     serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
-                            Component.translatable("ui.magic_realms.need_contract_item")
+                            Component.translatable("ui.magic_realms.need_contract_item", contractMinutes)
                                     .withStyle(ChatFormatting.YELLOW)
                     ));
                 }
@@ -132,13 +169,16 @@ public class ContractEventHandler {
             return;
         }
 
-        // Mostrar tiempo restante
+        // Mostrar tiempo restante y información sobre posibles extensiones
         int minutes = contractData.getRemainingMinutes();
         int seconds = contractData.getRemainingSeconds();
+        int starLevel = humanEntity.getStarLevel();
+        int extensionMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
 
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
-                    Component.translatable("ui.magic_realms.contract_time_remaining", minutes, seconds)
+                    Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",
+                                    minutes, seconds, extensionMinutes)
                             .withStyle(ChatFormatting.AQUA)
             ));
         }
@@ -158,8 +198,8 @@ public class ContractEventHandler {
         // Crear snapshot actualizado y abrir el menú
         EntitySnapshot snapshot = EntitySnapshot.fromEntity(humanEntity);
 
-        MagicRealms.LOGGER.info("Opening contract menu for entity: {} (UUID: {})",
-                humanEntity.getEntityName(), humanEntity.getUUID());
+        MagicRealms.LOGGER.info("Opening contract menu for entity: {} (UUID: {}, Star Level: {}, Contract Time: {}:{})",
+                humanEntity.getEntityName(), humanEntity.getUUID(), starLevel, minutes, seconds);
 
         player.openMenu(new ContractMenuProvider(snapshot, humanEntity), buf -> {
             CompoundTag snapshotNbt = snapshot.serialize();
@@ -187,14 +227,16 @@ public class ContractEventHandler {
                 MagicRealms.LOGGER.info("  - Entity UUID: {}", entity.getUUID());
                 MagicRealms.LOGGER.info("  - Entity alive: {}", entity.isAlive());
                 MagicRealms.LOGGER.info("  - Entity removed: {}", entity.isRemoved());
+                MagicRealms.LOGGER.info("  - Star Level: {}", entity.getStarLevel());
             }
         }
 
         @Override
         public Component getDisplayName() {
+            String starDisplay = "★".repeat(entity.getStarLevel());
             return Component.translatable("gui.magic_realms.human_info.title")
                     .append(" - ")
-                    .append(Component.literal(entity != null ? entity.getEntityName() : "Unknown").withStyle(ChatFormatting.AQUA));
+                    .append(Component.literal(starDisplay + " " + (entity != null ? entity.getEntityName() : "Unknown")).withStyle(ChatFormatting.AQUA));
         }
 
         @Nullable

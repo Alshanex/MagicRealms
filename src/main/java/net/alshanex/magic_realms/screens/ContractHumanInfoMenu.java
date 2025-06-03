@@ -67,14 +67,25 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         UUID entityUUID = buf.readUUID();
         this.player = playerInventory.player;
 
+        MagicRealms.LOGGER.info("ContractHumanInfoMenu client constructor:");
+        MagicRealms.LOGGER.info("  - Entity UUID: {}", entityUUID);
+        MagicRealms.LOGGER.info("  - Player level: {}", playerInventory.player.level());
+        MagicRealms.LOGGER.info("  - Is client side: {}", playerInventory.player.level().isClientSide);
+
         // Buscar la entidad en el mundo
         this.entity = findEntityByUUID(playerInventory.player.level(), entityUUID);
+
+        MagicRealms.LOGGER.info("  - Found entity: {}", entity != null ? entity.getEntityName() : "null");
 
         // Crear el container
         this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS);
 
         if (entity != null) {
             loadEquipmentFromEntity();
+        } else {
+            MagicRealms.LOGGER.warn("Entity not found with UUID: {}", entityUUID);
+            // En el cliente, la entidad podría no estar cargada aún
+            // Esto es normal en algunos casos
         }
 
         // Add slots
@@ -393,6 +404,17 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        // Verificación básica de distancia
+        if (entity != null && !entity.isRemoved() && player.distanceToSqr(entity) > 64.0) {
+            return false;
+        }
+
+        // Si la entidad es null en el cliente, permitir que continúe
+        // (puede ocurrir debido a sincronización de red)
+        if (entity == null && player.level().isClientSide) {
+            return true;
+        }
+
         if (entity == null) return false;
 
         // Verificar que el contrato sigue activo

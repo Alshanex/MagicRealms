@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.screens;
 
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
@@ -7,25 +8,40 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
 public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHumanInfoMenu> {
@@ -44,17 +60,19 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private int lastEntityMouseX = 0;
     private int lastMouseY = 0;
 
+    // Coordenadas y dimensiones para el área de renderizado 3D
+    private static final int ENTITY_RENDER_X = 13;
+    private static final int ENTITY_RENDER_Y = 30;
+    private static final int ENTITY_RENDER_WIDTH = 56;
+    private static final int ENTITY_RENDER_HEIGHT = 83;
+
+    // Otras coordenadas existentes...
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
     private static final int TAB_2_X = 162;
     private static final int TAB_2_Y = 3;
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
-
-    private static final int ENTITY_RENDER_X = 13;
-    private static final int ENTITY_RENDER_Y = 30;
-    private static final int ENTITY_RENDER_WIDTH = 56;
-    private static final int ENTITY_RENDER_HEIGHT = 83;
 
     private static final int HEALTH_X = 28;
     private static final int HEALTH_Y = 125;
@@ -79,6 +97,15 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         this.imageWidth = 256;
         this.imageHeight = 250;
+
+        // Debug logging
+        MagicRealms.LOGGER.info("ContractHumanInfoScreen created:");
+        MagicRealms.LOGGER.info("  - Snapshot: {}", snapshot != null ? "present" : "null");
+        MagicRealms.LOGGER.info("  - Entity: {}", entity != null ? entity.getEntityName() : "null");
+        if (entity != null) {
+            MagicRealms.LOGGER.info("  - Entity UUID: {}", entity.getUUID());
+            MagicRealms.LOGGER.info("  - Entity Class: {}", entity.getEntityClass());
+        }
     }
 
     @Override
@@ -112,7 +139,11 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        renderEntityPlaceholder(guiGraphics);
+        // Intentar renderizar la entidad en 3D, con fallback a 2D
+        if (!renderEntity3D(guiGraphics)) {
+            renderEntityFallback(guiGraphics);
+        }
+
         renderStats(guiGraphics);
 
         guiGraphics.enableScissor(
@@ -136,95 +167,239 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
-    private ResourceLocation getCurrentTexture() {
-        return switch (currentTab) {
-            case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
-            case APOTHIC -> APOTHIC_TEXTURE;
-        };
-    }
+    private boolean renderEntity3D(GuiGraphics guiGraphics) {
+        RandomHumanEntity entityToRender = entity;
 
-    private void calculateMaxScroll() {
-        int totalLines = getTotalAttributeLines();
-        int visibleLines = ATTRIBUTES_HEIGHT / LINE_HEIGHT;
-        this.maxScroll = Math.max(0, (totalLines - visibleLines) * LINE_HEIGHT);
-    }
-
-    private int getTotalAttributeLines() {
-        switch (currentTab) {
-            case IRON_SPELLS -> {
-                return getIronSpellsAttributeLines();
-            }
-            case APOTHIC -> {
-                return getApothicAttributeLines();
-            }
-            default -> {
-                return 0;
+        // Si no tenemos la entidad real, usar la entidad virtual con cache
+        if (entityToRender == null && snapshot != null) {
+            try {
+                entityToRender = getOrCreateVirtualEntity();
+                if (entityToRender != null) {
+                    MagicRealms.LOGGER.debug("Using cached/created virtual entity for 3D rendering");
+                }
+            } catch (Exception e) {
+                MagicRealms.LOGGER.warn("Failed to get virtual entity: {}", e.getMessage());
+                return false;
             }
         }
-    }
 
-    private int getIronSpellsAttributeLines() {
-        int lines = 2;
-        lines += 8;
-        lines += 2;
+        if (entityToRender == null) {
+            MagicRealms.LOGGER.debug("Cannot render 3D: no entity available");
+            return false;
+        }
+
         try {
-            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
-            lines += schools.size();
+            int entityX = leftPos + ENTITY_RENDER_X;
+            int entityY = topPos + ENTITY_RENDER_Y;
+
+            float centerX = entityX + ENTITY_RENDER_WIDTH / 2.0f + 1.0f;
+            float centerY = entityY + ENTITY_RENDER_HEIGHT / 2.0f - 8.0f;
+            float scale = 35.0f;
+
+            Quaternionf pose = new Quaternionf().rotateZ((float) Math.PI);
+            Quaternionf cameraOrientation = new Quaternionf().rotateX(0.0f);
+
+            float frontFacingAngle = 180.0f;
+            pose.rotateY(frontFacingAngle * (float) (Math.PI / 180.0));
+
+            Vector3f translate = new Vector3f(0.0F, 1.2F, 0.0F);
+
+            renderEntityInInventory(
+                    guiGraphics, centerX, centerY, scale, translate, pose, cameraOrientation,
+                    entityToRender, entityX, entityY, entityX + ENTITY_RENDER_WIDTH, entityY + ENTITY_RENDER_HEIGHT
+            );
+
+            return true;
+
         } catch (Exception e) {
-            lines += 9;
+            MagicRealms.LOGGER.error("Error rendering entity 3D: {}", e.getMessage(), e);
+            return false;
         }
-        lines += 2;
+    }
+
+    private static final Map<String, RandomHumanEntity> virtualEntityCache = new HashMap<>();
+
+    private RandomHumanEntity getOrCreateVirtualEntity() {
+        if (snapshot == null || minecraft.level == null) {
+            return null;
+        }
+
+        String cacheKey = createCacheKey();
+
+        // Verificar si ya tenemos una entidad virtual en cache
+        RandomHumanEntity cachedEntity = virtualEntityCache.get(cacheKey);
+        if (cachedEntity != null && cachedEntity.level() == minecraft.level) {
+            if (menu != null && menu.getEquipmentContainer() != null) {
+                applyEquipmentFromContainer(cachedEntity, menu.getEquipmentContainer());
+            }
+            MagicRealms.LOGGER.debug("Using cached virtual entity");
+            return cachedEntity;
+        }
+
+        // Crear nueva entidad virtual
+        RandomHumanEntity virtualEntity = createVirtualEntityForRendering();
+        if (virtualEntity != null) {
+            virtualEntityCache.put(cacheKey, virtualEntity);
+            MagicRealms.LOGGER.debug("Created and cached new virtual entity");
+
+            // Limpiar cache viejo para evitar memory leaks
+            if (virtualEntityCache.size() > 5) { // Reducir tamaño de cache
+                String oldestKey = virtualEntityCache.keySet().iterator().next();
+                virtualEntityCache.remove(oldestKey);
+                MagicRealms.LOGGER.debug("Cleaned old cache entry");
+            }
+        }
+
+        return virtualEntity;
+    }
+
+    private String createCacheKey() {
+        StringBuilder keyBuilder = new StringBuilder();
+        keyBuilder.append(snapshot.textureUUID != null ? snapshot.textureUUID : "null");
+        keyBuilder.append("_").append(snapshot.gender.name());
+        keyBuilder.append("_").append(snapshot.entityClass.name());
+        keyBuilder.append("_").append(snapshot.starLevel);
+        keyBuilder.append("_").append(snapshot.hasShield);
+        keyBuilder.append("_").append(snapshot.isArcher);
+        keyBuilder.append("_").append(snapshot.entityName);
+        keyBuilder.append("_").append(snapshot.entityUUID);
+
+        return keyBuilder.toString();
+    }
+
+    private RandomHumanEntity createVirtualEntityForRendering() {
+        if (snapshot == null || minecraft.level == null) {
+            return null;
+        }
+
         try {
-            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
-            lines += schools.size();
+            // Crear una entidad temporal solo para renderizado
+            RandomHumanEntity virtualEntity = new RandomHumanEntity(MREntityRegistry.HUMAN.get(), minecraft.level);
+
+            // Configurar EXACTAMENTE los mismos datos del snapshot
+            virtualEntity.setGender(snapshot.gender);
+            virtualEntity.setEntityClass(snapshot.entityClass);
+            virtualEntity.setEntityName(snapshot.entityName);
+            virtualEntity.setStarLevel(snapshot.starLevel);
+            virtualEntity.setHasShield(snapshot.hasShield);
+            virtualEntity.setIsArcher(snapshot.isArcher);
+
+            setEntityUUID(virtualEntity, snapshot.entityUUID);
+
+            // IMPORTANTE: Marcar como inicializada y configurada ANTES de cualquier generación
+            virtualEntity.setInitialized(true);
+            setAppearanceGenerated(virtualEntity, true);
+
+            // Crear la configuración de textura usando los datos exactos del snapshot
+            if (snapshot.textureUUID != null) {
+                EntityTextureConfig textureConfig = new EntityTextureConfig(
+                        snapshot.textureUUID,
+                        snapshot.gender,
+                        snapshot.entityClass
+                );
+                setTextureConfigDirectly(virtualEntity, textureConfig);
+            }
+
+            // Aplicar equipamiento visual DESPUÉS de configurar la textura
+            if (menu != null && menu.getEquipmentContainer() != null) {
+                applyEquipmentFromContainer(virtualEntity, menu.getEquipmentContainer());
+            }
+
+            // Configurar posición para evitar warnings
+            virtualEntity.setPos(0, 0, 0);
+
+            MagicRealms.LOGGER.debug("Created virtual entity for rendering: {} ({}) with texture UUID: {}",
+                    virtualEntity.getEntityName(),
+                    virtualEntity.getEntityClass().getName(),
+                    snapshot.textureUUID);
+
+            return virtualEntity;
+
         } catch (Exception e) {
-            lines += 9;
-        }
-        if (snapshot.entityClass == EntityClass.MAGE) {
-            lines += 2;
-            lines += Math.max(1, snapshot.magicSchools.size());
-        }
-        // Añadir líneas para los spells
-        lines += 2; // Header
-        lines += Math.max(1, snapshot.entitySpells.size()); // Spells list
-        return lines;
-    }
-
-    private int getApothicAttributeLines() {
-        int lines = 2;
-        lines += 3;
-        lines += 2;
-        lines += 4;
-        lines += 2;
-        lines += 3;
-        lines += 2;
-        lines += 4;
-        lines += 2;
-        lines += 4;
-        lines += 2;
-        lines += 3;
-        return lines;
-    }
-
-    private void renderScrollIndicator(GuiGraphics guiGraphics) {
-        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 4;
-        int scrollBarY = topPos + ATTRIBUTES_Y;
-        int scrollBarHeight = ATTRIBUTES_HEIGHT;
-
-        guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0x66000000);
-
-        if (maxScroll > 0) {
-            int thumbHeight = Math.max(8, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
-            int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
-            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 3, thumbY + thumbHeight, 0xAA666666);
+            MagicRealms.LOGGER.error("Failed to create virtual entity: {}", e.getMessage(), e);
+            return null;
         }
     }
 
-    private void renderEntityPlaceholder(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
+    private void setEntityUUID(RandomHumanEntity entity, UUID originalUUID) {
+        try {
+            if (originalUUID != null) {
+
+                // Usar reflection para establecer el UUID exacto
+                java.lang.reflect.Field uuidField = Entity.class.getDeclaredField("uuid");
+                uuidField.setAccessible(true);
+                uuidField.set(entity, originalUUID);
+
+                MagicRealms.LOGGER.debug("Set exact UUID for virtual entity: {}", originalUUID);
+            }
+        } catch (IllegalArgumentException e) {
+            MagicRealms.LOGGER.warn("Invalid UUID format: {}, error: {}", originalUUID, e.getMessage());
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to set exact UUID: {}", e.getMessage());
+        }
+    }
+
+    private void setTextureConfigDirectly(RandomHumanEntity entity, EntityTextureConfig textureConfig) {
+        try {
+            // Usar reflection para acceder al campo privado textureConfig
+            java.lang.reflect.Field textureConfigField = RandomHumanEntity.class.getDeclaredField("textureConfig");
+            textureConfigField.setAccessible(true);
+            textureConfigField.set(entity, textureConfig);
+
+            MagicRealms.LOGGER.debug("Set texture config directly for virtual entity");
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to set texture config directly: {}", e.getMessage());
+        }
+    }
+
+    private void setAppearanceGenerated(RandomHumanEntity entity, boolean generated) {
+        try {
+            java.lang.reflect.Field appearanceGeneratedField = RandomHumanEntity.class.getDeclaredField("appearanceGenerated");
+            appearanceGeneratedField.setAccessible(true);
+            appearanceGeneratedField.set(entity, generated);
+
+            MagicRealms.LOGGER.debug("Set appearanceGenerated to {} for virtual entity", generated);
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to set appearanceGenerated: {}", e.getMessage());
+        }
+    }
+
+    private void applyEquipmentFromContainer(RandomHumanEntity entity, Container equipmentContainer) {
+        try {
+            // Aplicar equipamiento de armadura
+            entity.setItemSlot(EquipmentSlot.HEAD, equipmentContainer.getItem(0).copy());
+            entity.setItemSlot(EquipmentSlot.CHEST, equipmentContainer.getItem(1).copy());
+            entity.setItemSlot(EquipmentSlot.LEGS, equipmentContainer.getItem(2).copy());
+            entity.setItemSlot(EquipmentSlot.FEET, equipmentContainer.getItem(3).copy());
+
+            // Aplicar equipamiento de manos
+            entity.setItemSlot(EquipmentSlot.MAINHAND, equipmentContainer.getItem(4).copy());
+            entity.setItemSlot(EquipmentSlot.OFFHAND, equipmentContainer.getItem(5).copy());
+
+            MagicRealms.LOGGER.debug("Applied equipment to virtual entity without texture regeneration");
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to apply equipment to virtual entity: {}", e.getMessage());
+        }
+    }
+
+
+    private void renderEntityFallback(GuiGraphics guiGraphics) {
+        if (snapshot == null) {
+            renderEmptyArea(guiGraphics,
+                    leftPos + ENTITY_RENDER_X,
+                    topPos + ENTITY_RENDER_Y,
+                    ENTITY_RENDER_WIDTH,
+                    ENTITY_RENDER_HEIGHT);
+            return;
+        }
 
         int entityX = leftPos + ENTITY_RENDER_X;
         int entityY = topPos + ENTITY_RENDER_Y;
+
+        MagicRealms.LOGGER.debug("Using 2D fallback rendering");
 
         if (!render2DEntityTexture(guiGraphics, entityX, entityY, ENTITY_RENDER_WIDTH, ENTITY_RENDER_HEIGHT)) {
             renderEmptyArea(guiGraphics, entityX, entityY, ENTITY_RENDER_WIDTH, ENTITY_RENDER_HEIGHT);
@@ -295,10 +470,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 4, 52, 4, 12, 64, 64);
     }
 
-    private void renderEmptyArea(GuiGraphics guiGraphics, int x, int y, int width, int height) {
-        guiGraphics.fill(x, y, x + width, y + height, 0x22000000);
-    }
-
     private ResourceLocation getEntityTexture() {
         if (snapshot.textureUUID != null) {
             try {
@@ -363,6 +534,255 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Could not generate virtual texture: {}", e.getMessage());
             return null;
+        }
+    }
+
+    public static void renderEntityInInventory(
+            GuiGraphics guiGraphics,
+            float x,
+            float y,
+            float scale,
+            Vector3f translate,
+            Quaternionf pose,
+            @Nullable Quaternionf cameraOrientation,
+            LivingEntity entity,
+            int scissorX1,
+            int scissorY1,
+            int scissorX2,
+            int scissorY2
+    ) {
+        // Habilitar scissor para limitar el área de renderizado
+        guiGraphics.enableScissor(scissorX1, scissorY1, scissorX2, scissorY2);
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate((double)x, (double)y, 50.0);
+        guiGraphics.pose().scale(scale, scale, -scale);
+        guiGraphics.pose().translate(translate.x, translate.y, translate.z);
+        guiGraphics.pose().mulPose(pose);
+
+        Lighting.setupForEntityInInventory();
+        EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+
+        if (cameraOrientation != null) {
+            entityRenderDispatcher.overrideCameraOrientation(
+                    cameraOrientation.conjugate(new Quaternionf()).rotateY((float) Math.PI)
+            );
+        }
+
+        entityRenderDispatcher.setRenderShadow(false);
+
+        RenderSystem.runAsFancy(() -> {
+            entityRenderDispatcher.render(
+                    entity,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0F,
+                    1.0F,
+                    guiGraphics.pose(),
+                    guiGraphics.bufferSource(),
+                    15728880
+            );
+        });
+
+        guiGraphics.flush();
+        entityRenderDispatcher.setRenderShadow(true);
+        guiGraphics.pose().popPose();
+        Lighting.setupFor3DItems();
+
+        // Deshabilitar scissor
+        guiGraphics.disableScissor();
+    }
+
+    private void renderEmptyArea(GuiGraphics guiGraphics, int x, int y, int width, int height) {
+        guiGraphics.fill(x, y, x + width, y + height, 0x22000000);
+
+        // Información de debug más útil
+        String debugText = "No Entity";
+        if (entity == null) {
+            debugText = "Entity: null";
+        } else if (!entity.isAlive()) {
+            debugText = "Entity: dead";
+        } else if (snapshot == null) {
+            debugText = "Snapshot: null";
+        }
+
+        Component noEntityText = Component.literal(debugText).withStyle(ChatFormatting.GRAY);
+        int textWidth = font.width(noEntityText);
+        int textX = x + (width - textWidth) / 2;
+        int textY = y + height / 2 - font.lineHeight / 2;
+        guiGraphics.drawString(font, noEntityText, textX, textY, 0xAAAAAA, false);
+    }
+
+    // Resto de métodos sin cambios...
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double relativeX = mouseX - leftPos;
+        double relativeY = mouseY - topPos;
+
+        // Check if clicking on entity area for rotation
+        if (relativeX >= ENTITY_RENDER_X && relativeX < ENTITY_RENDER_X + ENTITY_RENDER_WIDTH &&
+                relativeY >= ENTITY_RENDER_Y && relativeY < ENTITY_RENDER_Y + ENTITY_RENDER_HEIGHT) {
+            isDraggingEntity = true;
+            lastEntityMouseX = (int) mouseX;
+            return true;
+        }
+
+        // Tab clicking
+        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
+                relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
+            if (currentTab != Tab.IRON_SPELLS) {
+                currentTab = Tab.IRON_SPELLS;
+                scrollOffset = 0;
+                calculateMaxScroll();
+            }
+            return true;
+        }
+
+        if (relativeX >= TAB_2_X - 2 && relativeX < TAB_2_X + TAB_WIDTH + 2 &&
+                relativeY >= TAB_2_Y - 2 && relativeY < TAB_2_Y + TAB_HEIGHT + 2) {
+            if (currentTab != Tab.APOTHIC) {
+                currentTab = Tab.APOTHIC;
+                scrollOffset = 0;
+                calculateMaxScroll();
+            }
+            return true;
+        }
+
+        // Scroll area clicking for dragging
+        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
+                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
+            isScrolling = true;
+            lastMouseY = (int) mouseY;
+            return true;
+        }
+
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            isScrolling = false;
+            isDraggingEntity = false;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (isScrolling && button == 0) {
+            int currentMouseY = (int) mouseY;
+            int deltaScrollY = lastMouseY - currentMouseY;
+
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + deltaScrollY));
+            lastMouseY = currentMouseY;
+
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        double relativeX = mouseX - leftPos;
+        double relativeY = mouseY - topPos;
+
+        // Check if mouse is over the attributes area
+        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
+                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
+
+            int scrollAmount = (int) (deltaY * -10);
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + scrollAmount));
+            return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
+    }
+
+    private ResourceLocation getCurrentTexture() {
+        return switch (currentTab) {
+            case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
+            case APOTHIC -> APOTHIC_TEXTURE;
+        };
+    }
+
+    private void calculateMaxScroll() {
+        int totalLines = getTotalAttributeLines();
+        int visibleLines = ATTRIBUTES_HEIGHT / LINE_HEIGHT;
+        this.maxScroll = Math.max(0, (totalLines - visibleLines) * LINE_HEIGHT);
+    }
+
+    private int getTotalAttributeLines() {
+        switch (currentTab) {
+            case IRON_SPELLS -> {
+                return getIronSpellsAttributeLines();
+            }
+            case APOTHIC -> {
+                return getApothicAttributeLines();
+            }
+            default -> {
+                return 0;
+            }
+        }
+    }
+
+    private int getIronSpellsAttributeLines() {
+        int lines = 2;
+        lines += 8;
+        lines += 2;
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            lines += schools.size();
+        } catch (Exception e) {
+            lines += 9;
+        }
+        lines += 2;
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            lines += schools.size();
+        } catch (Exception e) {
+            lines += 9;
+        }
+        if (snapshot != null && snapshot.entityClass == EntityClass.MAGE) {
+            lines += 2;
+            lines += Math.max(1, snapshot.magicSchools.size());
+        }
+        // Añadir líneas para los spells
+        lines += 2; // Header
+        if (snapshot != null) {
+            lines += Math.max(1, snapshot.entitySpells.size()); // Spells list
+        }
+        return lines;
+    }
+
+    private int getApothicAttributeLines() {
+        int lines = 2;
+        lines += 3;
+        lines += 2;
+        lines += 4;
+        lines += 2;
+        lines += 3;
+        lines += 2;
+        lines += 4;
+        lines += 2;
+        lines += 4;
+        lines += 2;
+        lines += 3;
+        return lines;
+    }
+
+    private void renderScrollIndicator(GuiGraphics guiGraphics) {
+        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 4;
+        int scrollBarY = topPos + ATTRIBUTES_Y;
+        int scrollBarHeight = ATTRIBUTES_HEIGHT;
+
+        guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0x66000000);
+
+        if (maxScroll > 0) {
+            int thumbHeight = Math.max(8, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
+            int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
+            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 3, thumbY + thumbHeight, 0xAA666666);
         }
     }
 
@@ -466,7 +886,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             guiGraphics.drawString(font, Component.literal("No spells").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
         } else {
             for (String spellName : snapshot.entitySpells) {
-                // Truncar el nombre del spell si es muy largo
                 String displayName = truncateText(spellName, ATTRIBUTES_WIDTH - 10);
                 guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
                 y += 9;
@@ -594,106 +1013,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             return schoolId;
         }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        double relativeX = mouseX - leftPos;
-        double relativeY = mouseY - topPos;
-
-        // Check if clicking on entity area for rotation
-        if (relativeX >= ENTITY_RENDER_X && relativeX < ENTITY_RENDER_X + ENTITY_RENDER_WIDTH &&
-                relativeY >= ENTITY_RENDER_Y && relativeY < ENTITY_RENDER_Y + ENTITY_RENDER_HEIGHT) {
-            isDraggingEntity = true;
-            lastEntityMouseX = (int) mouseX;
-            return true;
-        }
-
-        // Tab clicking
-        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
-                relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
-            if (currentTab != Tab.IRON_SPELLS) {
-                currentTab = Tab.IRON_SPELLS;
-                scrollOffset = 0;
-                calculateMaxScroll();
-            }
-            return true;
-        }
-
-        if (relativeX >= TAB_2_X - 2 && relativeX < TAB_2_X + TAB_WIDTH + 2 &&
-                relativeY >= TAB_2_Y - 2 && relativeY < TAB_2_Y + TAB_HEIGHT + 2) {
-            if (currentTab != Tab.APOTHIC) {
-                currentTab = Tab.APOTHIC;
-                scrollOffset = 0;
-                calculateMaxScroll();
-            }
-            return true;
-        }
-
-        // Scroll area clicking for dragging
-        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
-                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
-            isScrolling = true;
-            lastMouseY = (int) mouseY;
-            return true;
-        }
-
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            isScrolling = false;
-            isDraggingEntity = false;
-        }
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (isDraggingEntity && button == 0) {
-            int currentMouseX = (int) mouseX;
-            int deltaMouseX = currentMouseX - lastEntityMouseX;
-
-            // Actualizar la rotación basada en el movimiento del mouse
-            entityRotationY += deltaMouseX * 2.0f; // Multiplicador para sensibilidad
-
-            // Mantener la rotación en el rango 0-360
-            while (entityRotationY >= 360.0f) entityRotationY -= 360.0f;
-            while (entityRotationY < 0.0f) entityRotationY += 360.0f;
-
-            lastEntityMouseX = currentMouseX;
-            return true;
-        }
-
-        if (isScrolling && button == 0) {
-            int currentMouseY = (int) mouseY;
-            int deltaScrollY = lastMouseY - currentMouseY;
-
-            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + deltaScrollY));
-            lastMouseY = currentMouseY;
-
-            return true;
-        }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        double relativeX = mouseX - leftPos;
-        double relativeY = mouseY - topPos;
-
-        // Check if mouse is over the attributes area
-        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
-                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
-
-            int scrollAmount = (int) (deltaY * -10);
-            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + scrollAmount));
-            return true;
-        }
-
-        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override

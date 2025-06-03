@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -142,11 +143,30 @@ public class ContractEventHandler {
             ));
         }
 
+        // Verificar que la entidad esté en un estado válido antes de crear el snapshot
+        if (humanEntity.isRemoved() || !humanEntity.isAlive()) {
+            MagicRealms.LOGGER.warn("Attempted to open menu for removed/dead entity: {}", humanEntity.getEntityName());
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.literal("Entity is no longer available").withStyle(ChatFormatting.RED)
+                ));
+            }
+            event.setCanceled(true);
+            return;
+        }
+
         // Crear snapshot actualizado y abrir el menú
         EntitySnapshot snapshot = EntitySnapshot.fromEntity(humanEntity);
+
+        MagicRealms.LOGGER.info("Opening contract menu for entity: {} (UUID: {})",
+                humanEntity.getEntityName(), humanEntity.getUUID());
+
         player.openMenu(new ContractMenuProvider(snapshot, humanEntity), buf -> {
-            buf.writeNbt(snapshot.serialize());
+            CompoundTag snapshotNbt = snapshot.serialize();
+            MagicRealms.LOGGER.debug("Sending snapshot NBT size: {} bytes", snapshotNbt.toString().length());
+            buf.writeNbt(snapshotNbt);
             buf.writeUUID(humanEntity.getUUID());
+            MagicRealms.LOGGER.debug("Sent entity UUID: {}", humanEntity.getUUID());
         });
 
         event.setCanceled(true);
@@ -159,18 +179,30 @@ public class ContractEventHandler {
         public ContractMenuProvider(EntitySnapshot snapshot, RandomHumanEntity entity) {
             this.snapshot = snapshot;
             this.entity = entity;
+
+            MagicRealms.LOGGER.info("ContractMenuProvider created:");
+            MagicRealms.LOGGER.info("  - Snapshot: {}", snapshot != null ? "present" : "null");
+            MagicRealms.LOGGER.info("  - Entity: {}", entity != null ? entity.getEntityName() : "null");
+            if (entity != null) {
+                MagicRealms.LOGGER.info("  - Entity UUID: {}", entity.getUUID());
+                MagicRealms.LOGGER.info("  - Entity alive: {}", entity.isAlive());
+                MagicRealms.LOGGER.info("  - Entity removed: {}", entity.isRemoved());
+            }
         }
 
         @Override
         public Component getDisplayName() {
             return Component.translatable("gui.magic_realms.human_info.title")
                     .append(" - ")
-                    .append(Component.literal(entity.getEntityName()).withStyle(ChatFormatting.AQUA));
+                    .append(Component.literal(entity != null ? entity.getEntityName() : "Unknown").withStyle(ChatFormatting.AQUA));
         }
 
         @Nullable
         @Override
         public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+            MagicRealms.LOGGER.info("Creating menu for player: {} (client side: {})",
+                    player.getName().getString(), player.level().isClientSide);
+
             return new ContractHumanInfoMenu(containerId, playerInventory, snapshot, entity);
         }
     }

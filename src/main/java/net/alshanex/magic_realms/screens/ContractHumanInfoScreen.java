@@ -226,82 +226,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         int entityX = leftPos + ENTITY_RENDER_X;
         int entityY = topPos + ENTITY_RENDER_Y;
 
-        if (entity != null) {
-            render3DEntity(guiGraphics, entityX, entityY, ENTITY_RENDER_WIDTH, ENTITY_RENDER_HEIGHT);
-        } else {
+        if (!render2DEntityTexture(guiGraphics, entityX, entityY, ENTITY_RENDER_WIDTH, ENTITY_RENDER_HEIGHT)) {
             renderEmptyArea(guiGraphics, entityX, entityY, ENTITY_RENDER_WIDTH, ENTITY_RENDER_HEIGHT);
-        }
-    }
-
-    private void render3DEntity(GuiGraphics guiGraphics, int x, int y, int width, int height) {
-        try {
-            // Calcular el centro y tamaño apropiado para la entidad
-            int centerX = x + width / 2;
-            int centerY = y + height - 10; // Un poco hacia arriba desde la base
-
-            // Tamaño de la entidad (escala)
-            int entitySize = Math.min(width, height) / 2;
-
-            // Guardar el estado actual de las matrices
-            var poseStack = guiGraphics.pose();
-            poseStack.pushPose();
-
-            // Trasladar al centro del área de renderizado
-            poseStack.translate(centerX, centerY, 100);
-
-            // Escalar la entidad para que se ajuste al área
-            poseStack.scale(entitySize, entitySize, entitySize);
-
-            // Rotar para que se vea bien (opcional)
-            poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180)); // Voltear
-            poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(10)); // Inclinación ligera
-
-            // Usar la rotación controlada por mouse o automática
-            if (!isDraggingEntity) {
-                // Rotación automática basada en el tiempo para que se vea dinámico
-                float time = (System.currentTimeMillis() % 8000) / 8000.0f; // 8 segundos por rotación completa
-                entityRotationY = time * 360.0f; // Rotación completa
-            }
-            poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(entityRotationY));
-
-            // Configurar la iluminación para que la entidad se vea bien
-            var bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
-
-            // Renderizar la entidad
-            var entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-
-            try {
-                // Configurar la cámara y lighting
-                var lightTexture = Minecraft.getInstance().gameRenderer.lightTexture();
-                lightTexture.turnOnLightLayer();
-
-                // Renderizar la entidad
-                entityRenderDispatcher.render(
-                        entity,                    // La entidad a renderizar
-                        0, 0, 0,                  // Posición (ya trasladada por matrices)
-                        0,                        // Rotación Y (ya aplicada)
-                        0,                        // Tiempo parcial
-                        poseStack,                // Matriz de transformación
-                        bufferSource,             // Buffer para el renderizado
-                        15728880                  // Nivel de luz máximo (para que se vea bien)
-                );
-
-                // Finalizar el renderizado
-                bufferSource.endBatch();
-                lightTexture.turnOffLightLayer();
-
-            } catch (Exception e) {
-                MagicRealms.LOGGER.debug("Could not render 3D entity: {}", e.getMessage());
-                // Fallback a área vacía si hay problemas
-                renderEmptyArea(guiGraphics, x, y, width, height);
-            }
-
-            // Restaurar el estado de las matrices
-            poseStack.popPose();
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Error in 3D entity rendering: {}", e.getMessage());
-            renderEmptyArea(guiGraphics, x, y, width, height);
         }
     }
 
@@ -514,7 +440,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         if (snapshot.entityClass == EntityClass.MAGE) {
             y += 3;
-            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
             y += 10;
 
             if (snapshot.magicSchools.isEmpty()) {
@@ -533,7 +459,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         // Nueva sección de Entity Spells
         y += 3;
-        guiGraphics.drawString(font, Component.literal("Entity Spells:").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("Entity Spells:").withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
 
         if (snapshot.entitySpells.isEmpty()) {
@@ -542,7 +468,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             for (String spellName : snapshot.entitySpells) {
                 // Truncar el nombre del spell si es muy largo
                 String displayName = truncateText(spellName, ATTRIBUTES_WIDTH - 10);
-                guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.LIGHT_PURPLE), x, y, 0xFFFFFF, false);
+                guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
                 y += 9;
             }
         }

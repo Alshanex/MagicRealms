@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.util.ContractTier;
 import net.minecraft.core.registries.Registries;
@@ -54,5 +55,13 @@ public class MRItems {
                             .stacksTo(64)
                             .fireResistant(),
                     ContractTier.MASTER
+            ));
+
+    public static final DeferredHolder<Item, PermanentContractItem> CONTRACT_PERMANENT =
+            ITEMS.register("contract_permanent", () -> new PermanentContractItem(
+                    new Item.Properties()
+                            .stacksTo(1)
+                            .fireResistant()
+                            .rarity(net.minecraft.world.item.Rarity.EPIC)
             ));
 }

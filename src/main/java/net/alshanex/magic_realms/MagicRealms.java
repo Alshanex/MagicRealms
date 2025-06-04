@@ -78,6 +78,7 @@ public class MagicRealms
             event.accept(MRItems.CONTRACT_JOURNEYMAN.get());
             event.accept(MRItems.CONTRACT_MASTER.get());
             event.accept(MRItems.CONTRACT_NOVICE.get());
+            event.accept(MRItems.CONTRACT_PERMANENT.get());
         }
     }
 

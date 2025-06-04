@@ -358,26 +358,40 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             goalsInitialized = true;
         }
 
-        // Verificar contrato y limpiar si ha expirado
+        // Verificar contrato y limpiar si ha expirado (no aplicar a contratos permanentes)
         if (!level().isClientSide) {
             ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
+
             if (contractData.hasActiveContract()) {
-                // El contrato sigue activo, mantener al jugador como summoner
-                if (this.getSummoner() == null) {
-                    // Buscar al jugador contratista en el mundo
-                    UUID contractorUUID = contractData.getContractorUUID();
-                    if (contractorUUID != null) {
-                        Player contractor = this.level().getPlayerByUUID(contractorUUID);
-                        if (contractor != null) {
-                            this.setSummoner(contractor);
-                            MagicRealms.LOGGER.debug("Restored summoner relationship for contracted entity {}", this.getEntityName());
+                // Si es un contrato permanente, solo asegurar que el summoner esté configurado
+                if (contractData.isPermanent()) {
+                    if (this.getSummoner() == null) {
+                        UUID contractorUUID = contractData.getContractorUUID();
+                        if (contractorUUID != null) {
+                            Player contractor = this.level().getPlayerByUUID(contractorUUID);
+                            if (contractor != null) {
+                                this.setSummoner(contractor);
+                                MagicRealms.LOGGER.debug("Restored summoner relationship for permanent contract entity {}", this.getEntityName());
+                            }
+                        }
+                    }
+                } else {
+                    // El contrato temporal sigue activo, mantener al jugador como summoner
+                    if (this.getSummoner() == null) {
+                        UUID contractorUUID = contractData.getContractorUUID();
+                        if (contractorUUID != null) {
+                            Player contractor = this.level().getPlayerByUUID(contractorUUID);
+                            if (contractor != null) {
+                                this.setSummoner(contractor);
+                                MagicRealms.LOGGER.debug("Restored summoner relationship for contracted entity {}", this.getEntityName());
+                            }
                         }
                     }
                 }
             } else {
-                // El contrato ha expirado, limpiar datos
+                // El contrato ha expirado (solo para contratos temporales), limpiar datos
                 UUID previousContractorUUID = contractData.getContractorUUID();
-                if (previousContractorUUID != null) {
+                if (previousContractorUUID != null && !contractData.isPermanent()) {
                     MagicRealms.LOGGER.info("Contract expired for {} star entity {} with player {}",
                             this.getStarLevel(), this.getEntityName(), previousContractorUUID);
 
@@ -386,7 +400,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
                     // Notificar al jugador si está cerca
                     Player contractor = this.level().getPlayerByUUID(previousContractorUUID);
-                    if (contractor instanceof ServerPlayer serverPlayer && contractor.distanceToSqr(this) <= 64) { // Dentro de 8 bloques
+                    if (contractor instanceof ServerPlayer serverPlayer && contractor.distanceToSqr(this) <= 64) {
                         serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(
                                 Component.translatable("ui.magic_realms.contract_expired", this.getEntityName())
                                         .withStyle(ChatFormatting.RED)
@@ -443,6 +457,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     potentialMinutes, starLevel);
         }
 
+        // Si es un contrato permanente
+        if (contractData.isPermanent()) {
+            return "Permanent contract (Never expires)";
+        }
+
+        // Contrato temporal normal
         int minutes = contractData.getRemainingMinutes();
         int seconds = contractData.getRemainingSeconds();
         int starLevel = this.getStarLevel();

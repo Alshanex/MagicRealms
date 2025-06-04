@@ -4,6 +4,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
@@ -51,7 +52,13 @@ public class ContractEventHandler {
                 return;
             }
 
-            // Si el jugador tiene un contrato (nuevo o viejo) en la mano
+            // Si el jugador tiene un contrato permanente en la mano
+            if (heldItem.getItem() instanceof PermanentContractItem) {
+                handlePermanentContractCreation(event, player, humanEntity, contractData, heldItem);
+                return;
+            }
+
+            // Si el jugador tiene un contrato tiered (nuevo o viejo) en la mano
             if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
                 handleTieredContractCreation(event, player, humanEntity, contractData, heldItem, tieredContract);
                 return;
@@ -65,12 +72,133 @@ public class ContractEventHandler {
         }
     }
 
+    private static void handlePermanentContractCreation(PlayerInteractEvent.EntityInteract event,
+                                                        Player player,
+                                                        RandomHumanEntity humanEntity,
+                                                        ContractData contractData,
+                                                        ItemStack heldItem) {
+
+        // Verificación usando el método seguro
+        if (!contractData.canEstablishPermanentContract(player.getUUID())) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                Component message;
+                if (contractData.isPermanent()) {
+                    // Ya es permanente de otro jugador
+                    message = Component.translatable("ui.magic_realms.contract_permanent_other_player",
+                                    humanEntity.getEntityName())
+                            .withStyle(ChatFormatting.RED);
+                } else {
+                    // Contrato temporal con otro jugador
+                    message = Component.translatable("ui.magic_realms.already_have_contract")
+                            .withStyle(ChatFormatting.RED);
+                }
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+            }
+            event.setCanceled(true);
+            return;
+        }
+
+        // Si ya es permanente del mismo jugador, mostrar mensaje y no consumir item
+        if (contractData.isPermanent() && contractData.isContractor(player.getUUID())) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.contract_already_permanent",
+                                        humanEntity.getEntityName())
+                                .withStyle(ChatFormatting.YELLOW)
+                ));
+            }
+            event.setCanceled(true);
+            return;
+        }
+
+        boolean isUpgrade = contractData.hasActiveContract() && contractData.isContractor(player.getUUID());
+
+        // Intentar establecer contrato permanente
+        boolean success = contractData.trySetPermanentContract(player.getUUID());
+
+        if (!success) {
+            // Esto no debería pasar, pero por seguridad
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.contract_failed")
+                                .withStyle(ChatFormatting.RED)
+                ));
+            }
+            event.setCanceled(true);
+            return;
+        }
+
+        if (!isUpgrade) {
+            humanEntity.setSummoner(player);
+        }
+
+        // Actualizar el nombre para mostrar el símbolo de infinito
+        humanEntity.updateCustomNameWithStars();
+
+        // Enviar mensaje de éxito
+        if (player instanceof ServerPlayer serverPlayer) {
+            Component message;
+            if (isUpgrade) {
+                message = Component.translatable("ui.magic_realms.contract_upgraded_permanent", humanEntity.getEntityName())
+                        .withStyle(ChatFormatting.GOLD);
+            } else {
+                message = Component.translatable("ui.magic_realms.contract_established_permanent", humanEntity.getEntityName())
+                        .withStyle(ChatFormatting.GOLD);
+            }
+
+            serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+        }
+
+        // Log del evento
+        String actionType = isUpgrade ? "upgraded to permanent" : "established permanent";
+        MagicRealms.LOGGER.info("Player {} {} contract with entity {} ({}). Contract info: {}",
+                player.getName().getString(),
+                actionType,
+                humanEntity.getEntityName(),
+                humanEntity.getUUID(),
+                contractData.getDetailedInfo());
+
+        // Consumir el item
+        if (!player.getAbilities().instabuild) {
+            heldItem.shrink(1);
+        }
+
+        event.setCanceled(true);
+    }
+
     private static void handleTieredContractCreation(PlayerInteractEvent.EntityInteract event,
                                                      Player player,
                                                      RandomHumanEntity humanEntity,
                                                      ContractData contractData,
                                                      ItemStack heldItem,
                                                      TieredContractItem contractItem) {
+
+        // Verificación temprana: no se puede usar contrato temporal en entidad con contrato permanente
+        if (!contractData.canEstablishTemporaryContract(player.getUUID())) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                Component message;
+                if (contractData.isPermanent()) {
+                    if (contractData.isContractor(player.getUUID())) {
+                        // Es el mismo jugador con contrato permanente
+                        message = Component.translatable("ui.magic_realms.contract_permanent_no_upgrade",
+                                        humanEntity.getEntityName())
+                                .withStyle(ChatFormatting.GOLD);
+                    } else {
+                        // Es otro jugador
+                        message = Component.translatable("ui.magic_realms.contract_permanent_other_player",
+                                        humanEntity.getEntityName())
+                                .withStyle(ChatFormatting.RED);
+                    }
+                } else {
+                    // Contrato temporal con otro jugador
+                    message = Component.translatable("ui.magic_realms.already_have_contract")
+                            .withStyle(ChatFormatting.RED);
+                }
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+            }
+            event.setCanceled(true);
+            return;
+        }
 
         // Obtener el nivel de la entidad
         KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
@@ -104,12 +232,23 @@ public class ContractEventHandler {
 
         int starLevel = humanEntity.getStarLevel();
         int additionalMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+        boolean isRenewal = contractData.isContractor(player.getUUID());
 
-        // Verificar si ya tiene un contrato activo con otro jugador
-        if (contractData.hasActiveContract() && !contractData.isContractor(player.getUUID())) {
+        boolean success;
+        if (isRenewal) {
+            success = contractData.renewContract(player.getUUID(), starLevel);
+        } else {
+            success = contractData.trySetTemporaryContract(player.getUUID(), starLevel);
+            if (success) {
+                humanEntity.setSummoner(player);
+            }
+        }
+
+        if (!success) {
+            // Esto no debería pasar ya que verificamos antes, pero por seguridad
             if (player instanceof ServerPlayer serverPlayer) {
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
-                        Component.translatable("ui.magic_realms.already_have_contract")
+                        Component.translatable("ui.magic_realms.contract_failed")
                                 .withStyle(ChatFormatting.RED)
                 ));
             }
@@ -117,13 +256,9 @@ public class ContractEventHandler {
             return;
         }
 
-        boolean isRenewal = contractData.isContractor(player.getUUID());
-
-        if (isRenewal) {
-            // Extender contrato existente
-            contractData.renewContract(player.getUUID(), starLevel);
-
-            if (player instanceof ServerPlayer serverPlayer) {
+        // Enviar mensaje de éxito
+        if (player instanceof ServerPlayer serverPlayer) {
+            if (isRenewal) {
                 int remainingMinutes = contractData.getRemainingMinutes();
                 int remainingSeconds = contractData.getRemainingSeconds();
 
@@ -135,23 +270,7 @@ public class ContractEventHandler {
                                         remainingSeconds)
                                 .withStyle(ChatFormatting.GREEN)
                 ));
-            }
-
-            MagicRealms.LOGGER.info("Player {} extended contract with Level {} entity {} ({}) using {} contract by {} minutes. Total remaining: {}:{}",
-                    player.getName().getString(),
-                    entityLevel,
-                    humanEntity.getEntityName(),
-                    humanEntity.getUUID(),
-                    contractTier.getName(),
-                    additionalMinutes,
-                    contractData.getRemainingMinutes(),
-                    contractData.getRemainingSeconds());
-        } else {
-            // Crear nuevo contrato
-            contractData.setContract(player.getUUID(), starLevel);
-            humanEntity.setSummoner(player);
-
-            if (player instanceof ServerPlayer serverPlayer) {
+            } else {
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
                         Component.translatable("ui.magic_realms.contract_established",
                                         humanEntity.getEntityName(),
@@ -159,15 +278,18 @@ public class ContractEventHandler {
                                 .withStyle(ChatFormatting.GREEN)
                 ));
             }
-
-            MagicRealms.LOGGER.info("Player {} established new contract with Level {} entity {} ({}) using {} contract for {} minutes",
-                    player.getName().getString(),
-                    entityLevel,
-                    humanEntity.getEntityName(),
-                    humanEntity.getUUID(),
-                    contractTier.getName(),
-                    additionalMinutes);
         }
+
+        // Log del evento
+        String actionType = isRenewal ? "extended" : "established";
+        MagicRealms.LOGGER.info("Player {} {} contract with Level {} entity {} ({}) using {} contract. Contract info: {}",
+                player.getName().getString(),
+                actionType,
+                entityLevel,
+                humanEntity.getEntityName(),
+                humanEntity.getUUID(),
+                contractTier.getName(),
+                contractData.getDetailedInfo());
 
         // Consumir el item
         if (!player.getAbilities().instabuild) {
@@ -213,18 +335,28 @@ public class ContractEventHandler {
             return;
         }
 
-        // Mostrar tiempo restante y información sobre posibles extensiones
-        int minutes = contractData.getRemainingMinutes();
-        int seconds = contractData.getRemainingSeconds();
-        int starLevel = humanEntity.getStarLevel();
-        int extensionMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+        // Si el contrato es permanente, mostrar mensaje especial
+        if (contractData.isPermanent()) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.contract_time_permanent")
+                                .withStyle(ChatFormatting.GOLD)
+                ));
+            }
+        } else {
+            // Mostrar tiempo restante para contratos temporales
+            int minutes = contractData.getRemainingMinutes();
+            int seconds = contractData.getRemainingSeconds();
+            int starLevel = humanEntity.getStarLevel();
+            int extensionMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
-                    Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",
-                                    minutes, seconds, extensionMinutes)
-                            .withStyle(ChatFormatting.AQUA)
-            ));
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",
+                                        minutes, seconds, extensionMinutes)
+                                .withStyle(ChatFormatting.AQUA)
+                ));
+            }
         }
 
         // Verificar que la entidad esté en un estado válido antes de crear el snapshot
@@ -242,8 +374,9 @@ public class ContractEventHandler {
         // Crear snapshot actualizado y abrir el menú
         EntitySnapshot snapshot = EntitySnapshot.fromEntity(humanEntity);
 
-        MagicRealms.LOGGER.info("Opening contract menu for entity: {} (UUID: {}, Star Level: {}, Contract Time: {}:{})",
-                humanEntity.getEntityName(), humanEntity.getUUID(), starLevel, minutes, seconds);
+        MagicRealms.LOGGER.info("Opening contract menu for entity: {} (UUID: {}, Star Level: {}, Contract Type: {})",
+                humanEntity.getEntityName(), humanEntity.getUUID(), humanEntity.getStarLevel(),
+                contractData.isPermanent() ? "Permanent" : "Temporary");
 
         player.openMenu(new ContractMenuProvider(snapshot, humanEntity), buf -> {
             CompoundTag snapshotNbt = snapshot.serialize();

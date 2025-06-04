@@ -18,7 +18,7 @@ public class MREntityRegistry {
     }
 
     public static final DeferredHolder<EntityType<?>, EntityType<RandomHumanEntity>> HUMAN =
-            ENTITIES.register("human_entity", () -> EntityType.Builder.<RandomHumanEntity>of(RandomHumanEntity::new, MobCategory.MISC)
+            ENTITIES.register("human_entity", () -> EntityType.Builder.<RandomHumanEntity>of(RandomHumanEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "human_entity").toString()));

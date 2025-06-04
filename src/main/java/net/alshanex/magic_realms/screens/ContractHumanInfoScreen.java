@@ -20,6 +20,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -30,6 +31,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
@@ -55,9 +57,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private int scrollOffset = 0;
     private int maxScroll = 0;
     private boolean isScrolling = false;
-    private float entityRotationY = 0.0f;
-    private boolean isDraggingEntity = false;
-    private int lastEntityMouseX = 0;
     private int lastMouseY = 0;
 
     // Coordenadas y dimensiones para el área de renderizado 3D
@@ -89,6 +88,9 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     private static final int LABEL_WIDTH = 70;
     private static final int VALUE_X_OFFSET = 72;
+
+    private static final int SYMBOL_X = 98;
+    private static final int SYMBOL_Y = 20;
 
     public ContractHumanInfoScreen(ContractHumanInfoMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -146,6 +148,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         renderStats(guiGraphics);
 
+        renderClassSymbol(guiGraphics);
+
         guiGraphics.enableScissor(
                 leftPos + ATTRIBUTES_X,
                 topPos + ATTRIBUTES_Y,
@@ -165,6 +169,64 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderClassSymbol(GuiGraphics guiGraphics) {
+        if (snapshot == null) return;
+
+        ItemStack symbolItem = getSymbolItemForClass();
+        if (symbolItem.isEmpty()) return;
+
+        int symbolX = leftPos + SYMBOL_X;
+        int symbolY = topPos + SYMBOL_Y;
+
+        // Renderizar el ítem
+        guiGraphics.renderItem(symbolItem, symbolX, symbolY);
+    }
+
+    private ItemStack getSymbolItemForClass() {
+        EntityClass entityClass = snapshot.entityClass;
+
+        switch (entityClass) {
+            case MAGE -> {
+                try {
+                    return new ItemStack(
+                            BuiltInRegistries.ITEM.get(
+                                    ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "gold_spell_book")
+                            )
+                    );
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Could not find gold_spell_book item: {}", e.getMessage());
+                    return new ItemStack(Items.BOOK);
+                }
+            }
+            case WARRIOR -> {
+                if (snapshot.hasShield) {
+                    return new ItemStack(Items.SHIELD);
+                } else {
+                    return new ItemStack(Items.IRON_SWORD);
+                }
+            }
+            case ROGUE -> {
+                if (snapshot.isArcher) {
+                    return new ItemStack(Items.BOW);
+                } else {
+                    try {
+                        return new ItemStack(
+                                BuiltInRegistries.ITEM.get(
+                                        ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "weapon_parts")
+                                )
+                        );
+                    } catch (Exception e) {
+                        MagicRealms.LOGGER.warn("Could not find weapon_parts item: {}", e.getMessage());
+                        return new ItemStack(Items.GOLDEN_SWORD);
+                    }
+                }
+            }
+            default -> {
+                return ItemStack.EMPTY;
+            }
+        }
     }
 
     private boolean renderEntity3D(GuiGraphics guiGraphics) {
@@ -620,14 +682,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
-        // Check if clicking on entity area for rotation
-        if (relativeX >= ENTITY_RENDER_X && relativeX < ENTITY_RENDER_X + ENTITY_RENDER_WIDTH &&
-                relativeY >= ENTITY_RENDER_Y && relativeY < ENTITY_RENDER_Y + ENTITY_RENDER_HEIGHT) {
-            isDraggingEntity = true;
-            lastEntityMouseX = (int) mouseX;
-            return true;
-        }
-
         // Tab clicking
         if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
@@ -664,7 +718,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (button == 0) {
             isScrolling = false;
-            isDraggingEntity = false;
         }
         return super.mouseReleased(mouseX, mouseY, button);
     }

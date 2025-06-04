@@ -41,6 +41,8 @@ public class KillTrackingHandler {
                 killData.getExperienceToNextLevel());
 
         if (newLevel > previousLevel) {
+            spawnLevelUpEffects(humanEntity);
+            humanEntity.updateCustomNameWithStars();
             LevelingStatsManager.applyLevelBasedAttributes(humanEntity, newLevel);
 
             MagicRealms.LOGGER.info("Entity {} leveled up! Level {} -> {} (Total kills: {})",
@@ -87,6 +89,7 @@ public class KillTrackingHandler {
 
         if (newLevel > previousLevel) {
             spawnLevelUpEffects(entity);
+            entity.updateCustomNameWithStars();
         }
 
         MagicRealms.LOGGER.debug("Added {} experience to entity {} (Level: {})",

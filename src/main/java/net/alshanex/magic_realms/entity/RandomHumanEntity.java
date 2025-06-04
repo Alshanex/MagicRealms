@@ -20,6 +20,7 @@ import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -513,15 +514,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(STAR_LEVEL, starLevel);
     }
 
-    private void updateCustomNameWithStars() {
+    public void updateCustomNameWithStars() {
         String entityName = this.entityData.get(ENTITY_NAME);
         int starLevel = this.entityData.get(STAR_LEVEL);
+        KillTrackerData data = this.getData(MRDataAttachments.KILL_TRACKER);
 
         if (!entityName.isEmpty()) {
             ChatFormatting nameColor = getColorForStarLevel(starLevel);
             String stars = getStarsDisplay(starLevel);
 
-            Component nameComponent = Component.literal(stars + " " + entityName).withStyle(nameColor);
+            Component nameComponent = Component.literal(stars + " " + entityName + "   Lv. " + data.getCurrentLevel()).withStyle(nameColor);
             this.setCustomName(nameComponent);
             this.setCustomNameVisible(true);
         }

@@ -27,13 +27,9 @@ public class HumanEntityCommands {
                         .then(Commands.argument("target", EntityArgument.entity())
                                 .then(Commands.argument("experience", IntegerArgumentType.integer(1, 10000))
                                         .executes(HumanEntityCommands::addExperience))))
-                .then(Commands.literal("info")
-                        .then(Commands.argument("target", EntityArgument.entity())
-                                .executes(HumanEntityCommands::showInfo)))
                 .then(Commands.literal("reset")
                         .then(Commands.argument("target", EntityArgument.entity())
-                                .executes(HumanEntityCommands::resetLevel)))
-                .then(Commands.literal("createitem")));
+                                .executes(HumanEntityCommands::resetLevel))));
     }
 
     private static int setLevel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -48,6 +44,7 @@ public class HumanEntityCommands {
 
         try {
             KillTrackingHandler.setEntityLevel(humanEntity, level);
+            humanEntity.updateCustomNameWithStars();
 
             source.sendSuccess(() -> Component.literal(
                     String.format("Set level of %s to %d",
@@ -80,48 +77,6 @@ public class HumanEntityCommands {
 
         } catch (Exception e) {
             source.sendFailure(Component.literal("Failed to add experience: " + e.getMessage()));
-            return 0;
-        }
-    }
-
-    private static int showInfo(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Entity target = EntityArgument.getEntity(context, "target");
-        CommandSourceStack source = context.getSource();
-
-        if (!(target instanceof RandomHumanEntity humanEntity)) {
-            source.sendFailure(Component.literal("Target must be a RandomHumanEntity!"));
-            return 0;
-        }
-
-        try {
-            KillTrackerData killData = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
-
-            source.sendSuccess(() -> Component.literal("=== Human Entity Info ==="), false);
-            source.sendSuccess(() -> Component.literal("Name: " + humanEntity.getEntityName()), false);
-            source.sendSuccess(() -> Component.literal("UUID: " + humanEntity.getUUID().toString()), false);
-            source.sendSuccess(() -> Component.literal("Class: " + humanEntity.getEntityClass().getName()), false);
-            source.sendSuccess(() -> Component.literal("Stars: " + humanEntity.getStarLevel()), false);
-            source.sendSuccess(() -> Component.literal("Level: " + killData.getCurrentLevel()), false);
-            source.sendSuccess(() -> Component.literal("Experience: " + killData.getExperiencePoints()), false);
-            source.sendSuccess(() -> Component.literal("Total Kills: " + killData.getTotalKills()), false);
-            source.sendSuccess(() -> Component.literal("Exp to Next: " + killData.getExperienceToNextLevel()), false);
-            source.sendSuccess(() -> Component.literal("Progress: " + String.format("%.1f%%", killData.getProgressToNextLevel() * 100)), false);
-
-            if (humanEntity.getEntityClass() == net.alshanex.magic_realms.util.humans.EntityClass.ROGUE) {
-                source.sendSuccess(() -> Component.literal("Subclass: " + (humanEntity.isArcher() ? "Archer" : "Assassin")), false);
-            }
-
-            if (humanEntity.getEntityClass() == net.alshanex.magic_realms.util.humans.EntityClass.MAGE) {
-                String schools = humanEntity.getMagicSchools().stream()
-                        .map(school -> school.getId().getPath())
-                        .collect(java.util.stream.Collectors.joining(", "));
-                source.sendSuccess(() -> Component.literal("Magic Schools: " + schools), false);
-            }
-
-            return 1;
-
-        } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to get info: " + e.getMessage()));
             return 0;
         }
     }

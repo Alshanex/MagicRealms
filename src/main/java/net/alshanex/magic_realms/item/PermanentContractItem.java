@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.item;
 
+import net.alshanex.magic_realms.data.ContractData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -37,6 +38,15 @@ public class PermanentContractItem extends Item {
                 .withStyle(ChatFormatting.GRAY));
 
         tooltipComponents.add(Component.empty());
+        tooltipComponents.add(Component.literal("Requirements:")
+                .withStyle(ChatFormatting.YELLOW));
+        int requiredMinutes = ContractData.getMinimumRequiredMinutes();
+        tooltipComponents.add(Component.literal("  • " + requiredMinutes + "+ minutes of previous contracts")
+                .withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.literal("    with the target entity")
+                .withStyle(ChatFormatting.GRAY));
+
+        tooltipComponents.add(Component.empty());
         tooltipComponents.add(Component.translatable("tooltip.magic_realms.permanent_contract.warning")
                 .withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
     }
@@ -44,7 +54,7 @@ public class PermanentContractItem extends Item {
     @Override
     public Component getName(ItemStack stack) {
         return Component.translatable("item.magic_realms.contract_permanent")
-                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+                .withStyle(ChatFormatting.GOLD);
     }
 
     @Override

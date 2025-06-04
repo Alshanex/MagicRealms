@@ -387,6 +387,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                             }
                         }
                     }
+
+                    if (this.tickCount % 200 == 0) {
+                        contractData.periodicTimeUpdate();
+                    }
                 }
             } else {
                 // El contrato ha expirado (solo para contratos temporales), limpiar datos

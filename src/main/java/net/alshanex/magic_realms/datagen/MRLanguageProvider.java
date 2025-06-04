@@ -29,6 +29,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("tooltip.magic_realms.permanent_contract.duration", "Duration:");
         add("tooltip.magic_realms.permanent_contract.duration_desc", "Permanent - Never expires!");
         add("tooltip.magic_realms.permanent_contract.warning", "This contract cannot be undone!");
+        add("tooltip.magic_realms.permanent_contract.requirement", "Requires 200+ minutes of previous contracts with entity");
 
         // GUI translations
         add("gui.magic_realms.human_info.title", "Entity Information");
@@ -62,5 +63,11 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.contract_permanent_no_upgrade", "%s already has a permanent contract - no upgrade needed!");
         add("ui.magic_realms.contract_permanent_other_player", "%s has a permanent contract with another player!");
         add("ui.magic_realms.contract_failed", "Failed to establish contract - please try again!");
+
+        // New permanent contract requirement messages
+        add("ui.magic_realms.permanent_contract_insufficient_time", "Need %d more contract minutes with this entity!");
+        add("ui.magic_realms.permanent_contract_progress", "Contract progress: %d/%d minutes towards permanent contract eligibility");
+        add("ui.magic_realms.permanent_contract_available", "Eligible for permanent contract!");
+        add("ui.magic_realms.permanent_contract_progress_remaining", "Progress: %d/%d minutes (%d more needed for permanent contract)");
     }
 }

@@ -7,6 +7,8 @@ import net.neoforged.neoforge.attachment.IAttachmentSerializer;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class ContractData implements INBTSerializable<CompoundTag> {
@@ -14,6 +16,15 @@ public class ContractData implements INBTSerializable<CompoundTag> {
     private long contractStartTime;
     private long totalContractDuration; // Duración total acumulada del contrato
     private boolean isPermanent; // Nuevo campo para contratos permanentes
+
+    // Nuevo campo para trackear tiempo total de contratación por jugador
+    private Map<UUID, Long> totalContractTimeByPlayer = new HashMap<>();
+
+    // Para evitar doble contabilización, trackear la última vez que se actualizó el tiempo
+    private long lastTimeUpdate = 0;
+
+    // Requisito mínimo de tiempo para contratos permanentes (200 minutos en milisegundos)
+    private static final long PERMANENT_CONTRACT_REQUIREMENT = 200 * 60 * 1000L; // 200 minutos
 
     private static final long ONE_STAR_DURATION = 10 * 60 * 1000; // 10 minutos
     private static final long TWO_STAR_DURATION = 8 * 60 * 1000;  // 8 minutos
@@ -24,6 +35,8 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.contractStartTime = 0;
         this.totalContractDuration = 0;
         this.isPermanent = false;
+        this.totalContractTimeByPlayer = new HashMap<>();
+        this.lastTimeUpdate = 0;
     }
 
     public ContractData(UUID contractorUUID, long contractStartTime, long duration) {
@@ -31,6 +44,8 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.contractStartTime = contractStartTime;
         this.totalContractDuration = duration;
         this.isPermanent = false;
+        this.totalContractTimeByPlayer = new HashMap<>();
+        this.lastTimeUpdate = contractStartTime;
     }
 
     // Constructor para contratos permanentes
@@ -39,6 +54,8 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.contractStartTime = System.currentTimeMillis();
         this.totalContractDuration = 0; // No importa para contratos permanentes
         this.isPermanent = isPermanent;
+        this.totalContractTimeByPlayer = new HashMap<>();
+        this.lastTimeUpdate = this.contractStartTime;
     }
 
     public static long getBaseDurationForStarLevel(int starLevel) {
@@ -65,18 +82,26 @@ public class ContractData implements INBTSerializable<CompoundTag> {
     }
 
     public void setContract(UUID playerUUID, int starLevel) {
+        // Actualizar tiempo del contrato anterior si existe
+        updateTotalContractTime();
+
         this.contractorUUID = playerUUID;
         this.contractStartTime = System.currentTimeMillis();
         this.totalContractDuration = getBaseDurationForStarLevel(starLevel);
         this.isPermanent = false;
+        this.lastTimeUpdate = this.contractStartTime;
     }
 
     // Nuevo método para establecer contrato permanente
     public void setPermanentContract(UUID playerUUID) {
+        // Antes de establecer el contrato permanente, actualizar el tiempo total
+        updateTotalContractTime();
+
         this.contractorUUID = playerUUID;
         this.contractStartTime = System.currentTimeMillis();
         this.totalContractDuration = 0; // No necesario para permanentes
         this.isPermanent = true;
+        this.lastTimeUpdate = this.contractStartTime;
     }
 
     public void extendContract(int starLevel) {
@@ -91,6 +116,7 @@ public class ContractData implements INBTSerializable<CompoundTag> {
 
         long additionalDuration = getBaseDurationForStarLevel(starLevel);
         this.totalContractDuration += additionalDuration;
+        // No actualizar lastTimeUpdate aquí porque no estamos cambiando el contrato actual
     }
 
     public boolean canEstablishTemporaryContract(UUID playerUUID) {
@@ -112,6 +138,11 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         // Si ya es permanente, solo permitir al mismo jugador (aunque no haga nada)
         if (isPermanent) {
             return contractorUUID != null && contractorUUID.equals(playerUUID);
+        }
+
+        // Verificar si el jugador cumple con el requisito de tiempo mínimo
+        if (!hasMinimumContractTime(playerUUID)) {
+            return false;
         }
 
         // Si no hay contrato activo, se puede establecer
@@ -198,16 +229,124 @@ public class ContractData implements INBTSerializable<CompoundTag> {
             return true;
         }
 
+        // Verificar requisito de tiempo antes de convertir
+        if (!hasMinimumContractTime(playerUUID)) {
+            return false;
+        }
+
         // Convertir a permanente
         setPermanentContract(playerUUID);
         return true;
     }
 
     public void clearContract() {
+        // Antes de limpiar, actualizar el tiempo total acumulado
+        updateTotalContractTime();
+
         this.contractorUUID = null;
         this.contractStartTime = 0;
         this.totalContractDuration = 0;
         this.isPermanent = false;
+        this.lastTimeUpdate = 0;
+    }
+
+    // Nuevos métodos para manejar tiempo total de contratación
+
+    /**
+     * Actualiza el tiempo total de contratación para el contratista actual
+     * Solo actualiza si hay tiempo nuevo que no ha sido contabilizado
+     */
+    private void updateTotalContractTime() {
+        if (contractorUUID == null || isPermanent) {
+            return; // No actualizar para contratos permanentes o sin contratista
+        }
+
+        long currentTime = System.currentTimeMillis();
+        long contractEndTime = contractStartTime + totalContractDuration;
+        long actualEndTime = Math.min(currentTime, contractEndTime);
+
+        // Calcular solo el tiempo nuevo desde la última actualización
+        long timeToAdd = 0;
+        if (lastTimeUpdate < actualEndTime) {
+            timeToAdd = actualEndTime - Math.max(lastTimeUpdate, contractStartTime);
+        }
+
+        if (timeToAdd > 0) {
+            long previousTime = totalContractTimeByPlayer.getOrDefault(contractorUUID, 0L);
+            totalContractTimeByPlayer.put(contractorUUID, previousTime + timeToAdd);
+            lastTimeUpdate = actualEndTime;
+        }
+    }
+
+    public void periodicTimeUpdate() {
+        if (contractorUUID != null && !isPermanent && hasActiveContract()) {
+            updateTotalContractTime();
+        }
+    }
+
+    public boolean hasMinimumContractTime(UUID playerUUID) {
+        long totalTime = totalContractTimeByPlayer.getOrDefault(playerUUID, 0L);
+
+        // Solo añadir tiempo del contrato actual si es el mismo jugador y no es permanente
+        if (contractorUUID != null && contractorUUID.equals(playerUUID) && !isPermanent && hasActiveContract()) {
+            long currentTime = System.currentTimeMillis();
+            long contractEndTime = contractStartTime + totalContractDuration;
+            long actualEndTime = Math.min(currentTime, contractEndTime);
+
+            // Calcular tiempo del contrato actual SIN actualizar lastTimeUpdate
+            long currentContractTime = Math.max(0, actualEndTime - Math.max(lastTimeUpdate, contractStartTime));
+            totalTime += currentContractTime;
+        }
+
+        return totalTime >= PERMANENT_CONTRACT_REQUIREMENT;
+    }
+
+    public int getTotalContractTimeMinutes(UUID playerUUID) {
+        long totalTime = totalContractTimeByPlayer.getOrDefault(playerUUID, 0L);
+
+        // Solo añadir tiempo del contrato actual si es el mismo jugador y no es permanente
+        if (contractorUUID != null && contractorUUID.equals(playerUUID) && !isPermanent && hasActiveContract()) {
+            long currentTime = System.currentTimeMillis();
+            long contractEndTime = contractStartTime + totalContractDuration;
+            long actualEndTime = Math.min(currentTime, contractEndTime);
+
+            // Calcular tiempo del contrato actual SIN actualizar lastTimeUpdate
+            long currentContractTime = Math.max(0, actualEndTime - Math.max(lastTimeUpdate, contractStartTime));
+            totalTime += currentContractTime;
+        }
+
+        return (int) (totalTime / (60 * 1000));
+    }
+
+    /**
+     * Obtiene los minutos restantes que necesita un jugador para poder usar contratos permanentes
+     */
+    public int getRemainingMinutesForPermanent(UUID playerUUID) {
+        if (hasMinimumContractTime(playerUUID)) {
+            return 0;
+        }
+
+        long totalTime = totalContractTimeByPlayer.getOrDefault(playerUUID, 0L);
+
+        // Añadir tiempo del contrato actual si aplica
+        if (contractorUUID != null && contractorUUID.equals(playerUUID) && !isPermanent && hasActiveContract()) {
+            long currentTime = System.currentTimeMillis();
+            long contractEndTime = contractStartTime + totalContractDuration;
+            long actualEndTime = Math.min(currentTime, contractEndTime);
+
+            long currentContractTime = Math.max(0, actualEndTime - Math.max(lastTimeUpdate, contractStartTime));
+            totalTime += currentContractTime;
+        }
+
+        long remainingTime = PERMANENT_CONTRACT_REQUIREMENT - totalTime;
+        return (int) (remainingTime / (60 * 1000));
+    }
+
+    /**
+     * Obtiene el requisito mínimo en minutos para contratos permanentes
+     */
+    public static int getMinimumRequiredMinutes() {
+        return (int) (PERMANENT_CONTRACT_REQUIREMENT / (60 * 1000));
     }
 
     public UUID getContractorUUID() {
@@ -264,6 +403,9 @@ public class ContractData implements INBTSerializable<CompoundTag> {
 
     @Override
     public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        // Actualizar tiempo antes de guardar
+        updateTotalContractTime();
+
         CompoundTag tag = new CompoundTag();
         if (contractorUUID != null) {
             tag.putString("contractor_uuid", contractorUUID.toString());
@@ -271,6 +413,15 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         tag.putLong("contract_start_time", contractStartTime);
         tag.putLong("total_contract_duration", totalContractDuration);
         tag.putBoolean("is_permanent", isPermanent);
+        tag.putLong("last_time_update", lastTimeUpdate);
+
+        // Serializar tiempo total por jugador
+        CompoundTag playerTimesTag = new CompoundTag();
+        for (Map.Entry<UUID, Long> entry : totalContractTimeByPlayer.entrySet()) {
+            playerTimesTag.putLong(entry.getKey().toString(), entry.getValue());
+        }
+        tag.put("total_contract_times", playerTimesTag);
+
         return tag;
     }
 
@@ -288,9 +439,30 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.contractStartTime = tag.getLong("contract_start_time");
         this.totalContractDuration = tag.getLong("total_contract_duration");
         this.isPermanent = tag.getBoolean("is_permanent");
+        this.lastTimeUpdate = tag.getLong("last_time_update");
 
         if (this.totalContractDuration == 0 && this.contractorUUID != null && !this.isPermanent) {
             this.totalContractDuration = TWO_STAR_DURATION;
+        }
+
+        // Si lastTimeUpdate no estaba guardado (versiones anteriores), inicializar
+        if (this.lastTimeUpdate == 0 && this.contractStartTime != 0) {
+            this.lastTimeUpdate = this.contractStartTime;
+        }
+
+        // Deserializar tiempo total por jugador
+        this.totalContractTimeByPlayer = new HashMap<>();
+        if (tag.contains("total_contract_times")) {
+            CompoundTag playerTimesTag = tag.getCompound("total_contract_times");
+            for (String uuidString : playerTimesTag.getAllKeys()) {
+                try {
+                    UUID playerUUID = UUID.fromString(uuidString);
+                    long time = playerTimesTag.getLong(uuidString);
+                    totalContractTimeByPlayer.put(playerUUID, time);
+                } catch (IllegalArgumentException e) {
+                    // Ignorar UUIDs inválidos
+                }
+            }
         }
     }
 

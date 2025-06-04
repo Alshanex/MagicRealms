@@ -596,6 +596,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     @Override
+    public boolean requiresCustomPersistence() {
+        return true;
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double pDistanceToClosestPlayer) {
+        return false;
+    }
+
+    @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putInt("Gender", this.entityData.get(GENDER));

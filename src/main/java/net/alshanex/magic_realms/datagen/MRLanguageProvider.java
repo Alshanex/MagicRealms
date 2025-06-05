@@ -48,7 +48,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.contract_established", "Contract established with %s for %d minutes!");
         add("ui.magic_realms.contract_extended", "Contract with %s extended by %d minutes! Time remaining: %d:%02d");
         add("ui.magic_realms.contract_other_player", "This entity is under contract with another player!");
-        add("ui.magic_realms.need_contract_item", "You need a Contract to hire this entity for %d minutes!");
+        add("ui.magic_realms.need_contract_item", "You need a %s to hire this entity for %d minutes!");
         add("ui.magic_realms.contract_time_remaining", "Contract time remaining: %d:%02d");
         add("ui.magic_realms.contract_time_remaining_with_extension", "Time remaining: %d:%02d (Use contract item to add %d more minutes)");
         add("ui.magic_realms.contract_expired", "Contract with %s has expired!");

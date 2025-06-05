@@ -94,7 +94,6 @@ public class ContractEventHandler {
             return;
         }
 
-        // Verificación usando el método seguro
         if (!contractData.canEstablishPermanentContract(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
@@ -333,13 +332,10 @@ public class ContractEventHandler {
                     ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
                     int contractMinutes = contractData.getAdditionalMinutesForStarLevel(humanEntity.getStarLevel());
 
-                    MutableComponent message = Component.translatable("ui.magic_realms.need_contract_item", contractMinutes);
-                    MutableComponent tierInfo = Component.translatable("ui.magic_realms.wrong_contract_tier",
-                            entityLevel,
-                            requiredTier.getDisplayName().getString());
+                    MutableComponent message = Component.translatable("ui.magic_realms.need_contract_item", requiredTier.getDisplayName().getString(), contractMinutes);
 
                     // Combinar mensajes usando literal
-                    message = Component.literal(message.getString() + " " + tierInfo.getString());
+                    message = Component.literal(message.getString());
                     message = message.withStyle(ChatFormatting.YELLOW);
                     serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
                 }

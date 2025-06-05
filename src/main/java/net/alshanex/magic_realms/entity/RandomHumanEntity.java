@@ -82,6 +82,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<String> MAGIC_SCHOOLS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> HAS_SHIELD = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_ARCHER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> STANDBY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
     private EntityTextureConfig textureConfig;
     private boolean appearanceGenerated = false;
@@ -155,6 +156,22 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public void setEntityName(String name) {
         this.entityData.set(ENTITY_NAME, name);
         updateCustomNameWithStars();
+    }
+
+    public void clearMovementGoals(){
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericFollowOwnerGoal);
+    }
+
+    public void restoreMovementGoals(){
+        this.goalSelector.addGoal(7, new GenericFollowOwnerGoal(this, this::getSummoner, 0.9f, 15, 5, false, 25));
+    }
+
+    public void setStandby(Boolean standby) {
+        this.entityData.set(STANDBY, standby);
+    }
+
+    public Boolean isStandby() {
+        return this.entityData.get(STANDBY);
     }
 
     public void setInitialized(boolean initialized) {
@@ -498,6 +515,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(MAGIC_SCHOOLS, "");
         pBuilder.define(HAS_SHIELD, false);
         pBuilder.define(IS_ARCHER, false);
+        pBuilder.define(STANDBY, false);
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -638,6 +656,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putBoolean("AppearanceGenerated", this.appearanceGenerated);
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
+        compound.putBoolean("Standby", this.entityData.get(STANDBY));
 
         ListTag schoolsTag = new ListTag();
         for (SchoolType school : getMagicSchools()) {
@@ -739,6 +758,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         this.summonerUUID = OwnerHelper.deserializeOwner(compound);
+
+        setStandby(compound.getBoolean("Standby"));
+        if(compound.getBoolean("Standby")){
+            clearMovementGoals();
+        }
     }
 
     @Override

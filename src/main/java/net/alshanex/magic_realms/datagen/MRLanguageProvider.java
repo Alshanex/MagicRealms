@@ -63,6 +63,8 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.contract_permanent_no_upgrade", "%s already has a permanent contract - no upgrade needed!");
         add("ui.magic_realms.contract_permanent_other_player", "%s has a permanent contract with another player!");
         add("ui.magic_realms.contract_failed", "Failed to establish contract - please try again!");
+        add("ui.magic_realms.standby_active", "STANDBY");
+        add("ui.magic_realms.standby_following", "FOLLOWING");
 
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "Need %d more contract minutes with this entity!");

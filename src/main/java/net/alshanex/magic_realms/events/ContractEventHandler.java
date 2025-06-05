@@ -344,6 +344,41 @@ public class ContractEventHandler {
             return;
         }
 
+        if (player.isShiftKeyDown()) {
+            boolean currentStandbyState = humanEntity.isStandby();
+
+            if (currentStandbyState) {
+                // La entidad está en standby, desactivar standby y restaurar movimiento
+                humanEntity.setStandby(false);
+                humanEntity.restoreMovementGoals();
+
+                if (player instanceof ServerPlayer serverPlayer) {
+                    MutableComponent message = Component.translatable("ui.magic_realms.standby_following");
+                    message = message.withStyle(ChatFormatting.YELLOW);
+                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                }
+
+                MagicRealms.LOGGER.info("Player {} deactivated standby for entity {}",
+                        player.getName().getString(), humanEntity.getEntityName());
+            } else {
+                // La entidad no está en standby, activar standby y limpiar movimiento
+                humanEntity.setStandby(true);
+                humanEntity.clearMovementGoals();
+
+                if (player instanceof ServerPlayer serverPlayer) {
+                    MutableComponent message = Component.translatable("ui.magic_realms.standby_active");
+                    message = message.withStyle(ChatFormatting.YELLOW);
+                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                }
+
+                MagicRealms.LOGGER.info("Player {} activated standby for entity {}",
+                        player.getName().getString(), humanEntity.getEntityName());
+            }
+
+            event.setCanceled(true);
+            return;
+        }
+
         // Si el contrato es permanente, mostrar mensaje especial
         if (contractData.isPermanent()) {
             if (player instanceof ServerPlayer serverPlayer) {

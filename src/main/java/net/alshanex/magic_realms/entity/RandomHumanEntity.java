@@ -73,7 +73,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, IMagicSummon {
+public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob {
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
@@ -765,15 +765,28 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
+    private boolean isAlliedHelper(Entity entity) {
+        var owner = getSummoner();
+        if (owner == null) {
+            return false;
+        }
+        if (entity instanceof IMagicSummon magicSummon) {
+            var otherOwner = magicSummon.getSummoner();
+            return otherOwner != null && (owner == otherOwner || otherOwner.isAlliedTo(otherOwner));
+        } else if (entity instanceof OwnableEntity tamableAnimal) {
+            var otherOwner = tamableAnimal.getOwner();
+            return otherOwner != null && (owner == otherOwner || otherOwner.isAlliedTo(otherOwner));
+        }
+        return false;
+    }
+
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
-        this.onDeathHelper();
         super.die(damageSource);
     }
 
     @Override
     public void onRemovedFromLevel() {
-        this.onRemovedHelper(this, MobEffectRegistry.RAISE_DEAD_TIMER);
         super.onRemovedFromLevel();
     }
 
@@ -1153,7 +1166,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     protected LivingEntity cachedSummoner;
     protected UUID summonerUUID;
 
-    @Override
     public LivingEntity getSummoner() {
         return OwnerHelper.getAndCacheOwner(level(), cachedSummoner, summonerUUID);
     }
@@ -1163,11 +1175,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             this.summonerUUID = owner.getUUID();
             this.cachedSummoner = owner;
         }
-    }
-
-    @Override
-    public void onUnSummon() {
-
     }
 
     @Override

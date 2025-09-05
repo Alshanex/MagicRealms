@@ -558,14 +558,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public void updateCustomNameWithStars() {
         String entityName = this.entityData.get(ENTITY_NAME);
-        int starLevel = this.entityData.get(STAR_LEVEL);
         KillTrackerData data = this.getData(MRDataAttachments.KILL_TRACKER);
 
         if (!entityName.isEmpty()) {
-            ChatFormatting nameColor = getColorForStarLevel(starLevel);
-            String stars = getStarsDisplay(starLevel);
 
-            Component nameComponent = Component.literal(stars + " " + entityName + "   Lv. " + data.getCurrentLevel()).withStyle(nameColor);
+            Component nameComponent = Component.literal(entityName + "   Lv. " + data.getCurrentLevel());
             this.setCustomName(nameComponent);
             this.setCustomNameVisible(true);
         }

@@ -56,6 +56,18 @@ repositories {
     maven { url = "https://cursemaven.com" }
     maven { url = "https://maven.blamejared.com" }
     maven { url = "https://maven.kosmx.dev/" }
+
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'SmartBrainLib'
+                url = 'https://dl.cloudsmith.io/public/tslat/sbl/maven/'
+            }
+        }
+        filter {
+            includeGroup('net.tslat.smartbrainlib')
+        }
+    }
 }
 
 base {
@@ -177,6 +189,8 @@ dependencies {
         implementation "dev.shadowsoffire:Placebo:${minecraft_version}-${placeboVersion}"
         implementation "dev.shadowsoffire:ApothicAttributes:${minecraft_version}-${attributesLibVersion}"
     }
+
+    implementation "net.tslat.smartbrainlib:SmartBrainLib-neoforge-${project.minecraft_version}:${project.sbl_version}"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

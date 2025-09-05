@@ -568,18 +568,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
-    private ChatFormatting getColorForStarLevel(int starLevel) {
-        return switch (starLevel) {
-            case 2 -> ChatFormatting.AQUA;
-            case 3 -> ChatFormatting.GOLD;
-            default -> ChatFormatting.WHITE;
-        };
-    }
-
-    private String getStarsDisplay(int starLevel) {
-        return "★".repeat(starLevel);
-    }
-
     public int getStarLevel() {
         return this.entityData.get(STAR_LEVEL);
     }

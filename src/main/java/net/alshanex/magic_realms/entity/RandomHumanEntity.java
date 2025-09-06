@@ -6,7 +6,6 @@ import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
-import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.IMagicSummon;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
@@ -15,7 +14,6 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.*;
 import io.redspace.ironsspellbooks.entity.mobs.goals.melee.AttackAnimationData;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
-import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.MagicRealms;
@@ -24,11 +22,9 @@ import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
-import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -60,11 +56,13 @@ import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.item.ArrowItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
 
@@ -468,6 +466,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         if (this.isArcher()) {
             handleArcherAnimations();
+            if (!level().isClientSide && this.getTarget() != null && this.tickCount % 10 == 0) {
+                if(!this.hasArrows()){
+                    this.setTarget(null);
+                }
+            }
         }
 
         if (!level().isClientSide) {
@@ -890,11 +893,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
         this.goalSelector.removeAllGoals((goal) -> goal instanceof ChargeArrowAttackGoal);
 
-        this.goalSelector.addGoal(2, new ChargeArrowAttackGoal<>(this, 1.0D, 20, 15.0F));
+        this.goalSelector.addGoal(2, new ChargeArrowAttackGoal<RandomHumanEntity>(this, 1.0D, 20, 15.0F));
 
-        this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.0f, 60, 120)
-                .setSpells(spells, spells, spells, spells)
-                .setDrinksPotions()
+        this.goalSelector.addGoal(3, new WizardAttackGoal(this, 1.0f, 60, 120)
+                        .setSpells(spells, spells, spells, spells)
+                        .setDrinksPotions()
         );
     }
 
@@ -1029,7 +1032,18 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void performRangedAttack(LivingEntity pTarget, float pDistanceFactor) {
+        // Check if we have arrows before attacking
+        if (!hasArrows()) {
+            return;
+        }
+
         AbstractArrow abstractarrow = this.getArrow();
+        if (abstractarrow == null) {
+            return;
+        }
+
+        // Consume an arrow from inventory
+        consumeArrow();
 
         double d0 = pTarget.getX() - this.getX();
         double d1 = pTarget.getY(0.3333333333333333D) - abstractarrow.getY();
@@ -1047,13 +1061,93 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     protected AbstractArrow getArrow() {
-        return ArrowTypeManager.createArrowByStarLevel(
-                getStarLevel(),
-                this.getRandom(),
-                this.level(),
-                this,
-                this.getMainHandItem()
-        );
+        // Only create arrow if we have arrows in inventory
+        if (!hasArrows()) {
+            return null;
+        }
+
+        // Find the best arrow type in inventory
+        ItemStack arrowStack = getBestArrowFromInventory();
+        if (arrowStack.isEmpty()) {
+            return new Arrow(this.level(), this, arrowStack.copyWithCount(1), this.getMainHandItem());
+        }
+
+        // Create arrow based on item type
+        if (arrowStack.getItem() instanceof ArrowItem arrowItem) {
+            return arrowItem.createArrow(this.level(), arrowStack, this, this.getMainHandItem());
+        }
+
+        return new Arrow(this.level(), this, arrowStack.copyWithCount(1), this.getMainHandItem());
+    }
+
+    public boolean hasArrows() {
+        int count = 0;
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (isArrowItem(stack)) {
+                count += stack.getCount();
+            }
+        }
+        return count > 0;
+    }
+
+    private boolean isArrowItem(ItemStack stack) {
+        return stack.getItem() instanceof ArrowItem || stack.is(Items.ARROW);
+    }
+
+    private ItemStack getBestArrowFromInventory() {
+        ItemStack bestArrow = ItemStack.EMPTY;
+
+        // First pass: look for special arrows (not basic arrows)
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (isArrowItem(stack) && !stack.is(Items.ARROW) && !stack.isEmpty()) {
+                return stack;
+            }
+        }
+
+        // Second pass: look for basic arrows
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.is(Items.ARROW) && !stack.isEmpty()) {
+                return stack;
+            }
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    /**
+     * Consume one arrow from inventory
+     */
+    private void consumeArrow() {
+        // First try to consume special arrows
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (isArrowItem(stack) && !stack.is(Items.ARROW) && !stack.isEmpty()) {
+                stack.shrink(1);
+                if (stack.isEmpty()) {
+                    inventory.setItem(i, ItemStack.EMPTY);
+                }
+                return;
+            }
+        }
+
+        // Then consume basic arrows
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.is(Items.ARROW) && !stack.isEmpty()) {
+                stack.shrink(1);
+                if (stack.isEmpty()) {
+                    inventory.setItem(i, ItemStack.EMPTY);
+                }
+                return;
+            }
+        }
+    }
+
+    public boolean canPerformRangedAttack() {
+        return this.isArcher() && this.hasArrows();
     }
 
     private float getArrowVelocity() {

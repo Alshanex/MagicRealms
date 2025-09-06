@@ -33,7 +33,7 @@ public class ChargeArrowAttackGoal<T extends RandomHumanEntity & RangedAttackMob
     }
 
     public boolean canUse() {
-        return this.mob.getTarget() != null && this.isHoldingBow();
+        return this.mob.getTarget() != null && this.isHoldingBow() && this.mob.canPerformRangedAttack();
     }
 
     protected boolean isHoldingBow() {
@@ -41,7 +41,7 @@ public class ChargeArrowAttackGoal<T extends RandomHumanEntity & RangedAttackMob
     }
 
     public boolean canContinueToUse() {
-        return (this.canUse() || !this.mob.getNavigation().isDone()) && this.isHoldingBow();
+        return (this.canUse() || !this.mob.getNavigation().isDone()) && this.isHoldingBow() && this.mob.canPerformRangedAttack();
     }
 
     public void start() {

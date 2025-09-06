@@ -2,10 +2,8 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.registry.*;
-import net.alshanex.magic_realms.util.ArrowTypeManager;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.events.TextureEventHandler;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -56,17 +54,12 @@ public class MagicRealms
         modEventBus.addListener(TextureEventHandler::onRegisterReloadListeners);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        //modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
-        event.enqueueWork(() -> {
-            ArrowTypeManager.initializeArrowTypes();
 
-            LOGGER.info("Magic Realms common setup completed. Available arrow types: {}",
-                    ArrowTypeManager.getAvailableArrowCount());
-        });
     }
 
     // Add the example block item to the building blocks tab

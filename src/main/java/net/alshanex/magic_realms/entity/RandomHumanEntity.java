@@ -22,7 +22,8 @@ import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
-import net.alshanex.magic_realms.util.ChargeArrowAttackGoal;
+import net.alshanex.magic_realms.util.MRUtils;
+import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -59,10 +60,7 @@ import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
-import net.minecraft.world.item.ArrowItem;
-import net.minecraft.world.item.BowItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import software.bernie.geckolib.animation.*;
@@ -191,10 +189,14 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
-        this.goalSelector.addGoal(7, new GenericFollowOwnerGoal(this, this::getSummoner, 0.9f, 15, 5, false, 25));
+        this.goalSelector.addGoal(5, new HumanGoals.SellItemsToVillagersGoal(this));
+        this.goalSelector.addGoal(6, new HumanGoals.BuyEquipmentFromVillagersGoal(this));
+        this.goalSelector.addGoal(6, new HumanGoals.EnchantEquipmentFromLibrarianGoal(this));
+
+        this.goalSelector.addGoal(4, new GenericFollowOwnerGoal(this, this::getSummoner, 0.9f, 15, 5, false, 25));
         this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(10, new WizardRecoverGoal(this));
+        this.goalSelector.addGoal(5, new WizardRecoverGoal(this));
 
         this.targetSelector.addGoal(1, new GenericOwnerHurtByTargetGoal(this, this::getSummoner));
         this.targetSelector.addGoal(2, new GenericOwnerHurtTargetGoal(this, this::getSummoner));
@@ -245,8 +247,21 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         HumanStatsManager.applyClassAttributes(this);
+        giveStartingEmeralds();
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
+    }
+
+    public void giveStartingEmeralds() {
+        int emeraldCount = switch (getStarLevel()) {
+            case 1 -> 5 + getRandom().nextInt(6); // 5-10 emeralds
+            case 2 -> 10 + getRandom().nextInt(11); // 10-20 emeralds
+            case 3 -> 20 + getRandom().nextInt(16); // 20-35 emeralds
+            default -> 5;
+        };
+
+        ItemStack emeralds = new ItemStack(Items.EMERALD, emeraldCount);
+        getInventory().addItem(emeralds);
     }
 
     public List<AbstractSpell> getPersistedSpells() {
@@ -383,6 +398,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     protected void pickUpItem(ItemEntity itemEntity) {
         InventoryCarrier.pickUpItem(this, this, itemEntity);
+        MRUtils.autoEquipBetterEquipment(this);
     }
 
     @Override
@@ -1120,9 +1136,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return ItemStack.EMPTY;
     }
 
-    /**
-     * Consume one arrow from inventory
-     */
     private void consumeArrow() {
         // First try to consume special arrows
         for (int i = 0; i < inventory.getContainerSize(); i++) {

@@ -1,6 +1,5 @@
-package net.alshanex.magic_realms.util;
+package net.alshanex.magic_realms.util.humans;
 
-import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;

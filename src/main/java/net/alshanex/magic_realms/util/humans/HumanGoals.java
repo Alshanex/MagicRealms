@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.util.humans;
 
+import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.util.MRUtils;
@@ -31,13 +32,19 @@ public class HumanGoals {
     public static class SellItemsToVillagersGoal extends Goal {
         private final RandomHumanEntity entity;
         private Villager targetVillager;
-        private ItemStack itemToSell;
         private int tradingCooldown = 0;
         private int searchCooldown = 0;
+        private boolean isActivelySelling = false;
+        private int itemsSoldThisSession = 0; // Track items sold in current session
+        private int ticksSinceLastTrade = 0; // Track time since last successful trade
 
         private static final int SEARCH_RADIUS = 32;
         private static final int TRADING_COOLDOWN = 200; // 10 seconds
         private static final int SEARCH_COOLDOWN = 100; // 5 seconds
+        private static final int MAX_ITEMS_PER_SESSION = 10; // Maximum items to sell per interaction
+        private static final int TRADE_ATTEMPT_INTERVAL = 40; // Try to trade every 2 seconds
+        private static final int MAX_DISTANCE_SQUARED = 256; // 16 blocks squared (more generous)
+        private static final int TRADING_DISTANCE_SQUARED = 16; // 4 blocks squared for trading
 
         public SellItemsToVillagersGoal(RandomHumanEntity entity) {
             this.entity = entity;
@@ -56,65 +63,136 @@ public class HumanGoals {
                 return false;
             }
 
+            // If we're already actively selling, don't restart the process
+            if (isActivelySelling) {
+                return false;
+            }
+
             // First auto-equip any better equipment found in inventory
             MRUtils.autoEquipBetterEquipment(entity);
 
-            return findItemToSell() && findNearbyEmployedVillager();
+            boolean hasItemToSell = hasItemsToSell();
+            boolean hasVillager = false;
+
+            if (hasItemToSell) {
+                hasVillager = findNearbyEmployedVillager();
+                if (!hasVillager) {
+                    MagicRealms.LOGGER.debug("Entity {} has items to sell but no villagers found", entity.getEntityName());
+                } else {
+                    MagicRealms.LOGGER.debug("Entity {} ready to sell items to villager", entity.getEntityName());
+                }
+            }
+
+            return hasItemToSell && hasVillager;
         }
 
         @Override
         public boolean canContinueToUse() {
-            return targetVillager != null && targetVillager.isAlive() &&
-                    itemToSell != null && !itemToSell.isEmpty() &&
-                    entity.distanceToSqr(targetVillager) < 64;
+            // Continue if we have a target villager, haven't sold too many items, and villager is alive and reasonably close
+            boolean canContinue = targetVillager != null &&
+                    targetVillager.isAlive() &&
+                    itemsSoldThisSession < MAX_ITEMS_PER_SESSION &&
+                    entity.distanceToSqr(targetVillager) < MAX_DISTANCE_SQUARED &&
+                    hasItemsToSell();
+
+            if (!canContinue && isActivelySelling) {
+                MagicRealms.LOGGER.debug("Entity {} stopping sell goal - villager alive: {}, items sold: {}/{}, has items: {}, distance OK: {}",
+                        entity.getEntityName(),
+                        targetVillager != null && targetVillager.isAlive(),
+                        itemsSoldThisSession, MAX_ITEMS_PER_SESSION,
+                        hasItemsToSell(),
+                        targetVillager != null && entity.distanceToSqr(targetVillager) < MAX_DISTANCE_SQUARED);
+            }
+
+            return canContinue;
         }
 
         @Override
         public void start() {
+            isActivelySelling = true;
+            itemsSoldThisSession = 0;
+            ticksSinceLastTrade = 0;
+
             if (targetVillager != null) {
                 entity.getNavigation().moveTo(targetVillager, 1.0);
+                MagicRealms.LOGGER.debug("Entity {} starting to sell items to villager at distance {}",
+                        entity.getEntityName(),
+                        Math.sqrt(entity.distanceToSqr(targetVillager)));
             }
         }
 
         @Override
         public void tick() {
-            if (targetVillager == null || itemToSell == null) return;
+            if (targetVillager == null) {
+                MagicRealms.LOGGER.debug("Entity {} tick failed - no villager", entity.getEntityName());
+                return;
+            }
 
             double distanceToVillager = entity.distanceToSqr(targetVillager);
+            ticksSinceLastTrade++;
 
-            if (distanceToVillager <= 9.0) { // Within 3 blocks
+            if (distanceToVillager <= TRADING_DISTANCE_SQUARED) { // Within 4 blocks
                 entity.getNavigation().stop();
                 entity.getLookControl().setLookAt(targetVillager);
 
-                if (entity.tickCount % 40 == 0) { // Try to trade every 2 seconds
-                    attemptSellItem();
+                // Try to trade every 2 seconds
+                if (ticksSinceLastTrade >= TRADE_ATTEMPT_INTERVAL) {
+                    boolean tradeMade = attemptSellItem();
+                    if (tradeMade) {
+                        ticksSinceLastTrade = 0; // Reset timer after successful trade
+                    }
                 }
-            } else if (distanceToVillager <= 64) { // Within 8 blocks
+            } else if (distanceToVillager <= MAX_DISTANCE_SQUARED) { // Within reasonable range
+                // Move towards villager
                 entity.getNavigation().moveTo(targetVillager, 1.0);
+
+                // Reset navigation if it's been too long since we moved
+                if (entity.getNavigation().isDone() && distanceToVillager > TRADING_DISTANCE_SQUARED) {
+                    entity.getNavigation().moveTo(targetVillager, 1.0);
+                }
+            } else {
+                MagicRealms.LOGGER.debug("Entity {} villager too far away: {} blocks",
+                        entity.getEntityName(), Math.sqrt(distanceToVillager));
+                // Don't immediately give up - the canContinueToUse will handle this
             }
         }
 
         @Override
         public void stop() {
+            if (isActivelySelling) {
+                MagicRealms.LOGGER.debug("Entity {} stopping sell goal after selling {} items",
+                        entity.getEntityName(), itemsSoldThisSession);
+            }
             targetVillager = null;
-            itemToSell = null;
+            isActivelySelling = false;
+            itemsSoldThisSession = 0;
+            ticksSinceLastTrade = 0;
             tradingCooldown = TRADING_COOLDOWN;
             searchCooldown = SEARCH_COOLDOWN;
         }
 
-        private boolean findItemToSell() {
+        private boolean hasItemsToSell() {
             SimpleContainer inventory = entity.getInventory();
 
             for (int i = 0; i < inventory.getContainerSize(); i++) {
                 ItemStack stack = inventory.getItem(i);
                 if (shouldSellItem(stack)) {
-                    itemToSell = stack;
                     return true;
                 }
             }
-
-            itemToSell = null;
             return false;
+        }
+
+        private ItemStack findNextItemToSell() {
+            SimpleContainer inventory = entity.getInventory();
+
+            for (int i = 0; i < inventory.getContainerSize(); i++) {
+                ItemStack stack = inventory.getItem(i);
+                if (shouldSellItem(stack)) {
+                    return stack;
+                }
+            }
+            return null;
         }
 
         private boolean shouldSellItem(ItemStack stack) {
@@ -131,7 +209,12 @@ public class HumanGoals {
                 return false;
             }
 
-            // Don't sell armor if it's better than what we're wearing
+            // Don't sell emeralds (we need them for buying)
+            if (stack.is(Items.EMERALD)) {
+                return false;
+            }
+
+            // Don't sell armor if it's better than what we're wearing AND we need armor
             if (stack.getItem() instanceof ArmorItem armorItem) {
                 EquipmentSlot slot = MRUtils.getSlotForArmorType(armorItem.getType());
                 ItemStack currentArmor = entity.getItemBySlot(slot);
@@ -140,15 +223,24 @@ public class HumanGoals {
                 }
             }
 
-            // Don't sell weapons if they're better than what we're using
-            if (MRUtils.isWeapon(stack)) {
+            // Don't sell weapons if they're better than what we're using AND we're a melee class
+            if (MRUtils.isWeapon(stack) &&
+                    (entityClass == EntityClass.WARRIOR || (entityClass == EntityClass.ROGUE && !entity.isArcher()))) {
                 ItemStack currentWeapon = entity.getMainHandItem();
                 if (currentWeapon.isEmpty() || MRUtils.isWeaponBetter(stack, currentWeapon, entity)) {
                     return false; // This weapon is better, don't sell it
                 }
             }
 
-            // Don't sell ranged weapons if they're better (for archers)
+            // Don't sell staves if they're better than what we're using AND we're a mage
+            if (entityClass == EntityClass.MAGE && MRUtils.isStaff(stack)) {
+                ItemStack currentWeapon = entity.getMainHandItem();
+                if (currentWeapon.isEmpty() || MRUtils.isStaffBetter(stack, currentWeapon)) {
+                    return false; // This staff is better, don't sell it
+                }
+            }
+
+            // Don't sell ranged weapons if they're better AND we're an archer
             if (entityClass == EntityClass.ROGUE && entity.isArcher() && MRUtils.isRangedWeapon(stack)) {
                 ItemStack currentWeapon = entity.getMainHandItem();
                 if (currentWeapon.isEmpty() || MRUtils.isRangedWeaponBetter(stack, currentWeapon)) {
@@ -164,6 +256,7 @@ public class HumanGoals {
                 }
             }
 
+            // For everything else (including rotten flesh, food, misc items), allow selling
             return true;
         }
 
@@ -181,32 +274,68 @@ public class HumanGoals {
             List<Villager> villagers = entity.level().getEntitiesOfClass(Villager.class, searchArea);
 
             for (Villager villager : villagers) {
-                if (villager.getVillagerData().getProfession() != VillagerProfession.NONE &&
-                        villager.getVillagerData().getProfession() != VillagerProfession.NITWIT &&
-                        entity.distanceToSqr(villager) <= SEARCH_RADIUS * SEARCH_RADIUS) {
+                VillagerProfession profession = villager.getVillagerData().getProfession();
+                double distance = entity.distanceToSqr(villager);
+
+                if (profession != VillagerProfession.NONE &&
+                        profession != VillagerProfession.NITWIT &&
+                        distance <= SEARCH_RADIUS * SEARCH_RADIUS) {
                     targetVillager = villager;
+                    MagicRealms.LOGGER.debug("Entity {} selected villager with profession {} at distance {} for selling",
+                            entity.getEntityName(), profession, Math.sqrt(distance));
                     return true;
                 }
             }
 
+            MagicRealms.LOGGER.debug("Entity {} found no suitable villagers for selling", entity.getEntityName());
             return false;
         }
 
-        private void attemptSellItem() {
-            if (targetVillager == null || itemToSell == null) return;
+        private boolean attemptSellItem() {
+            if (targetVillager == null) {
+                MagicRealms.LOGGER.debug("Entity {} attempt sell failed - no villager", entity.getEntityName());
+                return false;
+            }
+
+            // Check if we've sold enough items this session
+            if (itemsSoldThisSession >= MAX_ITEMS_PER_SESSION) {
+                MagicRealms.LOGGER.debug("Entity {} reached max items sold this session ({})",
+                        entity.getEntityName(), MAX_ITEMS_PER_SESSION);
+                return false;
+            }
+
+            // Find the next item to sell
+            ItemStack itemToSell = findNextItemToSell();
+            if (itemToSell == null) {
+                MagicRealms.LOGGER.debug("Entity {} no more items to sell", entity.getEntityName());
+                return false;
+            }
+
+            // Verify the item is still in inventory and get its slot
+            SimpleContainer inventory = entity.getInventory();
+            int itemSlot = -1;
+            for (int i = 0; i < inventory.getContainerSize(); i++) {
+                if (inventory.getItem(i) == itemToSell) {
+                    itemSlot = i;
+                    break;
+                }
+            }
+
+            if (itemSlot == -1) {
+                MagicRealms.LOGGER.debug("Entity {} item to sell no longer exists in inventory", entity.getEntityName());
+                return false;
+            }
 
             // Calculate emeralds to get based on rarity
             int emeraldsToGet = calculateEmeraldsForItem(itemToSell);
 
             if (emeraldsToGet > 0) {
+                MagicRealms.LOGGER.debug("Entity {} selling {} for {} emeralds (item {} of {})",
+                        entity.getEntityName(), itemToSell.getDisplayName().getString(),
+                        emeraldsToGet, itemsSoldThisSession + 1, MAX_ITEMS_PER_SESSION);
+
                 // Remove the item from inventory
-                SimpleContainer inventory = entity.getInventory();
-                for (int i = 0; i < inventory.getContainerSize(); i++) {
-                    if (inventory.getItem(i) == itemToSell) {
-                        inventory.removeItem(i, 1);
-                        break;
-                    }
-                }
+                inventory.removeItem(itemSlot, 1);
 
                 // Add emeralds to inventory
                 ItemStack emeralds = new ItemStack(Items.EMERALD, emeraldsToGet);
@@ -221,8 +350,39 @@ public class HumanGoals {
                     villager.setVillagerXp(villager.getVillagerXp() + 1);
                 }
 
-                // Reset for next potential trade
-                itemToSell = null;
+                // Increment items sold counter
+                itemsSoldThisSession++;
+
+                // Recheck unaffordable offers since we got emeralds
+                recheckUnaffordableOffers();
+
+                MagicRealms.LOGGER.debug("Entity {} completed selling, now has {} emeralds total",
+                        entity.getEntityName(), inventory.countItem(Items.EMERALD));
+
+                return true; // Successful trade
+            }
+
+            return false; // No trade made
+        }
+
+        private void recheckUnaffordableOffers() {
+            VillagerOffersData memory = entity.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
+
+            if (!memory.hasAnyUnaffordableOffers()) {
+                return;
+            }
+
+            // Create a copy of villager UUIDs to avoid concurrent modification
+            Set<UUID> villagerUUIDs = new HashSet<>(memory.getVillagersWithUnaffordableOffers());
+
+            for (UUID villagerUUID : villagerUUIDs) {
+                // This will automatically remove affordable offers from the unaffordable list
+                List<MerchantOffer> nowAffordable = memory.checkAffordableOffers(villagerUUID, entity.getInventory());
+
+                if (!nowAffordable.isEmpty()) {
+                    MagicRealms.LOGGER.debug("Entity {} can now afford {} offers from villager {} after selling",
+                            entity.getEntityName(), nowAffordable.size(), villagerUUID);
+                }
             }
         }
 
@@ -387,6 +547,33 @@ public class HumanGoals {
                         memory.storeUnaffordableOffers(villager.getUUID(), shieldOffers);
                     }
                 }
+
+                // Special case: Mages can buy artificer staff from librarians for 10 emeralds
+                if (profession == VillagerProfession.LIBRARIAN &&
+                        entity.getEntityClass() == EntityClass.MAGE) {
+
+                    boolean needsStaffResult = needsStaff();
+                    int emeraldCount = entity.getInventory().countItem(Items.EMERALD);
+
+                    //MagicRealms.LOGGER.debug("Mage {} checking librarian for staff. Needs staff: {}, Has {} emeralds", entity.getEntityName(), needsStaffResult, emeraldCount);
+
+                    if (needsStaffResult) {
+                        if (hasEmeralds(10)) {
+                            //MagicRealms.LOGGER.debug("Mage {} attempting to buy artificer staff from librarian", entity.getEntityName());
+                            targetVillager = villager;
+                            targetOffer = createStaffOffer();
+                            fromMemory = false;
+                            return true;
+                        } else {
+                            //MagicRealms.LOGGER.debug("Mage {} cannot afford staff (needs 10 emeralds, has {}), storing offer", entity.getEntityName(), emeraldCount);
+                            // Store staff offer as unaffordable
+                            List<MerchantOffer> staffOffers = Arrays.asList(createStaffOffer());
+                            memory.storeUnaffordableOffers(villager.getUUID(), staffOffers);
+                        }
+                    } else {
+                        //MagicRealms.LOGGER.debug("Mage {} doesn't need staff. Current weapon: {}", entity.getEntityName(), entity.getMainHandItem().getDisplayName().getString());
+                    }
+                }
             }
 
             return false;
@@ -450,6 +637,12 @@ public class HumanGoals {
                 return true;
             }
 
+            // Mages can buy staves from librarians
+            if (entityClass == EntityClass.MAGE &&
+                    profession == VillagerProfession.LIBRARIAN) {
+                return true;
+            }
+
             return false;
         }
 
@@ -488,6 +681,12 @@ public class HumanGoals {
                 }
             }
 
+            // Check if it's a staff we need (mages only)
+            if (entityClass == EntityClass.MAGE && MRUtils.isStaff(stack)) {
+                ItemStack currentWeapon = entity.getMainHandItem();
+                return currentWeapon.isEmpty() || MRUtils.isStaffBetter(stack, currentWeapon);
+            }
+
             return false;
         }
 
@@ -512,6 +711,11 @@ public class HumanGoals {
         private MerchantOffer createShieldOffer() {
             ItemCost emeraldCost = new ItemCost(Items.EMERALD, 10);
             return new MerchantOffer(emeraldCost, new ItemStack(Items.SHIELD), 1, 1, 0.0f);
+        }
+
+        private MerchantOffer createStaffOffer() {
+            ItemCost emeraldCost = new ItemCost(Items.EMERALD, 10);
+            return new MerchantOffer(emeraldCost, new ItemStack(io.redspace.ironsspellbooks.registries.ItemRegistry.ARTIFICER_STAFF.get()), 1, 1, 0.0f);
         }
 
         private void attemptBuyEquipment() {
@@ -591,6 +795,24 @@ public class HumanGoals {
         private boolean needsShield() {
             ItemStack offhand = entity.getOffhandItem();
             return offhand.isEmpty() || !(offhand.getItem() instanceof ShieldItem);
+        }
+
+        private boolean needsStaff() {
+            ItemStack mainHand = entity.getMainHandItem();
+
+            // If we don't have any weapon, we need a staff
+            if (mainHand.isEmpty()) {
+                return true;
+            }
+
+            // If we have a staff but the artificer staff would be better, we need it
+            if (MRUtils.isStaff(mainHand)) {
+                ItemStack artificerStaff = new ItemStack(io.redspace.ironsspellbooks.registries.ItemRegistry.ARTIFICER_STAFF.get());
+                return MRUtils.isStaffBetter(artificerStaff, mainHand);
+            }
+
+            // If we have a non-staff weapon as a mage, we need a staff
+            return true;
         }
 
         private boolean needsArrows() {

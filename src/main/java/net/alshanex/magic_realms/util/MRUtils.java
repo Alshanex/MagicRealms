@@ -1,11 +1,15 @@
 package net.alshanex.magic_realms.util;
 
+import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
 
 public class MRUtils {
@@ -18,6 +22,10 @@ public class MRUtils {
     public static boolean isRangedWeapon(ItemStack stack) {
         return stack.getItem() instanceof BowItem ||
                 stack.getItem() instanceof CrossbowItem;
+    }
+
+    public static boolean isStaff(ItemStack stack) {
+        return stack.getItem() instanceof StaffItem;
     }
 
     public static boolean isArmorBetter(ArmorItem newArmor, ItemStack currentArmorStack) {
@@ -57,6 +65,14 @@ public class MRUtils {
         return getRangedWeaponDamage(newRanged) > getRangedWeaponDamage(currentRanged);
     }
 
+    public static boolean isStaffBetter(ItemStack newStaff, ItemStack currentStaff) {
+        if (!isStaff(currentStaff)) {
+            return true;
+        }
+
+        return getStaffSpellPower(newStaff) > getStaffSpellPower(currentStaff);
+    }
+
     public static double getWeaponDamage(ItemStack weapon) {
         if (weapon.getItem() instanceof SwordItem sword) {
             return sword.getDamage(weapon);
@@ -85,6 +101,31 @@ public class MRUtils {
             return crossBow.getDamage(ranged);
         }
         return 1.0;
+    }
+
+    public static double getStaffSpellPower(ItemStack staff) {
+        if (!isStaff(staff)) {
+            return 0.0;
+        }
+
+        ItemAttributeModifiers modifiers = staff.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        if (modifiers == null) {
+            return 0.0;
+        }
+
+        double spellPower = 0.0;
+
+        // Check for general spell power
+        for (var entry : modifiers.modifiers()) {
+            if (entry.attribute().equals(AttributeRegistry.SPELL_POWER)) {
+                AttributeModifier modifier = entry.modifier();
+                if (modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE) {
+                    spellPower += modifier.amount();
+                }
+            }
+        }
+
+        return spellPower;
     }
 
     public static EquipmentSlot getSlotForArmorType(ArmorItem.Type armorType) {
@@ -121,6 +162,9 @@ public class MRUtils {
         } else if (isRangedWeapon(stack) && entity.getEntityClass() == EntityClass.ROGUE && entity.isArcher()) {
             ItemStack currentWeapon = entity.getMainHandItem();
             return currentWeapon.isEmpty() || isRangedWeaponBetter(stack, currentWeapon);
+        } else if (isStaff(stack) && entity.getEntityClass() == EntityClass.MAGE) {
+            ItemStack currentWeapon = entity.getMainHandItem();
+            return currentWeapon.isEmpty() || isStaffBetter(stack, currentWeapon);
         } else if (stack.getItem() instanceof ShieldItem && entity.getEntityClass() == EntityClass.WARRIOR && entity.hasShield()) {
             ItemStack currentShield = entity.getOffhandItem();
             return currentShield.isEmpty() || !(currentShield.getItem() instanceof ShieldItem);
@@ -136,7 +180,7 @@ public class MRUtils {
             EquipmentSlot slot = getSlotForArmorType(armorItem.getType());
             oldItem = entity.getItemBySlot(slot);
             entity.setItemSlot(slot, newItem.copy());
-        } else if (isWeapon(newItem) || isRangedWeapon(newItem)) {
+        } else if (isWeapon(newItem) || isRangedWeapon(newItem) || isStaff(newItem)) {
             oldItem = entity.getMainHandItem();
             entity.setItemSlot(EquipmentSlot.MAINHAND, newItem.copy());
         } else if (newItem.getItem() instanceof ShieldItem) {

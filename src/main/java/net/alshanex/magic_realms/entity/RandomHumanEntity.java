@@ -19,6 +19,7 @@ import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
+import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -61,15 +62,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, InventoryCarrier {
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
@@ -397,8 +397,13 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     protected void pickUpItem(ItemEntity itemEntity) {
+        ItemStack pickedUpItem = itemEntity.getItem();
         InventoryCarrier.pickUpItem(this, this, itemEntity);
         MRUtils.autoEquipBetterEquipment(this);
+
+        if (pickedUpItem.is(Items.EMERALD)) {
+            recheckUnaffordableOffers();
+        }
     }
 
     @Override
@@ -416,6 +421,26 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public void clearInventory() {
         this.getInventory().clearContent();
+    }
+
+    private void recheckUnaffordableOffers() {
+        VillagerOffersData memory = this.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
+
+        if (!memory.hasAnyUnaffordableOffers()) {
+            return;
+        }
+
+        // Create a copy of villager UUIDs to avoid concurrent modification
+        Set<UUID> villagerUUIDs = new HashSet<>(memory.getVillagersWithUnaffordableOffers());
+
+        for (UUID villagerUUID : villagerUUIDs) {
+            List<MerchantOffer> nowAffordable = memory.checkAffordableOffers(villagerUUID, this.getInventory());
+
+            if (!nowAffordable.isEmpty()) {
+                MagicRealms.LOGGER.debug("Entity {} can now afford {} offers from villager {}",
+                        this.getEntityName(), nowAffordable.size(), villagerUUID);
+            }
+        }
     }
 
     @Override

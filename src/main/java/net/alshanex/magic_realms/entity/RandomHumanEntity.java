@@ -27,6 +27,7 @@ import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -81,6 +82,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Boolean> HAS_SHIELD = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_ARCHER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> STANDBY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
+
+
+    private EntityType<?> fearedEntityType = null;
+    private boolean fearGoalInitialized = false;
 
     private EntityTextureConfig textureConfig;
     private boolean appearanceGenerated = false;
@@ -203,7 +209,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.targetSelector.addGoal(3, new GenericCopyOwnerTargetGoal(this, this::getSummoner));
         this.targetSelector.addGoal(4, (new GenericHurtByTargetGoal(this, (entity) -> entity == getSummoner())).setAlertOthers());
         this.targetSelector.addGoal(5, new GenericProtectOwnerTargetGoal(this, this::getSummoner));
-        this.targetSelector.addGoal(6, new NearestAttackableTargetGoal<>(this, Monster.class, true));
+
+
+        this.targetSelector.addGoal(6, new HumanGoals.NoFearTargetGoal(this));
     }
 
     private List<AbstractSpell> persistedSpells = new ArrayList<>();
@@ -218,6 +226,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeRandomAppearance(randomsource);
             initializeClassSpecifics(randomsource);
             initializeDefaultEquipment();
+            initializeFearedEntity(randomsource);
             this.entityData.set(INITIALIZED, true);
 
             if (!spellsGenerated) {
@@ -239,12 +248,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 }
             }
 
+            initializeFearGoal();
             goalsInitialized = true;
         } else {
             if (spellsGenerated && !persistedSpells.isEmpty()) {
                 reapplyGoalsWithPersistedSpells();
                 goalsInitialized = true;
             }
+
+            initializeFearGoal();
         }
 
         HumanStatsManager.applyClassAttributes(this);
@@ -633,6 +645,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(HAS_SHIELD, false);
         pBuilder.define(IS_ARCHER, false);
         pBuilder.define(STANDBY, false);
+        pBuilder.define(FEARED_ENTITY, "");
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -728,6 +741,92 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return EntityClass.values()[this.entityData.get(ENTITY_CLASS)];
     }
 
+    private void initializeFearedEntity(RandomSource randomSource) {
+        // 30% chance to fear an entity
+        if (randomSource.nextFloat() >= 0.3f) {
+            MagicRealms.LOGGER.debug("Entity {} spawned without fear", getEntityName());
+            return;
+        }
+
+        // Get all registered entity types that make sense to fear
+        List<EntityType<?>> fearableEntityTypes = BuiltInRegistries.ENTITY_TYPE.stream()
+                .filter(entityType -> {
+                    // Only include entities from these categories
+                    MobCategory category = entityType.getCategory();
+                    return category == MobCategory.MONSTER ||
+                            category == MobCategory.CREATURE ||
+                            category == MobCategory.WATER_CREATURE ||
+                            category == MobCategory.UNDERGROUND_WATER_CREATURE ||
+                            category == MobCategory.AXOLOTLS;
+                })
+                .filter(entityType -> {
+                    // Filter out some specific entity types that don't make sense to fear
+                    return entityType != EntityType.PLAYER &&
+                            entityType != EntityType.ITEM &&
+                            entityType != EntityType.EXPERIENCE_ORB &&
+                            entityType != EntityType.AREA_EFFECT_CLOUD &&
+                            entityType != MREntityRegistry.HUMAN.get();
+                })
+                .toList();
+
+        if (!fearableEntityTypes.isEmpty()) {
+            EntityType<?> randomEntity = fearableEntityTypes.get(randomSource.nextInt(fearableEntityTypes.size()));
+            setFearedEntity(randomEntity);
+
+            MagicRealms.LOGGER.debug("Entity {} now fears: {} (Category: {})",
+                    getEntityName(),
+                    randomEntity.getDescriptionId(),
+                    randomEntity.getCategory().getName());
+        }
+    }
+
+    public void setFearedEntity(EntityType<?> entityType) {
+        this.fearedEntityType = entityType;
+        String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entityType).toString();
+        this.entityData.set(FEARED_ENTITY, entityId);
+
+        // Reinitialize fear goal if entity is already spawned
+        if (this.level() != null && !this.level().isClientSide) {
+            initializeFearGoal();
+        }
+    }
+
+    public EntityType<?> getFearedEntity() {
+        if (fearedEntityType == null) {
+            String entityId = this.entityData.get(FEARED_ENTITY);
+            if (!entityId.isEmpty()) {
+                try {
+                    ResourceLocation location = ResourceLocation.parse(entityId);
+                    fearedEntityType = BuiltInRegistries.ENTITY_TYPE.get(location);
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Failed to parse feared entity ID: {}", entityId, e);
+                }
+            }
+        }
+        return fearedEntityType;
+    }
+
+    public boolean isAfraidOf(Entity entity) {
+        EntityType<?> feared = getFearedEntity();
+        return feared != null && entity.getType() == feared;
+    }
+
+    public boolean hasFear() {
+        return getFearedEntity() != null;
+    }
+
+    private void initializeFearGoal() {
+        if (getFearedEntity() != null && !fearGoalInitialized) {
+            // Remove existing fear goals to avoid duplicates
+            this.goalSelector.removeAllGoals(goal -> goal instanceof HumanGoals.CustomFearGoal);
+
+            // Fear goal with high priority
+            this.goalSelector.addGoal(1, new HumanGoals.CustomFearGoal(this, 16.0f, 1.2, 1.6));
+
+            fearGoalInitialized = true;
+        }
+    }
+
     public EntityTextureConfig getTextureConfig() {
         if (textureConfig == null) {
             if (!this.entityData.get(INITIALIZED)) {
@@ -759,6 +858,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
         compound.putBoolean("Standby", this.entityData.get(STANDBY));
+        compound.putString("FearedEntity", this.entityData.get(FEARED_ENTITY));
 
         ListTag schoolsTag = new ListTag();
         for (SchoolType school : getMagicSchools()) {
@@ -800,6 +900,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
         this.entityData.set(STAR_LEVEL, starLevel);
+
+        String fearedEntityId = compound.getString("FearedEntity");
+        this.entityData.set(FEARED_ENTITY, fearedEntityId);
+        initializeFearGoal();
 
         List<SchoolType> schools = new ArrayList<>();
         if (compound.contains("MagicSchools")) {

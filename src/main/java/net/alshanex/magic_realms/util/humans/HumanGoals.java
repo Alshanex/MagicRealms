@@ -10,7 +10,12 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.*;
@@ -1205,6 +1210,59 @@ public class HumanGoals {
                     }
                 }
             });
+        }
+    }
+
+    public static class CustomFearGoal extends AvoidEntityGoal<LivingEntity> {
+        private final RandomHumanEntity humanEntity;
+
+        public CustomFearGoal(RandomHumanEntity humanEntity, float maxDistance, double walkSpeedModifier, double sprintSpeedModifier) {
+            super(humanEntity, LivingEntity.class, maxDistance, walkSpeedModifier, sprintSpeedModifier,
+                    (livingEntity) -> humanEntity.isAfraidOf(livingEntity));
+            this.humanEntity = humanEntity;
+        }
+
+        @Override
+        public boolean canUse() {
+            boolean canUse = super.canUse();
+            if (canUse) {
+                humanEntity.setTarget(null);
+            }
+            return canUse;
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (humanEntity.getTarget() != null && humanEntity.isAfraidOf(humanEntity.getTarget())) {
+                humanEntity.setTarget(null);
+            }
+        }
+    }
+
+    public static class NoFearTargetGoal extends NearestAttackableTargetGoal<Monster> {
+        private final RandomHumanEntity humanEntity;
+
+        public NoFearTargetGoal(RandomHumanEntity humanEntity) {
+            super(humanEntity, Monster.class, true);
+            this.humanEntity = humanEntity;
+        }
+
+        @Override
+        public boolean canUse() {
+            boolean canUse = super.canUse();
+            if (canUse && target != null && humanEntity.isAfraidOf(target)) {
+                return false; // Don't target feared entities
+            }
+            return canUse;
+        }
+
+        @Override
+        protected boolean canAttack(LivingEntity potentialTarget, TargetingConditions targetPredicate) {
+            if (humanEntity.isAfraidOf(potentialTarget)) {
+                return false; // Never attack feared entities
+            }
+            return super.canAttack(potentialTarget, targetPredicate);
         }
     }
 }

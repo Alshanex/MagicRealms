@@ -11,11 +11,14 @@ import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.LevelingStatsManager;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.List;
 
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class KillTrackingHandler {
@@ -94,6 +97,120 @@ public class KillTrackingHandler {
 
         MagicRealms.LOGGER.debug("Added {} experience to entity {} (Level: {})",
                 experience, entity.getEntityName(), newLevel);
+    }
+
+    private static final double SHARED_XP_MULTIPLIER = 0.5; // 50% of normal XP
+    private static final double MAX_DISTANCE_SQR = 64 * 64; // 64 block radius
+
+    @SubscribeEvent
+    public static void onEntityDeath(LivingDeathEvent event) {
+        // Only process on server side
+        if (event.getEntity().level().isClientSide) {
+            return;
+        }
+
+        LivingEntity deadEntity = event.getEntity();
+
+        // Check if the killer is a player
+        if (!(deadEntity.getLastHurtByMob() instanceof Player killer)) {
+            return;
+        }
+
+        // Don't give XP for other RandomHumanEntities
+        if (deadEntity instanceof RandomHumanEntity) {
+            return;
+        }
+
+        // Find all RandomHumanEntity companions owned by this player within range
+        List<RandomHumanEntity> companions = findNearbyCompanions(killer, deadEntity);
+
+        if (companions.isEmpty()) {
+            return;
+        }
+
+        // Calculate base XP that would be gained (simulate the kill)
+        int baseXp = calculateBaseExperience(deadEntity);
+
+        if (baseXp <= 0) {
+            return;
+        }
+
+        // Calculate shared XP (50% of what they would have gained)
+        int sharedXp = Math.max(1, (int) (baseXp * SHARED_XP_MULTIPLIER));
+
+        // Distribute XP to all companions
+        for (RandomHumanEntity companion : companions) {
+            giveSharedExperience(companion, deadEntity, sharedXp, killer);
+        }
+
+        MagicRealms.LOGGER.debug("Distributed {} shared XP to {} companions of player {} for killing {}",
+                sharedXp, companions.size(), killer.getName().getString(), deadEntity.getType().getDescriptionId());
+    }
+
+    private static List<RandomHumanEntity> findNearbyCompanions(Player owner, LivingEntity deadEntity) {
+        return deadEntity.level().getEntitiesOfClass(RandomHumanEntity.class,
+                deadEntity.getBoundingBox().inflate(64.0), // 64 block radius
+                companion -> {
+                    // Check if this companion is owned by the player
+                    LivingEntity summoner = companion.getSummoner();
+                    if(summoner == null){
+                        return false;
+                    }
+                    if (summoner != owner) {
+                        return false;
+                    }
+
+                    // Check distance
+                    double distanceSqr = companion.distanceToSqr(deadEntity);
+                    return distanceSqr <= MAX_DISTANCE_SQR;
+                });
+    }
+
+    private static int calculateBaseExperience(LivingEntity entity) {
+        try {
+            if (entity instanceof Player) {
+                return 42; // Would never reach here due to earlier check, but kept for completeness
+            }
+
+            if (!(entity instanceof net.minecraft.world.entity.monster.Monster)) {
+                return 0; // No XP for non-monsters
+            }
+
+            float maxHealth = entity.getMaxHealth();
+            double baseExp = Math.sqrt(maxHealth) * 3.0;
+            int finalExp = (int) Math.round(baseExp);
+
+            return Math.max(1, Math.min(finalExp, 100));
+
+        } catch (Exception e) {
+            if (entity instanceof net.minecraft.world.entity.monster.Monster) {
+                return Math.max(1, Math.min((int) (entity.getMaxHealth() / 5), 20));
+            }
+            return 0;
+        }
+    }
+
+    private static void giveSharedExperience(RandomHumanEntity companion, LivingEntity killedEntity,
+                                             int sharedXp, Player owner) {
+        KillTrackerData killTracker = companion.getData(MRDataAttachments.KILL_TRACKER);
+
+        // Store previous level to check for level up
+        int previousLevel = killTracker.getCurrentLevel();
+
+        // Add the shared experience (using the existing method but with our calculated XP)
+        killTracker.addExperience(sharedXp);
+
+        // Check if leveled up and apply attribute bonuses
+        int newLevel = killTracker.getCurrentLevel();
+        if (newLevel > previousLevel) {
+            // Apply level-based attribute bonuses
+            LevelingStatsManager.applyLevelBasedAttributes(companion, newLevel);
+
+            // Update the custom name
+            companion.updateCustomNameWithStars();
+
+            spawnLevelUpEffects(companion);
+        }
     }
 }
 

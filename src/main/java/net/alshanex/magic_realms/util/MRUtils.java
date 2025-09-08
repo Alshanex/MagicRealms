@@ -2,8 +2,10 @@ package net.alshanex.magic_realms.util;
 
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -11,6 +13,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 public class MRUtils {
     public static boolean isWeapon(ItemStack stack) {
@@ -95,13 +99,83 @@ public class MRUtils {
     }
 
     public static double getRangedWeaponDamage(ItemStack ranged) {
-        if (ranged.getItem() instanceof BowItem bow) {
-            return bow.getDamage(ranged);
+        if (ranged.getItem() instanceof BowItem) {
+            return calculateBowScore(ranged);
         } else if (ranged.getItem() instanceof CrossbowItem crossBow) {
             return crossBow.getDamage(ranged);
         }
         return 1.0;
     }
+
+    public static double calculateBowScore(ItemStack bow) {
+        if (!(bow.getItem() instanceof BowItem)) {
+            return 0.0;
+        }
+
+        double score = 0.0;
+        int totalEnchantments = 0;
+
+        // Get all enchantments on the bow
+        ItemEnchantments enchantments = bow.getTagEnchantments();
+
+        // Check if bow has any enchantments
+        if (enchantments.isEmpty()) {
+            return 1.0; // Unenchanted bow gets minimal score
+        }
+
+        // Iterate through all enchantments using the correct Entry type
+        for (var entry : enchantments.entrySet()) {
+            Holder<Enchantment> enchantmentHolder = entry.getKey();
+            int level = entry.getIntValue();
+            totalEnchantments++;
+
+            // Get the enchantment ID
+            String enchantmentId = enchantmentHolder.getKey().location().toString();
+
+            switch (enchantmentId) {
+                case "minecraft:power" -> {
+                    // Power enchantment gets high priority
+                    score += level * 15.0; // Power I = 15, Power V = 75
+                }
+                case "minecraft:flame" -> {
+                    // Flame enchantment gets bonus points regardless of level
+                    score += 25.0;
+                }
+                case "minecraft:infinity" -> {
+                    // Infinity is valuable for archers
+                    score += 20.0;
+                }
+                case "minecraft:punch" -> {
+                    // Punch adds some value
+                    score += level * 5.0;
+                }
+                case "minecraft:unbreaking" -> {
+                    // Unbreaking adds moderate value
+                    score += level * 3.0;
+                }
+                case "minecraft:mending" -> {
+                    // Mending is valuable for longevity
+                    score += 15.0;
+                }
+                default -> {
+                    // Any other enchantment adds some base value
+                    score += level * 2.0;
+                }
+            }
+        }
+
+        // Bonus for having multiple enchantments (prioritize quantity)
+        // Each additional enchantment beyond the first adds bonus points
+        if (totalEnchantments > 1) {
+            score += (totalEnchantments - 1) * 8.0;
+        }
+
+        // Base score for having any enchantments at all
+        score += 10.0;
+
+        return score;
+    }
+
 
     public static double getStaffSpellPower(ItemStack staff) {
         if (!isStaff(staff)) {

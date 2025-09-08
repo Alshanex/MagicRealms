@@ -23,6 +23,7 @@ import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -34,6 +35,7 @@ import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
 
@@ -1410,6 +1412,201 @@ public class HumanGoals {
                 return false; // Never attack feared entities
             }
             return super.canAttack(potentialTarget, targetPredicate);
+        }
+    }
+
+    public static class PickupMobDropsGoal extends Goal {
+        private final RandomHumanEntity entity;
+        private ItemEntity targetItem;
+        private int searchCooldown = 0;
+        private int stuckTicks = 0;
+        private Vec3 lastPosition;
+
+        private static final int SEARCH_RADIUS = 16;
+        private static final int SEARCH_COOLDOWN = 40; // 2 seconds between searches
+        private static final int MAX_STUCK_TICKS = 100; // 5 seconds before giving up on stuck item
+        private static final double PICKUP_DISTANCE_SQ = 4.0; // 2 blocks
+        private static final double MOVEMENT_THRESHOLD = 0.1; // Minimum movement to not be considered stuck
+
+        public PickupMobDropsGoal(RandomHumanEntity entity) {
+            this.entity = entity;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't run if entity is in combat
+            if (entity.getTarget() != null) {
+                return false;
+            }
+
+            // Don't run if entity is in standby mode
+            if (entity.isStandby()) {
+                return false;
+            }
+
+            // Apply search cooldown
+            if (searchCooldown > 0) {
+                searchCooldown--;
+                return false;
+            }
+
+            // Only run if entity can pick up loot
+            if (!entity.canPickUpLoot()) {
+                return false;
+            }
+
+            // Find nearby item entities
+            return findNearestPickupableItem();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if we now have a target to fight
+            if (entity.getTarget() != null) {
+                return false;
+            }
+
+            // Stop if entity goes into standby
+            if (entity.isStandby()) {
+                return false;
+            }
+
+            // Stop if target item is gone or too far away
+            if (targetItem == null || !targetItem.isAlive() ||
+                    entity.distanceToSqr(targetItem) > SEARCH_RADIUS * SEARCH_RADIUS) {
+                return false;
+            }
+
+            // Stop if we've been stuck for too long
+            if (stuckTicks >= MAX_STUCK_TICKS) {
+                return false;
+            }
+
+            // Stop if item is no longer worth picking up
+            if (!isItemWorthPickingUp(targetItem)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public void start() {
+            if (targetItem != null) {
+                entity.getNavigation().moveTo(targetItem, 1.0);
+                stuckTicks = 0;
+                lastPosition = entity.position();
+            }
+        }
+
+        @Override
+        public void tick() {
+            if (targetItem == null) {
+                return;
+            }
+
+            double distanceToItem = entity.distanceToSqr(targetItem);
+
+            // Check if we're close enough to pick up the item
+            if (distanceToItem <= PICKUP_DISTANCE_SQ) {
+                // The entity's built-in pickup logic should handle this
+                // But we can trigger it manually if needed
+                if (entity.wantsToPickUp(targetItem.getItem())) {
+                    entity.take(targetItem, targetItem.getItem().getCount());
+                }
+                return;
+            }
+
+            // Check if we're stuck
+            Vec3 currentPosition = entity.position();
+            if (lastPosition != null) {
+                double movementDistance = currentPosition.distanceTo(lastPosition);
+                if (movementDistance < MOVEMENT_THRESHOLD) {
+                    stuckTicks++;
+                } else {
+                    stuckTicks = 0; // Reset if we're moving
+                }
+            }
+            lastPosition = currentPosition;
+
+            // Try to navigate to the item
+            if (entity.getNavigation().isDone() || stuckTicks > 20) {
+                // Recalculate path if navigation is done or we've been stuck for a bit
+                entity.getNavigation().moveTo(targetItem, 1.0);
+
+                // If we're really stuck, try moving to a slightly different position
+                if (stuckTicks > 40) {
+                    double offsetX = (entity.getRandom().nextDouble() - 0.5) * 2.0;
+                    double offsetZ = (entity.getRandom().nextDouble() - 0.5) * 2.0;
+                    entity.getNavigation().moveTo(
+                            targetItem.getX() + offsetX,
+                            targetItem.getY(),
+                            targetItem.getZ() + offsetZ,
+                            1.0
+                    );
+                }
+            }
+        }
+
+        @Override
+        public void stop() {
+            targetItem = null;
+            searchCooldown = SEARCH_COOLDOWN;
+            stuckTicks = 0;
+            lastPosition = null;
+            entity.getNavigation().stop();
+        }
+
+        private boolean findNearestPickupableItem() {
+            AABB searchArea = new AABB(entity.blockPosition()).inflate(SEARCH_RADIUS);
+            List<ItemEntity> nearbyItems = entity.level().getEntitiesOfClass(ItemEntity.class, searchArea);
+
+            ItemEntity closestItem = null;
+            double closestDistance = Double.MAX_VALUE;
+
+            for (ItemEntity itemEntity : nearbyItems) {
+                // Skip if item is not worth picking up
+                if (!isItemWorthPickingUp(itemEntity)) {
+                    continue;
+                }
+
+                // Skip if entity doesn't want to pick up this item
+                if (!entity.wantsToPickUp(itemEntity.getItem())) {
+                    continue;
+                }
+
+                // Skip items that are too young (just dropped)
+                if (itemEntity.getAge() < 20) { // 1 second old minimum
+                    continue;
+                }
+
+                double distance = entity.distanceToSqr(itemEntity);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestItem = itemEntity;
+                }
+            }
+
+            if (closestItem != null) {
+                targetItem = closestItem;
+                return true;
+            }
+
+            return false;
+        }
+
+        private boolean isItemWorthPickingUp(ItemEntity itemEntity) {
+            if (itemEntity == null || !itemEntity.isAlive()) {
+                return false;
+            }
+
+            // Don't pick up items that are about to despawn
+            if (itemEntity.getAge() > 5400) { // 4.5 minutes (items despawn at 6000 ticks)
+                return false;
+            }
+
+            return true;
         }
     }
 }

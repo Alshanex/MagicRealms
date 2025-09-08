@@ -1,6 +1,8 @@
 package net.alshanex.magic_realms.util;
 
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import io.redspace.ironsspellbooks.api.spells.*;
+import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
@@ -16,6 +18,8 @@ import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 
+import java.util.List;
+
 public class MRUtils {
     public static boolean isWeapon(ItemStack stack) {
         return stack.getItem() instanceof SwordItem ||
@@ -29,6 +33,10 @@ public class MRUtils {
 
     public static boolean isStaff(ItemStack stack) {
         return stack.getItem() instanceof StaffItem;
+    }
+
+    public static boolean isSpellbook(ItemStack stack) {
+        return stack.getItem() instanceof SpellBook;
     }
 
     public static boolean isArmorBetter(ArmorItem newArmor, ItemStack currentArmorStack) {
@@ -74,6 +82,70 @@ public class MRUtils {
         }
 
         return getStaffSpellPower(newStaff) > getStaffSpellPower(currentStaff);
+    }
+
+    public static boolean isSpellbookBetter(ItemStack newSpellbook, ItemStack currentSpellbook, RandomHumanEntity entity) {
+        if (!isSpellbook(currentSpellbook)) {
+            return true;
+        }
+
+        return getSpellbookScore(newSpellbook, entity) > getSpellbookScore(currentSpellbook, entity);
+    }
+
+    public static double getSpellbookScore(ItemStack spellbook, RandomHumanEntity entity) {
+        if (!isSpellbook(spellbook)) {
+            return 0.0;
+        }
+
+        ISpellContainer container = ISpellContainer.get(spellbook);
+        if (container == null || container.isEmpty()) {
+            return 1.0; // Empty spellbook gets minimal score
+        }
+
+        double score = 0.0;
+        List<SpellData> spells = container.getActiveSpells().stream()
+                .map(SpellSlot::spellData)
+                .toList();
+
+        for (SpellData spellData : spells) {
+            AbstractSpell spell = spellData.getSpell();
+            int level = spellData.getLevel();
+
+            // Base score for having a spell
+            score += 10.0;
+
+            // Score based on spell level (higher level = better)
+            score += level * 5.0;
+
+            // Score based on spell rarity
+            SpellRarity rarity = spell.getRarity(level);
+            score += switch (rarity) {
+                case COMMON -> 5.0;
+                case UNCOMMON -> 15.0;
+                case RARE -> 30.0;
+                case EPIC -> 50.0;
+                case LEGENDARY -> 75.0;
+            };
+
+            // Bonus score if the spell matches mage's schools
+            if (entity.getEntityClass() == EntityClass.MAGE) {
+                if (entity.hasSchool(spell.getSchoolType())) {
+                    score += 20.0; // Significant bonus for matching school
+                }
+            }
+
+            // Additional score for spell power
+            float spellPower = spell.getSpellPower(level, entity);
+            score += spellPower * 0.5;
+        }
+
+        // Bonus for having multiple spells
+        int spellCount = spells.size();
+        if (spellCount > 1) {
+            score += (spellCount - 1) * 15.0;
+        }
+
+        return score;
     }
 
     public static double getWeaponDamage(ItemStack weapon) {
@@ -175,7 +247,6 @@ public class MRUtils {
         return score;
     }
 
-
     public static double getStaffSpellPower(ItemStack staff) {
         if (!isStaff(staff)) {
             return 0.0;
@@ -225,25 +296,72 @@ public class MRUtils {
     }
 
     public static boolean shouldAutoEquip(ItemStack stack, RandomHumanEntity entity) {
+        if (stack.isEmpty()) return false;
+
+        // Don't equip equipped items
+        if (isEquipped(stack, entity)) return false;
+
+        EntityClass entityClass = entity.getEntityClass();
+
+        // Archers shouldn't sell arrows
+        if (entityClass == EntityClass.ROGUE && entity.isArcher() &&
+                (stack.getItem() instanceof ArrowItem || stack.is(Items.ARROW))) {
+            return false;
+        }
+
+        // Don't sell emeralds (we need them for buying)
+        if (stack.is(Items.EMERALD)) {
+            return false;
+        }
+
+        // Don't sell armor if it's better than what we're wearing AND we need armor
         if (stack.getItem() instanceof ArmorItem armorItem) {
             EquipmentSlot slot = getSlotForArmorType(armorItem.getType());
             ItemStack currentArmor = entity.getItemBySlot(slot);
             return currentArmor.isEmpty() || isArmorBetter(armorItem, currentArmor);
-        } else if (isWeapon(stack)) {
+        }
+
+        // Don't sell weapons if they're better than what we're using AND we're a melee class
+        if (isWeapon(stack) &&
+                (entityClass == EntityClass.WARRIOR || (entityClass == EntityClass.ROGUE && !entity.isArcher()))) {
             ItemStack currentWeapon = entity.getMainHandItem();
             return currentWeapon.isEmpty() || isWeaponBetter(stack, currentWeapon, entity);
-        } else if (isRangedWeapon(stack) && entity.getEntityClass() == EntityClass.ROGUE && entity.isArcher()) {
-            ItemStack currentWeapon = entity.getMainHandItem();
-            return currentWeapon.isEmpty() || isRangedWeaponBetter(stack, currentWeapon);
-        } else if (isStaff(stack) && entity.getEntityClass() == EntityClass.MAGE) {
+        }
+
+        // Don't sell staves if they're better than what we're using AND we're a mage
+        if (entityClass == EntityClass.MAGE && isStaff(stack)) {
             ItemStack currentWeapon = entity.getMainHandItem();
             return currentWeapon.isEmpty() || isStaffBetter(stack, currentWeapon);
-        } else if (stack.getItem() instanceof ShieldItem && entity.getEntityClass() == EntityClass.WARRIOR && entity.hasShield()) {
+        }
+
+        // Don't sell ranged weapons if they're better AND we're an archer
+        if (entityClass == EntityClass.ROGUE && entity.isArcher() && isRangedWeapon(stack)) {
+            ItemStack currentWeapon = entity.getMainHandItem();
+            return currentWeapon.isEmpty() || isRangedWeaponBetter(stack, currentWeapon);
+        }
+
+        // Don't sell shields if we need them and don't have one
+        if (entityClass == EntityClass.WARRIOR && entity.hasShield() && stack.getItem() instanceof ShieldItem) {
             ItemStack currentShield = entity.getOffhandItem();
             return currentShield.isEmpty() || !(currentShield.getItem() instanceof ShieldItem);
         }
 
+        // Spellbook handling for mages
+        if (entityClass == EntityClass.MAGE && isSpellbook(stack)) {
+            ItemStack currentOffhand = entity.getOffhandItem();
+            return currentOffhand.isEmpty() || isSpellbookBetter(stack, currentOffhand, entity);
+        }
+
         return false;
+    }
+
+    private static boolean isEquipped(ItemStack stack, RandomHumanEntity entity) {
+        return entity.getMainHandItem() == stack ||
+                entity.getOffhandItem() == stack ||
+                entity.getItemBySlot(EquipmentSlot.HEAD) == stack ||
+                entity.getItemBySlot(EquipmentSlot.CHEST) == stack ||
+                entity.getItemBySlot(EquipmentSlot.LEGS) == stack ||
+                entity.getItemBySlot(EquipmentSlot.FEET) == stack;
     }
 
     public static void equipItem(ItemStack newItem, int inventorySlot, RandomHumanEntity entity) {
@@ -257,6 +375,10 @@ public class MRUtils {
             oldItem = entity.getMainHandItem();
             entity.setItemSlot(EquipmentSlot.MAINHAND, newItem.copy());
         } else if (newItem.getItem() instanceof ShieldItem) {
+            oldItem = entity.getOffhandItem();
+            entity.setItemSlot(EquipmentSlot.OFFHAND, newItem.copy());
+        } else if (isSpellbook(newItem) && entity.getEntityClass() == EntityClass.MAGE) {
+            // Equip spellbook in offhand for mages
             oldItem = entity.getOffhandItem();
             entity.setItemSlot(EquipmentSlot.OFFHAND, newItem.copy());
         }

@@ -4,6 +4,7 @@ import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
+import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
@@ -71,6 +72,7 @@ import software.bernie.geckolib.animation.AnimationState;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, InventoryCarrier {
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
@@ -101,6 +103,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private static final int INVENTORY_SIZE = 27;
     private final SimpleContainer inventory = new SimpleContainer(INVENTORY_SIZE);
+
+    private List<AbstractSpell> spellbookSpells = new ArrayList<>();
+    private ItemStack lastEquippedSpellbook = ItemStack.EMPTY;
 
     public RandomHumanEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -195,9 +200,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
-        this.goalSelector.addGoal(5, new HumanGoals.SellItemsToVillagersGoal(this));
-        this.goalSelector.addGoal(6, new HumanGoals.BuyEquipmentFromVillagersGoal(this));
-        this.goalSelector.addGoal(6, new HumanGoals.EnchantEquipmentFromLibrarianGoal(this));
+        this.goalSelector.addGoal(6, new HumanGoals.SellItemsToVillagersGoal(this));
+        this.goalSelector.addGoal(5, new HumanGoals.BuyEquipmentFromVillagersGoal(this));
+        this.goalSelector.addGoal(7, new HumanGoals.EnchantEquipmentFromLibrarianGoal(this));
 
         this.goalSelector.addGoal(4, new GenericFollowOwnerGoal(this, this::getSummoner, 0.9f, 15, 5, false, 25));
         this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.8D));
@@ -564,6 +569,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             }
         }
 
+        if (!level().isClientSide && this.getEntityClass() == EntityClass.MAGE && this.tickCount % 20 == 0) {
+            updateSpellbookSpells();
+        }
+
         if (!level().isClientSide) {
             MagicData data = this.getMagicData();
             boolean isCasting = data.isCasting();
@@ -827,6 +836,86 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
+    public static List<AbstractSpell> extractSpellsFromSpellbook(ItemStack spellbook) {
+        List<AbstractSpell> spells = new ArrayList<>();
+
+        if (!MRUtils.isSpellbook(spellbook)) {
+            return spells;
+        }
+
+        ISpellContainer container = ISpellContainer.get(spellbook);
+        if (container != null && !container.isEmpty()) {
+            container.getActiveSpells().forEach(spellSlot -> {
+                spells.add(spellSlot.spellData().getSpell());
+            });
+        }
+
+        return spells;
+    }
+
+    public void updateSpellbookSpells() {
+        if (this.getEntityClass() != EntityClass.MAGE) {
+            return;
+        }
+
+        ItemStack currentOffhand = this.getOffhandItem();
+
+        // Check if spellbook has changed
+        if (!ItemStack.isSameItemSameComponents(currentOffhand, lastEquippedSpellbook)) {
+            // Extract new spellbook spells
+            List<AbstractSpell> newSpellbookSpells = extractSpellsFromSpellbook(currentOffhand);
+
+            // Update the spell roster
+            updateMageGoalWithSpellbook(newSpellbookSpells);
+
+            // Cache the current state
+            this.spellbookSpells = new ArrayList<>(newSpellbookSpells);
+            this.lastEquippedSpellbook = currentOffhand.copy();
+
+            MagicRealms.LOGGER.debug("Mage {} updated spellbook spells. New count: {}",
+                    getEntityName(), newSpellbookSpells.size());
+        }
+    }
+
+    private void updateMageGoalWithSpellbook(List<AbstractSpell> spellbookSpells) {
+        // Combine persisted spells with spellbook spells
+        List<AbstractSpell> combinedSpells = new ArrayList<>(persistedSpells);
+        combinedSpells.addAll(spellbookSpells);
+
+        // Remove duplicate spells (keep the first occurrence)
+        List<AbstractSpell> uniqueSpells = new ArrayList<>();
+        for (AbstractSpell spell : combinedSpells) {
+            if (!uniqueSpells.contains(spell)) {
+                uniqueSpells.add(spell);
+            }
+        }
+
+        // Remove existing wizard attack goal
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
+
+        // Add new goal with combined spells
+        if (!uniqueSpells.isEmpty()) {
+            this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
+                    .setSpells(uniqueSpells, uniqueSpells, uniqueSpells, uniqueSpells)
+                    .setDrinksPotions()
+            );
+
+            MagicRealms.LOGGER.debug("Mage {} updated spell roster: {} persisted + {} spellbook = {} total unique",
+                    getEntityName(), persistedSpells.size(), spellbookSpells.size(), uniqueSpells.size());
+        } else {
+            // Fallback to just persisted spells
+            setMageGoal(persistedSpells);
+        }
+    }
+
+    public List<AbstractSpell> getAllAvailableSpells() {
+        List<AbstractSpell> allSpells = new ArrayList<>(persistedSpells);
+        allSpells.addAll(spellbookSpells);
+
+        // Remove duplicates
+        return allSpells.stream().distinct().collect(Collectors.toList());
+    }
+
     public EntityTextureConfig getTextureConfig() {
         if (textureConfig == null) {
             if (!this.entityData.get(INITIALIZED)) {
@@ -888,6 +977,22 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         OwnerHelper.serializeOwner(compound, summonerUUID);
 
         this.writeInventoryToTag(compound, this.registryAccess());
+
+        // Save spellbook spells
+        if (!spellbookSpells.isEmpty()) {
+            ListTag spellbookSpellsTag = new ListTag();
+            for (AbstractSpell spell : spellbookSpells) {
+                spellbookSpellsTag.add(StringTag.valueOf(spell.getSpellResource().toString()));
+            }
+            compound.put("SpellbookSpells", spellbookSpellsTag);
+        }
+
+        // Save last equipped spellbook
+        if (!lastEquippedSpellbook.isEmpty()) {
+            CompoundTag spellbookTag = new CompoundTag();
+            lastEquippedSpellbook.save(this.registryAccess(), spellbookTag);
+            compound.put("LastEquippedSpellbook", spellbookTag);
+        }
     }
 
     @Override
@@ -973,6 +1078,31 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         this.readInventoryFromTag(compound, this.registryAccess());
+
+        // Load spellbook spells
+        this.spellbookSpells.clear();
+        if (compound.contains("SpellbookSpells")) {
+            ListTag spellbookSpellsTag = compound.getList("SpellbookSpells", 8);
+            for (int i = 0; i < spellbookSpellsTag.size(); i++) {
+                try {
+                    ResourceLocation spellLocation = ResourceLocation.parse(spellbookSpellsTag.getString(i));
+                    AbstractSpell spell = SpellRegistry.getSpell(spellLocation);
+                    if (spell != null) {
+                        spellbookSpells.add(spell);
+                    }
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Failed to parse spellbook spell from NBT: {}", spellbookSpellsTag.getString(i), e);
+                }
+            }
+        }
+
+        // Load last equipped spellbook
+        if (compound.contains("LastEquippedSpellbook")) {
+            CompoundTag spellbookTag = compound.getCompound("LastEquippedSpellbook");
+            this.lastEquippedSpellbook = ItemStack.parseOptional(this.registryAccess(), spellbookTag);
+        } else {
+            this.lastEquippedSpellbook = ItemStack.EMPTY;
+        }
     }
 
     private boolean isAlliedHelper(Entity entity) {
@@ -1066,8 +1196,17 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private void setMageGoal(List<AbstractSpell> spells){
         this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
+
+        // If we have spellbook spells, combine them
+        List<AbstractSpell> finalSpells = new ArrayList<>(spells);
+        if (this.getEntityClass() == EntityClass.MAGE && !spellbookSpells.isEmpty()) {
+            finalSpells.addAll(spellbookSpells);
+            // Remove duplicates
+            finalSpells = finalSpells.stream().distinct().collect(Collectors.toList());
+        }
+
         this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
-                .setSpells(spells, spells, spells, spells)
+                .setSpells(finalSpells, finalSpells, finalSpells, finalSpells)
                 .setDrinksPotions()
         );
     }

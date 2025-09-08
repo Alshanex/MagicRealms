@@ -1,5 +1,13 @@
 package net.alshanex.magic_realms.util.humans;
 
+import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
+import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
+import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
+import io.redspace.ironsspellbooks.api.spells.ISpellContainerMutable;
+import io.redspace.ironsspellbooks.api.spells.SchoolType;
+import io.redspace.ironsspellbooks.item.SpellBook;
+import io.redspace.ironsspellbooks.registries.ComponentRegistry;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
@@ -261,6 +269,14 @@ public class HumanGoals {
                 }
             }
 
+            // Don't sell spellbooks if they're better than what we're using AND we're a mage
+            if (entityClass == EntityClass.MAGE && MRUtils.isSpellbook(stack)) {
+                ItemStack currentOffhand = entity.getOffhandItem();
+                if (currentOffhand.isEmpty() || MRUtils.isSpellbookBetter(stack, currentOffhand, entity)) {
+                    return false; // This spellbook is better, don't sell it
+                }
+            }
+
             // For everything else (including rotten flesh, food, misc items), allow selling
             return true;
         }
@@ -434,21 +450,28 @@ public class HumanGoals {
         public boolean canUse() {
             if (tradingCooldown > 0) {
                 tradingCooldown--;
+                //MagicRealms.LOGGER.debug("Entity {} trading cooldown: {}", entity.getEntityName(), tradingCooldown);
                 return false;
             }
 
             if (searchCooldown > 0) {
                 searchCooldown--;
+                //MagicRealms.LOGGER.debug("Entity {} search cooldown: {}", entity.getEntityName(), searchCooldown);
                 return false;
             }
 
+            //MagicRealms.LOGGER.debug("Entity {} attempting to use BuyEquipmentFromVillagersGoal", entity.getEntityName());
+
             // First check if we can now afford any previously unaffordable offers
             if (checkMemoryForAffordableOffers()) {
+                //MagicRealms.LOGGER.debug("Entity {} found affordable offer in memory", entity.getEntityName());
                 return true;
             }
 
             // Then search for new offers
-            return findVillagerWithAffordableEquipment();
+            boolean result = findVillagerWithAffordableEquipment();
+            //MagicRealms.LOGGER.debug("Entity {} findVillagerWithAffordableEquipment result: {}", entity.getEntityName(), result);
+            return result;
         }
 
         @Override
@@ -558,30 +581,141 @@ public class HumanGoals {
                         entity.getEntityClass() == EntityClass.MAGE) {
 
                     boolean needsStaffResult = needsStaff();
+                    boolean needsSpellbookResult = needsSpellbook();
                     int emeraldCount = entity.getInventory().countItem(Items.EMERALD);
 
-                    //MagicRealms.LOGGER.debug("Mage {} checking librarian for staff. Needs staff: {}, Has {} emeralds", entity.getEntityName(), needsStaffResult, emeraldCount);
-
+                    // Check for staff first
                     if (needsStaffResult) {
                         if (hasEmeralds(10)) {
-                            //MagicRealms.LOGGER.debug("Mage {} attempting to buy artificer staff from librarian", entity.getEntityName());
                             targetVillager = villager;
                             targetOffer = createStaffOffer();
                             fromMemory = false;
                             return true;
                         } else {
-                            //MagicRealms.LOGGER.debug("Mage {} cannot afford staff (needs 10 emeralds, has {}), storing offer", entity.getEntityName(), emeraldCount);
                             // Store staff offer as unaffordable
                             List<MerchantOffer> staffOffers = Arrays.asList(createStaffOffer());
                             memory.storeUnaffordableOffers(villager.getUUID(), staffOffers);
                         }
-                    } else {
-                        //MagicRealms.LOGGER.debug("Mage {} doesn't need staff. Current weapon: {}", entity.getEntityName(), entity.getMainHandItem().getDisplayName().getString());
+                    }
+
+                    // Check for spellbook if no staff needed or couldn't afford staff
+                    if (needsSpellbookResult) {
+                        int spellbookCost = 15;
+                        if (hasEmeralds(spellbookCost)) {
+                            targetVillager = villager;
+                            targetOffer = createSpellbookOffer();
+                            fromMemory = false;
+                            return true;
+                        } else {
+                            // Store spellbook offer as unaffordable
+                            List<MerchantOffer> spellbookOffers = Arrays.asList(createSpellbookOffer());
+                            memory.storeUnaffordableOffers(villager.getUUID(), spellbookOffers);
+                        }
                     }
                 }
             }
 
             return false;
+        }
+
+        private boolean needsSpellbook() {
+            ItemStack offhand = entity.getOffhandItem();
+
+            //MagicRealms.LOGGER.debug("Entity {} needsSpellbook check: offhand={}", entity.getEntityName(), offhand.isEmpty() ? "EMPTY" : offhand.getDisplayName().getString());
+
+            // If we don't have any spellbook, we need one
+            boolean result = offhand.isEmpty() || !MRUtils.isSpellbook(offhand);
+            //MagicRealms.LOGGER.debug("Entity {} needsSpellbook result: {}", entity.getEntityName(), result);
+            return result;
+        }
+
+        private MerchantOffer createSpellbookOffer() {
+            int cost = 15;
+            ItemCost emeraldCost = new ItemCost(Items.EMERALD, cost);
+
+            // Create a basic spellbook - you might want to create one with random spells
+            ItemStack spellbook = new ItemStack(ItemRegistry.COPPER_SPELL_BOOK.get());
+
+            // You could add logic here to generate spells for the spellbook based on the mage's schools and level
+            initializeSpellbookWithRandomSpells(spellbook);
+
+            return new MerchantOffer(emeraldCost, spellbook, 1, 1, 0.0f);
+        }
+
+        private void initializeSpellbookWithRandomSpells(ItemStack spellbook) {
+            // Initialize the spellbook with spells that match the mage's schools
+            if (spellbook.getItem() instanceof SpellBook spellBookItem) {
+                spellBookItem.initializeSpellContainer(spellbook);
+
+                ISpellContainer container = ISpellContainer.get(spellbook);
+                if (container != null) {
+                    ISpellContainerMutable mutableContainer = container.mutableCopy();
+
+                    // Get the mage's magic schools
+                    List<SchoolType> mageSchools = entity.getMagicSchools();
+
+                    // Determine number of spells based on star level
+                    int maxSpells = Math.min(spellBookItem.getMaxSpellSlots(), getSpellCountForStarLevel());
+
+                    RandomSource random = entity.getRandom();
+                    List<AbstractSpell> availableSpells = new ArrayList<>();
+
+                    // Collect spells from mage's schools
+                    for (SchoolType school : mageSchools) {
+                        SpellRegistry.REGISTRY.stream()
+                                .filter(spell -> spell.getSchoolType() == school)
+                                .filter(AbstractSpell::isEnabled)
+                                .filter(spell -> !spell.requiresLearning() || spell.allowLooting())
+                                .forEach(availableSpells::add);
+                    }
+
+                    // If no school-specific spells available, use any available spell
+                    if (availableSpells.isEmpty()) {
+                        SpellRegistry.REGISTRY.stream()
+                                .filter(AbstractSpell::isEnabled)
+                                .filter(spell -> !spell.requiresLearning() || spell.allowLooting())
+                                .forEach(availableSpells::add);
+                    }
+
+                    // Add random spells to the spellbook
+                    for (int i = 0; i < maxSpells && !availableSpells.isEmpty(); i++) {
+                        AbstractSpell randomSpell = availableSpells.get(random.nextInt(availableSpells.size()));
+                        int spellLevel = getRandomSpellLevel(randomSpell, random);
+
+                        mutableContainer.addSpellAtIndex(randomSpell, spellLevel, i, true);
+
+                        // Remove spell to avoid duplicates
+                        availableSpells.remove(randomSpell);
+                    }
+
+                    // Set the modified container back to the item using the component registry
+                    spellbook.set(ComponentRegistry.SPELL_CONTAINER, mutableContainer.toImmutable());
+                }
+            }
+        }
+
+        private int getSpellCountForStarLevel() {
+            return switch (entity.getStarLevel()) {
+                case 1 -> 1 + entity.getRandom().nextInt(2); // 1-2 spells
+                case 2 -> 2 + entity.getRandom().nextInt(2); // 2-3 spells
+                case 3 -> 3 + entity.getRandom().nextInt(2); // 3-4 spells
+                default -> 2;
+            };
+        }
+
+        private int getRandomSpellLevel(AbstractSpell spell, RandomSource random) {
+            int maxLevel = spell.getMaxLevel();
+            int starLevel = entity.getStarLevel();
+
+            // Higher star level entities get better spell levels
+            int baseLevel = switch (starLevel) {
+                case 1 -> 1 + random.nextInt(Math.min(2, maxLevel)); // Level 1-2
+                case 2 -> 1 + random.nextInt(Math.min(3, maxLevel)); // Level 1-3
+                case 3 -> 2 + random.nextInt(Math.min(3, maxLevel - 1)); // Level 2-4
+                default -> 1;
+            };
+
+            return Math.min(baseLevel, maxLevel);
         }
 
         private MerchantOffer findAffordableUsefulOffer(Villager villager) {
@@ -623,6 +757,8 @@ public class HumanGoals {
         private boolean canVillagerSellNeededItems(VillagerProfession profession) {
             EntityClass entityClass = entity.getEntityClass();
 
+            //MagicRealms.LOGGER.debug("Entity {} canVillagerSellNeededItems: profession={}, entityClass={}", entity.getEntityName(), profession, entityClass);
+
             // All classes can buy armor
             if (profession == VillagerProfession.LEATHERWORKER ||
                     profession == VillagerProfession.ARMORER) {
@@ -642,9 +778,10 @@ public class HumanGoals {
                 return true;
             }
 
-            // Mages can buy staves from librarians
+            // Mages can buy staves and spellbooks from librarians
             if (entityClass == EntityClass.MAGE &&
                     profession == VillagerProfession.LIBRARIAN) {
+                //MagicRealms.LOGGER.debug("Entity {} - Mage can buy from librarian", entity.getEntityName());
                 return true;
             }
 
@@ -690,6 +827,12 @@ public class HumanGoals {
             if (entityClass == EntityClass.MAGE && MRUtils.isStaff(stack)) {
                 ItemStack currentWeapon = entity.getMainHandItem();
                 return currentWeapon.isEmpty() || MRUtils.isStaffBetter(stack, currentWeapon);
+            }
+
+            // Check if it's a spellbook we need (mages only)
+            if (entityClass == EntityClass.MAGE && MRUtils.isSpellbook(stack)) {
+                ItemStack currentOffhand = entity.getOffhandItem();
+                return currentOffhand.isEmpty() || MRUtils.isSpellbookBetter(stack, currentOffhand, entity);
             }
 
             return false;
@@ -807,16 +950,20 @@ public class HumanGoals {
 
             // If we don't have any weapon, we need a staff
             if (mainHand.isEmpty()) {
+                //MagicRealms.LOGGER.debug("Entity {} needs staff - no main hand weapon", entity.getEntityName());
                 return true;
             }
 
             // If we have a staff but the artificer staff would be better, we need it
             if (MRUtils.isStaff(mainHand)) {
                 ItemStack artificerStaff = new ItemStack(io.redspace.ironsspellbooks.registries.ItemRegistry.ARTIFICER_STAFF.get());
-                return MRUtils.isStaffBetter(artificerStaff, mainHand);
+                boolean isBetter = MRUtils.isStaffBetter(artificerStaff, mainHand);
+                //MagicRealms.LOGGER.debug("Entity {} has staff, artificer staff better: {}", entity.getEntityName(), isBetter);
+                return isBetter;
             }
 
             // If we have a non-staff weapon as a mage, we need a staff
+            //MagicRealms.LOGGER.debug("Entity {} needs staff - has non-staff weapon", entity.getEntityName());
             return true;
         }
 

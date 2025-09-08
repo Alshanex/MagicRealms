@@ -24,8 +24,7 @@ public class MRUtils {
     }
 
     public static boolean isRangedWeapon(ItemStack stack) {
-        return stack.getItem() instanceof BowItem ||
-                stack.getItem() instanceof CrossbowItem;
+        return stack.getItem() instanceof BowItem;
     }
 
     public static boolean isStaff(ItemStack stack) {

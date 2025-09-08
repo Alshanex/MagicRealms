@@ -217,6 +217,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeStarLevel(randomsource);
             initializeRandomAppearance(randomsource);
             initializeClassSpecifics(randomsource);
+            initializeDefaultEquipment();
             this.entityData.set(INITIALIZED, true);
 
             if (!spellsGenerated) {
@@ -294,6 +295,40 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 setIsArcher(isArcher);
                 MagicRealms.LOGGER.debug("Rogue {} is archer: {} (subclass: {})",
                         getEntityName(), isArcher, isArcher ? "Archer" : "Assassin");
+            }
+        }
+    }
+
+    private void initializeDefaultEquipment() {
+        EntityClass entityClass = getEntityClass();
+
+        switch (entityClass) {
+            case WARRIOR -> {
+                // Give wooden sword in main hand
+                ItemStack sword = new ItemStack(Items.WOODEN_SWORD);
+                this.setItemSlot(EquipmentSlot.MAINHAND, sword);
+
+                // Give shield in off hand if they can block
+                if (hasShield()) {
+                    ItemStack shield = new ItemStack(Items.SHIELD);
+                    this.setItemSlot(EquipmentSlot.OFFHAND, shield);
+                }
+            }
+
+            case ROGUE -> {
+                if (isArcher()) {
+                    // Give bow in main hand
+                    ItemStack bow = new ItemStack(Items.BOW);
+                    this.setItemSlot(EquipmentSlot.MAINHAND, bow);
+
+                    // Give 64 arrows in inventory
+                    ItemStack arrows = new ItemStack(Items.ARROW, 64);
+                    getInventory().addItem(arrows);
+                } else {
+                    // Assassin - give stone sword in main hand
+                    ItemStack sword = new ItemStack(Items.STONE_SWORD);
+                    this.setItemSlot(EquipmentSlot.MAINHAND, sword);
+                }
             }
         }
     }

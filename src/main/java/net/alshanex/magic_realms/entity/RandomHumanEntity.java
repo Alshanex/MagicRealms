@@ -217,6 +217,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.targetSelector.addGoal(3, new GenericCopyOwnerTargetGoal(this, this::getSummoner));
         this.targetSelector.addGoal(4, (new GenericHurtByTargetGoal(this, (entity) -> entity == getSummoner())).setAlertOthers());
         this.targetSelector.addGoal(5, new GenericProtectOwnerTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(5, new HumanGoals.HumanHurtByTargetGoal(this));
+        this.targetSelector.addGoal(6, new HumanGoals.AlliedHumanDefenseGoal(this));
 
 
         this.targetSelector.addGoal(6, new HumanGoals.NoFearTargetGoal(this));

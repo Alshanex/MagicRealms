@@ -28,6 +28,7 @@ import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -1152,6 +1153,23 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void onRemovedFromLevel() {
+        String entityUUID = this.getUUID().toString();
+
+        MagicRealms.LOGGER.debug("Scheduling texture cleanup for removed entity: {}", entityUUID);
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Minecraft.getInstance().execute(() -> {
+                    try {
+                        CombinedTextureManager.removeEntityTexture(entityUUID);
+                        MagicRealms.LOGGER.debug("Cleaned up texture for removed entity: {}", entityUUID);
+                    } catch (Exception e) {
+                        MagicRealms.LOGGER.error("Failed to cleanup texture for entity {}: {}", entityUUID, e.getMessage());
+                    }
+                });
+            }
+        }, 5000);
         super.onRemovedFromLevel();
     }
 

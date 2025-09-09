@@ -45,6 +45,11 @@ public class ContractEventHandler {
         if (!(player.level() instanceof net.minecraft.server.level.ServerLevel)) return;
 
         if (event.getTarget() instanceof RandomHumanEntity humanEntity) {
+
+            if(!humanEntity.hasBeenInteracted()){
+                humanEntity.markAsInteracted();
+            }
+
             ItemStack heldItem = player.getItemInHand(event.getHand());
             ContractData contractData = humanEntity.getData(MRDataAttachments.CONTRACT_DATA);
 

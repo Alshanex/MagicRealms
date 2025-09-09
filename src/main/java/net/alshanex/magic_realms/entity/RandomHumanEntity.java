@@ -85,7 +85,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Boolean> IS_ARCHER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> STANDBY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
-
+    private static final EntityDataAccessor<Boolean> HAS_BEEN_INTERACTED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
     private EntityType<?> fearedEntityType = null;
     private boolean fearGoalInitialized = false;
@@ -656,6 +656,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(IS_ARCHER, false);
         pBuilder.define(STANDBY, false);
         pBuilder.define(FEARED_ENTITY, "");
+        pBuilder.define(HAS_BEEN_INTERACTED, false);
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -930,12 +931,20 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean requiresCustomPersistence() {
-        return true;
+        return this.entityData.get(HAS_BEEN_INTERACTED);
     }
 
     @Override
     public boolean removeWhenFarAway(double pDistanceToClosestPlayer) {
-        return false;
+        return !this.entityData.get(HAS_BEEN_INTERACTED);
+    }
+
+    public void markAsInteracted() {
+        this.entityData.set(HAS_BEEN_INTERACTED, true);
+    }
+
+    public boolean hasBeenInteracted() {
+        return this.entityData.get(HAS_BEEN_INTERACTED);
     }
 
     @Override
@@ -994,6 +1003,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             lastEquippedSpellbook.save(this.registryAccess(), spellbookTag);
             compound.put("LastEquippedSpellbook", spellbookTag);
         }
+
+        compound.putBoolean("HasBeenInteracted", this.entityData.get(HAS_BEEN_INTERACTED));
     }
 
     @Override
@@ -1104,6 +1115,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         } else {
             this.lastEquippedSpellbook = ItemStack.EMPTY;
         }
+
+        this.entityData.set(HAS_BEEN_INTERACTED, compound.getBoolean("HasBeenInteracted"));
     }
 
     private boolean isAlliedHelper(Entity entity) {

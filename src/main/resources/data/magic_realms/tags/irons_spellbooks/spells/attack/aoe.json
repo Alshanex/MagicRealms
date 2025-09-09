@@ -1,0 +1,37 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:stomp",
+    "irons_spellbooks:ball_lightning",
+    "irons_spellbooks:chain_lightning",
+    "irons_spellbooks:blood_slash",
+    "irons_spellbooks:poison_splash",
+    "irons_spellbooks:sonic_boom",
+    "irons_spellbooks:sculk_tentacles",
+    "irons_spellbooks:magma_bomb",
+    "irons_spellbooks:scorch",
+    "irons_spellbooks:fang_strike",
+    "irons_spellbooks:dragon_breath",
+    "irons_spellbooks:starfall",
+    "irons_spellbooks:arrow_volley",
+    "irons_spellbooks:blaze_storm",
+    "irons_spellbooks:fire_breath",
+    "irons_spellbooks:poison_breath",
+    "irons_spellbooks:raise_hell",
+    "irons_spellbooks:divine_smite",
+    "irons_spellbooks:cone_of_cold",
+    "irons_spellbooks:ice_spikes",
+    "irons_spellbooks:snowball",
+    "irons_spellbooks:electrocute",
+    "irons_spellbooks:earthquake",
+    "irons_spellbooks:flaming_strike",
+    {
+      "id": "alshanex_familiars:explosion_melody",
+      "required": false
+    },
+    {
+      "id": "alshanex_familiars:harp_symphony",
+      "required": false
+    }
+  ]
+}

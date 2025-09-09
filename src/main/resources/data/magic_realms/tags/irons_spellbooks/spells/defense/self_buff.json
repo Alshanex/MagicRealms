@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:heal",
+    "irons_spellbooks:ice_tomb",
+    "irons_spellbooks:greater_heal"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:gust",
+    "irons_spellbooks:chain_creeper",
+    "irons_spellbooks:frostwave",
+    "irons_spellbooks:fang_ward",
+    "irons_spellbooks:shockwave",
+    "irons_spellbooks:heat_surge",
+    "irons_spellbooks:flaming_strike",
+    "irons_spellbooks:divine_smite",
+    "irons_spellbooks:raise_hell",
+    "irons_spellbooks:earthquake"
+  ]
+}

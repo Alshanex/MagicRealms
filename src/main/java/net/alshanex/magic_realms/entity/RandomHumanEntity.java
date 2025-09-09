@@ -25,6 +25,7 @@ import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.MRUtils;
+import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
@@ -888,18 +889,23 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         // Remove duplicate spells (keep the first occurrence)
         List<AbstractSpell> uniqueSpells = new ArrayList<>();
         for (AbstractSpell spell : combinedSpells) {
-            if (!uniqueSpells.contains(spell)) {
+            if (!uniqueSpells.contains(spell) && !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST)) {
                 uniqueSpells.add(spell);
             }
         }
 
         // Remove existing wizard attack goal
-        this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
 
         // Add new goal with combined spells
         if (!uniqueSpells.isEmpty()) {
-            this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
-                    .setSpells(uniqueSpells, uniqueSpells, uniqueSpells, uniqueSpells)
+            List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(uniqueSpells);
+            List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(uniqueSpells);
+            List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(uniqueSpells);
+            List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(uniqueSpells);
+
+            this.goalSelector.addGoal(2, new HumanGoals.HumanWizardAttackGoal(this, 1.25f, 25, 50)
+                    .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                     .setDrinksPotions()
             );
 
@@ -1210,30 +1216,40 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     //GOALS
 
     private void setMageGoal(List<AbstractSpell> spells){
-        this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
 
         // If we have spellbook spells, combine them
         List<AbstractSpell> finalSpells = new ArrayList<>(spells);
         if (this.getEntityClass() == EntityClass.MAGE && !spellbookSpells.isEmpty()) {
             finalSpells.addAll(spellbookSpells);
             // Remove duplicates
-            finalSpells = finalSpells.stream().distinct().collect(Collectors.toList());
+            finalSpells = finalSpells.stream().filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST)).distinct().collect(Collectors.toList());
         }
 
-        this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
-                .setSpells(finalSpells, finalSpells, finalSpells, finalSpells)
+        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(finalSpells);
+        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(finalSpells);
+        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
+        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
+
+        this.goalSelector.addGoal(2, new HumanGoals.HumanWizardAttackGoal(this, 1.25f, 25, 50)
+                .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                 .setDrinksPotions()
         );
     }
 
     private void setArcherGoal(List<AbstractSpell> spells){
-        this.goalSelector.removeAllGoals((goal) -> goal instanceof WizardAttackGoal);
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
         this.goalSelector.removeAllGoals((goal) -> goal instanceof ChargeArrowAttackGoal);
 
         this.goalSelector.addGoal(2, new ChargeArrowAttackGoal<RandomHumanEntity>(this, 1.0D, 20, 15.0F));
 
-        this.goalSelector.addGoal(3, new WizardAttackGoal(this, 1.0f, 60, 120)
-                        .setSpells(spells, spells, spells, spells)
+        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(spells);
+        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(spells);
+        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(spells);
+        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(spells);
+
+        this.goalSelector.addGoal(3, new HumanGoals.HumanWizardAttackGoal(this, 1.0f, 60, 120)
+                        .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                         .setDrinksPotions()
         );
     }
@@ -1341,7 +1357,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private void clearAttackGoals() {
         this.goalSelector.removeAllGoals(goal ->
-                goal instanceof WizardAttackGoal ||
+                goal instanceof HumanGoals.HumanWizardAttackGoal ||
                         goal instanceof RangedBowAttackGoal ||
                         goal instanceof GenericAnimatedWarlockAttackGoal
         );

@@ -89,10 +89,7 @@ public class MagicRealms
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
         {
-            event.enqueueWork(() -> {
-                CombinedTextureManager.initializeDirectories();
-                MagicRealms.LOGGER.info("Cleaned up orphaned textures from previous sessions");
-            });
+
         }
     }
 }

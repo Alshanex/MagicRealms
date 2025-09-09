@@ -1153,23 +1153,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void onRemovedFromLevel() {
-        String entityUUID = this.getUUID().toString();
-
-        MagicRealms.LOGGER.debug("Scheduling texture cleanup for removed entity: {}", entityUUID);
-
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Minecraft.getInstance().execute(() -> {
-                    try {
-                        CombinedTextureManager.removeEntityTexture(entityUUID);
-                        MagicRealms.LOGGER.debug("Cleaned up texture for removed entity: {}", entityUUID);
-                    } catch (Exception e) {
-                        MagicRealms.LOGGER.error("Failed to cleanup texture for entity {}: {}", entityUUID, e.getMessage());
-                    }
-                });
-            }
-        }, 5000);
         super.onRemovedFromLevel();
     }
 

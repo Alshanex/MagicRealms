@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.util.humans;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.util.ArmBackTextureFixer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.neoforged.api.distmarker.Dist;
@@ -16,48 +17,301 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class CombinedTextureManager {
     private static final Map<String, ResourceLocation> COMBINED_TEXTURE_CACHE = new ConcurrentHashMap<>();
+    private static final Set<String> ACTIVE_ENTITIES = ConcurrentHashMap.newKeySet();
     private static Path textureOutputDir;
+    private static String currentWorldName = null;
 
-    public static void initializeDirectories() {
+    // This will be called from WorldEventHandler when a world loads
+    public static void setWorldDirectory(Path worldSaveDir, String worldName) {
         try {
-            Path gameDir = Minecraft.getInstance().gameDirectory.toPath();
-            textureOutputDir = gameDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
+            textureOutputDir = worldSaveDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
             Files.createDirectories(textureOutputDir);
-            MagicRealms.LOGGER.info("Created texture directory at: " + textureOutputDir.toString());
+            MagicRealms.LOGGER.info("Set texture directory for world '{}' at: {}", worldName, textureOutputDir.toString());
+
+            // Check if we switched worlds
+            if (!worldName.equals(currentWorldName)) {
+                if (currentWorldName != null) {
+                    // Clear cache when switching worlds, but don't delete files
+                    clearCache();
+                    MagicRealms.LOGGER.info("Cleared texture cache due to world change: {} -> {}", currentWorldName, worldName);
+                }
+                currentWorldName = worldName;
+
+                // Only clean up orphaned textures when first joining this world (not on every rejoin)
+                // Check if this is a fresh session by looking for a session marker
+                Path sessionMarker = textureOutputDir.resolve(".session_" + System.currentTimeMillis());
+                try {
+                    // Clean up old session markers (older than 1 minute - indicates previous session)
+                    Files.walk(textureOutputDir)
+                            .filter(Files::isRegularFile)
+                            .filter(path -> path.getFileName().toString().startsWith(".session_"))
+                            .filter(path -> {
+                                try {
+                                    long timestamp = Long.parseLong(path.getFileName().toString().substring(9));
+                                    return System.currentTimeMillis() - timestamp > 60000; // 1 minute
+                                } catch (NumberFormatException e) {
+                                    return true; // Remove invalid session markers
+                                }
+                            })
+                            .forEach(path -> {
+                                try {
+                                    Files.delete(path);
+                                } catch (Exception e) {
+                                    // Ignore cleanup failures
+                                }
+                            });
+
+                    // Create new session marker
+                    Files.createFile(sessionMarker);
+                    MagicRealms.LOGGER.debug("Created session marker for texture cleanup tracking");
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.debug("Failed to manage session markers: {}", e.getMessage());
+                }
+            }
         } catch (IOException e) {
-            MagicRealms.LOGGER.error("Failed to create texture output directory", e);
+            MagicRealms.LOGGER.error("Failed to create texture output directory for world '{}'", worldName, e);
         }
     }
 
+    // Fallback initialization for when no world is loaded
+    public static void initializeDirectories() {
+        if (textureOutputDir == null) {
+            try {
+                Minecraft mc = Minecraft.getInstance();
+
+                // First, try to determine if we're in a world and use the correct directory
+                IntegratedServer server = mc.getSingleplayerServer();
+                if (server != null) {
+                    // We're in singleplayer - use the world directory
+                    Path worldSaveDir = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
+                    String worldName = server.getWorldData().getLevelName();
+                    textureOutputDir = worldSaveDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
+                    Files.createDirectories(textureOutputDir);
+                    MagicRealms.LOGGER.warn("Late initialization of world texture directory: {}", textureOutputDir);
+                    currentWorldName = worldName;
+                    return;
+                } else if (mc.getCurrentServer() != null) {
+                    // We're in multiplayer - use server-specific directory
+                    String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
+                    Path gameDir = mc.gameDirectory.toPath();
+                    textureOutputDir = gameDir.resolve("multiplayer_textures").resolve(serverName).resolve("magic_realms_textures").resolve("entity").resolve("human");
+                    Files.createDirectories(textureOutputDir);
+                    MagicRealms.LOGGER.warn("Late initialization of multiplayer texture directory: {}", textureOutputDir);
+                    currentWorldName = "multiplayer_" + serverName;
+                    return;
+                }
+
+                // Last resort fallback - this should rarely happen
+                Path gameDir = mc.gameDirectory.toPath();
+                textureOutputDir = gameDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
+                Files.createDirectories(textureOutputDir);
+                MagicRealms.LOGGER.error("Using game directory fallback for textures (this may cause texture loss): {}", textureOutputDir);
+                currentWorldName = null;
+
+            } catch (IOException e) {
+                MagicRealms.LOGGER.error("Failed to create fallback texture output directory", e);
+            }
+        }
+    }
+
+    // Called when leaving a world
+    public static void onWorldUnload() {
+        MagicRealms.LOGGER.debug("World unloaded, clearing texture cache but preserving texture files");
+        clearCache();
+
+        // Don't delete texture files - they should persist for when we rejoin the world
+        // Reset world tracking
+        currentWorldName = null;
+        textureOutputDir = null;
+    }
+
+    private static Path findExistingTextureFile(String entityUUID) {
+        // Try to find the texture in the correct world-specific location first
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            IntegratedServer server = mc.getSingleplayerServer();
+
+            if (server != null) {
+                // Singleplayer - check world directory
+                Path worldDir = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
+                Path worldTexture = worldDir.resolve(entityUUID + "_complete.png");
+
+                if (Files.exists(worldTexture)) {
+                    MagicRealms.LOGGER.info("Found texture in world directory: {}", worldTexture);
+                    return worldTexture;
+                } else {
+                    MagicRealms.LOGGER.debug("Texture not found in world directory: {}", worldTexture);
+                }
+            } else if (mc.getCurrentServer() != null) {
+                // Multiplayer - check server-specific directory
+                String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
+                Path serverDir = mc.gameDirectory.toPath()
+                        .resolve("multiplayer_textures").resolve(serverName)
+                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
+                Path serverTexture = serverDir.resolve(entityUUID + "_complete.png");
+
+                if (Files.exists(serverTexture)) {
+                    MagicRealms.LOGGER.info("Found texture in multiplayer directory: {}", serverTexture);
+                    return serverTexture;
+                } else {
+                    MagicRealms.LOGGER.debug("Texture not found in multiplayer directory: {}", serverTexture);
+                }
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Error while searching for texture in correct location: {}", e.getMessage());
+        }
+
+        // Fallback: check the current textureOutputDir (if set)
+        if (textureOutputDir != null) {
+            Path currentDirTexture = textureOutputDir.resolve(entityUUID + "_complete.png");
+            if (Files.exists(currentDirTexture)) {
+                MagicRealms.LOGGER.info("Found texture in current directory: {}", currentDirTexture);
+                return currentDirTexture;
+            }
+        }
+
+        // Last resort: check game directory fallback location
+        try {
+            Path fallbackDir = Minecraft.getInstance().gameDirectory.toPath()
+                    .resolve("magic_realms_textures").resolve("entity").resolve("human");
+            Path fallbackTexture = fallbackDir.resolve(entityUUID + "_complete.png");
+
+            if (Files.exists(fallbackTexture)) {
+                MagicRealms.LOGGER.warn("Found texture in fallback directory (this indicates a directory mismatch): {}", fallbackTexture);
+                return fallbackTexture;
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Error while checking fallback texture location: {}", e.getMessage());
+        }
+
+        MagicRealms.LOGGER.info("No existing texture found for entity: {}", entityUUID);
+        return null;
+    }
+
     public static ResourceLocation getCombinedTextureWithHair(String entityUUID, Gender gender, EntityClass entityClass, int hairTextureIndex) {
+        // SAFETY CHECK: Ensure we're using the correct world directory
+        if (textureOutputDir == null) {
+            MagicRealms.LOGGER.warn("Texture directory not set, attempting to initialize...");
+            initializeDirectories();
+
+            if (textureOutputDir == null) {
+                MagicRealms.LOGGER.error("Failed to initialize texture directory!");
+                return null;
+            }
+        }
+
+        // ADDITIONAL SAFETY: Verify we're using the correct world directory, not the fallback
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            IntegratedServer server = mc.getSingleplayerServer();
+
+            if (server != null) {
+                // Check if current directory matches the actual world directory
+                Path actualWorldDir = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
+
+                if (!textureOutputDir.equals(actualWorldDir)) {
+                    MagicRealms.LOGGER.warn("Texture directory mismatch detected!");
+                    MagicRealms.LOGGER.warn("Current: {}", textureOutputDir);
+                    MagicRealms.LOGGER.warn("Expected: {}", actualWorldDir);
+                    MagicRealms.LOGGER.warn("Correcting texture directory...");
+
+                    // Update to correct directory
+                    textureOutputDir = actualWorldDir;
+                    Files.createDirectories(textureOutputDir);
+                    currentWorldName = server.getWorldData().getLevelName();
+
+                    MagicRealms.LOGGER.info("Corrected texture directory to: {}", textureOutputDir);
+                }
+            } else if (mc.getCurrentServer() != null) {
+                // Similar check for multiplayer
+                String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
+                Path expectedMultiplayerDir = mc.gameDirectory.toPath()
+                        .resolve("multiplayer_textures").resolve(serverName)
+                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
+
+                if (!textureOutputDir.equals(expectedMultiplayerDir)) {
+                    MagicRealms.LOGGER.warn("Multiplayer texture directory mismatch detected!");
+                    MagicRealms.LOGGER.warn("Current: {}", textureOutputDir);
+                    MagicRealms.LOGGER.warn("Expected: {}", expectedMultiplayerDir);
+
+                    textureOutputDir = expectedMultiplayerDir;
+                    Files.createDirectories(textureOutputDir);
+                    currentWorldName = "multiplayer_" + serverName;
+
+                    MagicRealms.LOGGER.info("Corrected multiplayer texture directory to: {}", textureOutputDir);
+                }
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error during texture directory validation: {}", e.getMessage());
+        }
+
+        MagicRealms.LOGGER.debug("Using texture directory: {}", textureOutputDir);
+
+        // Track this entity as active
+        ACTIVE_ENTITIES.add(entityUUID);
+
         if (COMBINED_TEXTURE_CACHE.containsKey(entityUUID)) {
             MagicRealms.LOGGER.debug("Using cached complete texture for entity: " + entityUUID);
             return COMBINED_TEXTURE_CACHE.get(entityUUID);
         }
 
-        // Verificar si existe en disco
-        if (textureOutputDir != null) {
-            Path texturePath = textureOutputDir.resolve(entityUUID + "_complete.png");
-            if (Files.exists(texturePath)) {
-                try {
+        // Use the improved texture search method
+        Path texturePath = findExistingTextureFile(entityUUID);
+        if (texturePath != null) {
+            MagicRealms.LOGGER.info("Found existing texture for entity {} at: {}", entityUUID, texturePath);
+
+            // Update textureOutputDir to match the directory where we found the texture
+            Path foundDir = texturePath.getParent();
+            if (!foundDir.equals(textureOutputDir)) {
+                MagicRealms.LOGGER.info("Updating texture output directory from {} to {}", textureOutputDir, foundDir);
+                textureOutputDir = foundDir;
+            }
+
+            try {
+                long fileSize = Files.size(texturePath);
+                if (fileSize > 0) {
                     BufferedImage existingImage = ImageIO.read(texturePath.toFile());
-                    ResourceLocation location = DynamicTextureManager.registerDynamicTexture(entityUUID, existingImage);
-                    if (location != null) {
-                        COMBINED_TEXTURE_CACHE.put(entityUUID, location);
-                        MagicRealms.LOGGER.debug("Loaded existing complete texture from disk for entity: " + entityUUID);
-                        return location;
+                    if (existingImage != null && existingImage.getWidth() > 0 && existingImage.getHeight() > 0) {
+                        ResourceLocation location = DynamicTextureManager.registerDynamicTexture(entityUUID, existingImage);
+                        if (location != null) {
+                            COMBINED_TEXTURE_CACHE.put(entityUUID, location);
+                            MagicRealms.LOGGER.info("Successfully loaded existing texture from: {}", texturePath);
+                            return location;
+                        }
+                    } else {
+                        MagicRealms.LOGGER.warn("Existing texture file appears corrupted for entity {}", entityUUID);
+
+                        // Instead of deleting immediately, rename the corrupted file for debugging
+                        try {
+                            Path backupPath = texturePath.getParent().resolve(entityUUID + "_corrupted_" + System.currentTimeMillis() + ".png");
+                            Files.move(texturePath, backupPath);
+                            MagicRealms.LOGGER.info("Moved corrupted texture to: {}", backupPath);
+                        } catch (IOException moveException) {
+                            MagicRealms.LOGGER.error("Failed to backup corrupted texture: {}", moveException.getMessage());
+                        }
                     }
-                } catch (IOException e) {
-                    MagicRealms.LOGGER.error("Failed to load existing complete texture for entity " + entityUUID, e);
+                } else {
+                    MagicRealms.LOGGER.warn("Texture file is empty for entity {}, will regenerate", entityUUID);
+                    try {
+                        Files.delete(texturePath);
+                    } catch (IOException deleteError) {
+                        MagicRealms.LOGGER.error("Failed to delete empty texture file: {}", deleteError.getMessage());
+                    }
                 }
+            } catch (IOException e) {
+                MagicRealms.LOGGER.error("Failed to load existing texture from {}: {}", texturePath, e.getMessage());
             }
         }
 
+        // Generate new texture if we reach here
         try {
             BufferedImage combinedImage = createCompleteTexture(gender, entityClass, hairTextureIndex);
             if (combinedImage != null) {
@@ -65,12 +319,12 @@ public class CombinedTextureManager {
                 if (location != null) {
                     COMBINED_TEXTURE_CACHE.put(entityUUID, location);
 
-                    // Guardar en disco
+                    // Save to disk in the correct directory
                     if (textureOutputDir != null) {
                         try {
-                            Path texturePath = textureOutputDir.resolve(entityUUID + "_complete.png");
-                            ImageIO.write(combinedImage, "PNG", texturePath.toFile());
-                            MagicRealms.LOGGER.debug("Created and saved complete texture for entity: " + entityUUID);
+                            Path newTexturePath = textureOutputDir.resolve(entityUUID + "_complete.png");
+                            ImageIO.write(combinedImage, "PNG", newTexturePath.toFile());
+                            MagicRealms.LOGGER.debug("Created and saved new complete texture for entity: " + entityUUID + " at: " + newTexturePath);
                         } catch (IOException e) {
                             MagicRealms.LOGGER.error("Failed to save complete texture to disk for entity " + entityUUID, e);
                         }
@@ -140,7 +394,7 @@ public class CombinedTextureManager {
                 }
             }
 
-            // 4. Hair (último)
+            // 4. Hair (Ãºltimo)
             if (hairTexture != null) {
                 BufferedImage hairImage = loadImage(hairTexture);
                 if (hairImage != null) {
@@ -231,25 +485,145 @@ public class CombinedTextureManager {
     }
 
     public static void removeEntityTexture(String entityUUID) {
+        removeEntityTexture(entityUUID, false);
+    }
+
+    public static void removeEntityTexture(String entityUUID, boolean entityDespawned) {
         try {
-            // Remover la textura completa
+            // Remove from active tracking
+            ACTIVE_ENTITIES.remove(entityUUID);
+
+            // Remove from cache
             COMBINED_TEXTURE_CACHE.remove(entityUUID);
             DynamicTextureManager.unregisterTexture(entityUUID);
 
-            if (textureOutputDir != null) {
+            // Only delete file if entity truly despawned/died
+            if (entityDespawned && textureOutputDir != null) {
                 Path completeTexturePath = textureOutputDir.resolve(entityUUID + "_complete.png");
                 if (Files.exists(completeTexturePath)) {
                     Files.delete(completeTexturePath);
-                    MagicRealms.LOGGER.debug("Deleted complete texture file for entity: " + entityUUID);
+                    MagicRealms.LOGGER.debug("Deleted texture file for despawned entity: " + entityUUID);
                 }
+            } else {
+                MagicRealms.LOGGER.debug("Removed texture from cache for entity: " + entityUUID + " (file preserved)");
             }
         } catch (IOException e) {
             MagicRealms.LOGGER.error("Failed to delete complete texture for entity " + entityUUID, e);
         }
     }
 
+    public static void markEntityInactive(String entityUUID) {
+        ACTIVE_ENTITIES.remove(entityUUID);
+        MagicRealms.LOGGER.debug("Marked entity {} as inactive", entityUUID);
+    }
+
+    public static boolean isEntityActive(String entityUUID) {
+        return ACTIVE_ENTITIES.contains(entityUUID);
+    }
+
     public static void clearCache() {
         COMBINED_TEXTURE_CACHE.clear();
+        ACTIVE_ENTITIES.clear();
         DynamicTextureManager.clearAllTextures();
+    }
+
+    public static void cleanupOrphanedTextures() {
+        if (textureOutputDir == null || !Files.exists(textureOutputDir)) {
+            return;
+        }
+
+        try {
+            // Only clean up textures that are older than 1 hour (definitely from previous sessions)
+            long oneHourAgo = System.currentTimeMillis() - (60 * 60 * 1000);
+
+            Files.walk(textureOutputDir)
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith("_complete.png"))
+                    .filter(path -> {
+                        try {
+                            return Files.getLastModifiedTime(path).toMillis() < oneHourAgo;
+                        } catch (Exception e) {
+                            return false; // Don't delete if we can't check the time
+                        }
+                    })
+                    .forEach(path -> {
+                        try {
+                            String fileName = path.getFileName().toString();
+                            String entityUUID = fileName.replace("_complete.png", "");
+
+                            // Only delete if not currently active
+                            if (!ACTIVE_ENTITIES.contains(entityUUID)) {
+                                Files.delete(path);
+                                MagicRealms.LOGGER.debug("Cleaned up old orphaned texture: {}", path.getFileName());
+                            }
+                        } catch (IOException e) {
+                            MagicRealms.LOGGER.error("Failed to delete old orphaned texture: {}", path, e);
+                        }
+                    });
+        } catch (IOException e) {
+            MagicRealms.LOGGER.error("Failed to cleanup orphaned textures", e);
+        }
+    }
+
+    public static void cleanupInactiveEntityTextures() {
+        if (textureOutputDir == null || !Files.exists(textureOutputDir)) {
+            return;
+        }
+
+        try {
+            Files.walk(textureOutputDir)
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith("_complete.png"))
+                    .forEach(path -> {
+                        try {
+                            String fileName = path.getFileName().toString();
+                            String entityUUID = fileName.replace("_complete.png", "");
+
+                            // Only delete if not currently active and not in cache
+                            if (!ACTIVE_ENTITIES.contains(entityUUID) && !COMBINED_TEXTURE_CACHE.containsKey(entityUUID)) {
+                                Files.delete(path);
+                                MagicRealms.LOGGER.debug("Cleaned up texture for inactive entity: {}", entityUUID);
+                            }
+                        } catch (IOException e) {
+                            MagicRealms.LOGGER.error("Failed to delete inactive entity texture: {}", path, e);
+                        }
+                    });
+        } catch (IOException e) {
+            MagicRealms.LOGGER.error("Failed to cleanup inactive entity textures", e);
+        }
+    }
+
+    public static void cleanupAllTexturesOnShutdown() {
+        if (textureOutputDir == null || !Files.exists(textureOutputDir)) {
+            return;
+        }
+
+        MagicRealms.LOGGER.debug("Game shutting down - cleaning up session markers only, preserving textures");
+
+        try {
+            // Only clean up session markers, not the actual textures
+            Files.walk(textureOutputDir)
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().startsWith(".session_"))
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                            MagicRealms.LOGGER.debug("Cleaned up session marker on shutdown: {}", path.getFileName());
+                        } catch (IOException e) {
+                            MagicRealms.LOGGER.error("Failed to delete session marker on shutdown: {}", path, e);
+                        }
+                    });
+        } catch (IOException e) {
+            MagicRealms.LOGGER.error("Failed to cleanup session markers on shutdown", e);
+        }
+    }
+
+    // For debugging
+    public static Path getCurrentTextureDirectory() {
+        return textureOutputDir;
+    }
+
+    public static String getCurrentWorldName() {
+        return currentWorldName;
     }
 }

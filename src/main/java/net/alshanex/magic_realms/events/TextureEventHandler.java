@@ -16,10 +16,13 @@ public class TextureEventHandler {
     @OnlyIn(Dist.CLIENT)
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            CombinedTextureManager.initializeDirectories();
+            // Load the base textures (world-specific directories will be set when joining a world)
             LayeredTextureManager.loadTextures();
 
+            // Load names
             AdvancedNameManager.loadNamesFromResources();
+
+            MagicRealms.LOGGER.info("Client setup completed - texture directories will be initialized when joining a world");
         });
     }
 

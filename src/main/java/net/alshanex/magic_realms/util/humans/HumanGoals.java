@@ -36,6 +36,7 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.TargetGoal;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.animal.Chicken;
@@ -55,13 +56,18 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.WebBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Supplier;
 
 public class HumanGoals {
 
@@ -1465,7 +1471,7 @@ public class HumanGoals {
             }
 
             // Don't run if entity is in standby mode
-            if (entity.isStandby()) {
+            if (entity.isPatrolMode()) {
                 return false;
             }
 
@@ -1492,7 +1498,7 @@ public class HumanGoals {
             }
 
             // Stop if entity goes into standby
-            if (entity.isStandby()) {
+            if (entity.isPatrolMode()) {
                 return false;
             }
 
@@ -2667,7 +2673,7 @@ public class HumanGoals {
         public boolean canUse() {
             // Don't gather if in combat, on standby, or recently failed
             if (entity.getTarget() != null) return false;
-            if (entity.isStandby()) return false;
+            if (entity.isPatrolMode()) return false;
             if (searchCooldown > 0) return false;
             if (failedAttempts >= maxFailedAttempts) return false;
 
@@ -3220,6 +3226,361 @@ public class HumanGoals {
             GATHER_STRING_FROM_WEB,
             GATHER_STRING_FROM_SPIDER,
             GATHER_FEATHER
+        }
+    }
+
+    public static class HumanFollowOwnerGoal extends Goal {
+        private final RandomHumanEntity humanEntity;
+        @Nullable
+        private Entity owner;
+        private Supplier<Entity> ownerGetter;
+        private final double speedModifier;
+        private final PathNavigation navigation;
+        private int timeToRecalcPath;
+        private final float stopDistance;
+        private final float startDistance;
+        private float oldWaterCost;
+        private float teleportDistance;
+        private boolean canFly;
+
+        public HumanFollowOwnerGoal(RandomHumanEntity humanEntity, Supplier<Entity> ownerGetter, double speedModifier,
+                                    float startDistance, float stopDistance, boolean canFly, float teleportDistance) {
+            this.humanEntity = humanEntity;
+            this.ownerGetter = ownerGetter;
+            this.speedModifier = speedModifier;
+            this.navigation = humanEntity.getNavigation();
+            this.startDistance = startDistance;
+            this.stopDistance = stopDistance;
+            this.teleportDistance = teleportDistance;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+            this.canFly = canFly;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't follow if in patrol mode
+            if (humanEntity.isPatrolMode()) {
+                return false;
+            }
+
+            Entity livingentity = this.ownerGetter.get();
+            if (livingentity == null) {
+                return false;
+            } else if (this.humanEntity.distanceToSqr(livingentity) < (double) (this.startDistance * this.startDistance)) {
+                return false;
+            } else {
+                this.owner = livingentity;
+                return true;
+            }
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop following if entering patrol mode
+            if (humanEntity.isPatrolMode()) {
+                return false;
+            }
+
+            if (this.navigation.isDone()) {
+                return false;
+            } else {
+                return !(this.humanEntity.distanceToSqr(this.owner) <= (double) (this.stopDistance * this.stopDistance));
+            }
+        }
+
+        @Override
+        public void start() {
+            this.timeToRecalcPath = 0;
+            this.oldWaterCost = this.humanEntity.getPathfindingMalus(PathType.WATER);
+            this.humanEntity.setPathfindingMalus(PathType.WATER, 0.0F);
+        }
+
+        @Override
+        public void stop() {
+            this.owner = null;
+            this.navigation.stop();
+            this.humanEntity.setPathfindingMalus(PathType.WATER, this.oldWaterCost);
+        }
+
+        @Override
+        public void tick() {
+            boolean flag = this.shouldTryTeleportToOwner();
+            if (!flag) {
+                this.humanEntity.getLookControl().setLookAt(this.owner, 10.0F, (float) this.humanEntity.getMaxHeadXRot());
+            }
+
+            if (--this.timeToRecalcPath <= 0) {
+                this.timeToRecalcPath = this.adjustedTickDelay(10);
+                if (flag) {
+                    this.tryToTeleportToOwner();
+                } else {
+                    if (false && canFly && !humanEntity.onGround()) {
+                        Vec3 vec3 = owner.position();
+                        this.humanEntity.getMoveControl().setWantedPosition(vec3.x, vec3.y + 2, vec3.z, this.speedModifier);
+                    } else {
+                        this.navigation.moveTo(this.owner, this.speedModifier);
+                    }
+                }
+            }
+        }
+
+        public void tryToTeleportToOwner() {
+            Entity livingentity = this.ownerGetter.get();
+            if (livingentity != null) {
+                this.teleportToAroundBlockPos(livingentity.blockPosition());
+            }
+        }
+
+        public boolean shouldTryTeleportToOwner() {
+            Entity livingentity = this.ownerGetter.get();
+            return livingentity != null && humanEntity.distanceToSqr(livingentity) >= teleportDistance * teleportDistance;
+        }
+
+        private void teleportToAroundBlockPos(BlockPos pPos) {
+            for (int i = 0; i < 10; i++) {
+                int j = humanEntity.getRandom().nextIntBetweenInclusive(-3, 3);
+                int k = humanEntity.getRandom().nextIntBetweenInclusive(-3, 3);
+                if (Math.abs(j) >= 2 || Math.abs(k) >= 2) {
+                    int l = humanEntity.getRandom().nextIntBetweenInclusive(-1, 1);
+                    if (this.maybeTeleportTo(pPos.getX() + j, pPos.getY() + l, pPos.getZ() + k)) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        private boolean maybeTeleportTo(int pX, int pY, int pZ) {
+            if (!this.canTeleportTo(new BlockPos(pX, pY, pZ))) {
+                return false;
+            } else {
+                humanEntity.moveTo((double) pX + 0.5, (double) pY, (double) pZ + 0.5, humanEntity.getYRot(), humanEntity.getXRot());
+                this.navigation.stop();
+                return true;
+            }
+        }
+
+        private boolean canTeleportTo(BlockPos pPos) {
+            PathType pathtype = WalkNodeEvaluator.getPathTypeStatic(humanEntity, pPos);
+            if (pathtype != PathType.WALKABLE) {
+                return false;
+            } else {
+                BlockState blockstate = humanEntity.level().getBlockState(pPos.below());
+                if (!this.canFly && blockstate.getBlock() instanceof LeavesBlock) {
+                    return false;
+                } else {
+                    BlockPos blockpos = pPos.subtract(humanEntity.blockPosition());
+                    return humanEntity.level().noCollision(humanEntity, humanEntity.getBoundingBox().move(blockpos));
+                }
+            }
+        }
+    }
+
+    public static class PatrolAroundPositionGoal extends Goal {
+        private final RandomHumanEntity entity;
+        private final double speedModifier;
+        private final int patrolRadius;
+        private BlockPos targetPos;
+        private int patrolCooldown = 0;
+        private int stuckTicks = 0;
+        private Vec3 lastPosition;
+
+        private static final int PATROL_INTERVAL = 100; // 5 seconds between patrol moves
+        private static final int MAX_STUCK_TICKS = 60; // 3 seconds before trying new position
+        private static final double MOVEMENT_THRESHOLD = 0.1; // Minimum movement to not be considered stuck
+        private static final double ARRIVAL_DISTANCE = 2.0; // How close to get to target position
+
+        public PatrolAroundPositionGoal(RandomHumanEntity entity, double speedModifier, int patrolRadius) {
+            this.entity = entity;
+            this.speedModifier = speedModifier;
+            this.patrolRadius = patrolRadius;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+        }
+
+        @Override
+        public boolean canUse() {
+            // Only patrol if in patrol mode and not in combat
+            if (!entity.isPatrolMode()) {
+                return false;
+            }
+
+            if (entity.getTarget() != null) {
+                return false; // Don't patrol while in combat
+            }
+
+            if (patrolCooldown > 0) {
+                patrolCooldown--;
+                return false;
+            }
+
+            // Check if we have a valid patrol position
+            BlockPos patrolCenter = entity.getPatrolPosition();
+            if (patrolCenter == null || patrolCenter.equals(BlockPos.ZERO)) {
+                // Set current position as patrol center if none set
+                entity.setPatrolPosition(entity.blockPosition());
+                patrolCenter = entity.getPatrolPosition();
+            }
+
+            // Generate a new patrol target position
+            return generatePatrolTarget(patrolCenter);
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if no longer in patrol mode or entered combat
+            if (!entity.isPatrolMode() || entity.getTarget() != null) {
+                return false;
+            }
+
+            // Stop if we've reached our target
+            if (targetPos != null && entity.distanceToSqr(targetPos.getX(), targetPos.getY(), targetPos.getZ()) <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE) {
+                return false;
+            }
+
+            // Stop if we've been stuck for too long
+            if (stuckTicks >= MAX_STUCK_TICKS) {
+                return false;
+            }
+
+            return targetPos != null;
+        }
+
+        @Override
+        public void start() {
+            if (targetPos != null) {
+                entity.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), speedModifier);
+                stuckTicks = 0;
+                lastPosition = entity.position();
+            }
+        }
+
+        @Override
+        public void tick() {
+            if (targetPos == null) {
+                return;
+            }
+
+            // Check if we're stuck
+            Vec3 currentPosition = entity.position();
+            if (lastPosition != null) {
+                double movementDistance = currentPosition.distanceTo(lastPosition);
+                if (movementDistance < MOVEMENT_THRESHOLD) {
+                    stuckTicks++;
+                } else {
+                    stuckTicks = 0; // Reset if we're moving
+                }
+            }
+            lastPosition = currentPosition;
+
+            // Try to navigate to the target
+            if (entity.getNavigation().isDone() || stuckTicks > 20) {
+                // Recalculate path if navigation is done or we've been stuck for a bit
+                entity.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), speedModifier);
+
+                // If we're really stuck, try a different position
+                if (stuckTicks > 40) {
+                    BlockPos patrolCenter = entity.getPatrolPosition();
+                    if (patrolCenter != null) {
+                        generatePatrolTarget(patrolCenter);
+                        if (targetPos != null) {
+                            entity.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), speedModifier);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void stop() {
+            targetPos = null;
+            patrolCooldown = PATROL_INTERVAL;
+            stuckTicks = 0;
+            lastPosition = null;
+            entity.getNavigation().stop();
+        }
+
+        private boolean generatePatrolTarget(BlockPos patrolCenter) {
+            // Try to find a valid patrol position within the radius
+            for (int attempts = 0; attempts < 10; attempts++) {
+                double angle = entity.getRandom().nextDouble() * 2 * Math.PI;
+                int distance = 3 + entity.getRandom().nextInt(patrolRadius - 2); // Between 3 and patrolRadius blocks
+
+                int xOffset = (int) (Math.cos(angle) * distance);
+                int zOffset = (int) (Math.sin(angle) * distance);
+
+                BlockPos candidatePos = patrolCenter.offset(xOffset, 0, zOffset);
+
+                // Find a suitable Y level (ground level)
+                candidatePos = findGroundLevel(candidatePos);
+
+                // Check if the position is valid and pathable
+                if (isValidPatrolPosition(candidatePos, patrolCenter)) {
+                    targetPos = candidatePos;
+                    return true;
+                }
+            }
+
+            // If we can't find a valid position, just stay near the patrol center
+            targetPos = findGroundLevel(patrolCenter.offset(
+                    entity.getRandom().nextInt(5) - 2,
+                    0,
+                    entity.getRandom().nextInt(5) - 2
+            ));
+
+            return targetPos != null;
+        }
+
+        private BlockPos findGroundLevel(BlockPos startPos) {
+            Level level = entity.level();
+
+            // Search down for ground
+            for (int y = startPos.getY(); y >= startPos.getY() - 5; y--) {
+                BlockPos checkPos = new BlockPos(startPos.getX(), y, startPos.getZ());
+                BlockPos abovePos = checkPos.above();
+
+                // Check if this is a valid ground position
+                if (!level.getBlockState(checkPos).isAir() &&
+                        level.getBlockState(abovePos).isAir() &&
+                        level.getBlockState(abovePos.above()).isAir()) {
+                    return abovePos;
+                }
+            }
+
+            // Search up for ground if we didn't find any below
+            for (int y = startPos.getY() + 1; y <= startPos.getY() + 5; y++) {
+                BlockPos checkPos = new BlockPos(startPos.getX(), y, startPos.getZ());
+                BlockPos abovePos = checkPos.above();
+
+                if (!level.getBlockState(checkPos).isAir() &&
+                        level.getBlockState(abovePos).isAir() &&
+                        level.getBlockState(abovePos.above()).isAir()) {
+                    return abovePos;
+                }
+            }
+
+            // If all else fails, return the original position
+            return startPos;
+        }
+
+        private boolean isValidPatrolPosition(BlockPos pos, BlockPos patrolCenter) {
+            if (pos == null) return false;
+
+            Level level = entity.level();
+
+            // Check if position is within patrol radius
+            double distanceFromCenter = Math.sqrt(pos.distSqr(patrolCenter));
+            if (distanceFromCenter > patrolRadius) {
+                return false;
+            }
+
+            // Check if the position has solid ground and space above
+            BlockState groundState = level.getBlockState(pos.below());
+            BlockState posState = level.getBlockState(pos);
+            BlockState aboveState = level.getBlockState(pos.above());
+
+            return !groundState.isAir() && // Has solid ground
+                    posState.isAir() &&     // Position is air
+                    aboveState.isAir() &&   // Space above is air
+                    groundState.isSolid();  // Ground is solid
         }
     }
 }

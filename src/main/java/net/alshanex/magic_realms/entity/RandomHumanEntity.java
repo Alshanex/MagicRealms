@@ -30,6 +30,7 @@ import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -85,7 +86,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<String> MAGIC_SCHOOLS = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> HAS_SHIELD = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_ARCHER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> STANDBY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> PATROL_MODE = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<BlockPos> PATROL_POSITION = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> HAS_BEEN_INTERACTED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -178,20 +180,24 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         updateCustomNameWithStars();
     }
 
-    public void clearMovementGoals(){
-        this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericFollowOwnerGoal);
+    public void setPatrolMode(Boolean patrolMode) {
+        this.entityData.set(PATROL_MODE, patrolMode);
+        if (patrolMode) {
+            // Set current position as patrol center when entering patrol mode
+            setPatrolPosition(this.blockPosition());
+        }
     }
 
-    public void restoreMovementGoals(){
-        this.goalSelector.addGoal(7, new GenericFollowOwnerGoal(this, this::getSummoner, 0.9f, 15, 5, false, 25));
+    public Boolean isPatrolMode() {
+        return this.entityData.get(PATROL_MODE);
     }
 
-    public void setStandby(Boolean standby) {
-        this.entityData.set(STANDBY, standby);
+    public void setPatrolPosition(BlockPos position) {
+        this.entityData.set(PATROL_POSITION, position);
     }
 
-    public Boolean isStandby() {
-        return this.entityData.get(STANDBY);
+    public BlockPos getPatrolPosition() {
+        return this.entityData.get(PATROL_POSITION);
     }
 
     public void setInitialized(boolean initialized) {
@@ -209,7 +215,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.goalSelector.addGoal(7, new HumanGoals.EnchantEquipmentFromLibrarianGoal(this));
         this.goalSelector.addGoal(8, new HumanGoals.PickupMobDropsGoal(this));
 
-        this.goalSelector.addGoal(4, new GenericFollowOwnerGoal(this, this::getSummoner, 0.9f, 15, 5, false, 25));
         this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(5, new WizardRecoverGoal(this));
@@ -222,8 +227,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.targetSelector.addGoal(5, new HumanGoals.HumanHurtByTargetGoal(this));
         this.targetSelector.addGoal(6, new HumanGoals.AlliedHumanDefenseGoal(this));
 
-
         this.targetSelector.addGoal(1, new HumanGoals.NoFearTargetGoal(this));
+
+        this.goalSelector.addGoal(4, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
+
+        this.goalSelector.addGoal(7, new HumanGoals.PatrolAroundPositionGoal(this, 0.8D, 10));
     }
 
     private List<AbstractSpell> persistedSpells = new ArrayList<>();
@@ -660,7 +668,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(MAGIC_SCHOOLS, "");
         pBuilder.define(HAS_SHIELD, false);
         pBuilder.define(IS_ARCHER, false);
-        pBuilder.define(STANDBY, false);
+        pBuilder.define(PATROL_MODE, false);
+        pBuilder.define(PATROL_POSITION, BlockPos.ZERO);
         pBuilder.define(FEARED_ENTITY, "");
         pBuilder.define(HAS_BEEN_INTERACTED, false);
     }
@@ -967,7 +976,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putBoolean("AppearanceGenerated", this.appearanceGenerated);
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
-        compound.putBoolean("Standby", this.entityData.get(STANDBY));
+        compound.putBoolean("PatrolMode", this.entityData.get(PATROL_MODE));
+
+        BlockPos patrolPos = this.entityData.get(PATROL_POSITION);
+        if (patrolPos != null && !patrolPos.equals(BlockPos.ZERO)) {
+            compound.putLong("PatrolPosition", patrolPos.asLong());
+        }
         compound.putString("FearedEntity", this.entityData.get(FEARED_ENTITY));
 
         ListTag schoolsTag = new ListTag();
@@ -1095,9 +1109,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         this.summonerUUID = OwnerHelper.deserializeOwner(compound);
 
-        setStandby(compound.getBoolean("Standby"));
-        if(compound.getBoolean("Standby")){
-            clearMovementGoals();
+        setPatrolMode(compound.getBoolean("PatrolMode"));
+
+        if (compound.contains("PatrolPosition")) {
+            BlockPos patrolPos = BlockPos.of(compound.getLong("PatrolPosition"));
+            setPatrolPosition(patrolPos);
         }
 
         this.readInventoryFromTag(compound, this.registryAccess());

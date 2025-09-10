@@ -341,33 +341,31 @@ public class ContractEventHandler {
         }
 
         if (player.isShiftKeyDown()) {
-            boolean currentStandbyState = humanEntity.isStandby();
+            boolean currentPatrolState = humanEntity.isPatrolMode();
 
-            if (currentStandbyState) {
-                // La entidad está en standby, desactivar standby y restaurar movimiento
-                humanEntity.setStandby(false);
-                humanEntity.restoreMovementGoals();
+            if (currentPatrolState) {
+                // The entity is in patrol mode
+                humanEntity.setPatrolMode(false);
 
                 if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = Component.translatable("ui.magic_realms.standby_following");
+                    MutableComponent message = Component.translatable("ui.magic_realms.patrol_following");
                     message = message.withStyle(ChatFormatting.YELLOW);
                     serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
                 }
 
-                MagicRealms.LOGGER.info("Player {} deactivated standby for entity {}",
+                MagicRealms.LOGGER.info("Player {} deactivated patrol mode for entity {}",
                         player.getName().getString(), humanEntity.getEntityName());
             } else {
-                // La entidad no está en standby, activar standby y limpiar movimiento
-                humanEntity.setStandby(true);
-                humanEntity.clearMovementGoals();
+                // The entity is not in patrol mode, activate patrol
+                humanEntity.setPatrolMode(true);
 
                 if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = Component.translatable("ui.magic_realms.standby_active");
+                    MutableComponent message = Component.translatable("ui.magic_realms.patrol_active");
                     message = message.withStyle(ChatFormatting.YELLOW);
                     serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
                 }
 
-                MagicRealms.LOGGER.info("Player {} activated standby for entity {}",
+                MagicRealms.LOGGER.info("Player {} activated patrol mode for entity {}",
                         player.getName().getString(), humanEntity.getEntityName());
             }
 

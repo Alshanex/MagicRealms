@@ -63,8 +63,8 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.contract_permanent_no_upgrade", "%s already has a permanent contract - no upgrade needed!");
         add("ui.magic_realms.contract_permanent_other_player", "%s has a permanent contract with another player!");
         add("ui.magic_realms.contract_failed", "Failed to establish contract - please try again!");
-        add("ui.magic_realms.standby_active", "STANDBY");
-        add("ui.magic_realms.standby_following", "FOLLOWING");
+        add("ui.magic_realms.patrol_active", "PATROL MODE");
+        add("ui.magic_realms.patrol_following", "FOLLOWING");
 
         //Human introductions
         add("ui.magic_realms.introduction.warrior", "Hello, I'm %s, I'm a mercenary specialized in close range combat and my position is usually tank. I only accept a %s at least, which will last for %d minutes");

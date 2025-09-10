@@ -22,16 +22,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -40,9 +38,11 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.TargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.*;
@@ -52,6 +52,10 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.WebBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -112,9 +116,9 @@ public class HumanGoals {
             if (hasItemToSell) {
                 hasVillager = findNearbyEmployedVillager();
                 if (!hasVillager) {
-                    MagicRealms.LOGGER.debug("Entity {} has items to sell but no villagers found", entity.getEntityName());
+                    //MagicRealms.LOGGER.debug("Entity {} has items to sell but no villagers found", entity.getEntityName());
                 } else {
-                    MagicRealms.LOGGER.debug("Entity {} ready to sell items to villager", entity.getEntityName());
+                    //MagicRealms.LOGGER.debug("Entity {} ready to sell items to villager", entity.getEntityName());
                 }
             }
 
@@ -1845,17 +1849,19 @@ public class HumanGoals {
         protected final PathfinderMob mob;
         protected final AbstractSpellCastingMob spellCastingMob;
 
-        private Map<AbstractSpell, Holder<MobEffect>> buffs = Map.of(
-                SpellRegistry.EVASION_SPELL.get(), MobEffectRegistry.EVASION,
-                SpellRegistry.HEARTSTOP_SPELL.get(), MobEffectRegistry.HEARTSTOP,
-                SpellRegistry.CHARGE_SPELL.get(), MobEffectRegistry.CHARGED,
-                SpellRegistry.INVISIBILITY_SPELL.get(), MobEffectRegistry.TRUE_INVISIBILITY,
-                SpellRegistry.OAKSKIN_SPELL.get(), MobEffectRegistry.OAKSKIN,
-                SpellRegistry.HASTE_SPELL.get(), MobEffectRegistry.HASTENED,
-                SpellRegistry.FROSTBITE_SPELL.get(), MobEffectRegistry.FROSTBITTEN_STRIKES,
-                SpellRegistry.ABYSSAL_SHROUD_SPELL.get(), MobEffectRegistry.ABYSSAL_SHROUD,
-                SpellRegistry.ECHOING_STRIKES_SPELL.get(), MobEffectRegistry.ECHOING_STRIKES,
-                SpellRegistry.FORTIFY_SPELL.get(), MobEffectRegistry.FORTIFY
+        private Map<AbstractSpell, Holder<MobEffect>> buffs = Map.ofEntries(
+                Map.entry(SpellRegistry.EVASION_SPELL.get(), MobEffectRegistry.EVASION),
+                Map.entry(SpellRegistry.HEARTSTOP_SPELL.get(), MobEffectRegistry.HEARTSTOP),
+                Map.entry(SpellRegistry.CHARGE_SPELL.get(), MobEffectRegistry.CHARGED),
+                Map.entry(SpellRegistry.INVISIBILITY_SPELL.get(), MobEffectRegistry.TRUE_INVISIBILITY),
+                Map.entry(SpellRegistry.OAKSKIN_SPELL.get(), MobEffectRegistry.OAKSKIN),
+                Map.entry(SpellRegistry.HASTE_SPELL.get(), MobEffectRegistry.HASTENED),
+                Map.entry(SpellRegistry.FROSTBITE_SPELL.get(), MobEffectRegistry.FROSTBITTEN_STRIKES),
+                Map.entry(SpellRegistry.ABYSSAL_SHROUD_SPELL.get(), MobEffectRegistry.ABYSSAL_SHROUD),
+                Map.entry(SpellRegistry.ECHOING_STRIKES_SPELL.get(), MobEffectRegistry.ECHOING_STRIKES),
+                Map.entry(SpellRegistry.FORTIFY_SPELL.get(), MobEffectRegistry.FORTIFY),
+                Map.entry(SpellRegistry.THUNDERSTORM_SPELL.get(), MobEffectRegistry.THUNDERSTORM),
+                Map.entry(SpellRegistry.SPIDER_ASPECT_SPELL.get(), MobEffectRegistry.SPIDER_ASPECT)
         );
         private Map<AbstractSpell, Holder<MobEffect>> debuffs = Map.of(
                 SpellRegistry.BLIGHT_SPELL.get(), MobEffectRegistry.BLIGHT,
@@ -1881,13 +1887,6 @@ public class HumanGoals {
             this.spellcastingRangeSqr = spellcastingRange * spellcastingRange;
             allowFleeing = true;
             flyingMovementTimer = 0;
-
-            if(!buffs.containsKey(SpellRegistry.SPIDER_ASPECT_SPELL.get())){
-                buffs.put(SpellRegistry.THUNDERSTORM_SPELL.get(), MobEffectRegistry.THUNDERSTORM);
-            }
-            if(!buffs.containsKey(SpellRegistry.SPIDER_ASPECT_SPELL.get())){
-                buffs.put(SpellRegistry.SPIDER_ASPECT_SPELL.get(), MobEffectRegistry.SPIDER_ASPECT);
-            }
         }
 
         public HumanWizardAttackGoal setSpells(List<AbstractSpell> attackSpells, List<AbstractSpell> defenseSpells, List<AbstractSpell> movementSpells, List<AbstractSpell> supportSpells) {
@@ -2643,6 +2642,584 @@ public class HumanGoals {
                 }
             }
             return null;
+        }
+    }
+
+    public static class GatherResourcesGoal extends Goal {
+        protected final RandomHumanEntity entity;
+        protected BlockPos targetPos;
+        protected Entity targetEntity;
+        protected int gatheringTicks = 0;
+        protected int maxGatheringTicks = 60; // 3 seconds
+        protected boolean isGathering = false;
+        protected GatheringTask currentTask;
+        protected int searchCooldown = 0;
+        protected int maxSearchCooldown = 200; // 10 seconds between searches
+        protected int failedAttempts = 0;
+        protected int maxFailedAttempts = 3;
+
+        public GatherResourcesGoal(RandomHumanEntity entity) {
+            this.entity = entity;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't gather if in combat, on standby, or recently failed
+            if (entity.getTarget() != null) return false;
+            if (entity.isStandby()) return false;
+            if (searchCooldown > 0) return false;
+            if (failedAttempts >= maxFailedAttempts) return false;
+
+            // First check if we can craft with existing materials
+            if (canCraftSomething()) {
+                currentTask = null; // No gathering needed, just crafting
+                return true;
+            }
+
+            // Otherwise check if we need to gather resources
+            currentTask = determineNeededTask();
+            return currentTask != null;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            if (entity.getTarget() != null) return false;
+            if (isGathering) return gatheringTicks < maxGatheringTicks;
+
+            // Continue if we have a task or can craft
+            return currentTask != null || canCraftSomething();
+        }
+
+        @Override
+        public void start() {
+            if (currentTask != null) {
+                findTarget();
+            }
+            // If currentTask is null, we'll handle crafting in tick()
+        }
+
+        @Override
+        public void stop() {
+            targetPos = null;
+            targetEntity = null;
+            isGathering = false;
+            gatheringTicks = 0;
+
+            // Set cooldown if we failed to find a target
+            if (currentTask != null && targetPos == null && targetEntity == null) {
+                failedAttempts++;
+                searchCooldown = maxSearchCooldown;
+            }
+
+            currentTask = null;
+        }
+
+        @Override
+        public void tick() {
+            if (searchCooldown > 0) {
+                searchCooldown--;
+                return;
+            }
+
+            // If we don't have a gathering task, try crafting
+            if (currentTask == null) {
+                attemptCrafting();
+                return;
+            }
+
+            if (isGathering) {
+                gatheringTicks++;
+                if (gatheringTicks >= maxGatheringTicks) {
+                    completeGathering();
+                }
+                return;
+            }
+
+            if (targetPos != null) {
+                handleBlockTarget();
+            } else if (targetEntity != null) {
+                handleEntityTarget();
+            } else {
+                findTarget();
+            }
+        }
+
+        protected void handleBlockTarget() {
+            // Verify block still exists and is valid
+            if (!isValidBlockTarget(targetPos)) {
+                targetPos = null;
+                return;
+            }
+
+            double distance = entity.distanceToSqr(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+
+            if (distance <= 4.0) { // 2 blocks distance
+                entity.getNavigation().stop();
+                entity.getLookControl().setLookAt(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+                startGathering();
+            } else {
+                // Check if we can reach the target
+                if (!entity.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), 1.0)) {
+                    // Can't reach target, find a new one
+                    targetPos = null;
+                }
+            }
+        }
+
+        protected void handleEntityTarget() {
+            if (!targetEntity.isAlive()) {
+                targetEntity = null;
+                return;
+            }
+
+            double distance = entity.distanceToSqr(targetEntity);
+
+            if (distance <= 4.0) { // 2 blocks distance
+                entity.getNavigation().stop();
+                entity.getLookControl().setLookAt(targetEntity);
+                startGathering();
+            } else {
+                if (!entity.getNavigation().moveTo(targetEntity, 1.0)) {
+                    // Can't reach target, find a new one
+                    targetEntity = null;
+                }
+            }
+        }
+
+        protected boolean isValidBlockTarget(BlockPos pos) {
+            if (pos == null) return false;
+
+            BlockState state = entity.level().getBlockState(pos);
+            Block block = state.getBlock();
+
+            switch (currentTask) {
+                case GATHER_LOG -> { return state.is(BlockTags.LOGS); }
+                case GATHER_GRAVEL -> { return block == Blocks.GRAVEL; }
+                case GATHER_STRING_FROM_WEB -> { return block instanceof WebBlock; }
+                default -> { return false; }
+            }
+        }
+
+        protected void startGathering() {
+            if (!isGathering) {
+                isGathering = true;
+                gatheringTicks = 0;
+                entity.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 0.8F, 1.0F);
+            }
+        }
+
+        protected void completeGathering() {
+            boolean success = false;
+
+            if (targetPos != null) {
+                success = gatherFromBlock();
+            } else if (targetEntity != null) {
+                success = gatherFromEntity();
+            }
+
+            if (success) {
+                failedAttempts = 0; // Reset failed attempts on success
+                attemptCrafting();
+            }
+
+            isGathering = false;
+            gatheringTicks = 0;
+            targetPos = null;
+            targetEntity = null;
+            currentTask = null;
+        }
+
+        protected boolean gatherFromBlock() {
+            if (targetPos == null) return false;
+
+            Level level = entity.level();
+            BlockState blockState = level.getBlockState(targetPos);
+            Block block = blockState.getBlock();
+
+            // Double-check we can still gather from this block
+            if (!isValidBlockTarget(targetPos)) {
+                return false;
+            }
+
+            if (block.defaultBlockState().is(BlockTags.LOGS)) {
+                // Give 1-2 logs
+                ItemStack logStack = new ItemStack(block.asItem(), 1 + entity.getRandom().nextInt(2));
+                entity.getInventory().addItem(logStack);
+                level.destroyBlock(targetPos, false);
+                entity.playSound(SoundEvents.WOOD_BREAK, 1.0F, 1.0F);
+                return true;
+            } else if (block == Blocks.GRAVEL) {
+                // Give 1-3 gravel
+                ItemStack gravelStack = new ItemStack(Items.GRAVEL, 1 + entity.getRandom().nextInt(3));
+                entity.getInventory().addItem(gravelStack);
+                level.destroyBlock(targetPos, false);
+                entity.playSound(SoundEvents.GRAVEL_BREAK, 1.0F, 1.0F);
+                return true;
+            } else if (block instanceof WebBlock) {
+                // Give 3 string from cobweb
+                ItemStack stringStack = new ItemStack(Items.STRING, 3);
+                entity.getInventory().addItem(stringStack);
+                level.destroyBlock(targetPos, false);
+                entity.playSound(SoundEvents.WOOL_BREAK, 1.0F, 1.0F);
+                return true;
+            }
+
+            return false;
+        }
+
+        protected boolean gatherFromEntity() {
+            if (targetEntity == null || !targetEntity.isAlive()) return false;
+
+            if (targetEntity instanceof Spider spider) {
+                // Get 1-2 string from spider (don't kill it, just hurt it)
+                ItemStack stringStack = new ItemStack(Items.STRING, 1 + entity.getRandom().nextInt(2));
+                entity.getInventory().addItem(stringStack);
+                spider.hurt(entity.level().damageSources().mobAttack(entity), 2.0F);
+                entity.playSound(SoundEvents.SPIDER_HURT, 1.0F, 1.0F);
+                return true;
+            } else if (targetEntity instanceof Chicken chicken) {
+                // Get 1-2 feathers from chicken (don't kill it, just hurt it)
+                ItemStack featherStack = new ItemStack(Items.FEATHER, 1 + entity.getRandom().nextInt(2));
+                entity.getInventory().addItem(featherStack);
+                chicken.hurt(entity.level().damageSources().mobAttack(entity), 2.0F);
+                entity.playSound(SoundEvents.CHICKEN_HURT, 1.0F, 1.0F);
+                return true;
+            }
+
+            return false;
+        }
+
+        protected void findTarget() {
+            if (currentTask == null) return;
+
+            switch (currentTask) {
+                case GATHER_LOG -> findLogBlock();
+                case GATHER_GRAVEL -> findGravelBlock();
+                case GATHER_STRING_FROM_WEB -> findCobwebBlock();
+                case GATHER_STRING_FROM_SPIDER -> findSpider();
+                case GATHER_FEATHER -> findChicken();
+            }
+        }
+
+        protected void findLogBlock() {
+            targetPos = findNearestBlock(BlockTags.LOGS, 32);
+        }
+
+        protected void findGravelBlock() {
+            targetPos = findNearestBlockOfType(Blocks.GRAVEL, 32);
+        }
+
+        protected void findCobwebBlock() {
+            targetPos = findNearestBlockOfType(Blocks.COBWEB, 32);
+        }
+
+        protected void findSpider() {
+            targetEntity = findNearestEntity(Spider.class, 32);
+        }
+
+        protected void findChicken() {
+            targetEntity = findNearestEntity(Chicken.class, 32);
+        }
+
+        protected BlockPos findNearestBlock(net.minecraft.tags.TagKey<Block> blockTag, int radius) {
+            BlockPos entityPos = entity.blockPosition();
+            BlockPos closest = null;
+            double closestDistance = Double.MAX_VALUE;
+
+            for (int r = 1; r <= radius; r++) {
+                for (int x = -r; x <= r; x++) {
+                    for (int z = -r; z <= r; z++) {
+                        for (int y = -3; y <= 3; y++) {
+                            BlockPos checkPos = entityPos.offset(x, y, z);
+                            if (entity.level().getBlockState(checkPos).is(blockTag)) {
+                                double distance = entityPos.distSqr(checkPos);
+                                if (distance < closestDistance) {
+                                    closest = checkPos;
+                                    closestDistance = distance;
+                                }
+                            }
+                        }
+                    }
+                }
+                // If we found something within this radius, return it
+                if (closest != null) break;
+            }
+            return closest;
+        }
+
+        protected BlockPos findNearestBlockOfType(Block targetBlock, int radius) {
+            BlockPos entityPos = entity.blockPosition();
+            BlockPos closest = null;
+            double closestDistance = Double.MAX_VALUE;
+
+            for (int r = 1; r <= radius; r++) {
+                for (int x = -r; x <= r; x++) {
+                    for (int z = -r; z <= r; z++) {
+                        for (int y = -3; y <= 3; y++) {
+                            BlockPos checkPos = entityPos.offset(x, y, z);
+                            if (entity.level().getBlockState(checkPos).getBlock() == targetBlock) {
+                                double distance = entityPos.distSqr(checkPos);
+                                if (distance < closestDistance) {
+                                    closest = checkPos;
+                                    closestDistance = distance;
+                                }
+                            }
+                        }
+                    }
+                }
+                // If we found something within this radius, return it
+                if (closest != null) break;
+            }
+            return closest;
+        }
+
+        protected <T extends Entity> T findNearestEntity(Class<T> entityClass, int radius) {
+            AABB searchArea = AABB.ofSize(entity.position(), radius * 2, radius * 2, radius * 2);
+
+            return entity.level().getEntitiesOfClass(entityClass, searchArea)
+                    .stream()
+                    .filter(e -> e != entity && e.isAlive())
+                    .filter(e -> !isProtectedEntity(e))
+                    .min(Comparator.comparing(e -> e.distanceToSqr(entity)))
+                    .orElse(null);
+        }
+
+        protected boolean isProtectedEntity(Entity entity) {
+            if (entity instanceof LivingEntity livingEntity) {
+                return livingEntity.isAlliedTo(this.entity)
+                        || (this.entity.getSummoner() != null && livingEntity.isAlliedTo(this.entity.getSummoner()));
+            }
+            return false;
+        }
+
+        protected boolean canCraftSomething() {
+            switch (entity.getEntityClass()) {
+                case WARRIOR -> {
+                    if (entity.getMainHandItem().isEmpty() && hasAnyLog()) {
+                        return true; // Can craft sword
+                    }
+                    if (entity.hasShield() && entity.getOffhandItem().isEmpty() && hasLogs(2)) {
+                        return true; // Can craft shield
+                    }
+                }
+                case ROGUE -> {
+                    if (entity.isArcher()) {
+                        if (entity.getMainHandItem().isEmpty() && hasAnyLog() && hasString(3)) {
+                            return true; // Can craft bow
+                        }
+                        if (!entity.hasArrows() && hasAnyLog() && hasGravel() && hasFeather()) {
+                            return true; // Can craft arrows
+                        }
+                    } else {
+                        if (entity.getMainHandItem().isEmpty() && hasAnyLog()) {
+                            return true; // Can craft sword
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        protected GatheringTask determineNeededTask() {
+            switch (entity.getEntityClass()) {
+                case WARRIOR -> {
+                    // Warrior needs wooden sword
+                    if (entity.getMainHandItem().isEmpty() && !hasAnyLog()) {
+                        return GatheringTask.GATHER_LOG;
+                    }
+                    // Warrior with shield needs more logs for shield
+                    if (entity.hasShield() && entity.getOffhandItem().isEmpty() && hasLogs(1) && !hasLogs(2)) {
+                        return GatheringTask.GATHER_LOG;
+                    }
+                }
+                case ROGUE -> {
+                    if (entity.isArcher()) {
+                        // Archer needs bow materials
+                        if (entity.getMainHandItem().isEmpty() && !hasAnyLog()) {
+                            return GatheringTask.GATHER_LOG;
+                        }
+                        if (entity.getMainHandItem().isEmpty() && hasAnyLog() && !hasString(3)) {
+                            // Need string for bow - prefer cobwebs over spiders
+                            if (entity.getRandom().nextFloat() < 0.7f) {
+                                return GatheringTask.GATHER_STRING_FROM_WEB;
+                            } else {
+                                return GatheringTask.GATHER_STRING_FROM_SPIDER;
+                            }
+                        }
+                        // Need arrow materials
+                        if (!entity.hasArrows() && hasAnyLog() && !hasGravel()) {
+                            return GatheringTask.GATHER_GRAVEL;
+                        }
+                        if (!entity.hasArrows() && hasAnyLog() && hasGravel() && !hasFeather()) {
+                            return GatheringTask.GATHER_FEATHER;
+                        }
+                    } else {
+                        // Assassin needs sword
+                        if (entity.getMainHandItem().isEmpty() && !hasAnyLog()) {
+                            return GatheringTask.GATHER_LOG;
+                        }
+                    }
+                }
+                case MAGE -> {
+                    // Mages don't need to gather resources for weapons
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        protected void attemptCrafting() {
+            boolean crafted = false;
+
+            switch (entity.getEntityClass()) {
+                case WARRIOR -> {
+                    if (entity.getMainHandItem().isEmpty() && hasAnyLog()) {
+                        craftWoodenSword();
+                        crafted = true;
+                    }
+                    if (entity.hasShield() && entity.getOffhandItem().isEmpty() && hasLogs(2)) {
+                        craftShield();
+                        crafted = true;
+                    }
+                }
+                case ROGUE -> {
+                    if (entity.isArcher()) {
+                        if (entity.getMainHandItem().isEmpty() && hasAnyLog() && hasString(3)) {
+                            craftBow();
+                            crafted = true;
+                        }
+                        if (!entity.hasArrows() && hasAnyLog() && hasGravel() && hasFeather()) {
+                            craftArrows();
+                            crafted = true;
+                        }
+                    } else {
+                        if (entity.getMainHandItem().isEmpty() && hasAnyLog()) {
+                            craftWoodenSword();
+                            crafted = true;
+                        }
+                    }
+                }
+            }
+
+            if (crafted) {
+                failedAttempts = 0; // Reset failed attempts on successful crafting
+            }
+        }
+
+        // Resource checking methods
+        protected boolean hasAnyLog() {
+            for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
+                ItemStack stack = entity.getInventory().getItem(i);
+                if (stack.is(ItemTags.LOGS) && !stack.isEmpty()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        protected boolean hasLogs(int count) {
+            int totalLogs = 0;
+            for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
+                ItemStack stack = entity.getInventory().getItem(i);
+                if (stack.is(ItemTags.LOGS)) {
+                    totalLogs += stack.getCount();
+                }
+            }
+            return totalLogs >= count;
+        }
+
+        protected boolean hasString(int count) {
+            return entity.getInventory().countItem(Items.STRING) >= count;
+        }
+
+        protected boolean hasGravel() {
+            return entity.getInventory().countItem(Items.GRAVEL) > 0;
+        }
+
+        protected boolean hasFeather() {
+            return entity.getInventory().countItem(Items.FEATHER) > 0;
+        }
+
+        protected ItemStack getAnyLog() {
+            for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
+                ItemStack stack = entity.getInventory().getItem(i);
+                if (stack.is(ItemTags.LOGS) && !stack.isEmpty()) {
+                    return stack;
+                }
+            }
+            return ItemStack.EMPTY;
+        }
+
+        protected void consumeItem(ItemStack item, int count) {
+            int remaining = count;
+            for (int i = 0; i < entity.getInventory().getContainerSize() && remaining > 0; i++) {
+                ItemStack stack = entity.getInventory().getItem(i);
+                if (stack.is(item.getItem())) {
+                    int toConsume = Math.min(remaining, stack.getCount());
+                    stack.shrink(toConsume);
+                    remaining -= toConsume;
+                    if (stack.isEmpty()) {
+                        entity.getInventory().setItem(i, ItemStack.EMPTY);
+                    }
+                }
+            }
+        }
+
+        // Crafting methods
+        protected void craftWoodenSword() {
+            ItemStack log = getAnyLog();
+            if (!log.isEmpty()) {
+                consumeItem(log, 1);
+                ItemStack sword = new ItemStack(Items.WOODEN_SWORD);
+                entity.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, sword);
+                entity.playSound(SoundEvents.CRAFTER_CRAFT, 0.8F, 1.2F);
+                MagicRealms.LOGGER.debug("Entity {} crafted wooden sword", entity.getEntityName());
+            }
+        }
+
+        protected void craftShield() {
+            ItemStack log = getAnyLog();
+            if (!log.isEmpty() && hasLogs(2)) {
+                consumeItem(log, 2);
+                ItemStack shield = new ItemStack(Items.SHIELD);
+                entity.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, shield);
+                entity.playSound(SoundEvents.CRAFTER_CRAFT, 0.8F, 1.2F);
+                MagicRealms.LOGGER.debug("Entity {} crafted shield", entity.getEntityName());
+            }
+        }
+
+        protected void craftBow() {
+            ItemStack log = getAnyLog();
+            if (!log.isEmpty() && hasString(3)) {
+                consumeItem(log, 1);
+                consumeItem(new ItemStack(Items.STRING), 3);
+                ItemStack bow = new ItemStack(Items.BOW);
+                entity.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, bow);
+                entity.playSound(SoundEvents.CRAFTER_CRAFT, 0.8F, 1.2F);
+                MagicRealms.LOGGER.debug("Entity {} crafted bow", entity.getEntityName());
+            }
+        }
+
+        protected void craftArrows() {
+            ItemStack log = getAnyLog();
+            if (!log.isEmpty() && hasGravel() && hasFeather()) {
+                consumeItem(log, 1);
+                consumeItem(new ItemStack(Items.GRAVEL), 1);
+                consumeItem(new ItemStack(Items.FEATHER), 1);
+                ItemStack arrows = new ItemStack(Items.ARROW, 10);
+                entity.getInventory().addItem(arrows);
+                entity.playSound(SoundEvents.CRAFTER_CRAFT, 0.8F, 1.2F);
+                MagicRealms.LOGGER.debug("Entity {} crafted 10 arrows", entity.getEntityName());
+            }
+        }
+
+        protected enum GatheringTask {
+            GATHER_LOG,
+            GATHER_GRAVEL,
+            GATHER_STRING_FROM_WEB,
+            GATHER_STRING_FROM_SPIDER,
+            GATHER_FEATHER
         }
     }
 }

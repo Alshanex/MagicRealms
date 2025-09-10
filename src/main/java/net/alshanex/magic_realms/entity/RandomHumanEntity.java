@@ -202,6 +202,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
+        this.goalSelector.addGoal(2, new HumanGoals.GatherResourcesGoal(this));
+
         this.goalSelector.addGoal(6, new HumanGoals.SellItemsToVillagersGoal(this));
         this.goalSelector.addGoal(5, new HumanGoals.BuyEquipmentFromVillagersGoal(this));
         this.goalSelector.addGoal(7, new HumanGoals.EnchantEquipmentFromLibrarianGoal(this));
@@ -221,7 +223,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.targetSelector.addGoal(6, new HumanGoals.AlliedHumanDefenseGoal(this));
 
 
-        this.targetSelector.addGoal(6, new HumanGoals.NoFearTargetGoal(this));
+        this.targetSelector.addGoal(1, new HumanGoals.NoFearTargetGoal(this));
     }
 
     private List<AbstractSpell> persistedSpells = new ArrayList<>();
@@ -1258,6 +1260,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private void setAssassinGoal(List<AbstractSpell> spells){
         this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
+
+        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(spells);
+        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(spells);
+        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(spells);
+        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(spells);
+
         this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.5f, 40, 60)
                 .setMoveset(List.of(
                         new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
@@ -1268,13 +1276,19 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 .setComboChance(.4f)
                 .setMeleeAttackInverval(10, 20)
                 .setMeleeMovespeedModifier(1.8f)
-                .setSpells(spells, spells, spells, spells)
+                .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                 .setDrinksPotions()
         );
     }
 
     private void setWarriorGoal(List<AbstractSpell> spells){
         this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
+
+        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(spells);
+        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(spells);
+        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(spells);
+        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(spells);
+
         if(hasShield()){
             this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1f, 70, 85)
                     .setMoveset(List.of(
@@ -1286,7 +1300,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     .setComboChance(.4f)
                     .setMeleeAttackInverval(20, 40)
                     .setMeleeMovespeedModifier(1.3f)
-                    .setSpells(spells, spells, spells, spells)
+                    .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                     .setDrinksPotions()
             );
         } else {
@@ -1300,7 +1314,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     .setComboChance(.4f)
                     .setMeleeAttackInverval(10, 30)
                     .setMeleeMovespeedModifier(1.5f)
-                    .setSpells(spells, spells, spells, spells)
+                    .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                     .setDrinksPotions()
             );
         }

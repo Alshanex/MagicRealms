@@ -4,85 +4,39 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
+import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
+import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
+import io.redspace.ironsspellbooks.registries.ParticleRegistry;
+import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.events.KillTrackingHandler;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.humans.LevelingStatsManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class HumanEntityCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("human")
                 .requires(source -> source.hasPermission(2))
-                .then(Commands.literal("setlevel")
+                .then(Commands.literal("addlevels")
                         .then(Commands.argument("target", EntityArgument.entity())
-                                .then(Commands.argument("level", IntegerArgumentType.integer(1, 300))
-                                        .executes(HumanEntityCommands::setLevel))))
-                .then(Commands.literal("addexp")
-                        .then(Commands.argument("target", EntityArgument.entity())
-                                .then(Commands.argument("experience", IntegerArgumentType.integer(1, 10000))
-                                        .executes(HumanEntityCommands::addExperience))))
-                .then(Commands.literal("reset")
-                        .then(Commands.argument("target", EntityArgument.entity())
-                                .executes(HumanEntityCommands::resetLevel))));
+                                .then(Commands.argument("levels", IntegerArgumentType.integer(1, 100))
+                                        .executes(HumanEntityCommands::addLevels)))));
     }
 
-    private static int setLevel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int addLevels(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Entity target = EntityArgument.getEntity(context, "target");
-        int level = IntegerArgumentType.getInteger(context, "level");
-        CommandSourceStack source = context.getSource();
-
-        if (!(target instanceof RandomHumanEntity humanEntity)) {
-            source.sendFailure(Component.literal("Target must be a RandomHumanEntity!"));
-            return 0;
-        }
-
-        try {
-            KillTrackingHandler.setEntityLevel(humanEntity, level);
-            humanEntity.updateCustomNameWithStars();
-
-            source.sendSuccess(() -> Component.literal(
-                    String.format("Set level of %s to %d",
-                            humanEntity.getEntityName(), level)), true);
-            return 1;
-
-        } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to set level: " + e.getMessage()));
-            return 0;
-        }
-    }
-
-    private static int addExperience(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Entity target = EntityArgument.getEntity(context, "target");
-        int experience = IntegerArgumentType.getInteger(context, "experience");
-        CommandSourceStack source = context.getSource();
-
-        if (!(target instanceof RandomHumanEntity humanEntity)) {
-            source.sendFailure(Component.literal("Target must be a RandomHumanEntity!"));
-            return 0;
-        }
-
-        try {
-            KillTrackingHandler.addExperience(humanEntity, experience);
-
-            String message = String.format("Added %d experience to %s", experience, humanEntity.getEntityName());
-
-            source.sendSuccess(() -> Component.literal(message), true);
-            return 1;
-
-        } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to add experience: " + e.getMessage()));
-            return 0;
-        }
-    }
-
-    private static int resetLevel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Entity target = EntityArgument.getEntity(context, "target");
+        int levelsToAdd = IntegerArgumentType.getInteger(context, "levels");
         CommandSourceStack source = context.getSource();
 
         if (!(target instanceof RandomHumanEntity humanEntity)) {
@@ -92,18 +46,72 @@ public class HumanEntityCommands {
 
         try {
             KillTrackerData killData = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
-            killData.reset();
+            int currentLevel = killData.getCurrentLevel();
+            int maxLevel = 300; // Based on your getMaxLevel() method returning 100, but stats go to 300
 
-            // Aplicar nivel 1
-            KillTrackingHandler.setEntityLevel(humanEntity, 1);
+            // Calculate how many levels we can actually add
+            int actualLevelsToAdd = Math.min(levelsToAdd, maxLevel - currentLevel);
 
-            source.sendSuccess(() -> Component.literal(
-                    String.format("Reset %s to level 1", humanEntity.getEntityName())), true);
+            if (actualLevelsToAdd <= 0) {
+                source.sendFailure(Component.literal(
+                        String.format("%s is already at maximum level (%d)!",
+                                humanEntity.getEntityName(), currentLevel)));
+                return 0;
+            }
+
+            // Add levels one by one to trigger proper level-up effects
+            for (int i = 0; i < actualLevelsToAdd; i++) {
+                int newLevel = currentLevel + i + 1;
+
+                // Set the level (this sets experience to the required amount for that level)
+                killData.setLevel(newLevel);
+
+                // Apply level-based attribute bonuses
+                LevelingStatsManager.applyLevelBasedAttributes(humanEntity, newLevel);
+            }
+
+            spawnLevelUpEffects(humanEntity);
+
+            // Update the entity's name to reflect the new level
+            humanEntity.updateCustomNameWithStars();
+
+            String message = String.format("Added %d level%s to %s (Level %d -> %d)",
+                    actualLevelsToAdd,
+                    actualLevelsToAdd == 1 ? "" : "s",
+                    humanEntity.getEntityName(),
+                    currentLevel,
+                    killData.getCurrentLevel());
+
+            source.sendSuccess(() -> Component.literal(message), true);
+
+            if (actualLevelsToAdd < levelsToAdd) {
+                source.sendSuccess(() -> Component.literal(
+                        String.format("Note: Only %d level%s could be added (reached maximum level)",
+                                actualLevelsToAdd, actualLevelsToAdd == 1 ? "" : "s")), false);
+            }
+
             return 1;
 
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to reset level: " + e.getMessage()));
+            source.sendFailure(Component.literal("Failed to add levels: " + e.getMessage()));
             return 0;
+        }
+    }
+
+    private static void spawnLevelUpEffects(RandomHumanEntity entity) {
+        if (entity.level().isClientSide) return;
+
+        try {
+            MagicManager.spawnParticles(entity.level(), new BlastwaveParticleOptions(SchoolRegistry.HOLY.get().getTargetingColor(), 4), entity.getX(), entity.getY() + .165f, entity.getZ(), 1, 0, 0, 0, 0, true);
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new ShockwaveParticlesPacket(new Vec3(entity.getX(), entity.getY() + .165f, entity.getZ()), 4, ParticleRegistry.CLEANSE_PARTICLE.get()));
+
+            entity.playSound(
+                    net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP,
+                    0.8F,
+                    1.2F
+            );
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to spawn level up effects: {}", e.getMessage());
         }
     }
 }

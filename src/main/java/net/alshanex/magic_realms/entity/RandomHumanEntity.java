@@ -538,6 +538,138 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
+    public List<AbstractSpell> extractSpellsFromEquipment() {
+        List<AbstractSpell> equipmentSpells = new ArrayList<>();
+
+        // Check all equipment slots
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack equipment = this.getItemBySlot(slot);
+            if (!equipment.isEmpty()) {
+                List<AbstractSpell> spells = extractSpellsFromItem(equipment);
+                equipmentSpells.addAll(spells);
+            }
+        }
+
+        // Also check inventory for items that might have imbued spells
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack item = inventory.getItem(i);
+            if (!item.isEmpty() && shouldCheckInventoryItem(item)) {
+                List<AbstractSpell> spells = extractSpellsFromItem(item);
+                equipmentSpells.addAll(spells);
+            }
+        }
+
+        return equipmentSpells;
+    }
+
+    private List<AbstractSpell> extractSpellsFromItem(ItemStack item) {
+        List<AbstractSpell> spells = new ArrayList<>();
+
+        if (!ISpellContainer.isSpellContainer(item)) {
+            return spells;
+        }
+
+        ISpellContainer container = ISpellContainer.get(item);
+        if (container != null && !container.isEmpty()) {
+            container.getActiveSpells().forEach(spellSlot -> {
+                AbstractSpell spell = spellSlot.spellData().getSpell();
+                // Only add if not blacklisted
+                if (!ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST)) {
+                    spells.add(spell);
+                }
+            });
+        }
+
+        return spells;
+    }
+
+    private boolean shouldCheckInventoryItem(ItemStack item) {
+        return ISpellContainer.isSpellContainer(item);
+    }
+
+    public List<AbstractSpell> getAllAvailableSpellsWithEquipment() {
+        List<AbstractSpell> allSpells = new ArrayList<>(persistedSpells);
+
+        // Add spellbook spells (for mages)
+        if (this.getEntityClass() == EntityClass.MAGE) {
+            allSpells.addAll(spellbookSpells);
+        }
+
+        // Add equipment spells
+        List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
+        allSpells.addAll(equipmentSpells);
+
+        // Remove duplicates and blacklisted spells
+        return allSpells.stream()
+                .distinct()
+                .filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
+                .collect(Collectors.toList());
+    }
+
+    private void updateMageGoalWithSpellbookAndEquipment(List<AbstractSpell> spellbookSpells) {
+        // Combine persisted spells, spellbook spells, and equipment spells
+        List<AbstractSpell> combinedSpells = new ArrayList<>(persistedSpells);
+        combinedSpells.addAll(spellbookSpells);
+
+        // Add equipment spells
+        List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
+        combinedSpells.addAll(equipmentSpells);
+
+        // Remove duplicate spells and blacklisted spells
+        List<AbstractSpell> uniqueSpells = new ArrayList<>();
+        for (AbstractSpell spell : combinedSpells) {
+            if (!uniqueSpells.contains(spell) && !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST)) {
+                uniqueSpells.add(spell);
+            }
+        }
+
+        // Remove existing wizard attack goal
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
+
+        // Add new goal with combined spells
+        if (!uniqueSpells.isEmpty()) {
+            List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(uniqueSpells);
+            List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(uniqueSpells);
+            List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(uniqueSpells);
+            List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(uniqueSpells);
+
+            this.goalSelector.addGoal(2, new HumanGoals.HumanWizardAttackGoal(this, 1.25f, 25, 50)
+                    .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
+                    .setDrinksPotions()
+            );
+
+            MagicRealms.LOGGER.debug("Mage {} updated spell roster: {} persisted + {} spellbook + {} equipment = {} total unique",
+                    getEntityName(), persistedSpells.size(), spellbookSpells.size(), equipmentSpells.size(), uniqueSpells.size());
+        } else {
+            // Fallback to just persisted spells
+            setMageGoal(persistedSpells);
+        }
+    }
+
+    public void refreshSpellsAfterEquipmentChange() {
+        if (!spellsGenerated || persistedSpells.isEmpty()) {
+            return;
+        }
+
+        EntityClass entityClass = getEntityClass();
+        MagicRealms.LOGGER.debug("Equipment changed for {} {}, refreshing spells", getEntityName(), entityClass.getName());
+
+        switch (entityClass) {
+            case MAGE -> {
+                // For mages, call the updated method that includes equipment spells
+                updateMageGoalWithSpellbookAndEquipment(spellbookSpells);
+            }
+            case WARRIOR -> setWarriorGoal(persistedSpells);
+            case ROGUE -> {
+                if (isArcher()) {
+                    setArcherGoal(persistedSpells);
+                } else {
+                    setAssassinGoal(persistedSpells);
+                }
+            }
+        }
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -914,8 +1046,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             // Extract new spellbook spells
             List<AbstractSpell> newSpellbookSpells = extractSpellsFromSpellbook(currentOffhand);
 
-            // Update the spell roster
-            updateMageGoalWithSpellbook(newSpellbookSpells);
+            // Update the spell roster (now includes equipment spells)
+            updateMageGoalWithSpellbookAndEquipment(newSpellbookSpells);
 
             // Cache the current state
             this.spellbookSpells = new ArrayList<>(newSpellbookSpells);
@@ -1267,16 +1399,25 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     //GOALS
 
-    private void setMageGoal(List<AbstractSpell> spells){
+    private void setMageGoal(List<AbstractSpell> spells) {
         this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
 
-        // If we have spellbook spells, combine them
+        // Combine persisted spells, spellbook spells, and equipment spells
         List<AbstractSpell> finalSpells = new ArrayList<>(spells);
+
         if (this.getEntityClass() == EntityClass.MAGE && !spellbookSpells.isEmpty()) {
             finalSpells.addAll(spellbookSpells);
-            // Remove duplicates
-            finalSpells = finalSpells.stream().filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST)).distinct().collect(Collectors.toList());
         }
+
+        // Add equipment spells for all classes
+        List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
+        finalSpells.addAll(equipmentSpells);
+
+        // Remove duplicates and blacklisted spells
+        finalSpells = finalSpells.stream()
+                .filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
+                .distinct()
+                .collect(Collectors.toList());
 
         List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(finalSpells);
         List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(finalSpells);
@@ -1289,30 +1430,52 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         );
     }
 
-    private void setArcherGoal(List<AbstractSpell> spells){
+    private void setArcherGoal(List<AbstractSpell> spells) {
         this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
         this.goalSelector.removeAllGoals((goal) -> goal instanceof ChargeArrowAttackGoal);
 
         this.goalSelector.addGoal(2, new ChargeArrowAttackGoal<RandomHumanEntity>(this, 1.0D, 20, 15.0F));
 
-        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(spells);
-        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(spells);
-        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(spells);
-        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(spells);
+        // Add equipment spells
+        List<AbstractSpell> finalSpells = new ArrayList<>(spells);
+        List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
+        finalSpells.addAll(equipmentSpells);
+
+        // Remove duplicates and blacklisted spells
+        finalSpells = finalSpells.stream()
+                .filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(finalSpells);
+        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(finalSpells);
+        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
+        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
 
         this.goalSelector.addGoal(3, new HumanGoals.HumanWizardAttackGoal(this, 1.0f, 60, 120)
-                        .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
-                        .setDrinksPotions()
+                .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
+                .setDrinksPotions()
         );
     }
 
-    private void setAssassinGoal(List<AbstractSpell> spells){
+    private void setAssassinGoal(List<AbstractSpell> spells) {
         this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
 
-        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(spells);
-        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(spells);
-        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(spells);
-        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(spells);
+        // Add equipment spells
+        List<AbstractSpell> finalSpells = new ArrayList<>(spells);
+        List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
+        finalSpells.addAll(equipmentSpells);
+
+        // Remove duplicates and blacklisted spells
+        finalSpells = finalSpells.stream()
+                .filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(finalSpells);
+        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(finalSpells);
+        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
+        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
 
         this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.5f, 40, 60)
                 .setMoveset(List.of(
@@ -1329,15 +1492,26 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         );
     }
 
-    private void setWarriorGoal(List<AbstractSpell> spells){
+    private void setWarriorGoal(List<AbstractSpell> spells) {
         this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
 
-        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(spells);
-        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(spells);
-        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(spells);
-        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(spells);
+        // Add equipment spells
+        List<AbstractSpell> finalSpells = new ArrayList<>(spells);
+        List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
+        finalSpells.addAll(equipmentSpells);
 
-        if(hasShield()){
+        // Remove duplicates and blacklisted spells
+        finalSpells = finalSpells.stream()
+                .filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(finalSpells);
+        List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(finalSpells);
+        List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
+        List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
+
+        if (hasShield()) {
             this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1f, 70, 85)
                     .setMoveset(List.of(
                             new AttackAnimationData(9, "simple_sword_upward_swipe", 5),

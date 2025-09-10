@@ -10,6 +10,7 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.util.ContractTier;
 import net.alshanex.magic_realms.util.EntitySnapshot;
+import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -331,18 +332,8 @@ public class ContractEventHandler {
                 }
             } else {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    // Obtener información del nivel y mostrar qué contrato necesita
-                    KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
-                    int entityLevel = killTracker.getCurrentLevel();
-                    ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
-                    int contractMinutes = contractData.getAdditionalMinutesForStarLevel(humanEntity.getStarLevel());
-
-                    MutableComponent message = Component.translatable("ui.magic_realms.need_contract_item", requiredTier.getDisplayName().getString(), contractMinutes);
-
-                    // Combinar mensajes usando literal
-                    message = Component.literal(message.getString());
-                    message = message.withStyle(ChatFormatting.YELLOW);
-                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                    // Send introduction message instead of action bar message
+                    sendIntroductionMessage(serverPlayer, humanEntity, contractData);
                 }
             }
             event.setCanceled(true);
@@ -434,6 +425,43 @@ public class ContractEventHandler {
         });
 
         event.setCanceled(true);
+    }
+
+    private static void sendIntroductionMessage(ServerPlayer serverPlayer, RandomHumanEntity humanEntity, ContractData contractData) {
+        // Get entity information
+        String entityName = humanEntity.getEntityName();
+        EntityClass entityClass = humanEntity.getEntityClass();
+
+        // Get contract tier and time information
+        KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
+        int entityLevel = killTracker.getCurrentLevel();
+        ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
+        int contractMinutes = contractData.getAdditionalMinutesForStarLevel(humanEntity.getStarLevel());
+
+        // Create the introduction message based on class and subtype
+        String messageKey;
+        switch (entityClass) {
+            case WARRIOR -> messageKey = "ui.magic_realms.introduction.warrior";
+            case ROGUE -> {
+                if (humanEntity.isArcher()) {
+                    messageKey = "ui.magic_realms.introduction.archer";
+                } else {
+                    messageKey = "ui.magic_realms.introduction.assassin";
+                }
+            }
+            case MAGE -> messageKey = "ui.magic_realms.introduction.mage";
+            default -> messageKey = "ui.magic_realms.introduction.default";
+        }
+
+        // Create and send the message
+        MutableComponent message = Component.translatable(messageKey,
+                entityName,
+                requiredTier.getDisplayName().getString(),
+                contractMinutes);
+        message = message.withStyle(ChatFormatting.YELLOW);
+
+        // Send as chat message instead of action bar
+        serverPlayer.sendSystemMessage(message);
     }
 
     private static class ContractMenuProvider implements MenuProvider {

@@ -66,6 +66,13 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.standby_active", "STANDBY");
         add("ui.magic_realms.standby_following", "FOLLOWING");
 
+        //Human introductions
+        add("ui.magic_realms.introduction.warrior", "Hello, I'm %s, I'm a mercenary specialized in close range combat and my position is usually tank. I only accept a %s at least, which will last for %d minutes");
+        add("ui.magic_realms.introduction.assassin", "Hello, I'm %s, I'm a mercenary specialized in close range combat and my specialty is dodging attacks and dealing high damage. I only accept a %s at least, which will last for %d minutes");
+        add("ui.magic_realms.introduction.archer", "Hello, I'm %s, I'm a mercenary specialized in long range combat with my bow. I only accept a %s at least, which will last for %d minutes");
+        add("ui.magic_realms.introduction.mage", "Hello, I'm %s, I'm a mercenary specialized in fighting with magic. I only accept a %s at least, which will last for %d minutes");
+        add("ui.magic_realms.introduction.default", "Hello, I'm %s, I'm a mercenary ready to serve. I only accept a %s at least, which will last for %d minutes");
+
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "Need %d more contract minutes with this entity!");
         add("ui.magic_realms.permanent_contract_progress", "Contract progress: %d/%d minutes towards permanent contract eligibility");

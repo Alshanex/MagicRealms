@@ -242,19 +242,13 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
             boolean isWeapon = item instanceof SwordItem ||
                     item instanceof AxeItem ||
-                    item instanceof PickaxeItem ||
-                    item instanceof ShovelItem ||
-                    item instanceof HoeItem ||
-                    item instanceof TridentItem ||
-                    item instanceof BowItem ||
-                    item instanceof CrossbowItem;
+                    item instanceof TridentItem;
 
             String itemName = item.toString().toLowerCase();
             boolean isModdedWeapon = itemName.contains("sword") ||
                     itemName.contains("axe") ||
                     itemName.contains("bow") ||
                     itemName.contains("staff") ||
-                    itemName.contains("wand") ||
                     itemName.contains("blade") ||
                     itemName.contains("dagger");
 

@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.datagen;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
@@ -20,6 +21,8 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MRItems.CONTRACT_EXPERT.get(), "Expert Contract");
         add(MRItems.CONTRACT_MASTER.get(), "Master Contract");
         add(MRItems.CONTRACT_PERMANENT.get(), "Permanent Contract");
+
+        add(MREntityRegistry.HUMAN.get(), "Human");
 
         // Contract tooltips
         add("tooltip.magic_realms.contract.level_range", "Entity Level Range:");

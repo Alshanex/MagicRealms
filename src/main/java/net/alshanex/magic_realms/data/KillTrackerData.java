@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -76,7 +77,7 @@ public class KillTrackerData {
 
         double levelPenalty = Math.max(0.1, 1.0 - (currentLevel * 0.05));
 
-        int finalExp = Math.max(1, (int) (baseExp * levelPenalty));
+        int finalExp = Math.max(1, (int) (baseExp * levelPenalty * (Config.xpGainedMultiplier / 100)));
 
         return vanillaExp == 0 ? 0 : Math.max(finalExp, 1);
     }
@@ -88,10 +89,6 @@ public class KillTrackerData {
             }
 
             if (!(entity instanceof net.minecraft.world.entity.monster.Monster)) {
-                return 0;
-            }
-
-            if (entity instanceof net.minecraft.world.entity.AgeableMob ageableMob && ageableMob.isBaby()) {
                 return 0;
             }
 
@@ -123,12 +120,11 @@ public class KillTrackerData {
     private int getRequiredExperienceForLevel(int level) {
         if (level <= 1) return 0;
 
-        // Fórmula: exp requerida = 100 * (nivel^1.5)
-        return (int) (100 * Math.pow(level, 1.5));
+        return (int) (200 * level * (Config.xpNeededMultiplier / 100));
     }
 
-    private int getMaxLevel() {
-        return 100;
+    public int getMaxLevel() {
+        return Config.maxLevel;
     }
 
     // Getters
@@ -154,24 +150,11 @@ public class KillTrackerData {
 
     public int getExperienceToNextLevel() {
         if (currentLevel >= getMaxLevel()) {
-            return 0; // Ya está al máximo nivel
+            return 0;
         }
 
         int requiredForNext = getRequiredExperienceForLevel(currentLevel + 1);
         return Math.max(0, requiredForNext - experiencePoints);
-    }
-
-    public double getProgressToNextLevel() {
-        if (currentLevel >= getMaxLevel()) {
-            return 1.0; // 100% si está al máximo nivel
-        }
-
-        int currentLevelReq = getRequiredExperienceForLevel(currentLevel);
-        int nextLevelReq = getRequiredExperienceForLevel(currentLevel + 1);
-        int expInCurrentLevel = experiencePoints - currentLevelReq;
-        int expNeededForLevel = nextLevelReq - currentLevelReq;
-
-        return Math.min(1.0, (double) expInCurrentLevel / expNeededForLevel);
     }
 
     public void setLevel(int level) {
@@ -182,18 +165,6 @@ public class KillTrackerData {
     public void addExperience(int exp) {
         this.experiencePoints += exp;
         checkLevelUp();
-    }
-
-    public void unlockNaturalRegen() {
-        this.hasNaturalRegen = true;
-    }
-
-    public void reset() {
-        this.totalKills = 0;
-        this.currentLevel = 1;
-        this.experiencePoints = 0;
-        this.bossKills = 0;
-        this.hasNaturalRegen = false;
     }
 
     @Override

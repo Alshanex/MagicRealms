@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.util.humans;
 
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
@@ -22,187 +23,126 @@ public class LevelingStatsManager {
         MagicRealms.LOGGER.debug("Applying level-based attributes for {} (Level: {}, Class: {}, Stars: {})",
                 entity.getEntityName(), level, entityClass.getName(), starLevel);
 
-        applyHealthBonus(entity, level, starLevel);
+        applyHealthBonus(entity, level);
 
-        applyBossKillBonuses(entity, killData.getBossKills(), starLevel);
+        applyBossKillBonuses(entity, killData.getBossKills());
 
         switch (entityClass) {
-            case MAGE -> applyMageAttributes(entity, level, starLevel);
+            case MAGE -> applyMageAttributes(entity, level);
             case WARRIOR -> applyWarriorAttributes(entity, level, starLevel);
-            case ROGUE -> applyRogueAttributes(entity, level, starLevel);
+            case ROGUE -> applyRogueAttributes(entity, level);
         }
     }
 
-    private static void applyHealthBonus(RandomHumanEntity entity, int level, int starLevel) {
+    private static void applyHealthBonus(RandomHumanEntity entity, int level) {
         // Calcular bonificación de vida basada en estrellas y nivel
-        double healthPerLevel = switch (starLevel) {
-            case 1 -> 0.5;  // +0.5 corazones por nivel (1 HP)
-            case 2 -> 0.75; // +0.75 corazones por nivel (1.5 HP)
-            case 3 -> 1.0;  // +1 corazón por nivel (2 HP)
-            default -> 0.5;
-        };
+        int healthPerLevel = Config.healthAmount;
 
-        double totalHealthBonus = Math.min(level * healthPerLevel * 2, 300 * healthPerLevel * 2); // *2 porque cada corazón = 2 HP
+        int totalHealthBonus = Math.min(level * healthPerLevel, Config.maxLevel * healthPerLevel);
 
         applyOrUpdateAttribute(entity, Attributes.MAX_HEALTH,
                 "level_health_bonus",
                 totalHealthBonus,
                 AttributeModifier.Operation.ADD_VALUE);
 
-        // Curar completamente al subir de nivel para reflejar el aumento de vida
         entity.setHealth(entity.getMaxHealth());
-
-        MagicRealms.LOGGER.debug("Applied health bonus: +{} HP ({} hearts) to {} (Level: {})",
-                String.format("%.1f", totalHealthBonus),
-                String.format("%.1f", totalHealthBonus / 2),
-                entity.getEntityName(), level);
     }
 
-    private static void applyBossKillBonuses(RandomHumanEntity entity, int bossKills, int starLevel) {
+    private static void applyBossKillBonuses(RandomHumanEntity entity, int bossKills) {
         if (bossKills == 0) return;
 
-        // Boss kill bonuses scale with both kills and star level
-        double bossKillMultiplier = switch (starLevel) {
-            case 1 -> 0.5;
-            case 2 -> 0.75;
-            case 3 -> 1.0;
-            default -> 0.5;
-        };
+        int bossKillHealthMultiplier = Config.healthAmountBossKills;
+        int bossKillDamageMultiplier = Config.damageAmountBossKills;
+        int bossKillArmorMultiplier = Config.armorAmountBossKills;
 
         // Max health bonus from boss kills (0.5 hearts per boss kill, scaled by star level)
-        double bossHealthBonus = Math.min(bossKills * bossKillMultiplier * 2, 50 * bossKillMultiplier * 2);
+        int bossHealthBonus = Math.min(bossKills * bossKillHealthMultiplier, Config.healthAmountBossKillsTimes * bossKillHealthMultiplier);
         applyOrUpdateAttribute(entity, Attributes.MAX_HEALTH,
                 "boss_kill_health_bonus",
                 bossHealthBonus,
                 AttributeModifier.Operation.ADD_VALUE);
 
         // Attack damage bonus from boss kills
-        double bossDamageBonus = Math.min(bossKills * 0.02 * bossKillMultiplier, 0.3 * bossKillMultiplier);
+        int bossDamageBonus = Math.min(bossKills * bossKillDamageMultiplier, Config.damageAmountBossKillsTimes * bossKillDamageMultiplier);
         applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
                 "boss_kill_damage_bonus",
                 bossDamageBonus,
-                AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+                AttributeModifier.Operation.ADD_VALUE);
 
         // Armor bonus from boss kills
-        double bossArmorBonus = Math.min(bossKills * 1.0 * bossKillMultiplier, 15 * bossKillMultiplier);
+        double bossArmorBonus = Math.min(bossKills * bossKillArmorMultiplier, Config.armorAmountBossKillsTimes * bossKillArmorMultiplier);
         applyOrUpdateAttribute(entity, Attributes.ARMOR,
                 "boss_kill_armor_bonus",
                 bossArmorBonus,
                 AttributeModifier.Operation.ADD_VALUE);
-
-        MagicRealms.LOGGER.debug("Applied boss kill bonuses to {}: +{} HP, +{}% damage, +{} armor (Boss Kills: {})",
-                entity.getEntityName(),
-                String.format("%.1f", bossHealthBonus),
-                String.format("%.2f", bossDamageBonus * 100),
-                String.format("%.1f", bossArmorBonus),
-                bossKills);
     }
 
-    private static void applyMageAttributes(RandomHumanEntity entity, int level, int starLevel) {
-        // Calcular límite máximo: 50% + (10% * estrellas)
-        double maxBonusPercentage = 50.0 + (10.0 * starLevel);
+    private static void applyMageAttributes(RandomHumanEntity entity, int level) {
 
-        double progressPercentage = Math.min(1.0, level / 300.0);
-        double currentBonusPercentage = maxBonusPercentage * progressPercentage;
+        double progressPercentage = Math.min(1.0, (double) level / Config.maxLevel);
+        double currentSpellPowerBonusPercentage = Config.maxSpellPowerPercentage * progressPercentage;
+        double currentSpellResistBonusPercentage = Config.maxSpellResistancePercentage * progressPercentage;
 
         applyOrUpdateAttribute(entity, AttributeRegistry.SPELL_POWER,
                 "mage_level_spell_power",
-                currentBonusPercentage / 100.0,
+                currentSpellPowerBonusPercentage / 100.0,
                 AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
 
         applyOrUpdateAttribute(entity, AttributeRegistry.SPELL_RESIST,
                 "mage_level_spell_resist",
-                currentBonusPercentage / 100.0,
+                currentSpellResistBonusPercentage / 100.0,
                 AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-
-        // Bonus adicional de mana/spell power para magos
-        double manaBonus = Math.min(level * 0.5, 150.0); // Máximo 150 puntos de mana extra
-
-        try {
-            applyOrUpdateAttribute(entity, AttributeRegistry.MAX_MANA,
-                    "mage_level_mana_bonus",
-                    manaBonus,
-                    AttributeModifier.Operation.ADD_VALUE);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not apply mana bonus: {}", e.getMessage());
-        }
-
-        MagicRealms.LOGGER.debug("Applied mage level attributes: {}% spell power and resistance, +{} mana to {} (Level: {}/300)",
-                String.format("%.2f", currentBonusPercentage),
-                String.format("%.1f", manaBonus),
-                entity.getEntityName(), level);
     }
 
     private static void applyWarriorAttributes(RandomHumanEntity entity, int level, int starLevel) {
-        double baseMultiplier = switch (starLevel) {
-            case 1 -> 0.02; // 2% por nivel
-            case 2 -> 0.025; // 2.5% por nivel
-            case 3 -> 0.03; // 3% por nivel
-            default -> 0.02;
-        };
-
-        double damageBonus = Math.min(level * baseMultiplier, baseMultiplier * 300);
+        int damageBonus = Math.min(level * Config.damageAmountWarriors, Config.damageAmountWarriorsTimes * Config.damageAmountWarriors);
 
         applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
                 "warrior_level_attack_damage",
                 damageBonus,
-                AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+                AttributeModifier.Operation.ADD_VALUE);
 
         // Bonus adicional de armadura para guerreros
-        double armorBonus = Math.min(level * 0.1, 30.0); // Máximo 30 puntos de armadura
+        int armorBonus = Math.min(level * Config.armorAmountWarriors, Config.armorAmountWarriorsTimes * Config.armorAmountWarriors);
 
         applyOrUpdateAttribute(entity, Attributes.ARMOR,
                 "warrior_level_armor_bonus",
                 armorBonus,
                 AttributeModifier.Operation.ADD_VALUE);
-
-        MagicRealms.LOGGER.debug("Applied warrior level attributes: {}% attack damage, +{} armor to {} (Level: {})",
-                String.format("%.2f", damageBonus * 100),
-                String.format("%.1f", armorBonus),
-                entity.getEntityName(), level);
     }
 
-    private static void applyRogueAttributes(RandomHumanEntity entity, int level, int starLevel) {
-        double baseMultiplier = switch (starLevel) {
-            case 1 -> 0.015; // 1.5% por nivel
-            case 2 -> 0.02;  // 2% por nivel
-            case 3 -> 0.025; // 2.5% por nivel
-            default -> 0.015;
-        };
-
-        double damageBonus = Math.min(level * baseMultiplier, baseMultiplier * 300);
+    private static void applyRogueAttributes(RandomHumanEntity entity, int level) {
+        int damageBonus = Math.min(level * Config.damageAmountRogues, Config.damageAmountRoguesTimes * Config.damageAmountRogues);
 
         if(entity.isAssassin()){
             applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
                     "assassin_level_attack_damage",
                     damageBonus,
-                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+                    AttributeModifier.Operation.ADD_VALUE);
         }
 
-        double critBonus = Math.min(level * 0.05, 15.0) / 100.0;
+        double currentCritChance = entity.getAttribute(ALObjects.Attributes.CRIT_CHANCE).getBaseValue();
+        double maxCritChanceGain = 100.0 - currentCritChance;
+        double progressPercentage = Math.min(1.0, (double) level / (Config.maxLevel / 2.0));
+        double currentCritBonusPercentage = maxCritChanceGain * progressPercentage;
 
         try {
             applyOrUpdateAttribute(entity, ALObjects.Attributes.CRIT_CHANCE,
                     "assassin_level_crit_chance",
-                    critBonus,
-                    AttributeModifier.Operation.ADD_VALUE);
+                    currentCritBonusPercentage / 100,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Apothic Attributes not available for crit chance bonus");
         }
 
         // Bonus adicional de velocidad para rogues
-        double speedBonus = Math.min(level * 0.002, 0.6); // Máximo 60% de velocidad extra
+        double progressPercentageSpeed = Math.min(1.0, (double) level / (Config.maxLevel / 2.0));
+        double currentSpeedBonusPercentage = Config.maxSpeedPercentage * progressPercentageSpeed;
 
         applyOrUpdateAttribute(entity, Attributes.MOVEMENT_SPEED,
                 "rogue_level_speed_bonus",
-                speedBonus,
+                currentSpeedBonusPercentage / 100,
                 AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-
-        MagicRealms.LOGGER.debug("Applied rogue level attributes: {}% attack damage, {}% crit chance, +{}% speed to {} (Level: {})",
-                String.format("%.2f", damageBonus * 100),
-                String.format("%.2f", critBonus * 100),
-                String.format("%.2f", speedBonus * 100),
-                entity.getEntityName(), level);
     }
 
     private static void applyOrUpdateAttribute(RandomHumanEntity entity, Holder<Attribute> attributeHolder,

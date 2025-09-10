@@ -3,7 +3,9 @@ package net.alshanex.magic_realms.util.humans;
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -15,12 +17,14 @@ public class LevelingStatsManager {
     public static void applyLevelBasedAttributes(RandomHumanEntity entity, int level) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
+        KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
 
         MagicRealms.LOGGER.debug("Applying level-based attributes for {} (Level: {}, Class: {}, Stars: {})",
                 entity.getEntityName(), level, entityClass.getName(), starLevel);
 
-        // Aplicar bonificación de vida común para todas las clases
         applyHealthBonus(entity, level, starLevel);
+
+        applyBossKillBonuses(entity, killData.getBossKills(), starLevel);
 
         switch (entityClass) {
             case MAGE -> applyMageAttributes(entity, level, starLevel);
@@ -52,6 +56,46 @@ public class LevelingStatsManager {
                 String.format("%.1f", totalHealthBonus),
                 String.format("%.1f", totalHealthBonus / 2),
                 entity.getEntityName(), level);
+    }
+
+    private static void applyBossKillBonuses(RandomHumanEntity entity, int bossKills, int starLevel) {
+        if (bossKills == 0) return;
+
+        // Boss kill bonuses scale with both kills and star level
+        double bossKillMultiplier = switch (starLevel) {
+            case 1 -> 0.5;
+            case 2 -> 0.75;
+            case 3 -> 1.0;
+            default -> 0.5;
+        };
+
+        // Max health bonus from boss kills (0.5 hearts per boss kill, scaled by star level)
+        double bossHealthBonus = Math.min(bossKills * bossKillMultiplier * 2, 50 * bossKillMultiplier * 2);
+        applyOrUpdateAttribute(entity, Attributes.MAX_HEALTH,
+                "boss_kill_health_bonus",
+                bossHealthBonus,
+                AttributeModifier.Operation.ADD_VALUE);
+
+        // Attack damage bonus from boss kills
+        double bossDamageBonus = Math.min(bossKills * 0.02 * bossKillMultiplier, 0.3 * bossKillMultiplier);
+        applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
+                "boss_kill_damage_bonus",
+                bossDamageBonus,
+                AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+
+        // Armor bonus from boss kills
+        double bossArmorBonus = Math.min(bossKills * 1.0 * bossKillMultiplier, 15 * bossKillMultiplier);
+        applyOrUpdateAttribute(entity, Attributes.ARMOR,
+                "boss_kill_armor_bonus",
+                bossArmorBonus,
+                AttributeModifier.Operation.ADD_VALUE);
+
+        MagicRealms.LOGGER.debug("Applied boss kill bonuses to {}: +{} HP, +{}% damage, +{} armor (Boss Kills: {})",
+                entity.getEntityName(),
+                String.format("%.1f", bossHealthBonus),
+                String.format("%.2f", bossDamageBonus * 100),
+                String.format("%.1f", bossArmorBonus),
+                bossKills);
     }
 
     private static void applyMageAttributes(RandomHumanEntity entity, int level, int starLevel) {

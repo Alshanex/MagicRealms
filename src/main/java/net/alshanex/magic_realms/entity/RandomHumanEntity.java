@@ -111,6 +111,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private List<AbstractSpell> spellbookSpells = new ArrayList<>();
     private ItemStack lastEquippedSpellbook = ItemStack.EMPTY;
 
+    private int regenTimer = 0;
+    private static final int REGEN_INTERVAL = 100;
+    private static final float REGEN_AMOUNT = 1.0f;
+
     public RandomHumanEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
         xpReward = 0;
@@ -510,6 +514,30 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
+    private void handleNaturalRegeneration() {
+        KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
+
+        // Only regenerate if entity has unlocked natural regen and is not at full health
+        if (!killData.hasNaturalRegen() || this.getHealth() >= this.getMaxHealth()) {
+            return;
+        }
+
+        regenTimer++;
+
+        if (regenTimer >= REGEN_INTERVAL) {
+            // Calculate regen amount based on star level
+            float regenAmount = switch (getStarLevel()) {
+                case 1 -> 0.5f; // 0.25 hearts
+                case 2 -> 1.0f; // 0.5 hearts
+                case 3 -> 1.5f; // 0.75 hearts
+                default -> 1.0f;
+            };
+
+            this.heal(regenAmount);
+            regenTimer = 0;
+        }
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -517,6 +545,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (!level().isClientSide && !goalsInitialized && this.entityData.get(INITIALIZED)) {
             reinitializeGoalsAfterLoad();
             goalsInitialized = true;
+        }
+
+        if (!level().isClientSide) {
+            handleNaturalRegeneration();
         }
 
         // Verificar contrato y limpiar si ha expirado (no aplicar a contratos permanentes)

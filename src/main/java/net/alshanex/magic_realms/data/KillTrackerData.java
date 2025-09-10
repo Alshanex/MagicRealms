@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.world.entity.LivingEntity;
 
 public class KillTrackerData {
@@ -9,24 +10,32 @@ public class KillTrackerData {
             instance.group(
                     Codec.INT.fieldOf("total_kills").forGetter(data -> data.totalKills),
                     Codec.INT.fieldOf("current_level").forGetter(data -> data.currentLevel),
-                    Codec.INT.fieldOf("experience_points").forGetter(data -> data.experiencePoints)
+                    Codec.INT.fieldOf("experience_points").forGetter(data -> data.experiencePoints),
+                    Codec.INT.fieldOf("boss_kills").forGetter(data -> data.bossKills),
+                    Codec.BOOL.fieldOf("has_natural_regen").forGetter(data -> data.hasNaturalRegen)
             ).apply(instance, KillTrackerData::new)
     );
 
     private int totalKills;
     private int currentLevel;
     private int experiencePoints;
+    private int bossKills;
+    private boolean hasNaturalRegen;
 
     public KillTrackerData() {
         this.totalKills = 0;
         this.currentLevel = 1;
         this.experiencePoints = 0;
+        this.bossKills = 0;
+        this.hasNaturalRegen = false;
     }
 
-    private KillTrackerData(int totalKills, int currentLevel, int experiencePoints) {
+    private KillTrackerData(int totalKills, int currentLevel, int experiencePoints, int bossKills, boolean hasNaturalRegen) {
         this.totalKills = totalKills;
         this.currentLevel = currentLevel;
         this.experiencePoints = experiencePoints;
+        this.bossKills = bossKills;
+        this.hasNaturalRegen = hasNaturalRegen;
     }
 
     public void addKill(LivingEntity killedEntity) {
@@ -34,10 +43,26 @@ public class KillTrackerData {
 
         if (expGained > 0) {
             totalKills++;
-            experiencePoints += expGained;
 
+            // Check if it's a boss kill
+            boolean isBoss = isBossEntity(killedEntity);
+            if (isBoss) {
+                bossKills++;
+                expGained *= 10; // Multiply experience by 10 for boss kills
+
+                // Unlock natural regeneration if not already unlocked
+                if (!hasNaturalRegen) {
+                    hasNaturalRegen = true;
+                }
+            }
+
+            experiencePoints += expGained;
             checkLevelUp();
         }
+    }
+
+    private boolean isBossEntity(LivingEntity entity) {
+        return entity.getType().is(ModTags.BOSSES_TAG);
     }
 
     private int calculateExperienceGain(LivingEntity entity) {
@@ -102,7 +127,6 @@ public class KillTrackerData {
         return (int) (100 * Math.pow(level, 1.5));
     }
 
-
     private int getMaxLevel() {
         return 100;
     }
@@ -118,6 +142,14 @@ public class KillTrackerData {
 
     public int getExperiencePoints() {
         return experiencePoints;
+    }
+
+    public int getBossKills() {
+        return bossKills;
+    }
+
+    public boolean hasNaturalRegen() {
+        return hasNaturalRegen;
     }
 
     public int getExperienceToNextLevel() {
@@ -152,15 +184,21 @@ public class KillTrackerData {
         checkLevelUp();
     }
 
+    public void unlockNaturalRegen() {
+        this.hasNaturalRegen = true;
+    }
+
     public void reset() {
         this.totalKills = 0;
         this.currentLevel = 1;
         this.experiencePoints = 0;
+        this.bossKills = 0;
+        this.hasNaturalRegen = false;
     }
 
     @Override
     public String toString() {
-        return String.format("KillTrackerData{level=%d, exp=%d, totalKills=%d, expToNext=%d}",
-                currentLevel, experiencePoints, totalKills, getExperienceToNextLevel());
+        return String.format("KillTrackerData{level=%d, exp=%d, totalKills=%d, bossKills=%d, expToNext=%d, hasRegen=%s}",
+                currentLevel, experiencePoints, totalKills, bossKills, getExperienceToNextLevel(), hasNaturalRegen);
     }
 }

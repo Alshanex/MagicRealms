@@ -748,10 +748,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             }
         }
 
-        if (!level().isClientSide && this.getEntityClass() == EntityClass.MAGE && this.tickCount % 20 == 0) {
-            updateSpellbookSpells();
-        }
-
         if (!level().isClientSide) {
             MagicData data = this.getMagicData();
             boolean isCasting = data.isCasting();

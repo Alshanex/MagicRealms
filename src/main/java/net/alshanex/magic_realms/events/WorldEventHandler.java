@@ -73,20 +73,4 @@ public class WorldEventHandler {
         MagicRealms.LOGGER.debug("Player left world, clearing texture cache");
         CombinedTextureManager.onWorldUnload();
     }
-
-    @SubscribeEvent
-    @OnlyIn(Dist.CLIENT)
-    public static void onClientLevelLoad(LevelEvent.Load event) {
-        if (event.getLevel() instanceof ClientLevel clientLevel) {
-            MagicRealms.LOGGER.debug("Client level loaded: {}", clientLevel.dimension().location());
-        }
-    }
-
-    @SubscribeEvent
-    @OnlyIn(Dist.CLIENT)
-    public static void onClientLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ClientLevel clientLevel) {
-            MagicRealms.LOGGER.debug("Client level unloaded: {}", clientLevel.dimension().location());
-        }
-    }
 }

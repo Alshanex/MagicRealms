@@ -22,8 +22,11 @@ import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
+import net.alshanex.magic_realms.item.PermanentContractItem;
+import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.util.ContractUtils;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
@@ -46,6 +49,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
@@ -515,13 +519,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     private void handleNaturalRegeneration() {
-        KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
-
-        // Only regenerate if entity has unlocked natural regen and is not at full health
-        if (!killData.hasNaturalRegen() || this.getHealth() >= this.getMaxHealth()) {
-            return;
-        }
-
         regenTimer++;
 
         if (regenTimer >= REGEN_INTERVAL) {
@@ -585,25 +582,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private boolean shouldCheckInventoryItem(ItemStack item) {
         return ISpellContainer.isSpellContainer(item);
-    }
-
-    public List<AbstractSpell> getAllAvailableSpellsWithEquipment() {
-        List<AbstractSpell> allSpells = new ArrayList<>(persistedSpells);
-
-        // Add spellbook spells (for mages)
-        if (this.getEntityClass() == EntityClass.MAGE) {
-            allSpells.addAll(spellbookSpells);
-        }
-
-        // Add equipment spells
-        List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
-        allSpells.addAll(equipmentSpells);
-
-        // Remove duplicates and blacklisted spells
-        return allSpells.stream()
-                .distinct()
-                .filter(spell -> !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
-                .collect(Collectors.toList());
     }
 
     private void updateMageGoalWithSpellbookAndEquipment(List<AbstractSpell> spellbookSpells) {
@@ -680,39 +658,19 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         if (!level().isClientSide) {
-            handleNaturalRegeneration();
+            KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
+            if(killData.hasNaturalRegen() && this.getHealth() < this.getMaxHealth()){
+                handleNaturalRegeneration();
+            }
         }
 
         // Verificar contrato y limpiar si ha expirado (no aplicar a contratos permanentes)
-        if (!level().isClientSide) {
+        if (!level().isClientSide && this.tickCount % 20 == 0) {
             ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
 
             if (contractData.hasActiveContract()) {
                 // Si es un contrato permanente, solo asegurar que el summoner esté configurado
-                if (contractData.isPermanent()) {
-                    if (this.getSummoner() == null) {
-                        UUID contractorUUID = contractData.getContractorUUID();
-                        if (contractorUUID != null) {
-                            Player contractor = this.level().getPlayerByUUID(contractorUUID);
-                            if (contractor != null) {
-                                this.setSummoner(contractor);
-                                MagicRealms.LOGGER.debug("Restored summoner relationship for permanent contract entity {}", this.getEntityName());
-                            }
-                        }
-                    }
-                } else {
-                    // El contrato temporal sigue activo, mantener al jugador como summoner
-                    if (this.getSummoner() == null) {
-                        UUID contractorUUID = contractData.getContractorUUID();
-                        if (contractorUUID != null) {
-                            Player contractor = this.level().getPlayerByUUID(contractorUUID);
-                            if (contractor != null) {
-                                this.setSummoner(contractor);
-                                MagicRealms.LOGGER.debug("Restored summoner relationship for contracted entity {}", this.getEntityName());
-                            }
-                        }
-                    }
-
+                if (!contractData.isPermanent()) {
                     if (this.tickCount % 200 == 0) {
                         contractData.periodicTimeUpdate();
                     }
@@ -1054,48 +1012,33 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
-    private void updateMageGoalWithSpellbook(List<AbstractSpell> spellbookSpells) {
-        // Combine persisted spells with spellbook spells
-        List<AbstractSpell> combinedSpells = new ArrayList<>(persistedSpells);
-        combinedSpells.addAll(spellbookSpells);
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (level().isClientSide()) return InteractionResult.FAIL;
 
-        // Remove duplicate spells (keep the first occurrence)
-        List<AbstractSpell> uniqueSpells = new ArrayList<>();
-        for (AbstractSpell spell : combinedSpells) {
-            if (!uniqueSpells.contains(spell) && !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST)) {
-                uniqueSpells.add(spell);
-            }
+        if (player.level().isClientSide()) return InteractionResult.FAIL;
+
+        if(!this.hasBeenInteracted()){
+            this.markAsInteracted();
         }
 
-        // Remove existing wizard attack goal
-        this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
+        ItemStack heldItem = player.getItemInHand(hand);
+        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
 
-        // Add new goal with combined spells
-        if (!uniqueSpells.isEmpty()) {
-            List<AbstractSpell> attackSpells = ModTags.filterAttackSpells(uniqueSpells);
-            List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(uniqueSpells);
-            List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(uniqueSpells);
-            List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(uniqueSpells);
+        if (hand != InteractionHand.MAIN_HAND) {
+            return InteractionResult.FAIL;
+        }
 
-            this.goalSelector.addGoal(2, new HumanGoals.HumanWizardAttackGoal(this, 1.25f, 25, 50)
-                    .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
-                    .setDrinksPotions()
-            );
-
-            MagicRealms.LOGGER.debug("Mage {} updated spell roster: {} persisted + {} spellbook = {} total unique",
-                    getEntityName(), persistedSpells.size(), spellbookSpells.size(), uniqueSpells.size());
+        // Si el jugador tiene un contrato permanente en la mano
+        if (heldItem.getItem() instanceof PermanentContractItem) {
+            ContractUtils.handlePermanentContractCreation(player, this, contractData, heldItem);
+        } else if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
+            ContractUtils.handleTieredContractCreation(player, this, contractData, heldItem, tieredContract);
         } else {
-            // Fallback to just persisted spells
-            setMageGoal(persistedSpells);
+            ContractUtils.handleContractInteraction(player, this, contractData);
         }
-    }
 
-    public List<AbstractSpell> getAllAvailableSpells() {
-        List<AbstractSpell> allSpells = new ArrayList<>(persistedSpells);
-        allSpells.addAll(spellbookSpells);
-
-        // Remove duplicates
-        return allSpells.stream().distinct().collect(Collectors.toList());
+        return super.mobInteract(player, hand);
     }
 
     public EntityTextureConfig getTextureConfig() {

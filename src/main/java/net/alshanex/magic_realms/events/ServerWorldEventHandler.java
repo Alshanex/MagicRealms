@@ -47,9 +47,4 @@ public class ServerWorldEventHandler {
             }
         }
     }
-
-    @SubscribeEvent
-    public static void onServerStarting(ServerStartingEvent event) {
-        MagicRealms.LOGGER.info("Magic Realms server starting - texture directories will be created for each world as they load");
-    }
 }

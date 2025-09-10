@@ -1,15 +1,12 @@
-package net.alshanex.magic_realms.events;
+package net.alshanex.magic_realms.util;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
-import net.alshanex.magic_realms.util.ContractTier;
-import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -17,70 +14,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 import javax.annotation.Nullable;
 
-@EventBusSubscriber(modid = MagicRealms.MODID)
-public class ContractEventHandler {
-
-    @SubscribeEvent
-    public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
-        // Solo procesar en el servidor para evitar mensajes duplicados
-        if (event.getLevel().isClientSide()) return;
-
-        Player player = event.getEntity();
-
-        // Verificación adicional para asegurar que estamos en el servidor
-        if (player.level().isClientSide()) return;
-
-        // Solo procesar si es un servidor real (no integrado en single player)
-        if (!(player.level() instanceof net.minecraft.server.level.ServerLevel)) return;
-
-        if (event.getTarget() instanceof RandomHumanEntity humanEntity) {
-
-            if(!humanEntity.hasBeenInteracted()){
-                humanEntity.markAsInteracted();
-            }
-
-            ItemStack heldItem = player.getItemInHand(event.getHand());
-            ContractData contractData = humanEntity.getData(MRDataAttachments.CONTRACT_DATA);
-
-            // Solo procesar con la mano principal para evitar duplicaciones
-            if (event.getHand() != InteractionHand.MAIN_HAND) {
-                return;
-            }
-
-            // Si el jugador tiene un contrato permanente en la mano
-            if (heldItem.getItem() instanceof PermanentContractItem) {
-                handlePermanentContractCreation(event, player, humanEntity, contractData, heldItem);
-                return;
-            }
-
-            // Si el jugador tiene un contrato tiered (nuevo o viejo) en la mano
-            if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
-                handleTieredContractCreation(event, player, humanEntity, contractData, heldItem, tieredContract);
-                return;
-            }
-
-            // Si el jugador hace click derecho sin item (mano vacía) y tiene contrato activo
-            if (heldItem.isEmpty()) {
-                handleContractInteraction(event, player, humanEntity, contractData);
-                return;
-            }
-        }
-    }
-
-    private static void handlePermanentContractCreation(PlayerInteractEvent.EntityInteract event,
-                                                        Player player,
+public class ContractUtils {
+    public static void handlePermanentContractCreation(Player player,
                                                         RandomHumanEntity humanEntity,
                                                         ContractData contractData,
                                                         ItemStack heldItem) {
@@ -96,7 +40,6 @@ public class ContractEventHandler {
 
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -115,7 +58,6 @@ public class ContractEventHandler {
                 }
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -127,7 +69,6 @@ public class ContractEventHandler {
                 message = message.withStyle(ChatFormatting.YELLOW);
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -143,7 +84,6 @@ public class ContractEventHandler {
                 message = message.withStyle(ChatFormatting.RED);
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -183,12 +123,9 @@ public class ContractEventHandler {
         if (!player.getAbilities().instabuild) {
             heldItem.shrink(1);
         }
-
-        event.setCanceled(true);
     }
 
-    private static void handleTieredContractCreation(PlayerInteractEvent.EntityInteract event,
-                                                     Player player,
+    public static void handleTieredContractCreation(Player player,
                                                      RandomHumanEntity humanEntity,
                                                      ContractData contractData,
                                                      ItemStack heldItem,
@@ -217,7 +154,6 @@ public class ContractEventHandler {
                 }
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -247,7 +183,6 @@ public class ContractEventHandler {
 
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -272,7 +207,6 @@ public class ContractEventHandler {
                 message = message.withStyle(ChatFormatting.RED);
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -298,27 +232,13 @@ public class ContractEventHandler {
             }
         }
 
-        // Log del evento
-        String actionType = isRenewal ? "extended" : "established";
-        MagicRealms.LOGGER.info("Player {} {} contract with Level {} entity {} ({}) using {} contract. Contract info: {}",
-                player.getName().getString(),
-                actionType,
-                entityLevel,
-                humanEntity.getEntityName(),
-                humanEntity.getUUID(),
-                contractTier.getName(),
-                contractData.getDetailedInfo());
-
         // Consumir el item
         if (!player.getAbilities().instabuild) {
             heldItem.shrink(1);
         }
-
-        event.setCanceled(true);
     }
 
-    private static void handleContractInteraction(PlayerInteractEvent.EntityInteract event,
-                                                  Player player,
+    public static void handleContractInteraction(Player player,
                                                   RandomHumanEntity humanEntity,
                                                   ContractData contractData) {
 
@@ -336,7 +256,6 @@ public class ContractEventHandler {
                     sendIntroductionMessage(serverPlayer, humanEntity, contractData);
                 }
             }
-            event.setCanceled(true);
             return;
         }
 
@@ -352,9 +271,6 @@ public class ContractEventHandler {
                     message = message.withStyle(ChatFormatting.YELLOW);
                     serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
                 }
-
-                MagicRealms.LOGGER.info("Player {} deactivated patrol mode for entity {}",
-                        player.getName().getString(), humanEntity.getEntityName());
             } else {
                 // The entity is not in patrol mode, activate patrol
                 humanEntity.setPatrolMode(true);
@@ -364,12 +280,7 @@ public class ContractEventHandler {
                     message = message.withStyle(ChatFormatting.YELLOW);
                     serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
                 }
-
-                MagicRealms.LOGGER.info("Player {} activated patrol mode for entity {}",
-                        player.getName().getString(), humanEntity.getEntityName());
             }
-
-            event.setCanceled(true);
             return;
         }
 
@@ -403,29 +314,20 @@ public class ContractEventHandler {
                 message = message.withStyle(ChatFormatting.RED);
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
-            event.setCanceled(true);
             return;
         }
 
         // Crear snapshot actualizado y abrir el menú
         EntitySnapshot snapshot = EntitySnapshot.fromEntity(humanEntity);
 
-        MagicRealms.LOGGER.info("Opening contract menu for entity: {} (UUID: {}, Star Level: {}, Contract Type: {})",
-                humanEntity.getEntityName(), humanEntity.getUUID(), humanEntity.getStarLevel(),
-                contractData.isPermanent() ? "Permanent" : "Temporary");
-
         player.openMenu(new ContractMenuProvider(snapshot, humanEntity), buf -> {
             CompoundTag snapshotNbt = snapshot.serialize();
-            MagicRealms.LOGGER.debug("Sending snapshot NBT size: {} bytes", snapshotNbt.toString().length());
             buf.writeNbt(snapshotNbt);
             buf.writeUUID(humanEntity.getUUID());
-            MagicRealms.LOGGER.debug("Sent entity UUID: {}", humanEntity.getUUID());
         });
-
-        event.setCanceled(true);
     }
 
-    private static void sendIntroductionMessage(ServerPlayer serverPlayer, RandomHumanEntity humanEntity, ContractData contractData) {
+    public static void sendIntroductionMessage(ServerPlayer serverPlayer, RandomHumanEntity humanEntity, ContractData contractData) {
         // Get entity information
         String entityName = humanEntity.getEntityName();
         EntityClass entityClass = humanEntity.getEntityClass();
@@ -469,16 +371,6 @@ public class ContractEventHandler {
         public ContractMenuProvider(EntitySnapshot snapshot, RandomHumanEntity entity) {
             this.snapshot = snapshot;
             this.entity = entity;
-
-            MagicRealms.LOGGER.info("ContractMenuProvider created:");
-            MagicRealms.LOGGER.info("  - Snapshot: {}", snapshot != null ? "present" : "null");
-            MagicRealms.LOGGER.info("  - Entity: {}", entity != null ? entity.getEntityName() : "null");
-            if (entity != null) {
-                MagicRealms.LOGGER.info("  - Entity UUID: {}", entity.getUUID());
-                MagicRealms.LOGGER.info("  - Entity alive: {}", entity.isAlive());
-                MagicRealms.LOGGER.info("  - Entity removed: {}", entity.isRemoved());
-                MagicRealms.LOGGER.info("  - Star Level: {}", entity.getStarLevel());
-            }
         }
 
         @Override
@@ -494,9 +386,6 @@ public class ContractEventHandler {
         @Nullable
         @Override
         public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-            MagicRealms.LOGGER.info("Creating menu for player: {} (client side: {})",
-                    player.getName().getString(), player.level().isClientSide);
-
             return new ContractHumanInfoMenu(containerId, playerInventory, snapshot, entity);
         }
     }

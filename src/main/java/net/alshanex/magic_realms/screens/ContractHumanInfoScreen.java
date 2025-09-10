@@ -3,6 +3,8 @@ package net.alshanex.magic_realms.screens;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
+import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
@@ -23,6 +25,7 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
@@ -913,7 +916,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         if (snapshot.entityClass == EntityClass.MAGE) {
             y += 3;
-            guiGraphics.drawString(font, Component.literal("Entity Schools:").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+            guiGraphics.drawString(font, Component.literal("Schools:").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
             y += 10;
 
             if (snapshot.magicSchools.isEmpty()) {
@@ -932,16 +935,27 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         // Nueva sección de Entity Spells
         y += 3;
-        guiGraphics.drawString(font, Component.literal("Entity Spells:").withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("Spells:").withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
 
         if (snapshot.entitySpells.isEmpty()) {
             guiGraphics.drawString(font, Component.literal("No spells").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
         } else {
+            List<AbstractSpell> enabledSpells = SpellRegistry.getEnabledSpells();
+
             for (String spellName : snapshot.entitySpells) {
-                String displayName = truncateText(spellName, ATTRIBUTES_WIDTH - 10);
-                guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
-                y += 9;
+                AbstractSpell foundSpell = enabledSpells.stream()
+                        .filter(spell -> spell.getSpellName().equals(spellName))
+                        .findFirst()
+                        .orElse(null);
+
+                if (foundSpell != null && foundSpell != SpellRegistry.none()) {
+                    String componentId = foundSpell.getComponentId();
+                    Component displayNameComponent = Component.translatable(componentId);
+                    String displayName = truncateText(displayNameComponent.getString(), ATTRIBUTES_WIDTH - 10);
+                    guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
+                    y += 9;
+                }
             }
         }
     }

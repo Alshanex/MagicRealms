@@ -108,6 +108,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if(this.entity.isPatrolMode()){
+                return false;
+            }
+
             // If we're already actively selling, don't restart the process
             if (isActivelySelling) {
                 return false;
@@ -489,6 +493,10 @@ public class HumanGoals {
             if (searchCooldown > 0) {
                 searchCooldown--;
                 //MagicRealms.LOGGER.debug("Entity {} search cooldown: {}", entity.getEntityName(), searchCooldown);
+                return false;
+            }
+
+            if(this.entity.isPatrolMode()){
                 return false;
             }
 
@@ -1046,6 +1054,10 @@ public class HumanGoals {
 
             if (searchCooldown > 0) {
                 searchCooldown--;
+                return false;
+            }
+
+            if(this.entity.isPatrolMode()){
                 return false;
             }
 

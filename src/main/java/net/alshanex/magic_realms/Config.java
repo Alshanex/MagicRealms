@@ -86,6 +86,18 @@ public class Config
             .comment("Max percentage of bonus speed rogues can get upon leveling up (50.0 = 50%)")
             .defineInRange("maxSpeedPercentage", 50.0, 0, Double.MAX_VALUE);
 
+    private static final ModConfigSpec.DoubleValue MAX_ARROW_DAMAGE_PERCENTAGE = BUILDER
+            .comment("Max percentage of bonus arrow damage archers can get upon leveling up (50.0 = 50%)")
+            .defineInRange("maxArrowDamagePercentage", 50.0, 0, Double.MAX_VALUE);
+
+    private static final ModConfigSpec.DoubleValue MAX_ARROW_VELOCITY_PERCENTAGE = BUILDER
+            .comment("Max percentage of bonus arrow velocity archers can get upon leveling up (50.0 = 50%)")
+            .defineInRange("maxArrowVelocityPercentage", 50.0, 0, Double.MAX_VALUE);
+
+    private static final ModConfigSpec.DoubleValue MAX_DRAW_SPEED_PERCENTAGE = BUILDER
+            .comment("Max percentage of bonus draw speed archers can get upon leveling up (50.0 = 50%)")
+            .defineInRange("maxDrawSpeedPercentage", 50.0, 0, Double.MAX_VALUE);
+
     private static final ModConfigSpec.DoubleValue XP_GAIN_MULTIPLIER = BUILDER
             .comment("XP gain multiplier (50.0 = 50% = xp_gained * 0.5)")
             .defineInRange("xpGainedMultiplier", 100.0, 0, Double.MAX_VALUE);
@@ -116,6 +128,9 @@ public class Config
     public static double maxSpeedPercentage;
     public static double xpGainedMultiplier;
     public static double xpNeededMultiplier;
+    public static double maxArrowDamagePercentage;
+    public static double maxArrowVelocityPercentage;
+    public static double maxDrawSpeedPercentage;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
@@ -140,5 +155,8 @@ public class Config
         maxSpeedPercentage = MAX_SPEED_PERCENTAGE.get();
         xpGainedMultiplier = XP_GAIN_MULTIPLIER.get();
         xpNeededMultiplier = XP_LEVEL_UP_MULTIPLIER.get();
+        maxArrowDamagePercentage = MAX_ARROW_DAMAGE_PERCENTAGE.get();
+        maxArrowVelocityPercentage = MAX_ARROW_VELOCITY_PERCENTAGE.get();
+        maxDrawSpeedPercentage = MAX_DRAW_SPEED_PERCENTAGE.get();
     }
 }

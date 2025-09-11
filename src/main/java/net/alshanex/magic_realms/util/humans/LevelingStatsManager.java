@@ -30,12 +30,17 @@ public class LevelingStatsManager {
         switch (entityClass) {
             case MAGE -> applyMageAttributes(entity, level);
             case WARRIOR -> applyWarriorAttributes(entity, level, starLevel);
-            case ROGUE -> applyRogueAttributes(entity, level);
+            case ROGUE -> {
+                if (entity.isArcher()) {
+                    applyArcherAttributes(entity, level);
+                } else {
+                    applyAssassinAttributes(entity, level);
+                }
+            }
         }
     }
 
     private static void applyHealthBonus(RandomHumanEntity entity, int level) {
-        // Calcular bonificación de vida basada en estrellas y nivel
         int healthPerLevel = Config.healthAmount;
 
         int totalHealthBonus = Math.min(level * healthPerLevel, Config.maxLevel * healthPerLevel);
@@ -111,15 +116,47 @@ public class LevelingStatsManager {
                 AttributeModifier.Operation.ADD_VALUE);
     }
 
-    private static void applyRogueAttributes(RandomHumanEntity entity, int level) {
+    private static void applyArcherAttributes(RandomHumanEntity entity, int level) {
+        double progressPercentage = Math.min(1.0, (double) level / Config.maxLevel);
+
+        double currentArrowDamageBonusPercentage = Config.maxArrowDamagePercentage * progressPercentage;
+        try {
+            applyOrUpdateAttribute(entity, ALObjects.Attributes.ARROW_DAMAGE,
+                    "archer_level_arrow_damage",
+                    currentArrowDamageBonusPercentage / 100.0,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Apothic Attributes not available for arrow damage bonus: {}", e.getMessage());
+        }
+
+        double currentArrowVelocityBonusPercentage = Config.maxArrowVelocityPercentage * progressPercentage;
+        try {
+            applyOrUpdateAttribute(entity, ALObjects.Attributes.ARROW_VELOCITY,
+                    "archer_level_arrow_velocity",
+                    currentArrowVelocityBonusPercentage / 100.0,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Apothic Attributes not available for arrow velocity bonus: {}", e.getMessage());
+        }
+
+        double currentDrawSpeedBonusPercentage = Config.maxDrawSpeedPercentage * progressPercentage;
+        try {
+            applyOrUpdateAttribute(entity, ALObjects.Attributes.DRAW_SPEED,
+                    "archer_level_draw_speed",
+                    currentDrawSpeedBonusPercentage / 100.0,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Apothic Attributes not available for draw speed bonus: {}", e.getMessage());
+        }
+    }
+
+    private static void applyAssassinAttributes(RandomHumanEntity entity, int level) {
         int damageBonus = Math.min(level * Config.damageAmountRogues, Config.damageAmountRoguesTimes * Config.damageAmountRogues);
 
-        if(entity.isAssassin()){
-            applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
-                    "assassin_level_attack_damage",
-                    damageBonus,
-                    AttributeModifier.Operation.ADD_VALUE);
-        }
+        applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
+                "assassin_level_attack_damage",
+                damageBonus,
+                AttributeModifier.Operation.ADD_VALUE);
 
         double currentCritChance = entity.getAttribute(ALObjects.Attributes.CRIT_CHANCE).getBaseValue();
         double maxCritChanceGain = 100.0 - currentCritChance;
@@ -135,7 +172,6 @@ public class LevelingStatsManager {
             MagicRealms.LOGGER.debug("Apothic Attributes not available for crit chance bonus");
         }
 
-        // Bonus adicional de velocidad para rogues
         double progressPercentageSpeed = Math.min(1.0, (double) level / (Config.maxLevel / 2.0));
         double currentSpeedBonusPercentage = Config.maxSpeedPercentage * progressPercentageSpeed;
 

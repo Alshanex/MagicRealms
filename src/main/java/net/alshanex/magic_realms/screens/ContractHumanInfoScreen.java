@@ -240,7 +240,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             try {
                 entityToRender = getOrCreateVirtualEntity();
                 if (entityToRender != null) {
-                    MagicRealms.LOGGER.debug("Using cached/created virtual entity for 3D rendering");
+                    //MagicRealms.LOGGER.debug("Using cached/created virtual entity for 3D rendering");
                 }
             } catch (Exception e) {
                 MagicRealms.LOGGER.warn("Failed to get virtual entity: {}", e.getMessage());
@@ -297,7 +297,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             if (menu != null && menu.getEquipmentContainer() != null) {
                 applyEquipmentFromContainer(cachedEntity, menu.getEquipmentContainer());
             }
-            MagicRealms.LOGGER.debug("Using cached virtual entity");
+            //MagicRealms.LOGGER.debug("Using cached virtual entity");
             return cachedEntity;
         }
 
@@ -305,7 +305,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         RandomHumanEntity virtualEntity = createVirtualEntityForRendering();
         if (virtualEntity != null) {
             virtualEntityCache.put(cacheKey, virtualEntity);
-            MagicRealms.LOGGER.debug("Created and cached new virtual entity");
+            //MagicRealms.LOGGER.debug("Created and cached new virtual entity");
 
             // Limpiar cache viejo para evitar memory leaks
             if (virtualEntityCache.size() > 5) { // Reducir tamaño de cache
@@ -372,12 +372,12 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
             // Configurar posición para evitar warnings
             virtualEntity.setPos(0, 0, 0);
-
+/*
             MagicRealms.LOGGER.debug("Created virtual entity for rendering: {} ({}) with texture UUID: {}",
                     virtualEntity.getEntityName(),
                     virtualEntity.getEntityClass().getName(),
                     snapshot.textureUUID);
-
+*/
             return virtualEntity;
 
         } catch (Exception e) {
@@ -411,7 +411,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             textureConfigField.setAccessible(true);
             textureConfigField.set(entity, textureConfig);
 
-            MagicRealms.LOGGER.debug("Set texture config directly for virtual entity");
+            //MagicRealms.LOGGER.debug("Set texture config directly for virtual entity");
 
         } catch (Exception e) {
             MagicRealms.LOGGER.warn("Failed to set texture config directly: {}", e.getMessage());
@@ -443,7 +443,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             entity.setItemSlot(EquipmentSlot.MAINHAND, equipmentContainer.getItem(4).copy());
             entity.setItemSlot(EquipmentSlot.OFFHAND, equipmentContainer.getItem(5).copy());
 
-            MagicRealms.LOGGER.debug("Applied equipment to virtual entity without texture regeneration");
+            //MagicRealms.LOGGER.debug("Applied equipment to virtual entity without texture regeneration");
 
         } catch (Exception e) {
             MagicRealms.LOGGER.warn("Failed to apply equipment to virtual entity: {}", e.getMessage());

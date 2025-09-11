@@ -12,10 +12,12 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 import java.util.List;
@@ -148,25 +150,137 @@ public class MRUtils {
         return score;
     }
 
+    /**
+     * Calculate total weapon damage including enchantments
+     */
     public static double getWeaponDamage(ItemStack weapon) {
-        if (weapon.getItem() instanceof SwordItem sword) {
-            return sword.getDamage(weapon);
-        } else if (weapon.getItem() instanceof AxeItem axe) {
-            return axe.getDamage(weapon);
-        } else if (weapon.getItem() instanceof TridentItem trident) {
-            return trident.getDamage(weapon);
+        if (!isWeapon(weapon)) {
+            return 1.0;
         }
-        return 1.0;
+
+        // Get base damage from item attributes
+        double baseDamage = getBaseWeaponDamage(weapon);
+
+        // Add enchantment damage by simulating enchantment effects
+        double enchantmentDamage = getEnchantmentDamageBonus(weapon);
+
+        return baseDamage + enchantmentDamage;
+    }
+
+    /**
+     * Get base weapon damage from item attributes
+     */
+    public static double getBaseWeaponDamage(ItemStack weapon) {
+        ItemAttributeModifiers modifiers = weapon.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        if (modifiers == null) {
+            return 1.0;
+        }
+
+        double damage = 1.0; // Base damage (fist damage)
+
+        for (var entry : modifiers.modifiers()) {
+            if (entry.attribute().equals(Attributes.ATTACK_DAMAGE)) {
+                AttributeModifier modifier = entry.modifier();
+                if (modifier.operation() == AttributeModifier.Operation.ADD_VALUE) {
+                    damage += modifier.amount();
+                } else if (modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE) {
+                    damage *= (1.0 + modifier.amount());
+                } else if (modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+                    damage *= (1.0 + modifier.amount());
+                }
+            }
+        }
+
+        return damage;
+    }
+
+    /**
+     * Calculate damage bonus from enchantments by checking their damage effects
+     */
+    public static double getEnchantmentDamageBonus(ItemStack weapon) {
+        ItemEnchantments enchantments = weapon.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        if (enchantments.isEmpty()) {
+            return 0.0;
+        }
+
+        double totalDamageBonus = 0.0;
+
+        for (var entry : enchantments.entrySet()) {
+            Holder<Enchantment> enchantmentHolder = entry.getKey();
+            int level = entry.getIntValue();
+            Enchantment enchantment = enchantmentHolder.value();
+
+            // Check if this enchantment has damage effects
+            var damageEffects = enchantment.getEffects(EnchantmentEffectComponents.DAMAGE);
+            if (!damageEffects.isEmpty()) {
+                // Calculate damage bonus for this enchantment
+                for (var conditionalEffect : damageEffects) {
+                    var effect = conditionalEffect.effect();
+
+                    // Simulate the damage calculation with a dummy entity
+                    org.apache.commons.lang3.mutable.MutableFloat damageValue = new org.apache.commons.lang3.mutable.MutableFloat(0.0f);
+
+                    // Try to get the damage value from the effect
+                    try {
+                        // Create a minimal random source for the calculation
+                        net.minecraft.util.RandomSource random = net.minecraft.util.RandomSource.create(0);
+                        float calculatedDamage = effect.process(level, random, 0.0f);
+                        totalDamageBonus += calculatedDamage;
+                    } catch (Exception e) {
+                        // Fall back to reasonable estimates
+                        totalDamageBonus += estimateDamageBonus(enchantmentHolder, level);
+                    }
+                }
+            }
+        }
+
+        return totalDamageBonus;
+    }
+
+    private static double estimateDamageBonus(Holder<Enchantment> enchantmentHolder, int level) {
+        String enchantmentId = enchantmentHolder.getKey().location().toString();
+
+        // Provide reasonable estimates for common damage enchantments
+        return switch (enchantmentId) {
+            case "minecraft:sharpness" -> 1.0 + (level - 1) * 0.5; // Sharpness formula
+            case "minecraft:smite", "minecraft:bane_of_arthropods", "minecraft:impaling" -> level * 2.5;
+            default -> level * 1.0; // Generic estimate for unknown damage enchantments
+        };
     }
 
     public static double getWeaponSpeed(ItemStack weapon) {
-        if (weapon.getItem() instanceof SwordItem || weapon.getItem() instanceof AxeItem || weapon.getItem() instanceof TridentItem) {
-            Tool toolComponent = weapon.get(DataComponents.TOOL);
-            if (toolComponent != null) {
-                return toolComponent.defaultMiningSpeed();
+        if (!isWeapon(weapon)) {
+            return 1.0;
+        }
+
+        // Get base attack speed from item attributes
+        double attackSpeed = getBaseWeaponSpeed(weapon);
+
+        return attackSpeed;
+    }
+
+    public static double getBaseWeaponSpeed(ItemStack weapon) {
+        ItemAttributeModifiers modifiers = weapon.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        if (modifiers == null) {
+            return 0.0;
+        }
+
+        double speed = 4.0; // Base attack speed
+
+        for (var entry : modifiers.modifiers()) {
+            if (entry.attribute().equals(Attributes.ATTACK_SPEED)) {
+                AttributeModifier modifier = entry.modifier();
+                if (modifier.operation() == AttributeModifier.Operation.ADD_VALUE) {
+                    speed += modifier.amount();
+                } else if (modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE) {
+                    speed *= (1.0 + modifier.amount());
+                } else if (modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
+                    speed *= (1.0 + modifier.amount());
+                }
             }
         }
-        return 1.0;
+
+        return speed;
     }
 
     public static double getRangedWeaponDamage(ItemStack ranged) {

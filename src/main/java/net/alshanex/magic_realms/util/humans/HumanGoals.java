@@ -12,7 +12,9 @@ import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.util.MRUtils;
@@ -20,6 +22,7 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
@@ -29,6 +32,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
@@ -59,6 +63,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.WebBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.AABB;
@@ -1035,386 +1040,6 @@ public class HumanGoals {
                 }
             }
             return count;
-        }
-    }
-
-    /**
-     * Goal for RandomHumanEntity to buy and apply enchanted books from librarians
-     */
-    public static class EnchantEquipmentFromLibrarianGoal extends Goal {
-        private final RandomHumanEntity entity;
-        private Villager targetLibrarian;
-        private MerchantOffer targetEnchantmentOffer;
-        private ItemStack targetEquipment;
-        private boolean fromMemory = false;
-        private int tradingCooldown = 0;
-        private int searchCooldown = 0;
-
-        private static final int SEARCH_RADIUS = 32;
-        private static final int TRADING_COOLDOWN = 400; // 20 seconds
-        private static final int SEARCH_COOLDOWN = 300; // 15 seconds
-
-        public EnchantEquipmentFromLibrarianGoal(RandomHumanEntity entity) {
-            this.entity = entity;
-            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
-        }
-
-        @Override
-        public boolean canUse() {
-            if (tradingCooldown > 0) {
-                tradingCooldown--;
-                return false;
-            }
-
-            if (searchCooldown > 0) {
-                searchCooldown--;
-                return false;
-            }
-
-            if(this.entity.isPatrolMode()){
-                return false;
-            }
-
-            // First check if we can now afford any previously unaffordable offers
-            if (checkMemoryForAffordableOffers()) {
-                return true;
-            }
-
-            // Then search for new offers
-            return findLibrarianWithUsefulEnchantment();
-        }
-
-        @Override
-        public boolean canContinueToUse() {
-            return targetLibrarian != null && targetLibrarian.isAlive() &&
-                    targetEnchantmentOffer != null && targetEquipment != null &&
-                    entity.distanceToSqr(targetLibrarian) < 64;
-        }
-
-        @Override
-        public void start() {
-            if (targetLibrarian != null) {
-                entity.getNavigation().moveTo(targetLibrarian, 1.0);
-            }
-        }
-
-        @Override
-        public void tick() {
-            if (targetLibrarian == null || targetEnchantmentOffer == null) return;
-
-            double distanceToLibrarian = entity.distanceToSqr(targetLibrarian);
-
-            if (distanceToLibrarian <= 9.0) { // Within 3 blocks
-                entity.getNavigation().stop();
-                entity.getLookControl().setLookAt(targetLibrarian);
-
-                if (entity.tickCount % 80 == 0) { // Try to trade every 4 seconds
-                    attemptBuyAndApplyEnchantment();
-                }
-            } else if (distanceToLibrarian <= 64) { // Within 8 blocks
-                entity.getNavigation().moveTo(targetLibrarian, 1.0);
-            }
-        }
-
-        @Override
-        public void stop() {
-            targetLibrarian = null;
-            targetEnchantmentOffer = null;
-            targetEquipment = null;
-            fromMemory = false;
-            tradingCooldown = TRADING_COOLDOWN;
-            searchCooldown = SEARCH_COOLDOWN;
-        }
-
-        private boolean checkMemoryForAffordableOffers() {
-            VillagerOffersData memory = entity.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
-            AABB searchArea = new AABB(entity.blockPosition()).inflate(SEARCH_RADIUS);
-            List<Villager> nearbyLibrarians = entity.level().getEntitiesOfClass(Villager.class, searchArea);
-
-            for (Villager villager : nearbyLibrarians) {
-                // Only check librarians
-                if (villager.getVillagerData().getProfession() != VillagerProfession.LIBRARIAN) {
-                    continue;
-                }
-
-                List<MerchantOffer> affordableOffers = memory.checkAffordableOffers(villager.getUUID(), entity.getInventory());
-
-                for (MerchantOffer offer : affordableOffers) {
-                    ItemStack result = offer.getResult();
-                    if (result.getItem() == Items.ENCHANTED_BOOK && !offer.isOutOfStock()) {
-                        // Check if this enchantment can still be applied to any of our equipment
-                        ItemStack equipmentToEnchant = findEquipmentForEnchantment(result);
-                        if (equipmentToEnchant != null) {
-                            targetLibrarian = villager;
-                            targetEnchantmentOffer = offer;
-                            targetEquipment = equipmentToEnchant;
-                            fromMemory = true;
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private boolean findLibrarianWithUsefulEnchantment() {
-            AABB searchArea = new AABB(entity.blockPosition()).inflate(SEARCH_RADIUS);
-            List<Villager> villagers = entity.level().getEntitiesOfClass(Villager.class, searchArea);
-            VillagerOffersData memory = entity.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
-
-            for (Villager villager : villagers) {
-                if (villager.getVillagerData().getProfession() != VillagerProfession.LIBRARIAN) {
-                    continue;
-                }
-
-                // Check regular offers
-                MerchantOffer affordableOffer = findAffordableUsefulEnchantment(villager);
-                if (affordableOffer != null) {
-                    targetLibrarian = villager;
-                    targetEnchantmentOffer = affordableOffer;
-                    fromMemory = false;
-                    return true;
-                }
-
-                // Store unaffordable offers for later
-                storeUnaffordableEnchantmentOffers(villager, memory);
-            }
-
-            return false;
-        }
-
-        private MerchantOffer findAffordableUsefulEnchantment(Villager villager) {
-            MerchantOffers offers = villager.getOffers();
-
-            for (MerchantOffer offer : offers) {
-                if (offer.isOutOfStock()) continue;
-
-                ItemStack result = offer.getResult();
-                if (result.getItem() == Items.ENCHANTED_BOOK && canAffordOffer(offer)) {
-                    // Check if this enchantment can be applied to any of our equipment
-                    ItemStack equipmentToEnchant = findEquipmentForEnchantment(result);
-                    if (equipmentToEnchant != null) {
-                        targetEquipment = equipmentToEnchant;
-                        return offer;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        private void storeUnaffordableEnchantmentOffers(Villager villager, VillagerOffersData memory) {
-            MerchantOffers offers = villager.getOffers();
-            List<MerchantOffer> unaffordableOffers = new ArrayList<>();
-
-            for (MerchantOffer offer : offers) {
-                if (offer.isOutOfStock()) continue;
-
-                ItemStack result = offer.getResult();
-                if (result.getItem() == Items.ENCHANTED_BOOK) {
-                    // Check if this enchantment can be applied to any of our equipment
-                    ItemStack equipmentToEnchant = findEquipmentForEnchantment(result);
-                    if (equipmentToEnchant != null && !canAffordOffer(offer)) {
-                        // We need this enchantment but can't afford it, store it
-                        unaffordableOffers.add(offer);
-                    }
-                }
-            }
-
-            if (!unaffordableOffers.isEmpty()) {
-                memory.storeUnaffordableOffers(villager.getUUID(), unaffordableOffers);
-            }
-        }
-
-        private ItemStack findEquipmentForEnchantment(ItemStack enchantedBook) {
-            ItemEnchantments bookEnchantments = EnchantmentHelper.getEnchantmentsForCrafting(enchantedBook);
-
-            // Check all equipped items and inventory items
-            List<ItemStack> allEquipment = getAllEquipment();
-
-            for (ItemStack equipment : allEquipment) {
-                if (equipment.isEmpty()) continue;
-
-                for (var entry : bookEnchantments.entrySet()) {
-                    Holder<Enchantment> enchantmentHolder = entry.getKey();
-                    Enchantment enchantment = enchantmentHolder.value();
-                    int bookLevel = entry.getIntValue();
-
-                    // Check if this enchantment can be applied to this item
-                    if (enchantment.canEnchant(equipment)) {
-                        ItemEnchantments currentEnchantments = EnchantmentHelper.getEnchantmentsForCrafting(equipment);
-                        int currentLevel = currentEnchantments.getLevel(enchantmentHolder);
-
-                        // We want to apply if:
-                        // 1. The item doesn't have this enchantment
-                        // 2. The item has a lower level and we can combine them
-                        if (currentLevel == 0 ||
-                                (currentLevel == bookLevel && currentLevel < enchantment.getMaxLevel())) {
-                            return equipment;
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        private List<ItemStack> getAllEquipment() {
-            List<ItemStack> equipment = new ArrayList<>();
-
-            // Add equipped items
-            equipment.add(entity.getMainHandItem());
-            equipment.add(entity.getOffhandItem());
-            equipment.add(entity.getItemBySlot(EquipmentSlot.HEAD));
-            equipment.add(entity.getItemBySlot(EquipmentSlot.CHEST));
-            equipment.add(entity.getItemBySlot(EquipmentSlot.LEGS));
-            equipment.add(entity.getItemBySlot(EquipmentSlot.FEET));
-
-            // Add items from inventory that can be enchanted
-            SimpleContainer inventory = entity.getInventory();
-            for (int i = 0; i < inventory.getContainerSize(); i++) {
-                ItemStack stack = inventory.getItem(i);
-                if (canBeEnchanted(stack)) {
-                    equipment.add(stack);
-                }
-            }
-
-            return equipment;
-        }
-
-        private boolean canBeEnchanted(ItemStack stack) {
-            return stack.getItem() instanceof ArmorItem ||
-                    stack.getItem() instanceof SwordItem ||
-                    stack.getItem() instanceof AxeItem ||
-                    stack.getItem() instanceof BowItem ||
-                    stack.getItem() instanceof CrossbowItem ||
-                    stack.getItem() instanceof TridentItem ||
-                    stack.getItem() instanceof ShieldItem;
-        }
-
-        private boolean canAffordOffer(MerchantOffer offer) {
-            SimpleContainer inventory = entity.getInventory();
-
-            ItemStack costA = offer.getCostA();
-            ItemStack costB = offer.getCostB();
-
-            boolean canAffordA = costA.isEmpty() ||
-                    inventory.countItem(costA.getItem()) >= costA.getCount();
-            boolean canAffordB = costB.isEmpty() ||
-                    inventory.countItem(costB.getItem()) >= costB.getCount();
-
-            return canAffordA && canAffordB;
-        }
-
-        private void attemptBuyAndApplyEnchantment() {
-            if (targetLibrarian == null || targetEnchantmentOffer == null || targetEquipment == null) {
-                return;
-            }
-
-            // Double-check affordability
-            if (!canAffordOffer(targetEnchantmentOffer)) {
-                // Store as unaffordable and stop
-                VillagerOffersData memory = entity.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
-                memory.storeUnaffordableOffers(targetLibrarian.getUUID(), Arrays.asList(targetEnchantmentOffer));
-                stop();
-                return;
-            }
-
-            // If this offer came from memory, verify the librarian still has it
-            if (fromMemory && !villagerHasOffer(targetLibrarian, targetEnchantmentOffer)) {
-                // Offer no longer exists, stop and clear from memory
-                stop();
-                return;
-            }
-
-            SimpleContainer inventory = entity.getInventory();
-
-            // Remove cost items from inventory
-            ItemStack costA = targetEnchantmentOffer.getCostA();
-            ItemStack costB = targetEnchantmentOffer.getCostB();
-
-            if (!costA.isEmpty()) {
-                MRUtils.removeItemsFromInventory(inventory, costA.getItem(), costA.getCount());
-            }
-            if (!costB.isEmpty()) {
-                MRUtils.removeItemsFromInventory(inventory, costB.getItem(), costB.getCount());
-            }
-
-            // Get the enchanted book
-            ItemStack enchantedBook = targetEnchantmentOffer.getResult().copy();
-            ItemEnchantments bookEnchantments = EnchantmentHelper.getEnchantmentsForCrafting(enchantedBook);
-
-            // Apply enchantments to the target equipment
-            applyEnchantmentsToEquipment(targetEquipment, bookEnchantments);
-
-            // Use the offer (this increases villager experience) - only if not from memory
-            if (!fromMemory) {
-                targetEnchantmentOffer.increaseUses();
-            }
-
-            // Play trading sound
-            entity.playSound(SoundEvents.VILLAGER_YES, 1.0F, 1.0F);
-            targetLibrarian.playSound(SoundEvents.VILLAGER_YES, 1.0F, 1.0F);
-
-            // Play enchantment sound
-            entity.playSound(SoundEvents.ENCHANTMENT_TABLE_USE, 1.0F, 1.0F);
-
-            // Reset for next search
-            targetEnchantmentOffer = null;
-            targetEquipment = null;
-        }
-
-        private boolean villagerHasOffer(Villager villager, MerchantOffer targetOffer) {
-            MerchantOffers currentOffers = villager.getOffers();
-
-            for (MerchantOffer currentOffer : currentOffers) {
-                // Compare offers by result item and costs
-                if (offersMatch(currentOffer, targetOffer)) {
-                    return !currentOffer.isOutOfStock();
-                }
-            }
-
-            return false;
-        }
-
-        private boolean offersMatch(MerchantOffer offer1, MerchantOffer offer2) {
-            if (offer1 == offer2) return true;
-            if (offer1 == null || offer2 == null) return false;
-
-            return offer1.getItemCostA().equals(offer2.getItemCostA()) &&
-                    offer1.getItemCostB().equals(offer2.getItemCostB()) &&
-                    ItemStack.isSameItemSameComponents(offer1.getResult(), offer2.getResult()) &&
-                    offer1.getMaxUses() == offer2.getMaxUses() &&
-                    offer1.getXp() == offer2.getXp();
-        }
-
-        private void applyEnchantmentsToEquipment(ItemStack equipment, ItemEnchantments newEnchantments) {
-            EnchantmentHelper.updateEnchantments(equipment, currentEnchantments -> {
-                for (var entry : newEnchantments.entrySet()) {
-                    Holder<Enchantment> enchantmentHolder = entry.getKey();
-                    Enchantment enchantment = enchantmentHolder.value();
-                    int bookLevel = entry.getIntValue();
-
-                    if (enchantment.canEnchant(equipment)) {
-                        int currentLevel = currentEnchantments.getLevel(enchantmentHolder);
-                        int newLevel;
-
-                        if (currentLevel == 0) {
-                            // Item doesn't have this enchantment, add it
-                            newLevel = bookLevel;
-                        } else if (currentLevel == bookLevel && currentLevel < enchantment.getMaxLevel()) {
-                            // Same level enchantments combine to next level
-                            newLevel = currentLevel + 1;
-                        } else {
-                            // Use the higher level
-                            newLevel = Math.max(currentLevel, bookLevel);
-                        }
-
-                        currentEnchantments.set(enchantmentHolder, newLevel);
-                    }
-                }
-            });
         }
     }
 
@@ -3646,6 +3271,275 @@ public class HumanGoals {
                     posState.isAir() &&     // Position is air
                     aboveState.isAir() &&   // Space above is air
                     groundState.isSolid();  // Ground is solid
+        }
+    }
+
+    public static class EmeraldOverflowGoal extends Goal {
+        private final RandomHumanEntity entity;
+        private Villager targetVillager;
+        private int searchCooldown = 0;
+        private int interactionCooldown = 0;
+        private ExchangeType currentExchangeType = ExchangeType.NONE;
+
+        private static final int SEARCH_INTERVAL = 100; // Search every 5 seconds
+        private static final int INTERACTION_INTERVAL = 300; // 15 seconds in ticks
+        private static final double SEARCH_RANGE = 32.0;
+        private static final int MIN_OVERFLOW_THRESHOLD = 1; // Minimum overflow emeralds to trigger
+
+        private enum ExchangeType {
+            NONE,
+            CLERIC_BUFF,
+            LIBRARIAN_XP
+        }
+
+        // Beneficial effects that clerics can provide
+        private static final List<Holder<MobEffect>> BENEFICIAL_EFFECTS = List.of(
+                MobEffects.REGENERATION,
+                MobEffects.DAMAGE_BOOST,
+                MobEffects.DAMAGE_RESISTANCE,
+                MobEffects.FIRE_RESISTANCE,
+                MobEffects.WATER_BREATHING,
+                MobEffects.NIGHT_VISION,
+                MobEffects.MOVEMENT_SPEED,
+                MobEffects.LUCK,
+                MobEffects.HEALTH_BOOST,
+                MobEffects.ABSORPTION
+        );
+
+        public EmeraldOverflowGoal(RandomHumanEntity entity) {
+            this.entity = entity;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't run if on cooldown
+            if (searchCooldown > 0 || interactionCooldown > 0) {
+                return false;
+            }
+
+            if(entity.isPatrolMode()){
+                return false;
+            }
+
+            // Check if entity has overflow emeralds and no unaffordable offers
+            if (!hasOverflowEmeralds()) {
+                return false;
+            }
+
+            VillagerOffersData offersData = entity.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
+            if (offersData.hasAnyUnaffordableOffers()) {
+                return false;
+            }
+
+            // Find a suitable villager and determine exchange type
+            return findSuitableVillagerAndExchangeType();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return targetVillager != null &&
+                    targetVillager.isAlive() &&
+                    entity.distanceToSqr(targetVillager) <= SEARCH_RANGE * SEARCH_RANGE &&
+                    hasOverflowEmeralds() &&
+                    currentExchangeType != ExchangeType.NONE;
+        }
+
+        @Override
+        public void start() {
+            MagicRealms.LOGGER.debug("Entity {} starting emerald overflow goal with villager {} for {}",
+                    entity.getEntityName(),
+                    targetVillager.getDisplayName().getString(),
+                    currentExchangeType);
+        }
+
+        @Override
+        public void stop() {
+            targetVillager = null;
+            currentExchangeType = ExchangeType.NONE;
+            searchCooldown = SEARCH_INTERVAL;
+            interactionCooldown = INTERACTION_INTERVAL;
+        }
+
+        @Override
+        public void tick() {
+            if (searchCooldown > 0) {
+                searchCooldown--;
+            }
+            if (interactionCooldown > 0) {
+                interactionCooldown--;
+            }
+
+            if (targetVillager == null || currentExchangeType == ExchangeType.NONE) {
+                return;
+            }
+
+            double distanceToVillager = entity.distanceToSqr(targetVillager);
+
+            // If close enough, interact
+            if (distanceToVillager <= 9.0) { // 3 block radius
+                if (interactionCooldown <= 0) {
+                    performEmeraldExchange();
+                    interactionCooldown = INTERACTION_INTERVAL;
+                }
+            } else {
+                // Move towards villager
+                Path path = entity.getNavigation().createPath(targetVillager, 0);
+                if (path != null) {
+                    entity.getNavigation().moveTo(path, 1.0);
+                    entity.getLookControl().setLookAt(targetVillager, 30.0F, 30.0F);
+                }
+            }
+        }
+
+        private boolean hasOverflowEmeralds() {
+            int totalEmeralds = entity.getInventory().countItem(Items.EMERALD);
+            return totalEmeralds > Config.emeraldOverflowThreshold;
+        }
+
+        private int getOverflowEmeraldCount() {
+            int totalEmeralds = entity.getInventory().countItem(Items.EMERALD);
+            return Math.max(0, totalEmeralds - Config.emeraldOverflowThreshold);
+        }
+
+        private boolean findSuitableVillagerAndExchangeType() {
+            if (!(entity.level() instanceof ServerLevel serverLevel)) {
+                return false;
+            }
+
+            BlockPos entityPos = entity.blockPosition();
+            List<VillagerCandidate> candidates = new ArrayList<>();
+            int overflowCount = getOverflowEmeraldCount();
+
+            // Search for villagers in range
+            for (Villager villager : serverLevel.getEntitiesOfClass(Villager.class,
+                    entity.getBoundingBox().inflate(SEARCH_RANGE))) {
+
+                if (!villager.isAlive() || villager.isBaby()) {
+                    continue;
+                }
+
+                VillagerProfession profession = villager.getVillagerData().getProfession();
+                double distance = entityPos.distSqr(villager.blockPosition());
+
+                // Check if it's a cleric and we have enough emeralds for the buff
+                if (profession == VillagerProfession.CLERIC && overflowCount >= Config.clericEmeraldCost) {
+                    // Prioritize cleric exchanges as they provide more valuable benefits
+                    candidates.add(new VillagerCandidate(villager, ExchangeType.CLERIC_BUFF, distance, 1.0));
+                }
+            }
+
+            if (candidates.isEmpty()) {
+                return false;
+            }
+
+            // Sort by priority (higher first), then by distance (closer first)
+            candidates.sort((c1, c2) -> {
+                int priorityCompare = Double.compare(c2.priority, c1.priority);
+                if (priorityCompare != 0) return priorityCompare;
+                return Double.compare(c1.distance, c2.distance);
+            });
+
+            VillagerCandidate best = candidates.get(0);
+            targetVillager = best.villager;
+            currentExchangeType = best.exchangeType;
+
+            return true;
+        }
+
+        private void performEmeraldExchange() {
+            if (targetVillager == null || !targetVillager.isAlive()) {
+                return;
+            }
+
+            if (Objects.requireNonNull(currentExchangeType) == ExchangeType.CLERIC_BUFF) {
+                performClericExchange();
+            } else {
+                MagicRealms.LOGGER.warn("Entity {} attempted exchange with no valid type", entity.getEntityName());
+            }
+        }
+
+        private void performClericExchange() {
+            int overflowEmeralds = getOverflowEmeraldCount();
+
+            if (overflowEmeralds < Config.clericEmeraldCost) {
+                MagicRealms.LOGGER.debug("Entity {} doesn't have enough overflow emeralds for cleric (has: {}, needs: {})",
+                        entity.getEntityName(), overflowEmeralds, Config.clericEmeraldCost);
+                return;
+            }
+
+            // Remove emeralds from inventory
+            if (!removeEmeralds(Config.clericEmeraldCost)) {
+                return;
+            }
+
+            // Give cleric trading experience (simulate a trade)
+            if (targetVillager.getVillagerData().getLevel() < 5) {
+                targetVillager.setVillagerXp(targetVillager.getVillagerXp() + 2);
+            }
+
+            // Play trading sound
+            targetVillager.playSound(SoundEvents.VILLAGER_YES, 1.0F, 1.0F);
+
+            // Apply random beneficial effect
+            applyClericBuff();
+
+            MagicRealms.LOGGER.info("Entity {} completed cleric exchange: {} emeralds for beneficial effect",
+                    entity.getEntityName(), Config.clericEmeraldCost);
+        }
+
+        private void applyClericBuff() {
+            Holder<MobEffect> randomEffect = BENEFICIAL_EFFECTS.get(entity.getRandom().nextInt(BENEFICIAL_EFFECTS.size()));
+            int duration = Config.clericBuffDurationMinutes * 1200;
+
+            // Random amplifier between 0-2 (levels 1-3)
+            int amplifier = entity.getRandom().nextInt(3);
+
+            MobEffectInstance effectInstance = new MobEffectInstance(randomEffect, duration, amplifier, false, true, true);
+            entity.addEffect(effectInstance);
+
+            MagicRealms.LOGGER.debug("Applied effect {} (Level {}, Duration: {}s) to entity {}",
+                    randomEffect.getKey(), amplifier + 1, duration / 20, entity.getEntityName());
+        }
+
+        private boolean removeEmeralds(int count) {
+            int remaining = count;
+
+            for (int i = 0; i < entity.getInventory().getContainerSize() && remaining > 0; i++) {
+                ItemStack stack = entity.getInventory().getItem(i);
+
+                if (stack.is(Items.EMERALD)) {
+                    int toRemove = Math.min(remaining, stack.getCount());
+                    stack.shrink(toRemove);
+                    remaining -= toRemove;
+
+                    if (stack.isEmpty()) {
+                        entity.getInventory().setItem(i, ItemStack.EMPTY);
+                    }
+                }
+            }
+
+            boolean success = remaining == 0;
+            if (!success) {
+                MagicRealms.LOGGER.warn("Entity {} failed to remove {} emeralds from inventory",
+                        entity.getEntityName(), count);
+            }
+
+            return success;
+        }
+
+        private static class VillagerCandidate {
+            final Villager villager;
+            final ExchangeType exchangeType;
+            final double distance;
+            final double priority;
+
+            VillagerCandidate(Villager villager, ExchangeType exchangeType, double distance, double priority) {
+                this.villager = villager;
+                this.exchangeType = exchangeType;
+                this.distance = distance;
+                this.priority = priority;
+            }
         }
     }
 }

@@ -17,6 +17,7 @@ import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAtt
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.util.OwnerHelper;
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
@@ -215,17 +216,18 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(2, new WizardRecoverGoal(this));
+        this.goalSelector.addGoal(3, new HumanGoals.PatrolAroundPositionGoal(this, 0.8D, 10));
+        this.goalSelector.addGoal(3, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
+        this.goalSelector.addGoal(4, new HumanGoals.PickupMobDropsGoal(this));
+        this.goalSelector.addGoal(5, new HumanGoals.GatherResourcesGoal(this));
 
-        this.goalSelector.addGoal(2, new HumanGoals.GatherResourcesGoal(this));
+        this.goalSelector.addGoal(6, new HumanGoals.BuyEquipmentFromVillagersGoal(this));
+        this.goalSelector.addGoal(7, new HumanGoals.SellItemsToVillagersGoal(this));
+        this.goalSelector.addGoal(8, new HumanGoals.EmeraldOverflowGoal(this));
 
-        this.goalSelector.addGoal(6, new HumanGoals.SellItemsToVillagersGoal(this));
-        this.goalSelector.addGoal(5, new HumanGoals.BuyEquipmentFromVillagersGoal(this));
-        this.goalSelector.addGoal(7, new HumanGoals.EnchantEquipmentFromLibrarianGoal(this));
-        this.goalSelector.addGoal(8, new HumanGoals.PickupMobDropsGoal(this));
-
-        this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.8D));
-        this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(5, new WizardRecoverGoal(this));
+        this.goalSelector.addGoal(9, new WaterAvoidingRandomStrollGoal(this, 0.8D));
+        this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
 
         this.targetSelector.addGoal(1, new GenericOwnerHurtByTargetGoal(this, this::getSummoner));
         this.targetSelector.addGoal(2, new GenericOwnerHurtTargetGoal(this, this::getSummoner));
@@ -236,10 +238,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.targetSelector.addGoal(6, new HumanGoals.AlliedHumanDefenseGoal(this));
 
         this.targetSelector.addGoal(1, new HumanGoals.NoFearTargetGoal(this));
-
-        this.goalSelector.addGoal(4, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
-
-        this.goalSelector.addGoal(7, new HumanGoals.PatrolAroundPositionGoal(this, 0.8D, 10));
     }
 
     private List<AbstractSpell> persistedSpells = new ArrayList<>();
@@ -727,47 +725,27 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
-    public boolean canBeContractedBy(Player player) {
-        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
-
-        // Si no hay contrato activo, cualquiera puede contratar
-        if (!contractData.hasActiveContract()) {
-            return true;
-        }
-
-        // Si hay contrato activo, solo el contratista actual puede renovar
-        return contractData.isContractor(player.getUUID());
-    }
-
-    public String getContractInfo() {
-        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
-
-        if (!contractData.hasActiveContract()) {
-            int starLevel = this.getStarLevel();
-            int potentialMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
-            return String.format("No active contract (Would last %d minutes for %d stars)",
-                    potentialMinutes, starLevel);
-        }
-
-        // Si es un contrato permanente
-        if (contractData.isPermanent()) {
-            return "Permanent contract (Never expires)";
-        }
-
-        // Contrato temporal normal
-        int minutes = contractData.getRemainingMinutes();
-        int seconds = contractData.getRemainingSeconds();
-        int starLevel = this.getStarLevel();
-        int extensionMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
-
-        return String.format("Contract expires in %d:%02d (Extensions add %d min for %d stars)",
-                minutes, seconds, extensionMinutes, starLevel);
-    }
-
     public void clearContract() {
         ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
         contractData.clearContract();
         MagicRealms.LOGGER.info("Contract manually cleared for entity {}", this.getEntityName());
+    }
+
+    public int getTotalEmeralds() {
+        return this.getInventory().countItem(Items.EMERALD);
+    }
+
+    public int getOverflowEmeralds() {
+        return Math.max(0, getTotalEmeralds() - Config.emeraldOverflowThreshold);
+    }
+
+    public boolean canUseOverflowEmeralds() {
+        if (getOverflowEmeralds() <= 0) {
+            return false;
+        }
+
+        VillagerOffersData offersData = this.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
+        return !offersData.hasAnyUnaffordableOffers();
     }
 
     @Override

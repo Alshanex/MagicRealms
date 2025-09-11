@@ -164,9 +164,9 @@ public class HumanStatsManager {
     // Métodos helper para obtener valores específicos por clase
     private static double getClassSpecificCritChance(EntityClass entityClass, RandomSource random) {
         return switch (entityClass) {
-            case MAGE -> getRandomValue(5, 100, random);
-            case WARRIOR -> getRandomValue(5, 100, random);
-            case ROGUE -> getRandomValue(50, 100, random);
+            case MAGE -> getRandomValue(5, 95, random);
+            case WARRIOR -> getRandomValue(5, 95, random);
+            case ROGUE -> getRandomValue(50, 95, random);
         };
     }
 

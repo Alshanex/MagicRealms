@@ -500,6 +500,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if (!hasInventorySpace()) {
+                return false;
+            }
+
             //MagicRealms.LOGGER.debug("Entity {} attempting to use BuyEquipmentFromVillagersGoal", entity.getEntityName());
 
             // First check if we can now afford any previously unaffordable offers
@@ -552,6 +556,16 @@ public class HumanGoals {
             fromMemory = false;
             tradingCooldown = TRADING_COOLDOWN;
             searchCooldown = SEARCH_COOLDOWN;
+        }
+
+        private boolean hasInventorySpace() {
+            SimpleContainer inventory = entity.getInventory();
+            for (int i = 0; i < inventory.getContainerSize(); i++) {
+                if (inventory.getItem(i).isEmpty()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private boolean checkMemoryForAffordableOffers() {
@@ -1530,6 +1544,11 @@ public class HumanGoals {
                 return false;
             }
 
+            // Stop if we can no longer fit this item in our inventory
+            if (!canPickupItem(targetItem)) {
+                return false;
+            }
+
             return true;
         }
 
@@ -1600,6 +1619,21 @@ public class HumanGoals {
             entity.getNavigation().stop();
         }
 
+        private boolean canPickupItem(ItemEntity itemEntity) {
+            if (itemEntity == null || !itemEntity.isAlive()) {
+                return false;
+            }
+
+            ItemStack itemStack = itemEntity.getItem();
+            if (itemStack.isEmpty()) {
+                return false;
+            }
+
+            // Check if the inventory can add this item
+            SimpleContainer inventory = entity.getInventory();
+            return inventory.canAddItem(itemStack);
+        }
+
         private boolean findNearestPickupableItem() {
             AABB searchArea = new AABB(entity.blockPosition()).inflate(SEARCH_RADIUS);
             List<ItemEntity> nearbyItems = entity.level().getEntitiesOfClass(ItemEntity.class, searchArea);
@@ -1615,6 +1649,11 @@ public class HumanGoals {
 
                 // Skip if entity doesn't want to pick up this item
                 if (!entity.wantsToPickUp(itemEntity.getItem())) {
+                    continue;
+                }
+
+                // Skip if we can't fit this item in our inventory
+                if (!canPickupItem(itemEntity)) {
                     continue;
                 }
 
@@ -2689,6 +2728,10 @@ public class HumanGoals {
             if (searchCooldown > 0) return false;
             if (failedAttempts >= maxFailedAttempts) return false;
 
+            if (!hasInventorySpace()) {
+                return false;
+            }
+
             // First check if we can craft with existing materials
             if (canCraftSomething()) {
                 currentTask = null; // No gathering needed, just crafting
@@ -2761,6 +2804,16 @@ public class HumanGoals {
             } else {
                 findTarget();
             }
+        }
+
+        private boolean hasInventorySpace() {
+            SimpleContainer inventory = entity.getInventory();
+            for (int i = 0; i < inventory.getContainerSize(); i++) {
+                if (inventory.getItem(i).isEmpty()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         protected void handleBlockTarget() {

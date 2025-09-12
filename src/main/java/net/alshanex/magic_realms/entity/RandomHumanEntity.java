@@ -1330,6 +1330,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
         List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
 
+        finalSpells.removeIf(
+                spell -> attackSpells.contains(spell) || defenseSpells.contains(spell)
+                || movementSpells.contains(spell) || supportSpells.contains(spell)
+        );
+
+        if(!finalSpells.isEmpty()){
+            attackSpells.addAll(finalSpells);
+        }
+
         this.goalSelector.addGoal(2, new HumanGoals.HumanWizardAttackGoal(this, 1.25f, 25, 50)
                 .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                 .setDrinksPotions()
@@ -1358,6 +1367,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
         List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
 
+        finalSpells.removeIf(
+                spell -> attackSpells.contains(spell) || defenseSpells.contains(spell)
+                        || movementSpells.contains(spell) || supportSpells.contains(spell)
+        );
+
+        if(!finalSpells.isEmpty()){
+            attackSpells.addAll(finalSpells);
+        }
+
         this.goalSelector.addGoal(3, new HumanGoals.HumanWizardAttackGoal(this, 1.0f, 60, 120)
                 .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                 .setDrinksPotions()
@@ -1382,6 +1400,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(finalSpells);
         List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
         List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
+
+        finalSpells.removeIf(
+                spell -> attackSpells.contains(spell) || defenseSpells.contains(spell)
+                        || movementSpells.contains(spell) || supportSpells.contains(spell)
+        );
+
+        if(!finalSpells.isEmpty()){
+            attackSpells.addAll(finalSpells);
+        }
 
         this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.5f, 40, 60)
                 .setMoveset(List.of(
@@ -1416,6 +1443,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         List<AbstractSpell> defenseSpells = ModTags.filterDefenseSpells(finalSpells);
         List<AbstractSpell> movementSpells = ModTags.filterMovementSpells(finalSpells);
         List<AbstractSpell> supportSpells = ModTags.filterSupportSpells(finalSpells);
+
+        finalSpells.removeIf(
+                spell -> attackSpells.contains(spell) || defenseSpells.contains(spell)
+                        || movementSpells.contains(spell) || supportSpells.contains(spell)
+        );
+
+        if(!finalSpells.isEmpty()){
+            attackSpells.addAll(finalSpells);
+        }
 
         if (hasShield()) {
             this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1f, 70, 85)
@@ -1466,8 +1502,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 }
             }
         }
-
-        MagicRealms.LOGGER.info("Successfully reapplied goals for {} {}", getEntityName(), entityClass.getName());
     }
 
     private void reinitializeGoalsAfterLoad() {
@@ -1490,9 +1524,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     }
                 }
             }
-
-            MagicRealms.LOGGER.info("Successfully reinitialized goals for {} {} with class-specific attacks",
-                    getEntityName(), entityClass.getName());
         } else if (this.entityData.get(INITIALIZED)) {
             MagicRealms.LOGGER.warn("Entity {} was initialized but has no spells, regenerating...", getEntityName());
             generateAndApplySpells();

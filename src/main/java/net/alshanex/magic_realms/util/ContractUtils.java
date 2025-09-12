@@ -50,7 +50,6 @@ public class ContractUtils {
             return;
         }
 
-        // Si ya es permanente del mismo jugador, mostrar mensaje y no consumir item
         if (contractData.isPermanent() && contractData.isContractor(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_already_permanent",

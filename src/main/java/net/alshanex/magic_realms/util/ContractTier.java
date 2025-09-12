@@ -1,33 +1,36 @@
 package net.alshanex.magic_realms.util;
 
+import net.alshanex.magic_realms.Config;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 public enum ContractTier {
-    NOVICE(1, 20, "novice", ChatFormatting.WHITE),
-    APPRENTICE(21, 40, "apprentice", ChatFormatting.GREEN),
-    JOURNEYMAN(41, 60, "journeyman", ChatFormatting.BLUE),
-    EXPERT(61, 80, "expert", ChatFormatting.DARK_PURPLE),
-    MASTER(81, 100, "master", ChatFormatting.GOLD);
+    NOVICE(1, "novice", ChatFormatting.WHITE),
+    APPRENTICE(2, "apprentice", ChatFormatting.GREEN),
+    JOURNEYMAN(3, "journeyman", ChatFormatting.BLUE),
+    EXPERT(4, "expert", ChatFormatting.DARK_PURPLE),
+    MASTER(5, "master", ChatFormatting.GOLD);
 
-    private final int minLevel;
-    private final int maxLevel;
+    private final int tier;
     private final String name;
     private final ChatFormatting color;
 
-    ContractTier(int minLevel, int maxLevel, String name, ChatFormatting color) {
-        this.minLevel = minLevel;
-        this.maxLevel = maxLevel;
+    ContractTier(int tier, String name, ChatFormatting color) {
+        this.tier = tier;
         this.name = name;
         this.color = color;
     }
 
+    public int getAmountOfTiers(){
+        return 5;
+    }
+
     public int getMinLevel() {
-        return minLevel;
+        return 1 + (Config.maxLevel / getAmountOfTiers()) * (tier - 1);
     }
 
     public int getMaxLevel() {
-        return maxLevel;
+        return (Config.maxLevel / getAmountOfTiers()) * tier;
     }
 
     public String getName() {
@@ -39,7 +42,7 @@ public enum ContractTier {
     }
 
     public boolean canContractLevel(int level) {
-        return level >= minLevel && level <= maxLevel;
+        return level >= getMinLevel() && level <= getMaxLevel();
     }
 
     public static ContractTier getRequiredTierForLevel(int level) {
@@ -48,7 +51,7 @@ public enum ContractTier {
                 return tier;
             }
         }
-        return MASTER; // Fallback para niveles superiores a 100
+        return MASTER;
     }
 
     public Component getDisplayName() {
@@ -57,7 +60,7 @@ public enum ContractTier {
     }
 
     public Component getLevelRange() {
-        return Component.literal("(" + minLevel + "-" + maxLevel + ")")
+        return Component.literal("(" + getMinLevel() + "-" + getMaxLevel() + ")")
                 .withStyle(ChatFormatting.GRAY);
     }
 }

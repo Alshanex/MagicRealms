@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,6 +27,11 @@ public class CombinedTextureManager {
     private static final Set<String> ACTIVE_ENTITIES = ConcurrentHashMap.newKeySet();
     private static Path textureOutputDir;
     private static String currentWorldName = null;
+
+    // Random instance for texture selection - can be made configurable later
+    private static final Random TEXTURE_RANDOM = new Random();
+    // Chance to use additional texture (30% = 0.3)
+    private static final double ADDITIONAL_TEXTURE_CHANCE = 0.3;
 
     // This will be called from WorldEventHandler when a world loads
     public static void setWorldDirectory(Path worldSaveDir, String worldName) {
@@ -342,6 +348,46 @@ public class CombinedTextureManager {
 
     private static BufferedImage createCompleteTexture(Gender gender, EntityClass entityClass, int hairTextureIndex) {
         try {
+            // Roll for texture type: 70% layered, 30% additional
+            double roll = TEXTURE_RANDOM.nextDouble();
+            boolean useAdditionalTexture = roll < ADDITIONAL_TEXTURE_CHANCE;
+
+            MagicRealms.LOGGER.debug("Texture selection roll: {:.3f} (threshold: {:.3f}) - Using {}",
+                    roll, ADDITIONAL_TEXTURE_CHANCE, useAdditionalTexture ? "additional texture" : "layered texture");
+
+            // Try to use additional texture if selected
+            if (useAdditionalTexture && LayeredTextureManager.hasAdditionalTextures(gender)) {
+                ResourceLocation additionalTexture = LayeredTextureManager.getRandomAdditionalTexture(gender);
+                if (additionalTexture != null) {
+                    BufferedImage additionalImage = loadImage(additionalTexture);
+                    if (additionalImage != null) {
+                        MagicRealms.LOGGER.debug("Successfully loaded additional {} texture: {}",
+                                gender.getName(), additionalTexture);
+
+                        // Apply arm fixes to additional texture as well
+                        BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(additionalImage);
+                        return finalTexture;
+                    } else {
+                        MagicRealms.LOGGER.warn("Failed to load additional texture: {}, falling back to layered", additionalTexture);
+                    }
+                } else {
+                    MagicRealms.LOGGER.warn("No additional texture found for gender: {}, falling back to layered", gender.getName());
+                }
+            } else if (useAdditionalTexture) {
+                MagicRealms.LOGGER.debug("Additional texture requested but none available for gender: {}, using layered", gender.getName());
+            }
+
+            // Fallback to layered texture generation (original method)
+            return createLayeredTexture(gender, entityClass, hairTextureIndex);
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error creating complete texture", e);
+            return null;
+        }
+    }
+
+    private static BufferedImage createLayeredTexture(Gender gender, EntityClass entityClass, int hairTextureIndex) {
+        try {
             // Obtener texturas en el orden correcto
             ResourceLocation skinTexture = LayeredTextureManager.getRandomTexture("skin");
             ResourceLocation clothesTexture = getRandomClothesTexture(gender, entityClass);
@@ -394,7 +440,7 @@ public class CombinedTextureManager {
                 }
             }
 
-            // 4. Hair (Ãºltimo)
+            // 4. Hair (último)
             if (hairTexture != null) {
                 BufferedImage hairImage = loadImage(hairTexture);
                 if (hairImage != null) {
@@ -411,12 +457,12 @@ public class CombinedTextureManager {
 
             // Aplicar el fix de brazos
             BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(combinedImage);
-            MagicRealms.LOGGER.debug("Successfully created complete texture with all layers including hair");
+            MagicRealms.LOGGER.debug("Successfully created layered texture with all layers including hair");
 
             return finalTexture;
 
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Error creating complete texture", e);
+            MagicRealms.LOGGER.error("Error creating layered texture", e);
             return null;
         }
     }
@@ -616,6 +662,11 @@ public class CombinedTextureManager {
         } catch (IOException e) {
             MagicRealms.LOGGER.error("Failed to cleanup session markers on shutdown", e);
         }
+    }
+
+    // Configuration methods
+    public static double getAdditionalTextureChance() {
+        return ADDITIONAL_TEXTURE_CHANCE;
     }
 
     // For debugging

@@ -23,6 +23,13 @@ public class TextureEventHandler {
             AdvancedNameManager.loadNamesFromResources();
 
             MagicRealms.LOGGER.info("Client setup completed - texture directories will be initialized when joining a world");
+
+            // Log additional texture availability for debugging
+            int maleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.MALE);
+            int femaleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.FEMALE);
+
+            MagicRealms.LOGGER.info("Additional textures loaded - Male: {}, Female: {}", maleAdditionalCount, femaleAdditionalCount);
+            MagicRealms.LOGGER.info("Additional texture chance: {}%", (int)(CombinedTextureManager.getAdditionalTextureChance() * 100));
         });
     }
 
@@ -37,6 +44,12 @@ public class TextureEventHandler {
                 LayeredTextureManager.loadTextures();
 
                 AdvancedNameManager.reloadNames();
+
+                // Log reloaded additional texture counts
+                int maleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.MALE);
+                int femaleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.FEMALE);
+
+                MagicRealms.LOGGER.debug("Reloaded additional textures - Male: {}, Female: {}", maleAdditionalCount, femaleAdditionalCount);
             }, executor2);
         });
     }

@@ -1209,7 +1209,20 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 MagicRealms.LOGGER.warn("Trying to get texture config before entity is initialized: {}", this.getUUID().toString());
                 return null;
             }
-            textureConfig = new EntityTextureConfig(this.getUUID().toString(), getGender(), getEntityClass());
+
+            // Regenerate texture config
+            try {
+                Gender gender = this.getGender();
+                EntityClass entityClass = this.getEntityClass();
+                int newHairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
+
+                this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass, newHairTextureIndex);
+                MagicRealms.LOGGER.debug("Regenerated texture config for entity {} with hair index: {}", this.getEntityName(), newHairTextureIndex);
+
+            } catch (Exception e) {
+                MagicRealms.LOGGER.error("Failed to regenerate texture config for entity {}", this.getEntityName(), e);
+                return null;
+            }
         }
         return textureConfig;
     }
@@ -1532,6 +1545,85 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeStarLevel(randomSource);
             initializeRandomAppearance(randomSource);
             this.entityData.set(INITIALIZED, true);
+        }
+    }
+
+    public boolean regenerateTexture() {
+        if (this.level().isClientSide()) {
+            return false;
+        }
+
+        try {
+            String entityUUID = this.getUUID().toString();
+            Gender gender = this.getGender();
+            EntityClass entityClass = this.getEntityClass();
+
+            MagicRealms.LOGGER.debug("Starting texture regeneration for entity {} (Gender: {}, Class: {})",
+                    this.getEntityName(), gender.getName(), entityClass.getName());
+
+            // Remove old texture from cache and delete file
+            CombinedTextureManager.removeEntityTexture(entityUUID, true); // true = delete file
+
+            // Generate new hair texture index
+            int newHairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
+
+            // Force regeneration by clearing cache and letting the system recreate
+            this.textureConfig = null;
+
+            MagicRealms.LOGGER.debug("Successfully prepared texture regeneration for entity {} with hair index: {}",
+                    this.getEntityName(), newHairTextureIndex);
+
+            return true;
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to regenerate texture for entity {}", this.getEntityName(), e);
+            return false;
+        }
+    }
+
+    public void forceTextureRegeneration() {
+        if (!this.level().isClientSide()) {
+            if (this.regenerateTexture()) {
+                // Send packet to client to regenerate texture
+                this.level().broadcastEntityEvent(this, (byte) 60); // Custom event ID for texture update
+                MagicRealms.LOGGER.debug("Broadcasted texture regeneration event for entity {}", this.getEntityName());
+            }
+        }
+    }
+
+    public void setTextureConfig(EntityTextureConfig newConfig) {
+        this.textureConfig = newConfig;
+        MagicRealms.LOGGER.debug("Updated texture config for entity {}", this.getEntityName());
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (id == 60) { // Custom event ID for texture regeneration
+            // Only handle on client side
+            if (this.level().isClientSide() && this.entityData.get(INITIALIZED)) {
+                try {
+                    String entityUUID = this.getUUID().toString();
+                    Gender gender = this.getGender();
+                    EntityClass entityClass = this.getEntityClass();
+
+                    MagicRealms.LOGGER.debug("Client-side texture regeneration started for entity {}", this.getEntityName());
+
+                    // Remove old texture from client cache
+                    CombinedTextureManager.removeEntityTexture(entityUUID, true); // true = delete file
+
+                    // Clear current texture config to force regeneration
+                    this.textureConfig = null;
+
+                    // The texture will be regenerated automatically
+
+                    MagicRealms.LOGGER.debug("Client-side texture regeneration completed for entity {}", this.getEntityName());
+
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.error("Error during client-side texture regeneration for entity {}", this.getEntityName(), e);
+                }
+            }
+        } else {
+            super.handleEntityEvent(id);
         }
     }
 

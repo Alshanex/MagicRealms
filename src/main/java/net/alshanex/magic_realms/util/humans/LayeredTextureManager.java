@@ -28,6 +28,10 @@ public class LayeredTextureManager {
         loadTexturesFromDirectory("textures/entity/human/clothes/warrior/female", "clothes_warrior_female");
         loadTexturesFromDirectory("textures/entity/human/clothes/warrior/male", "clothes_warrior_male");
 
+        // Load additional complete textures
+        loadTexturesFromDirectory("textures/entity/human/additional_textures/male", "additional_male");
+        loadTexturesFromDirectory("textures/entity/human/additional_textures/female", "additional_female");
+
         MagicRealms.LOGGER.debug("Finished loading textures. Total categories: " + TEXTURE_CACHE.size());
     }
 
@@ -94,6 +98,23 @@ public class LayeredTextureManager {
             return null;
         }
         return textures.get(new Random().nextInt(textures.size()));
+    }
+
+    public static ResourceLocation getRandomAdditionalTexture(Gender gender) {
+        String category = "additional_" + gender.getName();
+        return getRandomTexture(category);
+    }
+
+    public static boolean hasAdditionalTextures(Gender gender) {
+        String category = "additional_" + gender.getName();
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+        return textures != null && !textures.isEmpty();
+    }
+
+    public static int getAdditionalTextureCount(Gender gender) {
+        String category = "additional_" + gender.getName();
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+        return textures != null ? textures.size() : 0;
     }
 
     public static void clearCache() {

@@ -118,6 +118,10 @@ public class Config
             .comment("Duration of cleric buffs in minutes")
             .defineInRange("clericBuffDurationMinutes", 10, 1, 60);
 
+    private static final ModConfigSpec.IntValue IMMORTAL_STUN_DURATION = BUILDER
+            .comment("Duration in seconds that immortal entities are stunned after being knocked out")
+            .defineInRange("immortalStunDuration", 10, 1, 60);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     public static int maxLevel;
@@ -146,6 +150,7 @@ public class Config
     public static int emeraldOverflowThreshold;
     public static int clericEmeraldCost;
     public static int clericBuffDurationMinutes;
+    public static int immortalStunDuration;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
@@ -176,5 +181,6 @@ public class Config
         emeraldOverflowThreshold = EMERALD_OVERFLOW_THRESHOLD.get();
         clericEmeraldCost = CLERIC_EMERALD_COST.get();
         clericBuffDurationMinutes = CLERIC_BUFF_DURATION_MINUTES.get();
+        immortalStunDuration = IMMORTAL_STUN_DURATION.get();
     }
 }

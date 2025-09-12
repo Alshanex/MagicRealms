@@ -10,6 +10,8 @@ import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.LevelingStatsManager;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -20,8 +22,49 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
+import static io.redspace.ironsspellbooks.api.util.Utils.random;
+
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class KillTrackingHandler {
+    @SubscribeEvent
+    public static void onHumanDeath(LivingDeathEvent event){
+        if(!(event.getEntity() instanceof RandomHumanEntity human && human.isImmortal())){
+            return;
+        }
+        event.setCanceled(true);
+        human.setHealth(human.getMaxHealth() / 2);
+        knockbackAndStun(event.getSource(), human);
+    }
+
+    private static void knockbackAndStun(DamageSource source, RandomHumanEntity entity) {
+        // Apply knockback effect
+        if (source.getEntity() != null) {
+            double knockbackStrength = 1.5;
+            double deltaX = entity.getX() - source.getEntity().getX();
+            double deltaZ = entity.getZ() - source.getEntity().getZ();
+            double distance = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+
+            if (distance > 0) {
+                deltaX /= distance;
+                deltaZ /= distance;
+
+                entity.setDeltaMovement(entity.getDeltaMovement().add(
+                        deltaX * knockbackStrength,
+                        0.4, // Upward knockback
+                        deltaZ * knockbackStrength
+                ));
+            }
+        }
+
+        // Set stunned state
+        entity.setStunned(true);
+
+        // Clear target and stop attacking
+        entity.setTarget(null);
+
+        // Play knockback sound
+        entity.playSound(SoundEvents.PLAYER_HURT, 0.8F, 1.2F);
+    }
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {

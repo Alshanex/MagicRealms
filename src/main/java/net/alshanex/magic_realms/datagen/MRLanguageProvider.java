@@ -26,6 +26,8 @@ public class MRLanguageProvider extends LanguageProvider {
 
         add(MREntityRegistry.HUMAN.get(), "Human");
 
+        add("effect.magic_realms.stun", "Stunned");
+
         add("itemGroup.magic_realms.main_tab", "Magic Realms");
 
         // Contract tooltips
@@ -74,5 +76,8 @@ public class MRLanguageProvider extends LanguageProvider {
 
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?");
+
+        add("message.magic_realms.already_immortal", "%s: Thanks but i don't need that, i already have my own pass");
+        add("message.magic_realms.granted_immortality", "%s: Oh, i've been searching for this pass for a long time, thank you so much!");
     }
 }

@@ -117,6 +117,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if(this.entity.isStunned()){
+                return false;
+            }
+
             // If we're already actively selling, don't restart the process
             if (isActivelySelling) {
                 return false;
@@ -502,6 +506,10 @@ public class HumanGoals {
             }
 
             if(this.entity.isPatrolMode()){
+                return false;
+            }
+
+            if(this.entity.isStunned()){
                 return false;
             }
 
@@ -1054,6 +1062,9 @@ public class HumanGoals {
 
         @Override
         public boolean canUse() {
+            if(this.humanEntity.isStunned()){
+                return false;
+            }
             boolean canUse = super.canUse();
             if (canUse) {
                 humanEntity.setTarget(null);
@@ -1080,6 +1091,9 @@ public class HumanGoals {
 
         @Override
         public boolean canUse() {
+            if(this.humanEntity.isStunned()){
+                return false;
+            }
             boolean canUse = super.canUse();
             if (canUse && target != null && humanEntity.isAfraidOf(target)) {
                 return false; // Don't target feared entities
@@ -1123,6 +1137,10 @@ public class HumanGoals {
 
             // Don't run if entity is in standby mode
             if (entity.isPatrolMode()) {
+                return false;
+            }
+
+            if(this.entity.isStunned()){
                 return false;
             }
 
@@ -1332,6 +1350,10 @@ public class HumanGoals {
         public boolean canUse() {
             // Don't help if we already have a target
             if (human.getTarget() != null) {
+                return false;
+            }
+
+            if(this.human.isStunned()){
                 return false;
             }
 
@@ -1614,6 +1636,9 @@ public class HumanGoals {
         }
 
         public boolean canUse() {
+            if(this.mob instanceof RandomHumanEntity human && human.isStunned()){
+                return false;
+            }
             LivingEntity livingentity = this.mob.getTarget();
             if (livingentity != null && livingentity.isAlive()) {
                 this.target = livingentity;
@@ -2347,6 +2372,10 @@ public class HumanGoals {
 
         @Override
         public boolean canUse() {
+            if(this.entity.isStunned()){
+                return false;
+            }
+
             // Don't gather if in combat, on standby, or recently failed
             if (entity.getTarget() != null) return false;
             if (entity.isPatrolMode()) return false;
@@ -2953,6 +2982,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if(this.humanEntity.isStunned()){
+                return false;
+            }
+
             Entity livingentity = this.ownerGetter.get();
             if (livingentity == null) {
                 return false;
@@ -3090,6 +3123,10 @@ public class HumanGoals {
         public boolean canUse() {
             // Only patrol if in patrol mode and not in combat
             if (!entity.isPatrolMode()) {
+                return false;
+            }
+
+            if(this.entity.isStunned()){
                 return false;
             }
 
@@ -3319,6 +3356,10 @@ public class HumanGoals {
             }
 
             if(entity.isPatrolMode()){
+                return false;
+            }
+
+            if(this.entity.isStunned()){
                 return false;
             }
 

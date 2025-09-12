@@ -25,15 +25,16 @@ import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.particles.StunParticleEffect;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.registry.MREffects;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ContractUtils;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -53,6 +54,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -62,10 +64,8 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
@@ -75,6 +75,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
 
@@ -95,6 +96,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<BlockPos> PATROL_POSITION = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> HAS_BEEN_INTERACTED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_IMMORTAL = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_STUNNED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> STUN_TIMER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
 
     private EntityType<?> fearedEntityType = null;
     private boolean fearGoalInitialized = false;
@@ -480,6 +484,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean wantsToPickUp(ItemStack stack) {
+        if (isStunned()) {
+            return false;
+        }
         return !stack.isEmpty() && this.getInventory().canAddItem(stack);
     }
 
@@ -645,9 +652,111 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
+    public boolean isImmortal() {
+        return this.entityData.get(IS_IMMORTAL);
+    }
+
+    public void setImmortal(boolean immortal) {
+        this.entityData.set(IS_IMMORTAL, immortal);
+    }
+
+    public boolean isStunned() {
+        return this.entityData.get(IS_STUNNED);
+    }
+
+    public void setStunned(boolean stunned) {
+        this.entityData.set(IS_STUNNED, stunned);
+        if (stunned) {
+            int duration = Config.immortalStunDuration * 20; // Convert seconds to ticks
+            this.entityData.set(STUN_TIMER, duration);
+
+            this.setPose(Pose.SITTING);
+
+            this.addEffect(new MobEffectInstance(MREffects.STUN, duration, 0, false, false, true));
+
+            // Clear target and stop attacking
+            this.setTarget(null);
+
+            // Stop any current actions
+            this.stopUsingItem();
+            this.getNavigation().stop();
+        } else {
+            this.entityData.set(STUN_TIMER, 0);
+
+            this.setPose(Pose.STANDING);
+        }
+    }
+
+    public int getStunTimer() {
+        return this.entityData.get(STUN_TIMER);
+    }
+
+    private void handleStunTick() {
+        if (!isStunned()) return;
+
+        int currentTimer = getStunTimer();
+        if (currentTimer > 0) {
+            currentTimer--;
+            this.entityData.set(STUN_TIMER, currentTimer);
+
+            if (currentTimer <= 0) {
+                setStunned(false);
+                this.heal(this.getMaxHealth() * 0.5f); // Heal to 50% when recovering
+
+                MagicRealms.LOGGER.info("Entity {} recovered from stun", this.getEntityName());
+            }
+        }
+    }
+
+    @Override
+    public boolean isImmobile() {
+        if (isStunned()) {
+            return true; // Stunned entities can't move
+        }
+        return super.isImmobile();
+    }
+
+    @Override
+    public Pose getPose() {
+        if (isStunned()) {
+            return Pose.SITTING;
+        }
+        return super.getPose();
+    }
+
+    @Override
+    public boolean canAttack(LivingEntity target) {
+        if (this.hasEffect(MREffects.STUN)) {
+            return false;
+        }
+        return super.canAttack(target);
+    }
+
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        if (this.hasEffect(MREffects.STUN) && target != null) {
+            return; // Don't set targets while stunned
+        }
+        super.setTarget(target);
+    }
+
+    @Override
+    public void travel(Vec3 travelVector) {
+        if (this.hasEffect(MREffects.STUN)) {
+            // Force entity to stay still
+            super.travel(Vec3.ZERO);
+            return;
+        }
+        super.travel(travelVector);
+    }
+
     @Override
     public void tick() {
         super.tick();
+
+        if(level().isClientSide() && this.isStunned()){
+            StunParticleEffect.spawnStunParticles(this, (ClientLevel) level());
+        }
 
         if (!level().isClientSide && !goalsInitialized && this.entityData.get(INITIALIZED)) {
             reinitializeGoalsAfterLoad();
@@ -658,6 +767,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
             if(killData.hasNaturalRegen() && this.getHealth() < this.getMaxHealth()){
                 handleNaturalRegeneration();
+            }
+
+            if (this.isStunned()) {
+                handleStunTick();
             }
         }
 
@@ -757,6 +870,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(PATROL_POSITION, BlockPos.ZERO);
         pBuilder.define(FEARED_ENTITY, "");
         pBuilder.define(HAS_BEEN_INTERACTED, false);
+        pBuilder.define(IS_IMMORTAL, false);
+        pBuilder.define(IS_STUNNED, false);
+        pBuilder.define(STUN_TIMER, 0);
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -985,6 +1101,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         if (player.level().isClientSide()) return InteractionResult.FAIL;
 
+        if (isStunned()) {
+            return InteractionResult.FAIL;
+        }
+
         if(!this.hasBeenInteracted()){
             this.markAsInteracted();
         }
@@ -1099,6 +1219,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         compound.putBoolean("HasBeenInteracted", this.entityData.get(HAS_BEEN_INTERACTED));
+
+        compound.putBoolean("IsImmortal", this.entityData.get(IS_IMMORTAL));
+        compound.putBoolean("IsStunned", this.entityData.get(IS_STUNNED));
+        compound.putInt("StunTimer", this.entityData.get(STUN_TIMER));
     }
 
     @Override
@@ -1213,6 +1337,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         this.entityData.set(HAS_BEEN_INTERACTED, compound.getBoolean("HasBeenInteracted"));
+
+        this.entityData.set(IS_IMMORTAL, compound.getBoolean("IsImmortal"));
+        this.entityData.set(IS_STUNNED, compound.getBoolean("IsStunned"));
+        this.entityData.set(STUN_TIMER, compound.getInt("StunTimer"));
     }
 
     private boolean isAlliedHelper(Entity entity) {
@@ -1232,7 +1360,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource damageSource) {
-        if (!level().isClientSide) {
+        if (!level().isClientSide && !isImmortal()) {
             for (int i = 0; i < inventory.getContainerSize(); i++) {
                 ItemStack itemStack = inventory.getItem(i);
                 if (!itemStack.isEmpty()) {
@@ -1253,6 +1381,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
+        if (isStunned()) {
+            return true;
+        }
+
         if (source.getEntity() != null && source.getEntity().is(this.getSummoner())) {
             return true;
         } else if (source.getEntity() != null && source.getEntity() instanceof RandomHumanEntity human
@@ -1264,7 +1396,32 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     @Override
+    public boolean canBeAffected(MobEffectInstance pPotioneffect) {
+        if (isStunned()) {
+            return false;
+        }
+        return super.canBeAffected(pPotioneffect);
+    }
+
+    @Override
+    public boolean isPickable() {
+        return !isStunned() && super.isPickable();
+    }
+
+    @Override
+    public boolean canBeSeenAsEnemy() {
+        if (isStunned()) {
+            return false; // Can't be seen as enemy while stunned
+        }
+        return super.canBeSeenAsEnemy();
+    }
+
+    @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
+        if (isStunned()) {
+            return false;
+        }
+
         if (level().isClientSide) {
             return false;
         }

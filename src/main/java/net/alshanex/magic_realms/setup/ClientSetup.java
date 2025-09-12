@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.TavernKeeperEntityRenderer;
 import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
 import net.alshanex.magic_realms.entity.RandomHumanEntityRenderer;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -16,6 +17,7 @@ public class ClientSetup {
     @SubscribeEvent
     public static void rendererRegister(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(MREntityRegistry.HUMAN.get(), RandomHumanEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntityRenderer::new);
     }
 
     @SubscribeEvent

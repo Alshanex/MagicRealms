@@ -28,6 +28,7 @@ public class MRCreativeTab {
                 entries.accept(MRItems.CONTRACT_APPRENTICE.get());
                 entries.accept(MRItems.CONTRACT_JOURNEYMAN.get());
                 entries.accept(MRItems.HELL_PASS.get());
+                entries.accept(MRItems.TIME_ESSENCE.get());
             })
             .withTabsBefore(CreativeTabRegistry.EQUIPMENT_TAB.getId())
             .build());

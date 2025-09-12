@@ -7,6 +7,7 @@ import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.util.ContractTier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -68,4 +69,7 @@ public class MRItems {
 
     public static final DeferredHolder<Item, HellPass> HELL_PASS =
             ITEMS.register("hell_pass", HellPass::new);
+
+    public static final DeferredHolder<Item, Item> TIME_ESSENCE =
+            ITEMS.register("time_essence", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
 }

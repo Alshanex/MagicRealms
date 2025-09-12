@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.TavernKeeperEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -22,4 +23,10 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "human_entity").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<TavernKeeperEntity>> TAVERNKEEP =
+            ENTITIES.register("tavernkeep", () -> EntityType.Builder.<TavernKeeperEntity>of(TavernKeeperEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep").toString()));
 }

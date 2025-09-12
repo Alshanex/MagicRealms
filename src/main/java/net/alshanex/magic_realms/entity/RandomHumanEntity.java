@@ -674,9 +674,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             } else {
                 UUID previousContractorUUID = contractData.getContractorUUID();
                 if (previousContractorUUID != null && !contractData.isPermanent()) {
-                    MagicRealms.LOGGER.info("Contract expired for {} star entity {} with player {}",
-                            this.getStarLevel(), this.getEntityName(), previousContractorUUID);
-
                     contractData.clearContract();
                     this.setSummoner(null);
 

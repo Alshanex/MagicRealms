@@ -43,6 +43,8 @@ public class MagicRealms
 
         MRMenus.register(modEventBus);
 
+        MRCreativeTab.register(modEventBus);
+
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
@@ -65,14 +67,7 @@ public class MagicRealms
     // Add the example block item to the building blocks tab
     private void addCreative(BuildCreativeModeTabContentsEvent event)
     {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(MRItems.CONTRACT_APPRENTICE.get());
-            event.accept(MRItems.CONTRACT_EXPERT.get());
-            event.accept(MRItems.CONTRACT_JOURNEYMAN.get());
-            event.accept(MRItems.CONTRACT_MASTER.get());
-            event.accept(MRItems.CONTRACT_NOVICE.get());
-            event.accept(MRItems.CONTRACT_PERMANENT.get());
-        }
+
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

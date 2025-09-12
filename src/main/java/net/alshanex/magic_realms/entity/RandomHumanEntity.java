@@ -118,7 +118,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private int regenTimer = 0;
     private static final int REGEN_INTERVAL = 100;
-    private static final float REGEN_AMOUNT = 1.0f;
 
     public RandomHumanEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);

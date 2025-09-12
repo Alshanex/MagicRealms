@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.item.HellPass;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.util.ContractTier;
@@ -64,4 +65,7 @@ public class MRItems {
                             .fireResistant()
                             .rarity(net.minecraft.world.item.Rarity.EPIC)
             ));
+
+    public static final DeferredHolder<Item, HellPass> HELL_PASS =
+            ITEMS.register("hell_pass", HellPass::new);
 }

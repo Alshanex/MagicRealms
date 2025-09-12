@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.datagen;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.registry.MRCreativeTab;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.minecraft.data.PackOutput;
@@ -21,8 +22,11 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MRItems.CONTRACT_EXPERT.get(), "Expert Contract");
         add(MRItems.CONTRACT_MASTER.get(), "Master Contract");
         add(MRItems.CONTRACT_PERMANENT.get(), "Permanent Contract");
+        add(MRItems.HELL_PASS.get(), "Hell's Pass");
 
         add(MREntityRegistry.HUMAN.get(), "Human");
+
+        add("itemGroup.magic_realms.main_tab", "Magic Realms");
 
         // Contract tooltips
         add("tooltip.magic_realms.contract.level_range", "Entity Level Range:");
@@ -33,6 +37,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("tooltip.magic_realms.permanent_contract.duration_desc", "Permanent - Never expires!");
         add("tooltip.magic_realms.permanent_contract.warning", "This contract cannot be undone!");
         add("tooltip.magic_realms.permanent_contract.requirement", "Requires 200+ minutes of previous contracts with entity");
+        add("tooltip.magic_realms.hell_pass", "Give to any human to allow him survive fatal hits");
 
         // GUI translations
         add("gui.magic_realms.human_info.title", "Entity Information");

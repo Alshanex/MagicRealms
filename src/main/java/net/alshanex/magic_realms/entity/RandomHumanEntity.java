@@ -662,19 +662,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             }
         }
 
-        // Verificar contrato y limpiar si ha expirado (no aplicar a contratos permanentes)
         if (!level().isClientSide && this.tickCount % 20 == 0) {
             ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
 
             if (contractData.hasActiveContract()) {
-                // Si es un contrato permanente, solo asegurar que el summoner esté configurado
                 if (!contractData.isPermanent()) {
                     if (this.tickCount % 200 == 0) {
                         contractData.periodicTimeUpdate();
                     }
                 }
             } else {
-                // El contrato ha expirado (solo para contratos temporales), limpiar datos
                 UUID previousContractorUUID = contractData.getContractorUUID();
                 if (previousContractorUUID != null && !contractData.isPermanent()) {
                     MagicRealms.LOGGER.info("Contract expired for {} star entity {} with player {}",
@@ -683,13 +680,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     contractData.clearContract();
                     this.setSummoner(null);
 
-                    // Notificar al jugador si está cerca
                     Player contractor = this.level().getPlayerByUUID(previousContractorUUID);
-                    if (contractor instanceof ServerPlayer serverPlayer && contractor.distanceToSqr(this) <= 64) {
-                        serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(
-                                Component.translatable("ui.magic_realms.contract_expired", this.getEntityName())
-                                        .withStyle(ChatFormatting.RED)
-                        ));
+                    if (contractor instanceof ServerPlayer serverPlayer) {
+                        serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.contract_expired", this.getEntityName()));
                     }
                 }
             }
@@ -1007,7 +1000,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             return InteractionResult.FAIL;
         }
 
-        // Si el jugador tiene un contrato permanente en la mano
         if (heldItem.getItem() instanceof PermanentContractItem) {
             ContractUtils.handlePermanentContractCreation(player, this, contractData, heldItem);
         } else if (heldItem.getItem() instanceof TieredContractItem tieredContract) {

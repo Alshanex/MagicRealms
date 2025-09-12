@@ -29,16 +29,14 @@ public class ContractUtils {
                                                         ContractData contractData,
                                                         ItemStack heldItem) {
 
-        // Nueva verificación: comprobar si el jugador cumple el requisito de tiempo
         if (!contractData.hasMinimumContractTime(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
                 int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID());
 
                 MutableComponent message = Component.translatable("ui.magic_realms.permanent_contract_insufficient_time",
-                        remainingMinutes);
-                message = message.withStyle(ChatFormatting.RED);
+                        humanEntity.getEntityName(), remainingMinutes);
 
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                serverPlayer.sendSystemMessage(message);
             }
             return;
         }
@@ -46,17 +44,8 @@ public class ContractUtils {
         if (!contractData.canEstablishPermanentContract(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
-                if (contractData.isPermanent()) {
-                    // Ya es permanente de otro jugador
-                    message = Component.translatable("ui.magic_realms.contract_permanent_other_player",
-                            humanEntity.getEntityName());
-                    message = message.withStyle(ChatFormatting.RED);
-                } else {
-                    // Contrato temporal con otro jugador
-                    message = Component.translatable("ui.magic_realms.already_have_contract");
-                    message = message.withStyle(ChatFormatting.RED);
-                }
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                message = Component.translatable("ui.magic_realms.already_have_contract");
+                serverPlayer.sendSystemMessage(message);
             }
             return;
         }
@@ -66,19 +55,16 @@ public class ContractUtils {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_already_permanent",
                         humanEntity.getEntityName());
-                message = message.withStyle(ChatFormatting.YELLOW);
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                serverPlayer.sendSystemMessage(message);
             }
             return;
         }
 
         boolean isUpgrade = contractData.hasActiveContract() && contractData.isContractor(player.getUUID());
 
-        // Intentar establecer contrato permanente
         boolean success = contractData.trySetPermanentContract(player.getUUID());
 
         if (!success) {
-            // Esto no debería pasar, pero por seguridad
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_failed");
                 message = message.withStyle(ChatFormatting.RED);
@@ -91,35 +77,15 @@ public class ContractUtils {
             humanEntity.setSummoner(player);
         }
 
-        // Actualizar el nombre para mostrar el símbolo de infinito
         humanEntity.updateCustomNameWithStars();
 
-        // Enviar mensaje de éxito
         if (player instanceof ServerPlayer serverPlayer) {
             MutableComponent message;
-            if (isUpgrade) {
-                message = Component.translatable("ui.magic_realms.contract_upgraded_permanent", humanEntity.getEntityName());
-                message = message.withStyle(ChatFormatting.GOLD);
-            } else {
-                message = Component.translatable("ui.magic_realms.contract_established_permanent", humanEntity.getEntityName());
-                message = message.withStyle(ChatFormatting.GOLD);
-            }
+            message = Component.translatable("ui.magic_realms.contract_established_permanent", humanEntity.getEntityName());
 
-            serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+            serverPlayer.sendSystemMessage(message);
         }
 
-        // Log del evento
-        String actionType = isUpgrade ? "upgraded to permanent" : "established permanent";
-        int totalMinutes = contractData.getTotalContractTimeMinutes(player.getUUID());
-        MagicRealms.LOGGER.info("Player {} {} contract with entity {} ({}). Total contract time: {} minutes. Contract info: {}",
-                player.getName().getString(),
-                actionType,
-                humanEntity.getEntityName(),
-                humanEntity.getUUID(),
-                totalMinutes,
-                contractData.getDetailedInfo());
-
-        // Consumir el item
         if (!player.getAbilities().instabuild) {
             heldItem.shrink(1);
         }
@@ -131,28 +97,22 @@ public class ContractUtils {
                                                      ItemStack heldItem,
                                                      TieredContractItem contractItem) {
 
-        // Verificación temprana: no se puede usar contrato temporal en entidad con contrato permanente
         if (!contractData.canEstablishTemporaryContract(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
                 if (contractData.isPermanent()) {
                     if (contractData.isContractor(player.getUUID())) {
-                        // Es el mismo jugador con contrato permanente
-                        message = Component.translatable("ui.magic_realms.contract_permanent_no_upgrade",
+                        message = Component.translatable("ui.magic_realms.contract_already_permanent",
                                 humanEntity.getEntityName());
-                        message = message.withStyle(ChatFormatting.GOLD);
                     } else {
-                        // Es otro jugador
-                        message = Component.translatable("ui.magic_realms.contract_permanent_other_player",
+                        message = Component.translatable("ui.magic_realms.already_have_contract",
                                 humanEntity.getEntityName());
-                        message = message.withStyle(ChatFormatting.RED);
                     }
                 } else {
-                    // Contrato temporal con otro jugador
-                    message = Component.translatable("ui.magic_realms.already_have_contract");
-                    message = message.withStyle(ChatFormatting.RED);
+                    message = Component.translatable("ui.magic_realms.already_have_contract",
+                            humanEntity.getEntityName());
                 }
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                serverPlayer.sendSystemMessage(message);
             }
             return;
         }
@@ -161,27 +121,15 @@ public class ContractUtils {
         KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
         int entityLevel = killTracker.getCurrentLevel();
         ContractTier contractTier = contractItem.getTier();
-        ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
 
         // Verificar si el contrato es apropiado para el nivel de la entidad
         if (!contractTier.canContractLevel(entityLevel)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
-                if (contractTier.getMinLevel() > entityLevel) {
-                    // El contrato es demasiado poderoso
-                    message = Component.translatable("ui.magic_realms.entity_level_too_low", entityLevel);
-                    message = message.withStyle(ChatFormatting.RED);
-                } else {
-                    // El contrato no es lo suficientemente poderoso
-                    message = Component.translatable("ui.magic_realms.contract_tier_mismatch",
-                            entityLevel,
-                            requiredTier.getDisplayName().getString(),
-                            requiredTier.getMinLevel(),
-                            requiredTier.getMaxLevel());
-                    message = message.withStyle(ChatFormatting.RED);
-                }
+                message = Component.translatable("ui.magic_realms.entity_level_too_low",
+                        humanEntity.getEntityName());
 
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                serverPlayer.sendSystemMessage(message);
             }
             return;
         }
@@ -201,7 +149,6 @@ public class ContractUtils {
         }
 
         if (!success) {
-            // Esto no debería pasar ya que verificamos antes, pero por seguridad
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_failed");
                 message = message.withStyle(ChatFormatting.RED);
@@ -210,29 +157,20 @@ public class ContractUtils {
             return;
         }
 
-        // Enviar mensaje de éxito
         if (player instanceof ServerPlayer serverPlayer) {
+            MutableComponent message;
             if (isRenewal) {
-                int remainingMinutes = contractData.getRemainingMinutes();
-                int remainingSeconds = contractData.getRemainingSeconds();
-
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_extended",
-                        humanEntity.getEntityName(),
-                        additionalMinutes,
-                        remainingMinutes,
-                        remainingSeconds);
-                message = message.withStyle(ChatFormatting.GREEN);
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
-            } else {
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_established",
+                message = Component.translatable("ui.magic_realms.contract_extended",
                         humanEntity.getEntityName(),
                         additionalMinutes);
-                message = message.withStyle(ChatFormatting.GREEN);
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+            } else {
+                message = Component.translatable("ui.magic_realms.contract_established",
+                        humanEntity.getEntityName(),
+                        additionalMinutes);
             }
+            serverPlayer.sendSystemMessage(message);
         }
 
-        // Consumir el item
         if (!player.getAbilities().instabuild) {
             heldItem.shrink(1);
         }
@@ -242,17 +180,15 @@ public class ContractUtils {
                                                   RandomHumanEntity humanEntity,
                                                   ContractData contractData) {
 
-        // Verificar si el jugador tiene un contrato activo
         if (!contractData.isContractor(player.getUUID())) {
             if (contractData.hasActiveContract()) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = Component.translatable("ui.magic_realms.contract_other_player");
-                    message = message.withStyle(ChatFormatting.RED);
-                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                    MutableComponent message = Component.translatable("ui.magic_realms.already_have_contract",
+                            humanEntity.getEntityName());
+                    serverPlayer.sendSystemMessage(message);
                 }
             } else {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    // Send introduction message instead of action bar message
                     sendIntroductionMessage(serverPlayer, humanEntity, contractData);
                 }
             }
@@ -263,7 +199,6 @@ public class ContractUtils {
             boolean currentPatrolState = humanEntity.isPatrolMode();
 
             if (currentPatrolState) {
-                // The entity is in patrol mode
                 humanEntity.setPatrolMode(false);
 
                 if (player instanceof ServerPlayer serverPlayer) {
@@ -272,7 +207,6 @@ public class ContractUtils {
                     serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
                 }
             } else {
-                // The entity is not in patrol mode, activate patrol
                 humanEntity.setPatrolMode(true);
 
                 if (player instanceof ServerPlayer serverPlayer) {
@@ -284,29 +218,23 @@ public class ContractUtils {
             return;
         }
 
-        // Si el contrato es permanente, mostrar mensaje especial
         if (contractData.isPermanent()) {
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_time_permanent");
-                message = message.withStyle(ChatFormatting.GOLD);
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                MutableComponent message = Component.translatable("ui.magic_realms.contract_time_permanent",
+                        humanEntity.getEntityName());
+                serverPlayer.sendSystemMessage(message);
             }
         } else {
-            // Mostrar tiempo restante para contratos temporales
             int minutes = contractData.getRemainingMinutes();
             int seconds = contractData.getRemainingSeconds();
-            int starLevel = humanEntity.getStarLevel();
-            int extensionMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
 
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",
-                        minutes, seconds, extensionMinutes);
-                message = message.withStyle(ChatFormatting.AQUA);
-                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+                        humanEntity.getEntityName(), minutes, seconds);
+                serverPlayer.sendSystemMessage(message);
             }
         }
 
-        // Verificar que la entidad esté en un estado válido antes de crear el snapshot
         if (humanEntity.isRemoved() || !humanEntity.isAlive()) {
             MagicRealms.LOGGER.warn("Attempted to open menu for removed/dead entity: {}", humanEntity.getEntityName());
             if (player instanceof ServerPlayer serverPlayer) {
@@ -317,7 +245,6 @@ public class ContractUtils {
             return;
         }
 
-        // Crear snapshot actualizado y abrir el menú
         EntitySnapshot snapshot = EntitySnapshot.fromEntity(humanEntity);
 
         player.openMenu(new ContractMenuProvider(snapshot, humanEntity), buf -> {
@@ -328,17 +255,14 @@ public class ContractUtils {
     }
 
     public static void sendIntroductionMessage(ServerPlayer serverPlayer, RandomHumanEntity humanEntity, ContractData contractData) {
-        // Get entity information
         String entityName = humanEntity.getEntityName();
         EntityClass entityClass = humanEntity.getEntityClass();
 
-        // Get contract tier and time information
         KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
         int entityLevel = killTracker.getCurrentLevel();
         ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
         int contractMinutes = contractData.getAdditionalMinutesForStarLevel(humanEntity.getStarLevel());
 
-        // Create the introduction message based on class and subtype
         String messageKey;
         switch (entityClass) {
             case WARRIOR -> messageKey = "ui.magic_realms.introduction.warrior";
@@ -353,14 +277,11 @@ public class ContractUtils {
             default -> messageKey = "ui.magic_realms.introduction.default";
         }
 
-        // Create and send the message
         MutableComponent message = Component.translatable(messageKey,
                 entityName,
                 requiredTier.getDisplayName().getString(),
                 contractMinutes);
-        message = message.withStyle(ChatFormatting.YELLOW);
 
-        // Send as chat message instead of action bar
         serverPlayer.sendSystemMessage(message);
     }
 

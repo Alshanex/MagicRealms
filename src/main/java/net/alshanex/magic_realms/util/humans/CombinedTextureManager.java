@@ -32,14 +32,14 @@ public class CombinedTextureManager {
         try {
             textureOutputDir = worldSaveDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
             Files.createDirectories(textureOutputDir);
-            MagicRealms.LOGGER.info("Set texture directory for world '{}' at: {}", worldName, textureOutputDir.toString());
+            MagicRealms.LOGGER.debug("Set texture directory for world '{}' at: {}", worldName, textureOutputDir.toString());
 
             // Check if we switched worlds
             if (!worldName.equals(currentWorldName)) {
                 if (currentWorldName != null) {
                     // Clear cache when switching worlds, but don't delete files
                     clearCache();
-                    MagicRealms.LOGGER.info("Cleared texture cache due to world change: {} -> {}", currentWorldName, worldName);
+                    MagicRealms.LOGGER.debug("Cleared texture cache due to world change: {} -> {}", currentWorldName, worldName);
                 }
                 currentWorldName = worldName;
 
@@ -144,7 +144,7 @@ public class CombinedTextureManager {
                 Path worldTexture = worldDir.resolve(entityUUID + "_complete.png");
 
                 if (Files.exists(worldTexture)) {
-                    MagicRealms.LOGGER.info("Found texture in world directory: {}", worldTexture);
+                    MagicRealms.LOGGER.debug("Found texture in world directory: {}", worldTexture);
                     return worldTexture;
                 } else {
                     MagicRealms.LOGGER.debug("Texture not found in world directory: {}", worldTexture);

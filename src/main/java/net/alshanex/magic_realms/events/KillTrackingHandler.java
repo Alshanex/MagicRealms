@@ -90,12 +90,13 @@ public class KillTrackingHandler {
             spawnLevelUpEffects(humanEntity);
             humanEntity.updateCustomNameWithStars();
             LevelingStatsManager.applyLevelBasedAttributes(humanEntity, newLevel);
-
+/*
             MagicRealms.LOGGER.info("Entity {} leveled up! Level {} -> {} (Total kills: {})",
                     humanEntity.getEntityName(),
                     previousLevel,
                     newLevel,
                     killData.getTotalKills());
+ */
         }
     }
 
@@ -124,7 +125,7 @@ public class KillTrackingHandler {
         KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
         killData.setLevel(level);
 
-        MagicRealms.LOGGER.info("Manually set entity {} to level {}", entity.getEntityName(), level);
+        MagicRealms.LOGGER.debug("Manually set entity {} to level {}", entity.getEntityName(), level);
     }
 
     public static void addExperience(RandomHumanEntity entity, int experience) {
@@ -186,8 +187,7 @@ public class KillTrackingHandler {
             giveSharedExperience(companion, deadEntity, sharedXp, killer);
         }
 
-        MagicRealms.LOGGER.debug("Distributed {} shared XP to {} companions of player {} for killing {}",
-                sharedXp, companions.size(), killer.getName().getString(), deadEntity.getType().getDescriptionId());
+        //MagicRealms.LOGGER.debug("Distributed {} shared XP to {} companions of player {} for killing {}", sharedXp, companions.size(), killer.getName().getString(), deadEntity.getType().getDescriptionId());
     }
 
     private static List<RandomHumanEntity> findNearbyCompanions(Player owner, LivingEntity deadEntity) {

@@ -69,8 +69,7 @@ public class LayeredTextureManager {
             return -1;
         }
         int index = new Random().nextInt(textures.size());
-        MagicRealms.LOGGER.debug("Selected hair texture index {} from {} options for category: {}",
-                index, textures.size(), category);
+        //MagicRealms.LOGGER.debug("Selected hair texture index {} from {} options for category: {}", index, textures.size(), category);
         return index;
     }
 

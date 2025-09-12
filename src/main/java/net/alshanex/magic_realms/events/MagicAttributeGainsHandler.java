@@ -77,9 +77,11 @@ public class MagicAttributeGainsHandler {
         }
 
         applyAttributeBonus(entity, powerAttribute, school, bonusPercentage, "spell_power");
-
+/*
         MagicRealms.LOGGER.info("Applied {}% spell power bonus for {} school to entity {} ({}★ {})",
                 bonusPercentage, school.getId(), entity.getEntityName(), starLevel, entityClass.getName());
+
+ */
     }
 
     private static void applySpellResistanceBonus(RandomHumanEntity entity, SchoolType school) {
@@ -107,9 +109,11 @@ public class MagicAttributeGainsHandler {
         }
 
         applyAttributeBonus(entity, resistAttribute, school, bonusPercentage, "spell_resistance");
-
+/*
         MagicRealms.LOGGER.info("Applied {}% spell resistance bonus for {} school to entity {} ({}★ {})",
                 bonusPercentage, school.getId(), entity.getEntityName(), starLevel, entityClass.getName());
+                
+ */
     }
 
     private static void applyAttributeBonus(RandomHumanEntity entity, Holder<Attribute> attributeHolder,

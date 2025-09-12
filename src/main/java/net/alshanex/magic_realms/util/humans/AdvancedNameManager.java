@@ -59,7 +59,7 @@ public class AdvancedNameManager {
             loadNamesFromJson("names/male_names.json", Gender.MALE);
             loadNamesFromJson("names/female_names.json", Gender.FEMALE);
 
-            MagicRealms.LOGGER.info("Successfully loaded {} male names and {} female names",
+            MagicRealms.LOGGER.debug("Successfully loaded {} male names and {} female names",
                     NAMES_BY_GENDER.get(Gender.MALE).size(),
                     NAMES_BY_GENDER.get(Gender.FEMALE).size());
 

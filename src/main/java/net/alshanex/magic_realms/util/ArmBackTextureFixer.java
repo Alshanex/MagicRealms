@@ -28,7 +28,7 @@ public class ArmBackTextureFixer {
 
         g2d.dispose();
 
-        MagicRealms.LOGGER.debug("Fixed arm back stripes in texture");
+        //MagicRealms.LOGGER.debug("Fixed arm back stripes in texture");
         return fixedTexture;
     }
 
@@ -39,7 +39,7 @@ public class ArmBackTextureFixer {
 
             // Verificar si esta área tiene problemas (píxeles transparentes)
             if (hasTransparentPixels(source, backX, backY, backWidth, backHeight)) {
-                MagicRealms.LOGGER.debug("Fixing right arm back at {}x{} {}x{}", backX, backY, backWidth, backHeight);
+                //MagicRealms.LOGGER.debug("Fixing right arm back at {}x{} {}x{}", backX, backY, backWidth, backHeight);
 
                 //Copiar desde el frente del brazo (espejo)
                 copyAndMirrorRegion(g2d, source, 44, 20, 4, 12, backX, backY);
@@ -56,7 +56,7 @@ public class ArmBackTextureFixer {
             int backX = 44, backY = 52, backWidth = 4, backHeight = 12;
 
             if (hasTransparentPixels(source, backX, backY, backWidth, backHeight)) {
-                MagicRealms.LOGGER.debug("Fixing left arm back at {}x{} {}x{}", backX, backY, backWidth, backHeight);
+                //MagicRealms.LOGGER.debug("Fixing left arm back at {}x{} {}x{}", backX, backY, backWidth, backHeight);
 
                 // Copiar desde el frente del brazo izquierdo (espejo)
                 copyAndMirrorRegion(g2d, source, 36, 52, 4, 12, backX, backY);
@@ -103,7 +103,7 @@ public class ArmBackTextureFixer {
             // Dibujar en la posición destino
             g2d.drawImage(mirroredRegion, destX, destY, null);
 
-            MagicRealms.LOGGER.debug("Copied and mirrored region from {}x{} to {}x{}", srcX, srcY, destX, destY);
+            //MagicRealms.LOGGER.debug("Copied and mirrored region from {}x{} to {}x{}", srcX, srcY, destX, destY);
 
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error copying and mirroring region", e);
@@ -135,7 +135,7 @@ public class ArmBackTextureFixer {
                 g2d.setColor(armColor);
                 g2d.fillRect(destX, destY, width, height);
 
-                MagicRealms.LOGGER.debug("Filled arm back region with average color: {}", armColor);
+                //MagicRealms.LOGGER.debug("Filled arm back region with average color: {}", armColor);
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error filling region with arm color");

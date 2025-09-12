@@ -702,8 +702,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             if (currentTimer <= 0) {
                 setStunned(false);
                 this.heal(this.getMaxHealth() * 0.5f); // Heal to 50% when recovering
-
-                MagicRealms.LOGGER.info("Entity {} recovered from stun", this.getEntityName());
             }
         }
     }
@@ -830,7 +828,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public void clearContract() {
         ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
         contractData.clearContract();
-        MagicRealms.LOGGER.info("Contract manually cleared for entity {}", this.getEntityName());
+        MagicRealms.LOGGER.debug("Contract manually cleared for entity {}", this.getEntityName());
     }
 
     public int getTotalEmeralds() {

@@ -1181,8 +1181,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     this.getX(), this.getY() + 0.5, this.getZ(), emeraldToAdd);
             emeraldEntity.setDefaultPickUpDelay();
             level().addFreshEntity(emeraldEntity);
-
-            MagicRealms.LOGGER.debug("Entity {} inventory full, dropped emerald on ground", this.getEntityName());
         } else {
             inventory.addItem(emeraldToAdd);
         }

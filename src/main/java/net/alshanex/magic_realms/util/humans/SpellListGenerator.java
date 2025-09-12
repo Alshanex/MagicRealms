@@ -52,6 +52,7 @@ public class SpellListGenerator {
                 spellCount);
 
         List<AbstractSpell> availableSpells = new ArrayList<>();
+        List<AbstractSpell> availableAttackSpells = new ArrayList<>();
 
         // Obtener spells de todas las escuelas del mage
         for (SchoolType school : magicSchools) {
@@ -59,12 +60,18 @@ public class SpellListGenerator {
             List<AbstractSpell> enabledSchoolSpells = schoolSpells.stream()
                     .filter(spell -> spell.isEnabled() && !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
                     .toList();
+
             availableSpells.addAll(enabledSchoolSpells);
 
-            MagicRealms.LOGGER.debug("School {} has {} enabled spells: [{}]",
+            // Filter attack spells from this school
+            List<AbstractSpell> schoolAttackSpells = ModTags.filterAttackSpells(enabledSchoolSpells);
+            availableAttackSpells.addAll(schoolAttackSpells);
+
+            MagicRealms.LOGGER.debug("School {} has {} enabled spells: [{}], {} attack spells",
                     school.getId(),
                     enabledSchoolSpells.size(),
-                    enabledSchoolSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
+                    enabledSchoolSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")),
+                    schoolAttackSpells.size());
         }
 
         if (availableSpells.isEmpty()) {
@@ -73,8 +80,32 @@ public class SpellListGenerator {
             return new ArrayList<>();
         }
 
-        // Seleccionar spells aleatorios
-        return selectRandomSpells(availableSpells, spellCount, random);
+        List<AbstractSpell> selectedSpells = new ArrayList<>();
+
+        // First, ensure we have at least one attack spell if available
+        if (!availableAttackSpells.isEmpty()) {
+            AbstractSpell attackSpell = availableAttackSpells.get(random.nextInt(availableAttackSpells.size()));
+            selectedSpells.add(attackSpell);
+            MagicRealms.LOGGER.debug("Guaranteed attack spell selected: {}", attackSpell.getSpellName());
+
+            // Remove the selected attack spell from the general pool to avoid duplicates
+            availableSpells.remove(attackSpell);
+            spellCount--; // Reduce remaining spell count
+        } else {
+            MagicRealms.LOGGER.warn("No attack spells available for mage with schools: {}",
+                    magicSchools.stream().map(s -> s.getId().toString()).collect(Collectors.joining(", ")));
+        }
+
+        // Fill remaining slots with random spells (if any slots remain)
+        if (spellCount > 0 && !availableSpells.isEmpty()) {
+            List<AbstractSpell> remainingSpells = selectRandomSpells(availableSpells, spellCount, random);
+            selectedSpells.addAll(remainingSpells);
+        }
+
+        MagicRealms.LOGGER.debug("Final spell selection: [{}]",
+                selectedSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
+
+        return selectedSpells;
     }
 
     private static List<AbstractSpell> generateWarriorSpells(int starLevel, RandomSource random) {

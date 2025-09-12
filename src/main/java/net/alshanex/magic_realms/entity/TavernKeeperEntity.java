@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.entity;
 
 import com.google.common.collect.Sets;
+import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
@@ -14,6 +15,7 @@ import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
@@ -22,6 +24,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -46,6 +49,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public TavernKeeperEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         xpReward = 0;
+        this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep"), 95.0, AttributeModifier.Operation.ADD_VALUE));
     }
 
     @Override
@@ -61,7 +65,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 .setDrinksPotions()
                 .setSingleUseSpell(SpellRegistry.SUMMON_SWORDS.get(), 1200, 2000, 4, 6)
         );
-        this.goalSelector.addGoal(3, new PatrolNearLocationGoal(this, 30, .75f));
+        this.goalSelector.addGoal(3, new PatrolNearLocationGoal(this, 5, .75f));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(10, new WizardRecoverGoal(this));
 

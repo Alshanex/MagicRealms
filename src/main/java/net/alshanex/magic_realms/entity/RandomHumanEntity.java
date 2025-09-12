@@ -1116,6 +1116,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             return InteractionResult.FAIL;
         }
 
+        if (heldItem.is(Items.EMERALD)) {
+            boolean tradeSuccessful = handleEmeraldTrade(player, heldItem);
+            return tradeSuccessful ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+        }
+
         if (heldItem.getItem() instanceof PermanentContractItem) {
             ContractUtils.handlePermanentContractCreation(player, this, contractData, heldItem);
         } else if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
@@ -1125,6 +1130,81 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         return super.mobInteract(player, hand);
+    }
+
+    private boolean handleEmeraldTrade(Player player, ItemStack emeraldStack) {
+        if (emeraldStack.getCount() < 1) {
+            return false;
+        }
+
+        // Get all non-emerald items from inventory
+        List<Integer> availableSlots = new ArrayList<>();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (!stack.isEmpty() && !stack.is(Items.EMERALD)) {
+                availableSlots.add(i);
+            }
+        }
+
+        if (availableSlots.isEmpty()) {
+            // No items to trade, send message to player
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.no_items_to_trade", this.getEntityName()));
+            }
+            return false;
+        }
+
+        // Select random item slot
+        int randomSlot = availableSlots.get(this.getRandom().nextInt(availableSlots.size()));
+        ItemStack tradeItem = inventory.getItem(randomSlot);
+
+        if (tradeItem.isEmpty()) {
+            return false;
+        }
+
+        // Create a copy of the item to trade (only 1 item)
+        ItemStack itemToGive = tradeItem.copyWithCount(1);
+
+        // Remove one item from the entity's inventory
+        tradeItem.shrink(1);
+        if (tradeItem.isEmpty()) {
+            inventory.setItem(randomSlot, ItemStack.EMPTY);
+        }
+
+        // Consume one emerald from player
+        emeraldStack.shrink(1);
+
+        ItemStack emeraldToAdd = new ItemStack(Items.EMERALD, 1);
+        if (!inventory.canAddItem(emeraldToAdd)) {
+            // Entity inventory full, drop emerald at entity's location
+            ItemEntity emeraldEntity = new ItemEntity(level(),
+                    this.getX(), this.getY() + 0.5, this.getZ(), emeraldToAdd);
+            emeraldEntity.setDefaultPickUpDelay();
+            level().addFreshEntity(emeraldEntity);
+
+            MagicRealms.LOGGER.debug("Entity {} inventory full, dropped emerald on ground", this.getEntityName());
+        } else {
+            inventory.addItem(emeraldToAdd);
+        }
+
+        // Give item to player
+        if (!player.getInventory().add(itemToGive)) {
+            // Player inventory full, drop item at player's location
+            ItemEntity itemEntity = new ItemEntity(level(),
+                    player.getX(), player.getY() + 0.1, player.getZ(), itemToGive);
+            itemEntity.setDefaultPickUpDelay();
+            level().addFreshEntity(itemEntity);
+        }
+
+        // Play trading sound
+        this.playSound(SoundEvents.VILLAGER_TRADE, 1.0F, 1.0F);
+
+        // Send success message
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.trade_success",
+                    this.getEntityName()));
+        }
+        return true;
     }
 
     public EntityTextureConfig getTextureConfig() {

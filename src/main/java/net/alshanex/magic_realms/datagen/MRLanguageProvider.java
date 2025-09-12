@@ -79,5 +79,7 @@ public class MRLanguageProvider extends LanguageProvider {
 
         add("message.magic_realms.already_immortal", "%s: Thanks but i don't need that, i already have my own pass");
         add("message.magic_realms.granted_immortality", "%s: Oh, i've been searching for this pass for a long time, thank you so much!");
+        add("ui.magic_realms.no_items_to_trade", "%s: Sorry, i have nothing i can give you for that emerald");
+        add("ui.magic_realms.trade_success", "%s: Thanks for the emerald! Take this in return");
     }
 }

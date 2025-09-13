@@ -174,9 +174,9 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public boolean isHostileTowards(LivingEntity entity) {
         LivingEntity last = entity.getLastHurtMob();
         if (last != null) {
-            if (this.isAlliedTo(last)) return true;
+            if (this.isAlliedTo(last) || last.is(this)) return true;
         }
-        if(entity instanceof Mob mob && mob.getTarget() != null && this.isAlliedTo(mob.getTarget())){
+        if(entity instanceof Mob mob && mob.getTarget() != null && (this.isAlliedTo(mob.getTarget()) || mob.getTarget().is(this))){
             return true;
         }
         return super.isHostileTowards(entity);

@@ -99,6 +99,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Boolean> IS_IMMORTAL = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_STUNNED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> STUN_TIMER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> EMERALD_BALANCE = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
 
     private EntityType<?> fearedEntityType = null;
     private boolean fearGoalInitialized = false;
@@ -302,8 +303,69 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             default -> 5;
         };
 
-        ItemStack emeralds = new ItemStack(Items.EMERALD, emeraldCount);
-        getInventory().addItem(emeralds);
+        addEmeralds(emeraldCount);
+    }
+
+    public int getEmeraldBalance() {
+        return this.entityData.get(EMERALD_BALANCE);
+    }
+
+    public void setEmeraldBalance(int balance) {
+        this.entityData.set(EMERALD_BALANCE, Math.max(0, balance));
+    }
+
+    public void addEmeralds(int amount) {
+        if (amount > 0) {
+            setEmeraldBalance(getEmeraldBalance() + amount);
+            MagicRealms.LOGGER.debug("Entity {} added {} emeralds to balance, new total: {}",
+                    getEntityName(), amount, getEmeraldBalance());
+        }
+    }
+
+    public boolean removeEmeralds(int amount) {
+        int current = getEmeraldBalance();
+        if (current >= amount) {
+            setEmeraldBalance(current - amount);
+            MagicRealms.LOGGER.debug("Entity {} removed {} emeralds from balance, remaining: {}",
+                    getEntityName(), amount, getEmeraldBalance());
+            return true;
+        }
+        return false;
+    }
+
+    public int getTotalEmeralds() {
+        return getEmeraldBalance();
+    }
+
+    public int getOverflowEmeralds() {
+        return Math.max(0, getTotalEmeralds() - Config.emeraldOverflowThreshold);
+    }
+
+    public boolean canUseOverflowEmeralds() {
+        if (getOverflowEmeralds() <= 0) {
+            return false;
+        }
+        VillagerOffersData offersData = this.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
+        return !offersData.hasAnyUnaffordableOffers();
+    }
+
+    public boolean spendEmeralds(int amount) {
+        return removeEmeralds(amount);
+    }
+
+    public boolean hasEmeralds(int amount) {
+        return getEmeraldBalance() >= amount;
+    }
+
+    public void consolidateEmeralds() {
+        SimpleContainer inventory = getInventory();
+        int inventoryEmeralds = inventory.countItem(Items.EMERALD);
+
+        if (inventoryEmeralds > 0) {
+            // Remove all emeralds from inventory and add to balance
+            MRUtils.removeItemsFromInventory(inventory, Items.EMERALD, inventoryEmeralds);
+            addEmeralds(inventoryEmeralds);
+        }
     }
 
     public List<AbstractSpell> getPersistedSpells() {
@@ -474,12 +536,26 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     protected void pickUpItem(ItemEntity itemEntity) {
         ItemStack pickedUpItem = itemEntity.getItem();
+
+        // Handle emerald pickup specially - always convert to stored balance
+        if (pickedUpItem.is(Items.EMERALD)) {
+            addEmeralds(pickedUpItem.getCount());
+            itemEntity.discard();
+
+            // Play pickup sound
+            this.playSound(SoundEvents.ITEM_PICKUP, 0.2F,
+                    ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+
+            recheckUnaffordableOffers();
+            return;
+        }
+
+        // Handle other items normally
         InventoryCarrier.pickUpItem(this, this, itemEntity);
         MRUtils.autoEquipBetterEquipment(this);
 
-        if (pickedUpItem.is(Items.EMERALD)) {
-            recheckUnaffordableOffers();
-        }
+        // Auto-consolidate any emeralds that might have been in the picked up item
+        consolidateEmeralds();
     }
 
     @Override
@@ -513,12 +589,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         Set<UUID> villagerUUIDs = new HashSet<>(memory.getVillagersWithUnaffordableOffers());
 
         for (UUID villagerUUID : villagerUUIDs) {
-            List<MerchantOffer> nowAffordable = memory.checkAffordableOffers(villagerUUID, this.getInventory());
-
-            if (!nowAffordable.isEmpty()) {
-                MagicRealms.LOGGER.debug("Entity {} can now afford {} offers from villager {}",
-                        this.getEntityName(), nowAffordable.size(), villagerUUID);
-            }
+            // Check affordability using internal emerald balance
+            List<MerchantOffer> nowAffordable = memory.checkAffordableOffersWithBalance(
+                    villagerUUID, this.getInventory(), this.getEmeraldBalance());
         }
     }
 
@@ -772,6 +845,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             }
         }
 
+        if (!level().isClientSide && this.tickCount % 200 == 0) {
+            consolidateEmeralds();
+        }
+
         if (!level().isClientSide && this.tickCount % 20 == 0) {
             ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
 
@@ -831,23 +908,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         MagicRealms.LOGGER.debug("Contract manually cleared for entity {}", this.getEntityName());
     }
 
-    public int getTotalEmeralds() {
-        return this.getInventory().countItem(Items.EMERALD);
-    }
-
-    public int getOverflowEmeralds() {
-        return Math.max(0, getTotalEmeralds() - Config.emeraldOverflowThreshold);
-    }
-
-    public boolean canUseOverflowEmeralds() {
-        if (getOverflowEmeralds() <= 0) {
-            return false;
-        }
-
-        VillagerOffersData offersData = this.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
-        return !offersData.hasAnyUnaffordableOffers();
-    }
-
     @Override
     public boolean shouldSheathSword() {
         return true;
@@ -871,6 +931,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(IS_IMMORTAL, false);
         pBuilder.define(IS_STUNNED, false);
         pBuilder.define(STUN_TIMER, 0);
+        pBuilder.define(EMERALD_BALANCE, 0);
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -1172,16 +1233,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         // Consume one emerald from player
         emeraldStack.shrink(1);
 
-        ItemStack emeraldToAdd = new ItemStack(Items.EMERALD, 1);
-        if (!inventory.canAddItem(emeraldToAdd)) {
-            // Entity inventory full, drop emerald at entity's location
-            ItemEntity emeraldEntity = new ItemEntity(level(),
-                    this.getX(), this.getY() + 0.5, this.getZ(), emeraldToAdd);
-            emeraldEntity.setDefaultPickUpDelay();
-            level().addFreshEntity(emeraldEntity);
-        } else {
-            inventory.addItem(emeraldToAdd);
-        }
+        // Add emerald to entity's stored balance instead of inventory
+        this.addEmeralds(1);
 
         // Give item to player
         if (!player.getInventory().add(itemToGive)) {
@@ -1312,6 +1365,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putBoolean("IsImmortal", this.entityData.get(IS_IMMORTAL));
         compound.putBoolean("IsStunned", this.entityData.get(IS_STUNNED));
         compound.putInt("StunTimer", this.entityData.get(STUN_TIMER));
+
+        compound.putInt("EmeraldBalance", getEmeraldBalance());
     }
 
     @Override
@@ -1430,6 +1485,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(IS_IMMORTAL, compound.getBoolean("IsImmortal"));
         this.entityData.set(IS_STUNNED, compound.getBoolean("IsStunned"));
         this.entityData.set(STUN_TIMER, compound.getInt("StunTimer"));
+
+        setEmeraldBalance(compound.getInt("EmeraldBalance"));
     }
 
     private boolean isAlliedHelper(Entity entity) {

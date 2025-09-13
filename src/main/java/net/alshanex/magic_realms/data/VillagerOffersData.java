@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.neoforged.neoforge.common.util.INBTSerializable;
@@ -20,18 +21,20 @@ public class VillagerOffersData implements INBTSerializable<CompoundTag> {
     public VillagerOffersData() {}
 
     /**
-     * Store unaffordable offers for a villager
+     * Store unaffordable offers, checking against emerald balance instead of inventory emeralds
      */
-    public void storeUnaffordableOffers(UUID villagerUUID, List<MerchantOffer> offers) {
-        if (!offers.isEmpty()) {
-            // Create copies to avoid reference issues
-            List<MerchantOffer> offerCopies = new ArrayList<>();
-            for (MerchantOffer offer : offers) {
-                offerCopies.add(offer.copy());
+    public void storeUnaffordableOffersWithBalance(UUID villagerUUID, List<MerchantOffer> offers,
+                                                   SimpleContainer inventory, int emeraldBalance) {
+        List<MerchantOffer> unaffordable = new ArrayList<>();
+
+        for (MerchantOffer offer : offers) {
+            if (!canAffordOfferWithBalance(offer, inventory, emeraldBalance)) {
+                unaffordable.add(offer);
             }
-            unaffordableOffers.put(villagerUUID, offerCopies);
-        } else {
-            unaffordableOffers.remove(villagerUUID);
+        }
+
+        if (!unaffordable.isEmpty()) {
+            unaffordableOffers.put(villagerUUID, unaffordable);
         }
     }
 
@@ -43,44 +46,59 @@ public class VillagerOffersData implements INBTSerializable<CompoundTag> {
     }
 
     /**
-     * Check if we can now afford any previously unaffordable offers
+     * Check affordability using internal emerald balance instead of physical emeralds
+     * This method should be added to the VillagerOffersData class
      */
-    public List<MerchantOffer> checkAffordableOffers(UUID villagerUUID, SimpleContainer inventory) {
-        List<MerchantOffer> storedOffers = unaffordableOffers.get(villagerUUID);
-        if (storedOffers == null || storedOffers.isEmpty()) {
+    public List<MerchantOffer> checkAffordableOffersWithBalance(UUID villagerUUID, SimpleContainer inventory, int emeraldBalance) {
+        List<MerchantOffer> unaffordableOffersFromVillager = this.unaffordableOffers.get(villagerUUID);
+        if (unaffordableOffersFromVillager == null || unaffordableOffersFromVillager.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<MerchantOffer> nowAffordable = new ArrayList<>();
-        Iterator<MerchantOffer> iterator = storedOffers.iterator();
+        Iterator<MerchantOffer> iterator = unaffordableOffersFromVillager.iterator();
 
         while (iterator.hasNext()) {
             MerchantOffer offer = iterator.next();
-            if (canAffordOffer(offer, inventory)) {
+
+            if (canAffordOfferWithBalance(offer, inventory, emeraldBalance)) {
                 nowAffordable.add(offer);
                 iterator.remove(); // Remove from unaffordable list
             }
         }
 
-        // Clean up empty entries
-        if (storedOffers.isEmpty()) {
-            unaffordableOffers.remove(villagerUUID);
+        // Clean up empty lists
+        if (unaffordableOffersFromVillager.isEmpty()) {
+            this.unaffordableOffers.remove(villagerUUID);
         }
 
         return nowAffordable;
     }
 
     /**
-     * Check if entity can afford a specific offer
+     * Check if an offer can be afforded using inventory items and internal emerald balance
      */
-    private boolean canAffordOffer(MerchantOffer offer, SimpleContainer inventory) {
+    private boolean canAffordOfferWithBalance(MerchantOffer offer, SimpleContainer inventory, int emeraldBalance) {
         ItemStack costA = offer.getCostA();
         ItemStack costB = offer.getCostB();
 
+        // Check first cost
         boolean canAffordA = costA.isEmpty() ||
-                inventory.countItem(costA.getItem()) >= costA.getCount();
+                (costA.is(Items.EMERALD) ?
+                        emeraldBalance >= costA.getCount() :
+                        inventory.countItem(costA.getItem()) >= costA.getCount());
+
+        // Check second cost
         boolean canAffordB = costB.isEmpty() ||
-                inventory.countItem(costB.getItem()) >= costB.getCount();
+                (costB.is(Items.EMERALD) ?
+                        emeraldBalance >= costB.getCount() :
+                        inventory.countItem(costB.getItem()) >= costB.getCount());
+
+        // Handle combined emerald costs (both costs are emeralds)
+        if (costA.is(Items.EMERALD) && costB.is(Items.EMERALD)) {
+            int totalEmeraldCost = costA.getCount() + costB.getCount();
+            return emeraldBalance >= totalEmeraldCost;
+        }
 
         return canAffordA && canAffordB;
     }

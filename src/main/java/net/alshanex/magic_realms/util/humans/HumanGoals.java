@@ -403,9 +403,8 @@ public class HumanGoals {
                 // Remove the item from inventory
                 inventory.removeItem(itemSlot, 1);
 
-                // Add emeralds to inventory
-                ItemStack emeralds = new ItemStack(Items.EMERALD, emeraldsToGet);
-                inventory.addItem(emeralds);
+                // Add emeralds to stored balance instead of inventory
+                entity.addEmeralds(emeraldsToGet);
 
                 // Play trading sound
                 entity.playSound(SoundEvents.VILLAGER_YES, 1.0F, 1.0F);
@@ -422,8 +421,8 @@ public class HumanGoals {
                 // Recheck unaffordable offers since we got emeralds
                 recheckUnaffordableOffers();
 
-                MagicRealms.LOGGER.debug("Entity {} completed selling, now has {} emeralds total",
-                        entity.getEntityName(), inventory.countItem(Items.EMERALD));
+                MagicRealms.LOGGER.debug("Entity {} completed selling, now has {} total emeralds",
+                        entity.getEntityName(), entity.getTotalEmeralds());
 
                 return true; // Successful trade
             }
@@ -442,8 +441,9 @@ public class HumanGoals {
             Set<UUID> villagerUUIDs = new HashSet<>(memory.getVillagersWithUnaffordableOffers());
 
             for (UUID villagerUUID : villagerUUIDs) {
-                // This will automatically remove affordable offers from the unaffordable list
-                List<MerchantOffer> nowAffordable = memory.checkAffordableOffers(villagerUUID, entity.getInventory());
+                // Use the new method that works with emerald balance
+                List<MerchantOffer> nowAffordable = memory.checkAffordableOffersWithBalance(
+                        villagerUUID, entity.getInventory(), entity.getEmeraldBalance());
 
                 if (!nowAffordable.isEmpty()) {
                     MagicRealms.LOGGER.debug("Entity {} can now afford {} offers from villager {} after selling",
@@ -587,7 +587,8 @@ public class HumanGoals {
             List<Villager> nearbyVillagers = entity.level().getEntitiesOfClass(Villager.class, searchArea);
 
             for (Villager villager : nearbyVillagers) {
-                List<MerchantOffer> affordableOffers = memory.checkAffordableOffers(villager.getUUID(), entity.getInventory());
+                List<MerchantOffer> affordableOffers = memory.checkAffordableOffersWithBalance(
+                        villager.getUUID(), entity.getInventory(), entity.getEmeraldBalance());
 
                 for (MerchantOffer offer : affordableOffers) {
                     if (isNeededItem(offer.getResult()) && !offer.isOutOfStock()) {
@@ -639,7 +640,8 @@ public class HumanGoals {
                     } else {
                         // Store shield offer as unaffordable
                         List<MerchantOffer> shieldOffers = Arrays.asList(createShieldOffer());
-                        memory.storeUnaffordableOffers(villager.getUUID(), shieldOffers);
+                        memory.storeUnaffordableOffersWithBalance(villager.getUUID(), shieldOffers,
+                                entity.getInventory(), entity.getEmeraldBalance());
                     }
                 }
 
@@ -649,7 +651,6 @@ public class HumanGoals {
 
                     boolean needsStaffResult = needsStaff();
                     boolean needsSpellbookResult = needsSpellbook();
-                    int emeraldCount = entity.getInventory().countItem(Items.EMERALD);
 
                     // Check for staff first
                     if (needsStaffResult) {
@@ -661,7 +662,8 @@ public class HumanGoals {
                         } else {
                             // Store staff offer as unaffordable
                             List<MerchantOffer> staffOffers = Arrays.asList(createStaffOffer());
-                            memory.storeUnaffordableOffers(villager.getUUID(), staffOffers);
+                            memory.storeUnaffordableOffersWithBalance(villager.getUUID(), staffOffers,
+                                    entity.getInventory(), entity.getEmeraldBalance());
                         }
                     }
 
@@ -676,7 +678,8 @@ public class HumanGoals {
                         } else {
                             // Store spellbook offer as unaffordable
                             List<MerchantOffer> spellbookOffers = Arrays.asList(createSpellbookOffer());
-                            memory.storeUnaffordableOffers(villager.getUUID(), spellbookOffers);
+                            memory.storeUnaffordableOffersWithBalance(villager.getUUID(), spellbookOffers,
+                                    entity.getInventory(), entity.getEmeraldBalance());
                         }
                     }
                 }
@@ -817,7 +820,8 @@ public class HumanGoals {
             }
 
             if (!unaffordableOffers.isEmpty()) {
-                memory.storeUnaffordableOffers(villager.getUUID(), unaffordableOffers);
+                memory.storeUnaffordableOffersWithBalance(villager.getUUID(), unaffordableOffers,
+                        entity.getInventory(), entity.getEmeraldBalance());
             }
         }
 
@@ -906,21 +910,32 @@ public class HumanGoals {
         }
 
         private boolean canAffordOffer(MerchantOffer offer) {
-            SimpleContainer inventory = entity.getInventory();
-
             ItemStack costA = offer.getCostA();
             ItemStack costB = offer.getCostB();
 
+            // Check first cost
             boolean canAffordA = costA.isEmpty() ||
-                    inventory.countItem(costA.getItem()) >= costA.getCount();
+                    (costA.is(Items.EMERALD) ?
+                            entity.hasEmeralds(costA.getCount()) :
+                            entity.getInventory().countItem(costA.getItem()) >= costA.getCount());
+
+            // Check second cost
             boolean canAffordB = costB.isEmpty() ||
-                    inventory.countItem(costB.getItem()) >= costB.getCount();
+                    (costB.is(Items.EMERALD) ?
+                            entity.hasEmeralds(costB.getCount()) :
+                            entity.getInventory().countItem(costB.getItem()) >= costB.getCount());
+
+            // Handle combined emerald costs
+            if (costA.is(Items.EMERALD) && costB.is(Items.EMERALD)) {
+                int totalEmeraldCost = costA.getCount() + costB.getCount();
+                return entity.hasEmeralds(totalEmeraldCost);
+            }
 
             return canAffordA && canAffordB;
         }
 
         private boolean hasEmeralds(int count) {
-            return entity.getInventory().countItem(Items.EMERALD) >= count;
+            return entity.hasEmeralds(count);
         }
 
         private MerchantOffer createShieldOffer() {
@@ -940,28 +955,44 @@ public class HumanGoals {
             if (!canAffordOffer(targetOffer)) {
                 // Store as unaffordable and stop
                 VillagerOffersData memory = entity.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
-                memory.storeUnaffordableOffers(targetVillager.getUUID(), Arrays.asList(targetOffer));
+                memory.storeUnaffordableOffersWithBalance(targetVillager.getUUID(),
+                        Arrays.asList(targetOffer), entity.getInventory(), entity.getEmeraldBalance());
                 stop();
                 return;
             }
 
             // If this offer came from memory, verify the villager still has it
             if (fromMemory && !villagerHasOffer(targetVillager, targetOffer)) {
-                // Offer no longer exists, stop and clear from memory
                 stop();
                 return;
             }
 
             SimpleContainer inventory = entity.getInventory();
 
-            // Remove cost items from inventory
+            // Remove cost items
             ItemStack costA = targetOffer.getCostA();
             ItemStack costB = targetOffer.getCostB();
 
-            if (!costA.isEmpty()) {
+            // Calculate total emerald cost first (for combined emerald costs)
+            int totalEmeraldCost = 0;
+            if (costA.is(Items.EMERALD)) totalEmeraldCost += costA.getCount();
+            if (costB.is(Items.EMERALD)) totalEmeraldCost += costB.getCount();
+
+            // Handle emerald costs
+            if (totalEmeraldCost > 0) {
+                if (!entity.spendEmeralds(totalEmeraldCost)) {
+                    MagicRealms.LOGGER.warn("Entity {} failed to spend {} emeralds for trade",
+                            entity.getEntityName(), totalEmeraldCost);
+                    return;
+                }
+            }
+
+            // Handle non-emerald costs
+            if (!costA.isEmpty() && !costA.is(Items.EMERALD)) {
                 MRUtils.removeItemsFromInventory(inventory, costA.getItem(), costA.getCount());
             }
-            if (!costB.isEmpty()) {
+
+            if (!costB.isEmpty() && !costB.is(Items.EMERALD)) {
                 MRUtils.removeItemsFromInventory(inventory, costB.getItem(), costB.getCount());
             }
 
@@ -977,6 +1008,9 @@ public class HumanGoals {
             // Play trading sound
             entity.playSound(SoundEvents.VILLAGER_YES, 1.0F, 1.0F);
             targetVillager.playSound(SoundEvents.VILLAGER_YES, 1.0F, 1.0F);
+
+            MagicRealms.LOGGER.debug("Entity {} completed equipment purchase, remaining emeralds: {}",
+                    entity.getEntityName(), entity.getTotalEmeralds());
 
             // Reset for next search
             targetOffer = null;
@@ -3434,13 +3468,15 @@ public class HumanGoals {
         }
 
         private boolean hasOverflowEmeralds() {
-            int totalEmeralds = entity.getInventory().countItem(Items.EMERALD);
-            return totalEmeralds > Config.emeraldOverflowThreshold;
+            return entity.getTotalEmeralds() > Config.emeraldOverflowThreshold;
         }
 
         private int getOverflowEmeraldCount() {
-            int totalEmeralds = entity.getInventory().countItem(Items.EMERALD);
-            return Math.max(0, totalEmeralds - Config.emeraldOverflowThreshold);
+            return Math.max(0, entity.getTotalEmeralds() - Config.emeraldOverflowThreshold);
+        }
+
+        private boolean removeEmeralds(int count) {
+            return entity.spendEmeralds(count);
         }
 
         private boolean findSuitableVillagerAndExchangeType() {
@@ -3541,32 +3577,6 @@ public class HumanGoals {
 
             MagicRealms.LOGGER.debug("Applied effect {} (Level {}, Duration: {}s) to entity {}",
                     randomEffect.getKey(), amplifier + 1, duration / 20, entity.getEntityName());
-        }
-
-        private boolean removeEmeralds(int count) {
-            int remaining = count;
-
-            for (int i = 0; i < entity.getInventory().getContainerSize() && remaining > 0; i++) {
-                ItemStack stack = entity.getInventory().getItem(i);
-
-                if (stack.is(Items.EMERALD)) {
-                    int toRemove = Math.min(remaining, stack.getCount());
-                    stack.shrink(toRemove);
-                    remaining -= toRemove;
-
-                    if (stack.isEmpty()) {
-                        entity.getInventory().setItem(i, ItemStack.EMPTY);
-                    }
-                }
-            }
-
-            boolean success = remaining == 0;
-            if (!success) {
-                MagicRealms.LOGGER.warn("Entity {} failed to remove {} emeralds from inventory",
-                        entity.getEntityName(), count);
-            }
-
-            return success;
         }
 
         private static class VillagerCandidate {

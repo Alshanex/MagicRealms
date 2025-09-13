@@ -11,6 +11,25 @@ import java.util.*;
 public class LayeredTextureManager {
     public static final Map<String, List<ResourceLocation>> TEXTURE_CACHE = new HashMap<>();
 
+    // New class to hold texture and its name
+    public static class TextureWithName {
+        private final ResourceLocation texture;
+        private final String name;
+
+        public TextureWithName(ResourceLocation texture, String name) {
+            this.texture = texture;
+            this.name = name;
+        }
+
+        public ResourceLocation getTexture() {
+            return texture;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     @OnlyIn(Dist.CLIENT)
     public static void loadTextures() {
         MagicRealms.LOGGER.debug("Starting to load layered textures...");
@@ -100,9 +119,61 @@ public class LayeredTextureManager {
         return textures.get(new Random().nextInt(textures.size()));
     }
 
-    public static ResourceLocation getRandomAdditionalTexture(Gender gender) {
+    // New method that returns both texture and name
+    public static TextureWithName getRandomAdditionalTextureWithName(Gender gender) {
         String category = "additional_" + gender.getName();
-        return getRandomTexture(category);
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No additional textures found for gender: " + gender.getName());
+            return null;
+        }
+
+        ResourceLocation selectedTexture = textures.get(new Random().nextInt(textures.size()));
+
+        // Extract the texture name from the ResourceLocation path
+        String textureName = extractTextureNameFromPath(selectedTexture.getPath());
+
+        MagicRealms.LOGGER.debug("Selected additional texture: {} with name: {} for gender: {}",
+                selectedTexture, textureName, gender.getName());
+
+        return new TextureWithName(selectedTexture, textureName);
+    }
+
+    // Helper method to extract a clean texture name from the file path
+    private static String extractTextureNameFromPath(String path) {
+        try {
+            // Extract the filename from the path
+            String filename = path.substring(path.lastIndexOf('/') + 1);
+
+            // Remove the .png extension
+            if (filename.endsWith(".png")) {
+                filename = filename.substring(0, filename.length() - 4);
+            }
+
+            // Convert underscores to spaces and capitalize each word for a prettier name
+            String[] words = filename.split("_");
+            StringBuilder prettyName = new StringBuilder();
+
+            for (int i = 0; i < words.length; i++) {
+                if (i > 0) {
+                    prettyName.append(" ");
+                }
+
+                String word = words[i];
+                if (!word.isEmpty()) {
+                    // Capitalize first letter, lowercase the rest
+                    prettyName.append(Character.toUpperCase(word.charAt(0)))
+                            .append(word.substring(1).toLowerCase());
+                }
+            }
+
+            return prettyName.toString();
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to extract texture name from path: " + path, e);
+            return "Unknown";
+        }
     }
 
     public static boolean hasAdditionalTextures(Gender gender) {

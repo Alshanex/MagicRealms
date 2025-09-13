@@ -42,7 +42,7 @@ public abstract class WololoSpellMixin extends AbstractSpell {
                 boolean success = human.regenerateTexture();
                 if (success) {
                     // Trigger client-side update
-                    human.forceTextureRegeneration();
+                    human.forceTextureRegenerationWithName();
                 }
                 MagicManager.spawnParticles(level, ParticleTypes.CRIT, human.getX(), human.getY() + .6, human.getZ(), 25, .5, .5, .5, 0, false);
             }

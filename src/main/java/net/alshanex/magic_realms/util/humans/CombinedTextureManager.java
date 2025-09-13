@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CombinedTextureManager {
     private static final Map<String, ResourceLocation> COMBINED_TEXTURE_CACHE = new ConcurrentHashMap<>();
     private static final Set<String> ACTIVE_ENTITIES = ConcurrentHashMap.newKeySet();
+    // New cache to store texture names for entities that used preset textures
+    private static final Map<String, String> ENTITY_TEXTURE_NAMES = new ConcurrentHashMap<>();
     private static Path textureOutputDir;
     private static String currentWorldName = null;
 
@@ -32,6 +34,23 @@ public class CombinedTextureManager {
     private static final Random TEXTURE_RANDOM = new Random();
     // Chance to use additional texture (30% = 0.3)
     private static final double ADDITIONAL_TEXTURE_CHANCE = 0.3;
+
+    // Result class to hold both texture and name information
+    public static class TextureResult {
+        private final ResourceLocation textureLocation;
+        private final String textureName;
+        private final boolean isPresetTexture;
+
+        public TextureResult(ResourceLocation textureLocation, String textureName, boolean isPresetTexture) {
+            this.textureLocation = textureLocation;
+            this.textureName = textureName;
+            this.isPresetTexture = isPresetTexture;
+        }
+
+        public ResourceLocation getTextureLocation() { return textureLocation; }
+        public String getTextureName() { return textureName; }
+        public boolean isPresetTexture() { return isPresetTexture; }
+    }
 
     // This will be called from WorldEventHandler when a world loads
     public static void setWorldDirectory(Path worldSaveDir, String worldName) {
@@ -83,6 +102,223 @@ public class CombinedTextureManager {
         } catch (IOException e) {
             MagicRealms.LOGGER.error("Failed to create texture output directory for world '{}'", worldName, e);
         }
+    }
+
+    // Modified method that now returns TextureResult with name information
+    public static TextureResult getCombinedTextureWithHairAndName(String entityUUID, Gender gender, EntityClass entityClass, int hairTextureIndex) {
+        // SAFETY CHECK: Ensure we're using the correct world directory
+        if (textureOutputDir == null) {
+            MagicRealms.LOGGER.warn("Texture directory not set, attempting to initialize...");
+            initializeDirectories();
+
+            if (textureOutputDir == null) {
+                MagicRealms.LOGGER.error("Failed to initialize texture directory!");
+                return null;
+            }
+        }
+
+        // ADDITIONAL SAFETY: Verify we're using the correct world directory, not the fallback
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            IntegratedServer server = mc.getSingleplayerServer();
+
+            if (server != null) {
+                // Check if current directory matches the actual world directory
+                Path actualWorldDir = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
+
+                if (!textureOutputDir.equals(actualWorldDir)) {
+                    MagicRealms.LOGGER.warn("Texture directory mismatch detected!");
+                    MagicRealms.LOGGER.warn("Current: {}", textureOutputDir);
+                    MagicRealms.LOGGER.warn("Expected: {}", actualWorldDir);
+                    MagicRealms.LOGGER.warn("Correcting texture directory...");
+
+                    // Update to correct directory
+                    textureOutputDir = actualWorldDir;
+                    Files.createDirectories(textureOutputDir);
+                    currentWorldName = server.getWorldData().getLevelName();
+
+                    MagicRealms.LOGGER.debug("Corrected texture directory to: {}", textureOutputDir);
+                }
+            } else if (mc.getCurrentServer() != null) {
+                // Similar check for multiplayer
+                String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
+                Path expectedMultiplayerDir = mc.gameDirectory.toPath()
+                        .resolve("multiplayer_textures").resolve(serverName)
+                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
+
+                if (!textureOutputDir.equals(expectedMultiplayerDir)) {
+                    MagicRealms.LOGGER.warn("Multiplayer texture directory mismatch detected!");
+                    MagicRealms.LOGGER.warn("Current: {}", textureOutputDir);
+                    MagicRealms.LOGGER.warn("Expected: {}", expectedMultiplayerDir);
+
+                    textureOutputDir = expectedMultiplayerDir;
+                    Files.createDirectories(textureOutputDir);
+                    currentWorldName = "multiplayer_" + serverName;
+
+                    MagicRealms.LOGGER.debug("Corrected multiplayer texture directory to: {}", textureOutputDir);
+                }
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error during texture directory validation: {}", e.getMessage());
+        }
+
+        MagicRealms.LOGGER.debug("Using texture directory: {}", textureOutputDir);
+
+        // Track this entity as active
+        ACTIVE_ENTITIES.add(entityUUID);
+
+        if (COMBINED_TEXTURE_CACHE.containsKey(entityUUID)) {
+            MagicRealms.LOGGER.debug("Using cached complete texture for entity: " + entityUUID);
+            String cachedTextureName = ENTITY_TEXTURE_NAMES.get(entityUUID);
+            boolean isPreset = cachedTextureName != null && !cachedTextureName.isEmpty();
+            return new TextureResult(COMBINED_TEXTURE_CACHE.get(entityUUID), cachedTextureName, isPreset);
+        }
+
+        // Use the improved texture search method
+        Path texturePath = findExistingTextureFile(entityUUID);
+        if (texturePath != null) {
+            MagicRealms.LOGGER.info("Found existing texture for entity {} at: {}", entityUUID, texturePath);
+
+            // Update textureOutputDir to match the directory where we found the texture
+            Path foundDir = texturePath.getParent();
+            if (!foundDir.equals(textureOutputDir)) {
+                MagicRealms.LOGGER.info("Updating texture output directory from {} to {}", textureOutputDir, foundDir);
+                textureOutputDir = foundDir;
+            }
+
+            try {
+                long fileSize = Files.size(texturePath);
+                if (fileSize > 0) {
+                    BufferedImage existingImage = ImageIO.read(texturePath.toFile());
+                    if (existingImage != null && existingImage.getWidth() > 0 && existingImage.getHeight() > 0) {
+                        ResourceLocation location = DynamicTextureManager.registerDynamicTexture(entityUUID, existingImage);
+                        if (location != null) {
+                            COMBINED_TEXTURE_CACHE.put(entityUUID, location);
+                            MagicRealms.LOGGER.info("Successfully loaded existing texture from: {}", texturePath);
+
+                            // Check if this entity had a preset texture name stored
+                            String storedTextureName = ENTITY_TEXTURE_NAMES.get(entityUUID);
+                            boolean isPreset = storedTextureName != null && !storedTextureName.isEmpty();
+
+                            return new TextureResult(location, storedTextureName, isPreset);
+                        }
+                    } else {
+                        MagicRealms.LOGGER.warn("Existing texture file appears corrupted for entity {}", entityUUID);
+
+                        // Instead of deleting immediately, rename the corrupted file for debugging
+                        try {
+                            Path backupPath = texturePath.getParent().resolve(entityUUID + "_corrupted_" + System.currentTimeMillis() + ".png");
+                            Files.move(texturePath, backupPath);
+                            MagicRealms.LOGGER.info("Moved corrupted texture to: {}", backupPath);
+                        } catch (IOException moveException) {
+                            MagicRealms.LOGGER.error("Failed to backup corrupted texture: {}", moveException.getMessage());
+                        }
+                    }
+                } else {
+                    MagicRealms.LOGGER.warn("Texture file is empty for entity {}, will regenerate", entityUUID);
+                    try {
+                        Files.delete(texturePath);
+                    } catch (IOException deleteError) {
+                        MagicRealms.LOGGER.error("Failed to delete empty texture file: {}", deleteError.getMessage());
+                    }
+                }
+            } catch (IOException e) {
+                MagicRealms.LOGGER.error("Failed to load existing texture from {}: {}", texturePath, e.getMessage());
+            }
+        }
+
+        // Generate new texture if we reach here
+        try {
+            TextureCreationResult result = createCompleteTextureWithName(gender, entityClass, hairTextureIndex);
+            if (result != null && result.image != null) {
+                ResourceLocation location = DynamicTextureManager.registerDynamicTexture(entityUUID, result.image);
+                if (location != null) {
+                    COMBINED_TEXTURE_CACHE.put(entityUUID, location);
+
+                    // Store the texture name if it's a preset texture
+                    if (result.isPresetTexture && result.textureName != null) {
+                        ENTITY_TEXTURE_NAMES.put(entityUUID, result.textureName);
+                    }
+
+                    // Save to disk in the correct directory
+                    if (textureOutputDir != null) {
+                        try {
+                            Path newTexturePath = textureOutputDir.resolve(entityUUID + "_complete.png");
+                            ImageIO.write(result.image, "PNG", newTexturePath.toFile());
+                            MagicRealms.LOGGER.debug("Created and saved new complete texture for entity: " + entityUUID + " at: " + newTexturePath);
+                        } catch (IOException e) {
+                            MagicRealms.LOGGER.error("Failed to save complete texture to disk for entity " + entityUUID, e);
+                        }
+                    }
+
+                    return new TextureResult(location, result.textureName, result.isPresetTexture);
+                }
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to create complete texture for entity " + entityUUID, e);
+        }
+
+        return null;
+    }
+
+    // Internal class for texture creation results
+    private static class TextureCreationResult {
+        final BufferedImage image;
+        final String textureName;
+        final boolean isPresetTexture;
+
+        TextureCreationResult(BufferedImage image, String textureName, boolean isPresetTexture) {
+            this.image = image;
+            this.textureName = textureName;
+            this.isPresetTexture = isPresetTexture;
+        }
+    }
+
+    private static TextureCreationResult createCompleteTextureWithName(Gender gender, EntityClass entityClass, int hairTextureIndex) {
+        try {
+            // Roll for texture type: 70% layered, 30% additional
+            double roll = TEXTURE_RANDOM.nextDouble();
+            boolean useAdditionalTexture = roll < ADDITIONAL_TEXTURE_CHANCE;
+
+            MagicRealms.LOGGER.debug("Texture selection roll: {:.3f} (threshold: {:.3f}) - Using {}",
+                    roll, ADDITIONAL_TEXTURE_CHANCE, useAdditionalTexture ? "additional texture" : "layered texture");
+
+            // Try to use additional texture if selected
+            if (useAdditionalTexture && LayeredTextureManager.hasAdditionalTextures(gender)) {
+                LayeredTextureManager.TextureWithName additionalResult = LayeredTextureManager.getRandomAdditionalTextureWithName(gender);
+                if (additionalResult != null && additionalResult.getTexture() != null) {
+                    BufferedImage additionalImage = loadImage(additionalResult.getTexture());
+                    if (additionalImage != null) {
+                        MagicRealms.LOGGER.debug("Successfully loaded additional {} texture: {} with name: {}",
+                                gender.getName(), additionalResult.getTexture(), additionalResult.getName());
+
+                        // Apply arm fixes to additional texture as well
+                        BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(additionalImage);
+                        return new TextureCreationResult(finalTexture, additionalResult.getName(), true);
+                    } else {
+                        MagicRealms.LOGGER.warn("Failed to load additional texture: {}, falling back to layered", additionalResult.getTexture());
+                    }
+                } else {
+                    MagicRealms.LOGGER.warn("No additional texture found for gender: {}, falling back to layered", gender.getName());
+                }
+            } else if (useAdditionalTexture) {
+                MagicRealms.LOGGER.debug("Additional texture requested but none available for gender: {}, using layered", gender.getName());
+            }
+
+            // Fallback to layered texture generation (original method)
+            BufferedImage layeredTexture = createLayeredTexture(gender, entityClass, hairTextureIndex);
+            return new TextureCreationResult(layeredTexture, null, false);
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error creating complete texture", e);
+            return null;
+        }
+    }
+
+    private static BufferedImage createCompleteTexture(Gender gender, EntityClass entityClass, int hairTextureIndex) {
+        TextureCreationResult result = createCompleteTextureWithName(gender, entityClass, hairTextureIndex);
+        return result != null ? result.image : null;
     }
 
     // Fallback initialization for when no world is loaded
@@ -272,12 +508,12 @@ public class CombinedTextureManager {
         // Use the improved texture search method
         Path texturePath = findExistingTextureFile(entityUUID);
         if (texturePath != null) {
-            MagicRealms.LOGGER.info("Found existing texture for entity {} at: {}", entityUUID, texturePath);
+            MagicRealms.LOGGER.debug("Found existing texture for entity {} at: {}", entityUUID, texturePath);
 
             // Update textureOutputDir to match the directory where we found the texture
             Path foundDir = texturePath.getParent();
             if (!foundDir.equals(textureOutputDir)) {
-                MagicRealms.LOGGER.info("Updating texture output directory from {} to {}", textureOutputDir, foundDir);
+                MagicRealms.LOGGER.debug("Updating texture output directory from {} to {}", textureOutputDir, foundDir);
                 textureOutputDir = foundDir;
             }
 
@@ -289,7 +525,7 @@ public class CombinedTextureManager {
                         ResourceLocation location = DynamicTextureManager.registerDynamicTexture(entityUUID, existingImage);
                         if (location != null) {
                             COMBINED_TEXTURE_CACHE.put(entityUUID, location);
-                            MagicRealms.LOGGER.info("Successfully loaded existing texture from: {}", texturePath);
+                            MagicRealms.LOGGER.debug("Successfully loaded existing texture from: {}", texturePath);
                             return location;
                         }
                     } else {
@@ -299,7 +535,7 @@ public class CombinedTextureManager {
                         try {
                             Path backupPath = texturePath.getParent().resolve(entityUUID + "_corrupted_" + System.currentTimeMillis() + ".png");
                             Files.move(texturePath, backupPath);
-                            MagicRealms.LOGGER.info("Moved corrupted texture to: {}", backupPath);
+                            MagicRealms.LOGGER.debug("Moved corrupted texture to: {}", backupPath);
                         } catch (IOException moveException) {
                             MagicRealms.LOGGER.error("Failed to backup corrupted texture: {}", moveException.getMessage());
                         }
@@ -344,46 +580,6 @@ public class CombinedTextureManager {
         }
 
         return null;
-    }
-
-    private static BufferedImage createCompleteTexture(Gender gender, EntityClass entityClass, int hairTextureIndex) {
-        try {
-            // Roll for texture type: 70% layered, 30% additional
-            double roll = TEXTURE_RANDOM.nextDouble();
-            boolean useAdditionalTexture = roll < ADDITIONAL_TEXTURE_CHANCE;
-
-            MagicRealms.LOGGER.debug("Texture selection roll: {:.3f} (threshold: {:.3f}) - Using {}",
-                    roll, ADDITIONAL_TEXTURE_CHANCE, useAdditionalTexture ? "additional texture" : "layered texture");
-
-            // Try to use additional texture if selected
-            if (useAdditionalTexture && LayeredTextureManager.hasAdditionalTextures(gender)) {
-                ResourceLocation additionalTexture = LayeredTextureManager.getRandomAdditionalTexture(gender);
-                if (additionalTexture != null) {
-                    BufferedImage additionalImage = loadImage(additionalTexture);
-                    if (additionalImage != null) {
-                        MagicRealms.LOGGER.debug("Successfully loaded additional {} texture: {}",
-                                gender.getName(), additionalTexture);
-
-                        // Apply arm fixes to additional texture as well
-                        BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(additionalImage);
-                        return finalTexture;
-                    } else {
-                        MagicRealms.LOGGER.warn("Failed to load additional texture: {}, falling back to layered", additionalTexture);
-                    }
-                } else {
-                    MagicRealms.LOGGER.warn("No additional texture found for gender: {}, falling back to layered", gender.getName());
-                }
-            } else if (useAdditionalTexture) {
-                MagicRealms.LOGGER.debug("Additional texture requested but none available for gender: {}, using layered", gender.getName());
-            }
-
-            // Fallback to layered texture generation (original method)
-            return createLayeredTexture(gender, entityClass, hairTextureIndex);
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Error creating complete texture", e);
-            return null;
-        }
     }
 
     private static BufferedImage createLayeredTexture(Gender gender, EntityClass entityClass, int hairTextureIndex) {
@@ -541,6 +737,10 @@ public class CombinedTextureManager {
 
             // Remove from cache
             COMBINED_TEXTURE_CACHE.remove(entityUUID);
+
+            // Remove texture name mapping
+            ENTITY_TEXTURE_NAMES.remove(entityUUID);
+
             DynamicTextureManager.unregisterTexture(entityUUID);
 
             // Only delete file if entity truly despawned/died
@@ -573,108 +773,8 @@ public class CombinedTextureManager {
         DynamicTextureManager.clearAllTextures();
     }
 
-    public static void cleanupOrphanedTextures() {
-        if (textureOutputDir == null || !Files.exists(textureOutputDir)) {
-            return;
-        }
-
-        try {
-            // Only clean up textures that are older than 1 hour (definitely from previous sessions)
-            long oneHourAgo = System.currentTimeMillis() - (60 * 60 * 1000);
-
-            Files.walk(textureOutputDir)
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith("_complete.png"))
-                    .filter(path -> {
-                        try {
-                            return Files.getLastModifiedTime(path).toMillis() < oneHourAgo;
-                        } catch (Exception e) {
-                            return false; // Don't delete if we can't check the time
-                        }
-                    })
-                    .forEach(path -> {
-                        try {
-                            String fileName = path.getFileName().toString();
-                            String entityUUID = fileName.replace("_complete.png", "");
-
-                            // Only delete if not currently active
-                            if (!ACTIVE_ENTITIES.contains(entityUUID)) {
-                                Files.delete(path);
-                                MagicRealms.LOGGER.debug("Cleaned up old orphaned texture: {}", path.getFileName());
-                            }
-                        } catch (IOException e) {
-                            MagicRealms.LOGGER.error("Failed to delete old orphaned texture: {}", path, e);
-                        }
-                    });
-        } catch (IOException e) {
-            MagicRealms.LOGGER.error("Failed to cleanup orphaned textures", e);
-        }
-    }
-
-    public static void cleanupInactiveEntityTextures() {
-        if (textureOutputDir == null || !Files.exists(textureOutputDir)) {
-            return;
-        }
-
-        try {
-            Files.walk(textureOutputDir)
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith("_complete.png"))
-                    .forEach(path -> {
-                        try {
-                            String fileName = path.getFileName().toString();
-                            String entityUUID = fileName.replace("_complete.png", "");
-
-                            // Only delete if not currently active and not in cache
-                            if (!ACTIVE_ENTITIES.contains(entityUUID) && !COMBINED_TEXTURE_CACHE.containsKey(entityUUID)) {
-                                Files.delete(path);
-                                MagicRealms.LOGGER.debug("Cleaned up texture for inactive entity: {}", entityUUID);
-                            }
-                        } catch (IOException e) {
-                            MagicRealms.LOGGER.error("Failed to delete inactive entity texture: {}", path, e);
-                        }
-                    });
-        } catch (IOException e) {
-            MagicRealms.LOGGER.error("Failed to cleanup inactive entity textures", e);
-        }
-    }
-
-    public static void cleanupAllTexturesOnShutdown() {
-        if (textureOutputDir == null || !Files.exists(textureOutputDir)) {
-            return;
-        }
-
-        MagicRealms.LOGGER.debug("Game shutting down - cleaning up session markers only, preserving textures");
-
-        try {
-            // Only clean up session markers, not the actual textures
-            Files.walk(textureOutputDir)
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().startsWith(".session_"))
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                            MagicRealms.LOGGER.debug("Cleaned up session marker on shutdown: {}", path.getFileName());
-                        } catch (IOException e) {
-                            MagicRealms.LOGGER.error("Failed to delete session marker on shutdown: {}", path, e);
-                        }
-                    });
-        } catch (IOException e) {
-            MagicRealms.LOGGER.error("Failed to cleanup session markers on shutdown", e);
-        }
-    }
-
     // Configuration methods
     public static double getAdditionalTextureChance() {
         return ADDITIONAL_TEXTURE_CHANCE;
-    }
-
-    // For debugging
-    public static Path getCurrentTextureDirectory() {
-        return textureOutputDir;
-    }
-
-    public static String getCurrentWorldName() {
-        return currentWorldName;
     }
 }

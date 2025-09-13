@@ -9,6 +9,8 @@ public class EntityTextureConfig {
     private final EntityClass entityClass;
     private final String entityUUID;
     private final int hairTextureIndex;
+    private final String textureName; // Name from preset texture
+    private final boolean isPresetTexture; // Whether this uses a preset texture
 
     public EntityTextureConfig(String entityUUID, Gender gender, EntityClass entityClass, int hairTextureIndex) {
         this.entityUUID = entityUUID;
@@ -17,16 +19,29 @@ public class EntityTextureConfig {
         this.hairTextureIndex = hairTextureIndex;
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-            this.completeTexture = CombinedTextureManager.getCombinedTextureWithHair(entityUUID, gender, entityClass, hairTextureIndex);
+            CombinedTextureManager.TextureResult result = CombinedTextureManager.getCombinedTextureWithHairAndName(entityUUID, gender, entityClass, hairTextureIndex);
 
-            if (this.completeTexture == null) {
-                MagicRealms.LOGGER.error("Failed to create complete texture for entity: {}", entityUUID);
+            if (result != null) {
+                this.completeTexture = result.getTextureLocation();
+                this.textureName = result.getTextureName();
+                this.isPresetTexture = result.isPresetTexture();
+
+                if (this.completeTexture == null) {
+                    MagicRealms.LOGGER.error("Failed to create complete texture for entity: {}", entityUUID);
+                } else {
+                    MagicRealms.LOGGER.debug("Created complete texture config for entity: {} -> texture: {}, hair index: {}, preset name: {}",
+                            entityUUID, this.completeTexture, hairTextureIndex, this.textureName);
+                }
             } else {
-                MagicRealms.LOGGER.debug("Created complete texture config for entity: {} -> texture: {}, hair index: {}",
-                        entityUUID, this.completeTexture, hairTextureIndex);
+                this.completeTexture = null;
+                this.textureName = null;
+                this.isPresetTexture = false;
+                MagicRealms.LOGGER.error("Failed to get texture result for entity: {}", entityUUID);
             }
         } else {
             this.completeTexture = null;
+            this.textureName = null;
+            this.isPresetTexture = false;
         }
     }
 
@@ -37,18 +52,32 @@ public class EntityTextureConfig {
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
             this.hairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
-            this.completeTexture = CombinedTextureManager.getCombinedTextureWithHair(entityUUID, gender, entityClass, hairTextureIndex);
 
-            if (this.completeTexture == null) {
-                MagicRealms.LOGGER.error("Failed to create complete texture for entity: {}", entityUUID);
+            CombinedTextureManager.TextureResult result = CombinedTextureManager.getCombinedTextureWithHairAndName(entityUUID, gender, entityClass, hairTextureIndex);
+
+            if (result != null) {
+                this.completeTexture = result.getTextureLocation();
+                this.textureName = result.getTextureName();
+                this.isPresetTexture = result.isPresetTexture();
+
+                if (this.completeTexture == null) {
+                    MagicRealms.LOGGER.error("Failed to create complete texture for entity: {}", entityUUID);
+                } else {
+                    MagicRealms.LOGGER.debug("Created complete texture config for entity: {} -> texture: {}, hair index: {}, preset name: {}",
+                            entityUUID, this.completeTexture, hairTextureIndex, this.textureName);
+                }
             } else {
-                MagicRealms.LOGGER.debug("Created complete texture config for entity: {} -> texture: {}, hair index: {}",
-                        entityUUID, this.completeTexture, hairTextureIndex);
+                this.completeTexture = null;
+                this.textureName = null;
+                this.isPresetTexture = false;
+                MagicRealms.LOGGER.error("Failed to get texture result for entity: {}", entityUUID);
             }
         } else {
             // Server side - use dummy values
             this.hairTextureIndex = -1;
             this.completeTexture = null;
+            this.textureName = null;
+            this.isPresetTexture = false;
         }
     }
 
@@ -78,5 +107,18 @@ public class EntityTextureConfig {
 
     public boolean hasValidTexture() {
         return completeTexture != null;
+    }
+
+    // New methods to get texture name information
+    public String getTextureName() {
+        return textureName;
+    }
+
+    public boolean isPresetTexture() {
+        return isPresetTexture;
+    }
+
+    public boolean hasTextureName() {
+        return textureName != null && !textureName.isEmpty();
     }
 }

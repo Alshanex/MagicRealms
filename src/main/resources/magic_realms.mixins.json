@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "net.alshanex.magic_realms.mixin",
-  "compatibilityLevel": "JAVA_17",
+  "compatibilityLevel": "JAVA_21",
   "refmap": "magic_realms.refmap.json",
   "mixins": [
     "WololoSpellMixin",

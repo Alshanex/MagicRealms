@@ -943,26 +943,71 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         Gender gender = Gender.values()[randomSource.nextInt(Gender.values().length)];
         EntityClass entityClass = EntityClass.values()[randomSource.nextInt(EntityClass.values().length)];
 
-        String randomName = AdvancedNameManager.getRandomName(gender);
-
+        // Initialize basic appearance data
         this.entityData.set(GENDER, gender.ordinal());
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
-        this.entityData.set(ENTITY_NAME, randomName);
 
         // Only create texture config on client side
         if (this.level().isClientSide()) {
             this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
+
+            // Check if we got a preset texture with a name
+            if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
+                // Use the texture name as the entity name
+                String textureName = this.textureConfig.getTextureName();
+                this.entityData.set(ENTITY_NAME, textureName);
+
+                MagicRealms.LOGGER.info("Entity {} assigned preset texture name: {}",
+                        this.getUUID().toString(), textureName);
+            } else {
+                // Use random generated name for layered textures
+                String randomName = AdvancedNameManager.getRandomName(gender);
+                this.entityData.set(ENTITY_NAME, randomName);
+
+                MagicRealms.LOGGER.debug("Entity {} assigned random name: {} (layered texture)",
+                        this.getUUID().toString(), randomName);
+            }
         } else {
-            // Server side - texture config will be created when needed on client
+            // Server side - DON'T assign name yet, wait for client to determine texture type
             this.textureConfig = null;
+            // Leave ENTITY_NAME empty for now - it will be set when texture config is created
+            this.entityData.set(ENTITY_NAME, ""); // Empty name initially
         }
 
         this.appearanceGenerated = true;
 
-        updateCustomNameWithStars();
+        MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}, Stars={}, Name={}",
+                this.getUUID().toString(), gender.getName(), entityClass.getName(),
+                this.entityData.get(STAR_LEVEL), this.entityData.get(ENTITY_NAME));
+    }
 
-        MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}, Stars={}",
-                this.getUUID().toString(), gender.getName(), entityClass.getName(), this.entityData.get(STAR_LEVEL));
+    public void updateNameFromTexture() {
+        if (!this.level().isClientSide()) {
+            return; // Only run on client side
+        }
+
+        // Only update if name is empty (hasn't been set yet)
+        String currentName = this.entityData.get(ENTITY_NAME);
+        if (!currentName.isEmpty()) {
+            return; // Name already set
+        }
+
+        if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
+            String textureName = this.textureConfig.getTextureName();
+            this.entityData.set(ENTITY_NAME, textureName);
+            this.updateCustomNameWithStars();
+
+            MagicRealms.LOGGER.info("Updated entity {} name to preset texture name: {}",
+                    this.getUUID().toString(), textureName);
+        } else {
+            // Fallback to random name if no preset texture name
+            String randomName = AdvancedNameManager.getRandomName(this.getGender());
+            this.entityData.set(ENTITY_NAME, randomName);
+            this.updateCustomNameWithStars();
+
+            MagicRealms.LOGGER.debug("Updated entity {} name to random name: {} (layered texture)",
+                    this.getUUID().toString(), randomName);
+        }
     }
 
     private void initializeStarLevel(RandomSource randomSource) {
@@ -982,14 +1027,17 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public void updateCustomNameWithStars() {
         String entityName = this.entityData.get(ENTITY_NAME);
+
+        // Don't update if name is empty
+        if (entityName.isEmpty()) {
+            return;
+        }
+
         KillTrackerData data = this.getData(MRDataAttachments.KILL_TRACKER);
 
-        if (!entityName.isEmpty()) {
-
-            Component nameComponent = Component.literal(entityName + " Lv. " + data.getCurrentLevel());
-            this.setCustomName(nameComponent);
-            this.setCustomNameVisible(true);
-        }
+        Component nameComponent = Component.literal(entityName + " Lv. " + data.getCurrentLevel());
+        this.setCustomName(nameComponent);
+        this.setCustomNameVisible(true);
     }
 
     public int getStarLevel() {
@@ -1285,6 +1333,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
                 this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass, newHairTextureIndex);
                 MagicRealms.LOGGER.debug("Regenerated texture config for entity {} with hair index: {}", this.getEntityName(), newHairTextureIndex);
+
+                // Update name based on texture type
+                updateNameFromTexture();
 
             } catch (Exception e) {
                 MagicRealms.LOGGER.error("Failed to regenerate texture config for entity {}", this.getEntityName(), e);
@@ -1652,9 +1703,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
-    public void forceTextureRegeneration() {
+    public void forceTextureRegenerationWithName() {
         if (!this.level().isClientSide()) {
-            if (this.regenerateTexture()) {
+            if (this.regenerateTextureAndName()) {
                 // Send packet to client to regenerate texture
                 this.level().broadcastEntityEvent(this, (byte) 60); // Custom event ID for texture update
                 MagicRealms.LOGGER.debug("Broadcasted texture regeneration event for entity {}", this.getEntityName());
@@ -1662,9 +1713,49 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
-    public void setTextureConfig(EntityTextureConfig newConfig) {
-        this.textureConfig = newConfig;
-        MagicRealms.LOGGER.debug("Updated texture config for entity {}", this.getEntityName());
+    public boolean regenerateTextureAndName() {
+        if (!this.level().isClientSide()) {
+            return false;
+        }
+
+        try {
+            String entityUUID = this.getUUID().toString();
+            Gender gender = this.getGender();
+            EntityClass entityClass = this.getEntityClass();
+
+            MagicRealms.LOGGER.debug("Starting texture and name regeneration for entity {} (Gender: {}, Class: {})",
+                    this.getEntityName(), gender.getName(), entityClass.getName());
+
+            // Remove old texture from cache and delete file
+            CombinedTextureManager.removeEntityTexture(entityUUID, true); // true = delete file
+
+            // Force regeneration by clearing cache and letting the system recreate
+            this.textureConfig = null;
+
+            // Create new texture config (this will generate new texture and potentially new name)
+            this.textureConfig = new EntityTextureConfig(entityUUID, gender, entityClass);
+
+            // Update name if we got a preset texture
+            if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
+                String newTextureName = this.textureConfig.getTextureName();
+                this.entityData.set(ENTITY_NAME, newTextureName);
+                MagicRealms.LOGGER.info("Entity {} got new preset texture name: {}", entityUUID, newTextureName);
+            } else {
+                // Generate new random name for layered texture
+                String newRandomName = AdvancedNameManager.getRandomName(gender);
+                this.entityData.set(ENTITY_NAME, newRandomName);
+                MagicRealms.LOGGER.info("Entity {} got new random name: {} (layered texture)", entityUUID, newRandomName);
+            }
+
+            this.updateCustomNameWithStars();
+
+            MagicRealms.LOGGER.debug("Successfully completed texture and name regeneration for entity {}", this.getEntityName());
+            return true;
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to regenerate texture and name for entity {}", this.getEntityName(), e);
+            return false;
+        }
     }
 
     @Override

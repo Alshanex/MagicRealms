@@ -20,6 +20,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -42,6 +43,8 @@ import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.neoforged.neoforge.event.EventHooks;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
@@ -52,7 +55,6 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public TavernKeeperEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         xpReward = 0;
-        this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep"), 95.0, AttributeModifier.Operation.ADD_VALUE));
     }
 
     @Override
@@ -61,12 +63,11 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         this.goalSelector.addGoal(2, new WizardAttackGoal(this, 1.25f, 25, 50)
                 .setSpells(
                         List.of(SpellRegistry.SUNBEAM_SPELL.get()),
-                        List.of(SpellRegistry.INVISIBILITY_SPELL.get()),
                         List.of(),
-                        List.of(SpellRegistry.ROOT_SPELL.get(), SpellRegistry.INVISIBILITY_SPELL.get(), SpellRegistry.ABYSSAL_SHROUD_SPELL.get(), SpellRegistry.GREATER_HEAL_SPELL.get())
+                        List.of(),
+                        List.of()
                 )
                 .setDrinksPotions()
-                .setSingleUseSpell(SpellRegistry.SUMMON_SWORDS.get(), 1200, 2000, 4, 6)
         );
         this.goalSelector.addGoal(3, new PatrolNearLocationGoal(this, 5, .75f));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -158,6 +159,13 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 .add(Attributes.MAX_HEALTH, 2000.0)
                 .add(Attributes.FOLLOW_RANGE, 24.0)
                 .add(Attributes.MOVEMENT_SPEED, .25);
+    }
+
+    @Override
+    public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData) {
+        this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_holy_power"), 95.0, AttributeModifier.Operation.ADD_VALUE));
+        this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_spell_res"), 0.3, AttributeModifier.Operation.ADD_VALUE));
+        return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
     }
 
     @Override

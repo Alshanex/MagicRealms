@@ -934,6 +934,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(EMERALD_BALANCE, 0);
     }
 
+
     private void initializeRandomAppearance(RandomSource randomSource) {
         if (appearanceGenerated) {
             return;
@@ -948,7 +949,14 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
         this.entityData.set(ENTITY_NAME, randomName);
 
-        this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
+        // Only create texture config on client side
+        if (this.level().isClientSide()) {
+            this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
+        } else {
+            // Server side - texture config will be created when needed on client
+            this.textureConfig = null;
+        }
+
         this.appearanceGenerated = true;
 
         updateCustomNameWithStars();
@@ -1260,6 +1268,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (textureConfig == null) {
             if (!this.entityData.get(INITIALIZED)) {
                 MagicRealms.LOGGER.warn("Trying to get texture config before entity is initialized: {}", this.getUUID().toString());
+                return null;
+            }
+
+            // Only regenerate texture config on client side
+            if (!this.level().isClientSide()) {
+                MagicRealms.LOGGER.debug("Server side - not creating texture config for entity {}", this.getEntityName());
                 return null;
             }
 

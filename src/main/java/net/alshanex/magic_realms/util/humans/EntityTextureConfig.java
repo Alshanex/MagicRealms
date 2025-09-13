@@ -31,7 +31,25 @@ public class EntityTextureConfig {
     }
 
     public EntityTextureConfig(String entityUUID, Gender gender, EntityClass entityClass) {
-        this(entityUUID, gender, entityClass, LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName()));
+        this.entityUUID = entityUUID;
+        this.gender = gender;
+        this.entityClass = entityClass;
+
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+            this.hairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
+            this.completeTexture = CombinedTextureManager.getCombinedTextureWithHair(entityUUID, gender, entityClass, hairTextureIndex);
+
+            if (this.completeTexture == null) {
+                MagicRealms.LOGGER.error("Failed to create complete texture for entity: {}", entityUUID);
+            } else {
+                MagicRealms.LOGGER.debug("Created complete texture config for entity: {} -> texture: {}, hair index: {}",
+                        entityUUID, this.completeTexture, hairTextureIndex);
+            }
+        } else {
+            // Server side - use dummy values
+            this.hairTextureIndex = -1;
+            this.completeTexture = null;
+        }
     }
 
     public ResourceLocation getSkinTexture() {

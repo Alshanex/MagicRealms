@@ -67,7 +67,7 @@ public class MRItems {
             ITEMS.register("hell_pass", HellPass::new);
 
     public static final DeferredHolder<Item, Item> BLOOD_PACT =
-            ITEMS.register("blood_pact", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+            ITEMS.register("blood_pact", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
     public static final DeferredHolder<Item, PermanentBloodPact> PERMANENT_BLOOD_PACT =
             ITEMS.register("permanent_blood_pact", PermanentBloodPact::new);

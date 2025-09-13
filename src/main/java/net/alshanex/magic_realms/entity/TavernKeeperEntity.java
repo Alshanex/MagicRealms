@@ -37,6 +37,7 @@ import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -281,11 +282,12 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, new ItemStack(ItemRegistry.FIRE_ALE.get()), 3, 6).getOffer(this, this.random));
             this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_NOVICE.get(), 1), 7, 10).getOffer(this, this.random));
 
-            this.offers.addAll(createRandomOffers(1, 2));
+            this.offers.addAll(createRandomOffers(2, 3));
 
             this.offers.add(
                     new MerchantOffer(
                             new ItemCost(MRItems.PERMANENT_BLOOD_PACT.get(), 1),
+                            Optional.of(new ItemCost(Items.EMERALD, 64)),
                             new ItemStack(MRItems.CONTRACT_PERMANENT),
                             1,
                             0,

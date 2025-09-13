@@ -2,13 +2,23 @@ package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.TavernKeeperEntity;
 import net.alshanex.magic_realms.util.HumanEntityCommands;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+
+import java.util.List;
+import java.util.regex.Pattern;
 
 @EventBusSubscriber(modid = MagicRealms.MODID)
 public class ServerEvents {
@@ -26,5 +36,61 @@ public class ServerEvents {
             }
             human.refreshSpellsAfterEquipmentChange();
         }
+    }
+
+    private static final Pattern HOW_PATTERN = Pattern.compile("\\bhow\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern GET_OBTAIN_PATTERN = Pattern.compile("\\b(get|obtain)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TAVERNKEEP_PATTERN = Pattern.compile("\\b(tavernkeep|tavernkeeper)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern BLOOD_PACT_PATTERN = Pattern.compile("\\bblood pact\\b", Pattern.CASE_INSENSITIVE);
+
+    private static final double SEARCH_RADIUS = 5.0;
+
+    @SubscribeEvent
+    public static void onServerChat(ServerChatEvent event) {
+        Player player = event.getPlayer();
+        String message = event.getMessage().getString().toLowerCase();
+        Level level = player.level();
+
+        // Check if the message contains all required words/phrases
+        if (containsAllRequiredWords(message)) {
+            // Check for nearby TavernKeeperEntity
+            if (hasTavernKeeperNearby(player, level)) {
+                // Send the response message to the player
+                sendTavernKeeperResponse(player);
+            }
+        }
+    }
+
+    private static boolean containsAllRequiredWords(String message) {
+        return HOW_PATTERN.matcher(message).find() &&
+                GET_OBTAIN_PATTERN.matcher(message).find() &&
+                TAVERNKEEP_PATTERN.matcher(message).find() &&
+                BLOOD_PACT_PATTERN.matcher(message).find();
+    }
+
+    private static boolean hasTavernKeeperNearby(Player player, Level level) {
+        // Create a bounding box around the player
+        AABB searchArea = new AABB(
+                player.getX() - SEARCH_RADIUS,
+                player.getY() - SEARCH_RADIUS,
+                player.getZ() - SEARCH_RADIUS,
+                player.getX() + SEARCH_RADIUS,
+                player.getY() + SEARCH_RADIUS,
+                player.getZ() + SEARCH_RADIUS
+        );
+
+        // Get all TavernKeeperEntity instances in the area
+        List<TavernKeeperEntity> nearbyTavernKeepers = level.getEntitiesOfClass(
+                TavernKeeperEntity.class,
+                searchArea
+        );
+
+        return !nearbyTavernKeepers.isEmpty();
+    }
+
+    private static void sendTavernKeeperResponse(Player player) {
+        Component responseMessage = Component.translatable("message.magic_realms.tavernkeep_tip").withStyle(ChatFormatting.GOLD);
+
+        player.sendSystemMessage(responseMessage);
     }
 }

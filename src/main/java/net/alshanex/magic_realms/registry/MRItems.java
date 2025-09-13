@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.item.HellPass;
+import net.alshanex.magic_realms.item.PermanentBloodPact;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.util.ContractTier;
@@ -67,4 +68,7 @@ public class MRItems {
 
     public static final DeferredHolder<Item, Item> BLOOD_PACT =
             ITEMS.register("blood_pact", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+
+    public static final DeferredHolder<Item, PermanentBloodPact> PERMANENT_BLOOD_PACT =
+            ITEMS.register("permanent_blood_pact", PermanentBloodPact::new);
 }

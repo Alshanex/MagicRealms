@@ -23,6 +23,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MRItems.CONTRACT_PERMANENT.get(), "Permanent Contract");
         add(MRItems.HELL_PASS.get(), "Hell's Pass");
         add(MRItems.BLOOD_PACT.get(), "Blood Pact");
+        add(MRItems.PERMANENT_BLOOD_PACT.get(), "Binding Blood Pact");
 
         add(MREntityRegistry.HUMAN.get(), "Human");
         add(MREntityRegistry.TAVERNKEEP.get(), "Tavernkeep");
@@ -41,6 +42,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("tooltip.magic_realms.permanent_contract.warning", "This contract cannot be undone!");
         add("tooltip.magic_realms.permanent_contract.requirement", "Requires 200+ minutes of previous contracts with entity");
         add("tooltip.magic_realms.hell_pass", "Give to any human to allow him survive fatal hits");
+        add("tooltip.magic_realms.blood_pact", "Has the ability to bind two souls forever");
 
         // GUI translations
         add("gui.magic_realms.human_info.title", "Entity Information");
@@ -82,5 +84,6 @@ public class MRLanguageProvider extends LanguageProvider {
         add("message.magic_realms.granted_immortality", "%s: Oh, i've been searching for this pass for a long time, thank you so much!");
         add("ui.magic_realms.no_items_to_trade", "%s: Sorry, i have nothing i can give you for that emerald");
         add("ui.magic_realms.trade_success", "%s: Thanks for the emerald! Take this in return");
+        add("message.magic_realms.tavernkeep_tip", "Tavernkeep: I don't know the exact method, but i've heard rumours about a book called Necronomicon that has information regarding blood magic");
     }
 }

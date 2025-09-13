@@ -29,6 +29,7 @@ public class MRCreativeTab {
                 entries.accept(MRItems.CONTRACT_JOURNEYMAN.get());
                 entries.accept(MRItems.HELL_PASS.get());
                 entries.accept(MRItems.BLOOD_PACT.get());
+                entries.accept(MRItems.PERMANENT_BLOOD_PACT.get());
             })
             .withTabsBefore(CreativeTabRegistry.EQUIPMENT_TAB.getId())
             .build());

@@ -5,7 +5,7 @@
     "id": "irons_spellbooks:timeless_slurry"
   },
   "byproduct": {
-    "id": "magic_realms:contract_permanent"
+    "id": "magic_realms:permanent_blood_pact"
   },
   "input": {
     "item": "magic_realms:blood_pact"

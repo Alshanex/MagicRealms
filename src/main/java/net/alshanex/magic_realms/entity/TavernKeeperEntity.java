@@ -279,22 +279,19 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             this.offers = new MerchantOffers();
 
             this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, new ItemStack(ItemRegistry.FIRE_ALE.get()), 3, 6).getOffer(this, this.random));
-            this.offers.add(new AdditionalWanderingTrades.SimpleBuy(16, new ItemCost(MRItems.CONTRACT_NOVICE.get(), 1), 7, 10).getOffer(this, this.random));
+            this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_NOVICE.get(), 1), 7, 10).getOffer(this, this.random));
 
             this.offers.addAll(createRandomOffers(1, 2));
 
-            if (this.random.nextFloat() < 0.25f) {
-                this.offers.add(
-                        new MerchantOffer(
-                                new ItemCost(ItemRegistry.BLOODY_VELLUM.get(), 1),
-                                Optional.of(new ItemCost(MRItems.BLOOD_PACT.get(), 1)),
-                                new ItemStack(MRItems.CONTRACT_PERMANENT),
-                                1,
-                                0,
-                                .05f
-                        )
-                );
-            }
+            this.offers.add(
+                    new MerchantOffer(
+                            new ItemCost(MRItems.PERMANENT_BLOOD_PACT.get(), 1),
+                            new ItemStack(MRItems.CONTRACT_PERMANENT),
+                            1,
+                            0,
+                            .05f
+                    )
+            );
             this.offers.removeIf(Objects::isNull);
             //We count the creation of our stock as a restock so that we do not immediately refresh trades the same day.
             numberOfRestocksToday++;
@@ -303,10 +300,10 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     }
 
     private static final List<VillagerTrades.ItemListing> fillerOffers = List.of(
-            new AdditionalWanderingTrades.SimpleBuy(16, new ItemCost(MRItems.CONTRACT_APPRENTICE.get(), 1), 15, 20),
-            new AdditionalWanderingTrades.SimpleBuy(16, new ItemCost(MRItems.CONTRACT_JOURNEYMAN.get(), 1), 25, 35),
-            new AdditionalWanderingTrades.SimpleBuy(16, new ItemCost(MRItems.CONTRACT_EXPERT.get(), 1), 45, 55),
-            new AdditionalWanderingTrades.SimpleBuy(16, new ItemCost(MRItems.CONTRACT_MASTER.get(), 1), 60, 64)
+            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_APPRENTICE.get(), 1), 15, 20),
+            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_JOURNEYMAN.get(), 1), 25, 35),
+            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_EXPERT.get(), 1), 45, 55),
+            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_MASTER.get(), 1), 60, 64)
     );
 
     private Collection<MerchantOffer> createRandomOffers(int min, int max) {

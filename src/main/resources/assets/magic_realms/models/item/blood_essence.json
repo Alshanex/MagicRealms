@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "magic_realms:item/time_essence"
+    "layer0": "magic_realms:item/blood_essence"
   }
 }

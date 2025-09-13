@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
-import io.redspace.ironsspellbooks.entity.mobs.IMagicSummon;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
 import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
@@ -15,8 +14,6 @@ import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
@@ -40,7 +37,6 @@ import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -291,7 +287,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 this.offers.add(
                         new MerchantOffer(
                                 new ItemCost(ItemRegistry.BLOODY_VELLUM.get(), 1),
-                                Optional.of(new ItemCost(MRItems.TIME_ESSENCE.get(), 1)),
+                                Optional.of(new ItemCost(MRItems.BLOOD_PACT.get(), 1)),
                                 new ItemStack(MRItems.CONTRACT_PERMANENT),
                                 1,
                                 0,

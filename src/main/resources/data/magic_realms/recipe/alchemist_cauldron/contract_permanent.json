@@ -1,0 +1,14 @@
+{
+  "type": "irons_spellbooks:alchemist_cauldron_brew",
+  "base_fluid": {
+    "amount": 1000,
+    "id": "irons_spellbooks:timeless_slurry"
+  },
+  "byproduct": {
+    "id": "magic_realms:contract_permanent"
+  },
+  "input": {
+    "item": "magic_realms:blood_pact"
+  },
+  "results": []
+}

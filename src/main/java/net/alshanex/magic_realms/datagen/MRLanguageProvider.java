@@ -1,7 +1,6 @@
 package net.alshanex.magic_realms.datagen;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.registry.MRCreativeTab;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.minecraft.data.PackOutput;
@@ -23,7 +22,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MRItems.CONTRACT_MASTER.get(), "Master Contract");
         add(MRItems.CONTRACT_PERMANENT.get(), "Permanent Contract");
         add(MRItems.HELL_PASS.get(), "Hell's Pass");
-        add(MRItems.TIME_ESSENCE.get(), "Time Essence");
+        add(MRItems.BLOOD_PACT.get(), "Blood Pact");
 
         add(MREntityRegistry.HUMAN.get(), "Human");
         add(MREntityRegistry.TAVERNKEEP.get(), "Tavernkeep");

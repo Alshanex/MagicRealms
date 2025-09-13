@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.events;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
+import io.redspace.ironsspellbooks.entity.spells.devour_jaw.DevourJaw;
 import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
 import io.redspace.ironsspellbooks.registries.ParticleRegistry;
@@ -9,11 +10,16 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.registry.MRItems;
+import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.LevelingStatsManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -34,6 +40,24 @@ public class KillTrackingHandler {
         event.setCanceled(true);
         human.setHealth(human.getMaxHealth() / 2);
         knockbackAndStun(event.getSource(), human);
+    }
+
+    @SubscribeEvent
+    public static void onBossDeath(LivingDeathEvent event){
+        if(event.getEntity().getType().is(ModTags.BOSSES_TAG)){
+            if(event.getSource().getEntity() instanceof Player player && event.getSource().getDirectEntity() instanceof DevourJaw jaw
+                    && jaw.getOwner() != null && jaw.getOwner().is(player)){
+                ItemStack bloodPact = new ItemStack(MRItems.BLOOD_PACT, 1);
+                if(player.getItemBySlot(EquipmentSlot.OFFHAND).is(MRItems.CONTRACT_MASTER)){
+                    player.getItemBySlot(EquipmentSlot.OFFHAND).shrink(1);
+                    if(player.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty()){
+                        player.setItemSlot(EquipmentSlot.OFFHAND, bloodPact);
+                    } else {
+                        player.getInventory().add(bloodPact);
+                    }
+                }
+            }
+        }
     }
 
     private static void knockbackAndStun(DamageSource source, RandomHumanEntity entity) {
@@ -115,32 +139,6 @@ public class KillTrackingHandler {
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to spawn level up effects: {}", e.getMessage());
         }
-    }
-
-    public static KillTrackerData getKillData(RandomHumanEntity entity) {
-        return entity.getData(MRDataAttachments.KILL_TRACKER);
-    }
-
-    public static void setEntityLevel(RandomHumanEntity entity, int level) {
-        KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
-        killData.setLevel(level);
-
-        MagicRealms.LOGGER.debug("Manually set entity {} to level {}", entity.getEntityName(), level);
-    }
-
-    public static void addExperience(RandomHumanEntity entity, int experience) {
-        KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
-        int previousLevel = killData.getCurrentLevel();
-        killData.addExperience(experience);
-        int newLevel = killData.getCurrentLevel();
-
-        if (newLevel > previousLevel) {
-            spawnLevelUpEffects(entity);
-            entity.updateCustomNameWithStars();
-        }
-
-        MagicRealms.LOGGER.debug("Added {} experience to entity {} (Level: {})",
-                experience, entity.getEntityName(), newLevel);
     }
 
     private static final double SHARED_XP_MULTIPLIER = 0.5; // 50% of normal XP

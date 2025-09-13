@@ -22,40 +22,35 @@ public class MRItems {
     public static final DeferredHolder<Item, TieredContractItem> CONTRACT_NOVICE =
             ITEMS.register("contract_novice", () -> new TieredContractItem(
                     new Item.Properties()
-                            .stacksTo(64)
-                            .fireResistant(),
+                            .stacksTo(64),
                     ContractTier.NOVICE
             ));
 
     public static final DeferredHolder<Item, TieredContractItem> CONTRACT_APPRENTICE =
             ITEMS.register("contract_apprentice", () -> new TieredContractItem(
                     new Item.Properties()
-                            .stacksTo(64)
-                            .fireResistant(),
+                            .stacksTo(64),
                     ContractTier.APPRENTICE
             ));
 
     public static final DeferredHolder<Item, TieredContractItem> CONTRACT_JOURNEYMAN =
             ITEMS.register("contract_journeyman", () -> new TieredContractItem(
                     new Item.Properties()
-                            .stacksTo(64)
-                            .fireResistant(),
+                            .stacksTo(64),
                     ContractTier.JOURNEYMAN
             ));
 
     public static final DeferredHolder<Item, TieredContractItem> CONTRACT_EXPERT =
             ITEMS.register("contract_expert", () -> new TieredContractItem(
                     new Item.Properties()
-                            .stacksTo(64)
-                            .fireResistant(),
+                            .stacksTo(64),
                     ContractTier.EXPERT
             ));
 
     public static final DeferredHolder<Item, TieredContractItem> CONTRACT_MASTER =
             ITEMS.register("contract_master", () -> new TieredContractItem(
                     new Item.Properties()
-                            .stacksTo(64)
-                            .fireResistant(),
+                            .stacksTo(64),
                     ContractTier.MASTER
             ));
 
@@ -70,6 +65,6 @@ public class MRItems {
     public static final DeferredHolder<Item, HellPass> HELL_PASS =
             ITEMS.register("hell_pass", HellPass::new);
 
-    public static final DeferredHolder<Item, Item> TIME_ESSENCE =
-            ITEMS.register("time_essence", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    public static final DeferredHolder<Item, Item> BLOOD_PACT =
+            ITEMS.register("blood_pact", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
 }

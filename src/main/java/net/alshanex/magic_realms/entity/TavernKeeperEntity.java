@@ -78,34 +78,6 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     }
 
     @Override
-    public boolean hurt(DamageSource pSource, float pAmount) {
-        if (level().isClientSide) {
-            return false;
-        }
-        /*
-        can parry:
-        - serverside
-        - in combat
-        - we aren't in melee attack anim or spell cast
-        - the damage source is caused by an entity (ie not fall damage)
-        - the damage is caused within our rough field of vision (117 degrees)
-        - the damage is not /kill
-         */
-        boolean canParry = this.isAggressive() &&
-                !isImmobile() &&
-                !isAnimating() &&
-                pSource.getEntity() != null
-                && !pSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
-        if (canParry) {
-            serverTriggerAnimation("offhand_parry");
-            this.playSound(SoundRegistry.ABYSSAL_TELEPORT.get());
-            return false;
-        }
-
-        return super.hurt(pSource, pAmount);
-    }
-
-    @Override
     public boolean fireImmune() {
         return true;
     }
@@ -148,7 +120,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     @Override
     public boolean hasEffect(Holder<MobEffect> effect) {
         if(effect.is(MobEffectRegistry.ABYSSAL_SHROUD)){
-            return true;
+            return this.random.nextFloat() <= 0.50;
         }
         return super.hasEffect(effect);
     }

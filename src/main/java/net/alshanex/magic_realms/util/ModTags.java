@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,13 @@ public class ModTags {
     public static TagKey<AbstractSpell> COMMON_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "common_archer_spells"));
     public static TagKey<AbstractSpell> RARE_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "rare_archer_spells"));
     public static TagKey<AbstractSpell> LEGENDARY_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "common_archer_spells"));
+
+    // Structures
+    public static TagKey<Structure> FURLED_MAP_STRUCTURES = create("furled_map_structures");
+
+    private static TagKey<Structure> create(String pName) {
+        return TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, pName));
+    }
 
     //Spells
     public static TagKey<AbstractSpell> AOE_ATTACKS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "attack/aoe"));

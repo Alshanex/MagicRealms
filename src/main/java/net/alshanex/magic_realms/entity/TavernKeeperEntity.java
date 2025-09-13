@@ -9,17 +9,27 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.IMerchantWizard;
+import io.redspace.ironsspellbooks.item.FurledMapItem;
 import io.redspace.ironsspellbooks.player.AdditionalWanderingTrades;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.registry.MRItems;
+import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -44,6 +54,7 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.neoforged.neoforge.event.EventHooks;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animation.*;
@@ -260,9 +271,17 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             this.offers = new MerchantOffers();
 
             this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, new ItemStack(ItemRegistry.FIRE_ALE.get()), 3, 6).getOffer(this, this.random));
+
+            if(this.level() instanceof ServerLevel serverLevel){
+                List<ItemStack> furledMaps = getRandomFurledMaps(serverLevel, ModTags.FURLED_MAP_STRUCTURES, this.random);
+                for(ItemStack map : furledMaps){
+                    this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, map, 8, 12).getOffer(this, this.random));
+                }
+            }
+
             this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_NOVICE.get(), 1), 7, 10).getOffer(this, this.random));
 
-            this.offers.addAll(createRandomOffers(2, 3));
+            this.offers.addAll(createRandomOffers(1, 2));
 
             this.offers.add(
                     new MerchantOffer(
@@ -279,6 +298,108 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             numberOfRestocksToday++;
         }
         return this.offers;
+    }
+
+    private List<ItemStack> getRandomFurledMaps(ServerLevel level, TagKey<Structure> structureTag, RandomSource random){
+        List<String> structureKeys = getRandomStructuresFromTag(level, structureTag, random, 2);
+        List<ItemStack> furledMaps = new ArrayList<>();
+        if(structureKeys != null && !structureKeys.isEmpty()){
+            for(String key : structureKeys){
+                ItemStack furledMap = FurledMapItem.of(ResourceLocation.parse(key), Component.literal(cleanupStructureName(key)));
+                furledMaps.add(furledMap);
+            }
+        }
+        return furledMaps;
+    }
+
+    public static List<String> getRandomStructuresFromTag(ServerLevel level, TagKey<Structure> structureTag, RandomSource random, int amountOfMaps) {
+        try {
+            Registry<Structure> structureRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
+
+            Optional<HolderSet.Named<Structure>> tagHolder = structureRegistry.getTag(structureTag);
+
+            if (tagHolder.isEmpty()) {
+                MagicRealms.LOGGER.warn("Structure tag {} not found in registry", structureTag.location());
+                return null;
+            }
+
+            List<String> structureIds = new ArrayList<>();
+
+            // Extract all ResourceLocation strings from the tag
+            tagHolder.get().forEach(holder -> {
+                try {
+                    Optional<ResourceKey<Structure>> keyOpt = Optional.ofNullable(holder.getKey());
+                    if (keyOpt.isPresent()) {
+                        ResourceKey<Structure> key = keyOpt.get();
+                        structureIds.add(key.location().toString());
+                    }
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.debug("Failed to extract key from holder: {}", e.getMessage());
+                }
+            });
+
+            if (structureIds.isEmpty()) {
+                MagicRealms.LOGGER.warn("Structure tag {} is empty", structureTag.location());
+                return null;
+            }
+
+            List<String> finalStructureIds = new ArrayList<>();
+            int maxRolls = Math.min(structureIds.size(), amountOfMaps);
+
+            // Select random structure ID
+            for(int i = 0; i < maxRolls; i++){
+                String selectedId = structureIds.get(random.nextInt(structureIds.size()));
+                finalStructureIds.add(selectedId);
+                structureIds.remove(selectedId);
+            }
+
+            return finalStructureIds;
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error selecting random structure from tag {}: {}", structureTag.location(), e.getMessage());
+            return null;
+        }
+    }
+
+    public static String cleanupStructureName(String structureId) {
+        if (structureId == null || structureId.isEmpty()) {
+            return "Unknown Structure";
+        }
+
+        try {
+            // Remove namespace (everything before the colon)
+            String pathOnly;
+            if (structureId.contains(":")) {
+                pathOnly = structureId.substring(structureId.indexOf(':') + 1);
+            } else {
+                pathOnly = structureId;
+            }
+
+            // Replace underscores with spaces
+            String withSpaces = pathOnly.replace('_', ' ');
+
+            // Capitalize each word
+            StringBuilder result = new StringBuilder();
+            String[] words = withSpaces.split(" ");
+
+            for (int i = 0; i < words.length; i++) {
+                if (i > 0) {
+                    result.append(" ");
+                }
+
+                String word = words[i];
+                if (!word.isEmpty()) {
+                    // Capitalize first letter, lowercase the rest
+                    result.append(Character.toUpperCase(word.charAt(0)))
+                            .append(word.substring(1).toLowerCase());
+                }
+            }
+
+            return result.toString();
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to cleanup structure name '{}': {}", structureId, e.getMessage());
+            return "Unknown Structure";
+        }
     }
 
     private static final List<VillagerTrades.ItemListing> fillerOffers = List.of(

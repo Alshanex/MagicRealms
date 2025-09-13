@@ -2,8 +2,10 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.registry.*;
+import net.alshanex.magic_realms.util.humans.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.events.TextureEventHandler;
+import net.alshanex.magic_realms.util.humans.LayeredTextureManager;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -54,8 +56,6 @@ public class MagicRealms
 
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
-        modEventBus.addListener(TextureEventHandler::onClientSetup);
-        modEventBus.addListener(TextureEventHandler::onRegisterReloadListeners);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -86,7 +86,22 @@ public class MagicRealms
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
         {
+            event.enqueueWork(() -> {
+                // Load the base textures (world-specific directories will be set when joining a world)
+                LayeredTextureManager.loadTextures();
 
+                // Load names
+                AdvancedNameManager.loadNamesFromResources();
+
+                MagicRealms.LOGGER.info("Client setup completed - texture directories will be initialized when joining a world");
+
+                // Log additional texture availability for debugging
+                int maleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.MALE);
+                int femaleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.FEMALE);
+
+                MagicRealms.LOGGER.info("Additional textures loaded - Male: {}, Female: {}", maleAdditionalCount, femaleAdditionalCount);
+                MagicRealms.LOGGER.info("Additional texture chance: {}%", (int)(CombinedTextureManager.getAdditionalTextureChance() * 100));
+            });
         }
     }
 }

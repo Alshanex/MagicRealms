@@ -140,9 +140,13 @@ public class ContractUtils {
         boolean success;
         if (isRenewal) {
             success = contractData.renewContract(player.getUUID(), starLevel);
+            if(success){
+                humanEntity.addEmeralds(additionalMinutes);
+            }
         } else {
             success = contractData.trySetTemporaryContract(player.getUUID(), starLevel);
             if (success) {
+                humanEntity.addEmeralds(additionalMinutes);
                 humanEntity.setSummoner(player);
             }
         }

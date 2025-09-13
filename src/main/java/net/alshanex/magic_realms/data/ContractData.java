@@ -92,7 +92,6 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.lastTimeUpdate = this.contractStartTime;
     }
 
-    // Nuevo método para establecer contrato permanente
     public void setPermanentContract(UUID playerUUID) {
         // Antes de establecer el contrato permanente, actualizar el tiempo total
         updateTotalContractTime();

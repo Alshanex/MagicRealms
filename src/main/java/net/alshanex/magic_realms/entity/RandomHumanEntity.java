@@ -257,6 +257,21 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeClassSpecifics(randomsource);
             initializeDefaultEquipment();
             initializeFearedEntity(randomsource);
+
+            HumanStatsManager.applyClassAttributes(this);
+
+            // Initialize random level in the data attachment itself
+            KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
+            killData.initializeRandomSpawnLevel(randomsource);
+
+            // Apply level-based bonuses using the initialized level
+            int spawnLevel = killData.getCurrentLevel();
+            LevelingStatsManager.applyLevelBasedAttributes(this, spawnLevel);
+
+            MagicRealms.LOGGER.info("Entity spawned at level {} (from KillTrackerData)", spawnLevel);
+
+            giveStartingEmeralds();
+
             this.entityData.set(INITIALIZED, true);
 
             if (!spellsGenerated) {
@@ -285,12 +300,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 reapplyGoalsWithPersistedSpells();
                 goalsInitialized = true;
             }
-
             initializeFearGoal();
         }
-
-        HumanStatsManager.applyClassAttributes(this);
-        giveStartingEmeralds();
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
     }
@@ -995,7 +1006,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
             String textureName = this.textureConfig.getTextureName();
             this.entityData.set(ENTITY_NAME, textureName);
-            this.updateCustomNameWithStars();
+            updateCustomNameWithStars();
 
             MagicRealms.LOGGER.info("Updated entity {} name to preset texture name: {}",
                     this.getUUID().toString(), textureName);
@@ -1003,7 +1014,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             // Fallback to random name if no preset texture name
             String randomName = AdvancedNameManager.getRandomName(this.getGender());
             this.entityData.set(ENTITY_NAME, randomName);
-            this.updateCustomNameWithStars();
+            updateCustomNameWithStars();
 
             MagicRealms.LOGGER.debug("Updated entity {} name to random name: {} (layered texture)",
                     this.getUUID().toString(), randomName);
@@ -1028,7 +1039,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public void updateCustomNameWithStars() {
         String entityName = this.entityData.get(ENTITY_NAME);
 
-        // Don't update if name is empty
         if (entityName.isEmpty()) {
             return;
         }
@@ -1588,6 +1598,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     @Override
     public void onRemovedFromLevel() {
         super.onRemovedFromLevel();
+    }
+
+    @Override
+    public void onAddedToLevel(){
+        super.onAddedToLevel();
     }
 
     @Override

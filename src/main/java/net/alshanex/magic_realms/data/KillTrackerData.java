@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.util.ModTags;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 
 public class KillTrackerData {
@@ -13,7 +14,8 @@ public class KillTrackerData {
                     Codec.INT.fieldOf("current_level").forGetter(data -> data.currentLevel),
                     Codec.INT.fieldOf("experience_points").forGetter(data -> data.experiencePoints),
                     Codec.INT.fieldOf("boss_kills").forGetter(data -> data.bossKills),
-                    Codec.BOOL.fieldOf("has_natural_regen").forGetter(data -> data.hasNaturalRegen)
+                    Codec.BOOL.fieldOf("has_natural_regen").forGetter(data -> data.hasNaturalRegen),
+                    Codec.BOOL.fieldOf("is_initialized").forGetter(data -> data.isInitialized)
             ).apply(instance, KillTrackerData::new)
     );
 
@@ -22,6 +24,7 @@ public class KillTrackerData {
     private int experiencePoints;
     private int bossKills;
     private boolean hasNaturalRegen;
+    private boolean isInitialized;
 
     public KillTrackerData() {
         this.totalKills = 0;
@@ -29,14 +32,80 @@ public class KillTrackerData {
         this.experiencePoints = 0;
         this.bossKills = 0;
         this.hasNaturalRegen = false;
+        this.isInitialized = false;
     }
 
-    private KillTrackerData(int totalKills, int currentLevel, int experiencePoints, int bossKills, boolean hasNaturalRegen) {
+    private KillTrackerData(int totalKills, int currentLevel, int experiencePoints, int bossKills, boolean hasNaturalRegen, boolean isInitialized) {
         this.totalKills = totalKills;
         this.currentLevel = currentLevel;
         this.experiencePoints = experiencePoints;
         this.bossKills = bossKills;
         this.hasNaturalRegen = hasNaturalRegen;
+        this.isInitialized = isInitialized;
+    }
+
+    public void initializeRandomSpawnLevel(RandomSource randomSource) {
+        if (isInitialized) {
+            return; // Already initialized, don't re-roll
+        }
+
+        int maxLevel = Config.maxLevel;
+        int halfMaxLevel = maxLevel / 2;
+
+        // Calculate level ranges
+        int range1Max = Math.max(1, halfMaxLevel / 5);
+        int range2Min = range1Max + 1;
+        int range2Max = Math.max(range2Min, halfMaxLevel / 4);
+        int range3Min = range2Max + 1;
+        int range3Max = Math.max(range3Min, halfMaxLevel / 3);
+        int range4Min = range3Max + 1;
+        int range4Max = Math.max(range4Min, halfMaxLevel / 2);
+        int range5Min = range4Max + 1;
+        int range5Max = halfMaxLevel;
+
+        double roll = randomSource.nextDouble() * 100; // 0-100
+        int spawnLevel;
+
+        if (roll < 90.0) {
+            // 90% chance: Level 1 to (maxLevel/2)/5
+            spawnLevel = randomSource.nextInt(range1Max) + 1;
+        } else if (roll < 95.0) {
+            // 5% chance: Level ((maxLevel/2)/5)+1 to (maxLevel/2)/4
+            if (range2Min <= range2Max) {
+                spawnLevel = randomSource.nextInt(range2Max - range2Min + 1) + range2Min;
+            } else {
+                spawnLevel = range2Min;
+            }
+        } else if (roll < 98.0) {
+            // 3% chance: Level ((maxLevel/2)/4)+1 to (maxLevel/2)/3
+            if (range3Min <= range3Max) {
+                spawnLevel = randomSource.nextInt(range3Max - range3Min + 1) + range3Min;
+            } else {
+                spawnLevel = range3Min;
+            }
+        } else if (roll < 99.0) {
+            // 2% chance: Level ((maxLevel/2)/3)+1 to (maxLevel/2)/2
+            if (range4Min <= range4Max) {
+                spawnLevel = randomSource.nextInt(range4Max - range4Min + 1) + range4Min;
+            } else {
+                spawnLevel = range4Min;
+            }
+        } else {
+            // 1% chance: Level ((maxLevel/2)/2)+1 to maxLevel/2
+            if (range5Min <= range5Max) {
+                spawnLevel = randomSource.nextInt(range5Max - range5Min + 1) + range5Min;
+            } else {
+                spawnLevel = range5Min;
+            }
+        }
+
+        // Ensure level is within bounds
+        spawnLevel = Math.max(1, Math.min(spawnLevel, halfMaxLevel));
+
+        // Set the level
+        this.currentLevel = spawnLevel;
+        this.experiencePoints = getRequiredExperienceForLevel(spawnLevel);
+        this.isInitialized = true;
     }
 
     public void addKill(LivingEntity killedEntity) {
@@ -148,6 +217,10 @@ public class KillTrackerData {
         return hasNaturalRegen;
     }
 
+    public boolean isInitialized() {
+        return isInitialized;
+    }
+
     public int getExperienceToNextLevel() {
         if (currentLevel >= getMaxLevel()) {
             return 0;
@@ -160,6 +233,7 @@ public class KillTrackerData {
     public void setLevel(int level) {
         this.currentLevel = Math.max(1, Math.min(level, getMaxLevel()));
         this.experiencePoints = getRequiredExperienceForLevel(this.currentLevel);
+        this.isInitialized = true; // Mark as initialized when level is manually set
     }
 
     public void addExperience(int exp) {
@@ -169,7 +243,7 @@ public class KillTrackerData {
 
     @Override
     public String toString() {
-        return String.format("KillTrackerData{level=%d, exp=%d, totalKills=%d, bossKills=%d, expToNext=%d, hasRegen=%s}",
-                currentLevel, experiencePoints, totalKills, bossKills, getExperienceToNextLevel(), hasNaturalRegen);
+        return String.format("KillTrackerData{level=%d, exp=%d, totalKills=%d, bossKills=%d, expToNext=%d, hasRegen=%s, initialized=%s}",
+                currentLevel, experiencePoints, totalKills, bossKills, getExperienceToNextLevel(), hasNaturalRegen, isInitialized);
     }
 }

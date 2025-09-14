@@ -271,6 +271,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             this.offers = new MerchantOffers();
 
             this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, new ItemStack(ItemRegistry.FIRE_ALE.get()), 3, 6).getOffer(this, this.random));
+            this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, new ItemStack(Items.SUSPICIOUS_STEW), 4, 8).getOffer(this, this.random));
 
             if(this.level() instanceof ServerLevel serverLevel){
                 List<ItemStack> furledMaps = getRandomFurledMaps(serverLevel, ModTags.FURLED_MAP_STRUCTURES, this.random);

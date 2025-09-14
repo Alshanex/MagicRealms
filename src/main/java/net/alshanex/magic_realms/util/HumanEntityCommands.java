@@ -9,6 +9,7 @@ import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
 import io.redspace.ironsspellbooks.registries.ParticleRegistry;
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
@@ -47,7 +48,7 @@ public class HumanEntityCommands {
         try {
             KillTrackerData killData = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
             int currentLevel = killData.getCurrentLevel();
-            int maxLevel = 300; // Based on your getMaxLevel() method returning 100, but stats go to 300
+            int maxLevel = Config.maxLevel;
 
             // Calculate how many levels we can actually add
             int actualLevelsToAdd = Math.min(levelsToAdd, maxLevel - currentLevel);

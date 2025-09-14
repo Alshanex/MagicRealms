@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.data;
 
+import net.alshanex.magic_realms.Config;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
@@ -24,11 +25,9 @@ public class ContractData implements INBTSerializable<CompoundTag> {
     private long lastTimeUpdate = 0;
 
     // Requisito mínimo de tiempo para contratos permanentes (200 minutos en milisegundos)
-    private static final long PERMANENT_CONTRACT_REQUIREMENT = 200 * 60 * 1000L; // 200 minutos
+    private static final long PERMANENT_CONTRACT_REQUIREMENT = Config.minutesUntilPermanent * 60 * 1000L; // 200 minutos
 
-    private static final long ONE_STAR_DURATION = 10 * 60 * 1000; // 10 minutos
-    private static final long TWO_STAR_DURATION = 8 * 60 * 1000;  // 8 minutos
-    private static final long THREE_STAR_DURATION = 5 * 60 * 1000; // 5 minutos
+    private static final long ONE_STAR_DURATION = (long) Config.minutesPerContract * 60 * 1000; // 10 minutos // 5 minutos
 
     public ContractData() {
         this.contractorUUID = null;
@@ -59,12 +58,7 @@ public class ContractData implements INBTSerializable<CompoundTag> {
     }
 
     public static long getBaseDurationForStarLevel(int starLevel) {
-        return switch (starLevel) {
-            case 1 -> ONE_STAR_DURATION;
-            case 2 -> TWO_STAR_DURATION;
-            case 3 -> THREE_STAR_DURATION;
-            default -> TWO_STAR_DURATION; // Valor por defecto
-        };
+        return ONE_STAR_DURATION;
     }
 
     public boolean hasActiveContract() {
@@ -441,7 +435,7 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.lastTimeUpdate = tag.getLong("last_time_update");
 
         if (this.totalContractDuration == 0 && this.contractorUUID != null && !this.isPermanent) {
-            this.totalContractDuration = TWO_STAR_DURATION;
+            this.totalContractDuration = ONE_STAR_DURATION;
         }
 
         // Si lastTimeUpdate no estaba guardado (versiones anteriores), inicializar

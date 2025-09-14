@@ -23,7 +23,7 @@ public class Config
             .defineInRange("healthAmount", 1, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.IntValue HEALTH_AMOUNT_TIMES = BUILDER
-            .comment("Max times humans will get the health bonus upon leveling up")
+            .comment("Max times humans will get the health bonus upon leveling up (can't be higher than max level)")
             .defineInRange("healthAmountTimes", 100, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.IntValue HEALTH_AMOUNT_BOSS_KILLS = BUILDER
@@ -63,7 +63,7 @@ public class Config
             .defineInRange("damageAmountWarriors", 1, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.IntValue DAMAGE_AMOUNT_WARRIORS_TIMES = BUILDER
-            .comment("Max times warriors will get the damage bonus upon leveling up")
+            .comment("Max times warriors will get the damage bonus upon leveling up (can't be higher than max level)")
             .defineInRange("damageAmountWarriorsTimes", 20, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.IntValue ARMOR_AMOUNT_WARRIORS = BUILDER
@@ -71,7 +71,7 @@ public class Config
             .defineInRange("armorAmountWarriors", 1, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.IntValue ARMOR_AMOUNT_WARRIORS_TIMES = BUILDER
-            .comment("Max times warriors will get the armor bonus upon leveling up")
+            .comment("Max times warriors will get the armor bonus upon leveling up (can't be higher than max level)")
             .defineInRange("armorAmountWarriorsTimes", 30, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.IntValue DAMAGE_AMOUNT_ROGUES = BUILDER
@@ -79,7 +79,7 @@ public class Config
             .defineInRange("damageAmountRogues", 1, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.IntValue DAMAGE_AMOUNT_ROGUES_TIMES = BUILDER
-            .comment("Max times rogues will get the damage bonus upon leveling up")
+            .comment("Max times rogues will get the damage bonus upon leveling up (can't be higher than max level)")
             .defineInRange("damageAmountRoguesTimes", 20, 0, Integer.MAX_VALUE);
 
     private static final ModConfigSpec.DoubleValue MAX_SPEED_PERCENTAGE = BUILDER
@@ -122,6 +122,18 @@ public class Config
             .comment("Duration in seconds that immortal entities are stunned after being knocked out")
             .defineInRange("immortalStunDuration", 10, 1, 60);
 
+    private static final ModConfigSpec.DoubleValue CUSTOM_TEXTURE_CHANCE = BUILDER
+            .comment("Chance of a human spawning with one of the textures from the additional textures directory (0.5 = 50%)")
+            .defineInRange("customTextureChance", 0.1, 0, 1.0);
+
+    private static final ModConfigSpec.IntValue MINUTES_UNTIL_PERMANENT = BUILDER
+            .comment("Duration in minutes needed to be able to establish a permanent contract with a human")
+            .defineInRange("minutesUntilPermanent", 200, 1, Integer.MAX_VALUE);
+
+    private static final ModConfigSpec.IntValue MINUTES_PER_CONTRACT = BUILDER
+            .comment("Duration in minutes contracts will last for")
+            .defineInRange("minutesPerContract", 10, 1, Integer.MAX_VALUE);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     public static int maxLevel;
@@ -151,6 +163,9 @@ public class Config
     public static int clericEmeraldCost;
     public static int clericBuffDurationMinutes;
     public static int immortalStunDuration;
+    public static double customTextureChance;
+    public static int minutesUntilPermanent;
+    public static int minutesPerContract;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
@@ -182,5 +197,8 @@ public class Config
         clericEmeraldCost = CLERIC_EMERALD_COST.get();
         clericBuffDurationMinutes = CLERIC_BUFF_DURATION_MINUTES.get();
         immortalStunDuration = IMMORTAL_STUN_DURATION.get();
+        customTextureChance = CUSTOM_TEXTURE_CHANCE.get();
+        minutesUntilPermanent = MINUTES_UNTIL_PERMANENT.get();
+        minutesPerContract = MINUTES_PER_CONTRACT.get();
     }
 }

@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.util.humans;
 
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.util.ArmBackTextureFixer;
 import net.minecraft.client.Minecraft;
@@ -32,8 +33,8 @@ public class CombinedTextureManager {
 
     // Random instance for texture selection - can be made configurable later
     private static final Random TEXTURE_RANDOM = new Random();
-    // Chance to use additional texture (30% = 0.3)
-    private static final double ADDITIONAL_TEXTURE_CHANCE = 0.3;
+    // Chance to use additional texture
+    private static final double ADDITIONAL_TEXTURE_CHANCE = Config.customTextureChance;
 
     // Result class to hold both texture and name information
     public static class TextureResult {

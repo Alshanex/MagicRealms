@@ -4,23 +4,40 @@ import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.spells.*;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
+import net.alshanex.magic_realms.network.SyncPresetTextureNamePacket;
+import net.alshanex.magic_realms.network.UpdateEntityNamePacket;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.humans.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.Level;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
+import java.util.UUID;
 
 public class MRUtils {
     public static boolean isWeapon(ItemStack stack) {
@@ -513,6 +530,142 @@ public class MRUtils {
                     inventory.setItem(i, ItemStack.EMPTY);
                 }
             }
+        }
+    }
+
+    public static void handleHumanNameUpdate(Player player, UUID entityUUID, String entityName){
+        if (player instanceof ServerPlayer serverPlayer) {
+            ServerLevel level = serverPlayer.serverLevel();
+            Entity entity = level.getEntity(entityUUID);
+
+            if (entity instanceof RandomHumanEntity humanEntity) {
+                // Update the entity name on server side
+                humanEntity.setEntityName(entityName);
+
+                MagicRealms.LOGGER.debug("Updated entity {} name to: {}",
+                        entityUUID, entityName);
+            }
+        }
+    }
+
+    public static void requestEntityLevel(Player player, UUID entityUUID){
+        if (player instanceof ServerPlayer serverPlayer) {
+            ServerLevel level = serverPlayer.serverLevel();
+            Entity entity = level.getEntity(entityUUID);
+
+            if (entity instanceof RandomHumanEntity humanEntity) {
+                KillTrackerData killData = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
+                int currentLevel = killData.getCurrentLevel();
+
+                // Send the level back to the client with both ID and UUID
+                PacketDistributor.sendToPlayer(serverPlayer,
+                        new SyncEntityLevelPacket(humanEntity.getId(), humanEntity.getUUID(), currentLevel));
+
+                MagicRealms.LOGGER.debug("Sent level {} for entity {} (ID: {}) to client",
+                        currentLevel, entityUUID, humanEntity.getId());
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void handleEntityLevelSync(int entityId, int level, UUID entityUUID){
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel world = mc.level;
+
+        if (world != null) {
+            // Use entity ID to get the entity on client side
+            Entity entity = world.getEntity(entityId);
+
+            if (entity instanceof RandomHumanEntity humanEntity) {
+                // Update the custom name with level first
+                humanEntity.updateCustomNameWithLevel(level);
+
+                // Check if we need to generate/update the name
+                String entityName = humanEntity.getEntityName();
+                boolean needsNameUpdate = entityName == null || entityName.isEmpty();
+
+                if (needsNameUpdate) {
+                    // Try to get name from texture config first (for preset textures)
+                    humanEntity.updateNameFromTexture();
+                    entityName = humanEntity.getEntityName();
+
+                    // If still empty, generate a random name (for layered textures)
+                    if (entityName == null || entityName.isEmpty()) {
+                        entityName = AdvancedNameManager.getRandomName(humanEntity.getGender());
+                        humanEntity.setEntityName(entityName);
+
+                        MagicRealms.LOGGER.debug("Generated random name '{}' for layered texture entity {}",
+                                entityName, entityUUID);
+                    } else {
+                        MagicRealms.LOGGER.debug("Used preset texture name '{}' for entity {}",
+                                entityName, entityUUID);
+                    }
+
+                    // Send the name back to server
+                    PacketDistributor.sendToServer(new UpdateEntityNamePacket(entityUUID, entityName));
+
+                    // Update display name again with the new name
+                    humanEntity.updateCustomNameWithLevel(level);
+                }
+
+                MagicRealms.LOGGER.debug("Synced entity {} (ID: {}) with level {} and name '{}'",
+                        entityUUID, entityId, level, entityName);
+            }
+        }
+    }
+
+    public static void handlePresetTextureNameSync(Player player, UUID entityUUID, String presetTextureName, boolean hasPresetTexture){
+        if (player instanceof ServerPlayer serverPlayer) {
+            ServerLevel level = serverPlayer.serverLevel();
+            Entity entity = level.getEntity(entityUUID);
+
+            if (entity instanceof RandomHumanEntity humanEntity) {
+                if (hasPresetTexture && !presetTextureName.isEmpty()) {
+                    // Set the preset texture name on server side
+                    humanEntity.setEntityName(presetTextureName);
+
+                    MagicRealms.LOGGER.debug("Updated entity {} with preset texture name: {}",
+                            entityUUID, presetTextureName);
+                } else {
+                    MagicRealms.LOGGER.debug("Entity {} does not have a preset texture, name will be generated randomly",
+                            entityUUID);
+                }
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void syncPresetTextureName(RandomHumanEntity humanEntity) {
+        try {
+            // Get the texture config which contains preset texture information
+            EntityTextureConfig textureConfig = humanEntity.getTextureConfig();
+
+            if (textureConfig != null) {
+                String presetTextureName = textureConfig.getTextureName();
+                boolean hasPresetTexture = textureConfig.isPresetTexture();
+
+                if (hasPresetTexture && presetTextureName != null && !presetTextureName.isEmpty()) {
+                    // Send preset texture name to server
+                    PacketDistributor.sendToServer(new SyncPresetTextureNamePacket(
+                            humanEntity.getUUID(), presetTextureName, true));
+
+                    MagicRealms.LOGGER.debug("Sent preset texture name '{}' to server for entity {}",
+                            presetTextureName, humanEntity.getUUID());
+                } else {
+                    // Notify server that this entity doesn't have a preset texture
+                    PacketDistributor.sendToServer(new SyncPresetTextureNamePacket(
+                            humanEntity.getUUID(), "", false));
+
+                    MagicRealms.LOGGER.debug("Entity {} does not have preset texture, notified server",
+                            humanEntity.getUUID());
+                }
+            } else {
+                MagicRealms.LOGGER.debug("No texture config available for entity {}, skipping preset name sync",
+                        humanEntity.getUUID());
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error syncing preset texture name for entity {}: {}",
+                    humanEntity.getUUID(), e.getMessage());
         }
     }
 }

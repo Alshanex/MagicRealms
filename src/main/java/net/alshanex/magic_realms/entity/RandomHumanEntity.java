@@ -25,6 +25,7 @@ import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
 import net.alshanex.magic_realms.particles.StunParticleEffect;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREffects;
@@ -76,6 +77,7 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
 
@@ -301,6 +303,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 goalsInitialized = true;
             }
             initializeFearGoal();
+        }
+
+        if (!this.level().isClientSide) {
+            // Schedule the name sync request for next tick to ensure entity is fully initialized
+            this.level().getServer().execute(() -> {
+                if (this.isAlive() && !this.isRemoved()) {
+                    requestNameSyncFromClient();
+                }
+            });
         }
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
@@ -1003,21 +1014,18 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             return; // Name already set
         }
 
-        if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
-            String textureName = this.textureConfig.getTextureName();
+        // Get texture config and check for preset texture name
+        EntityTextureConfig textureConfig = this.getTextureConfig();
+        if (textureConfig != null && textureConfig.hasTextureName()) {
+            String textureName = textureConfig.getTextureName();
             this.entityData.set(ENTITY_NAME, textureName);
-            updateCustomNameWithStars();
 
-            MagicRealms.LOGGER.info("Updated entity {} name to preset texture name: {}",
+            MagicRealms.LOGGER.debug("Updated entity {} name to preset texture name: {}",
                     this.getUUID().toString(), textureName);
         } else {
-            // Fallback to random name if no preset texture name
-            String randomName = AdvancedNameManager.getRandomName(this.getGender());
-            this.entityData.set(ENTITY_NAME, randomName);
-            updateCustomNameWithStars();
-
-            MagicRealms.LOGGER.debug("Updated entity {} name to random name: {} (layered texture)",
-                    this.getUUID().toString(), randomName);
+            // No preset texture name available
+            MagicRealms.LOGGER.debug("Entity {} has no preset texture name available (layered texture)",
+                    this.getUUID().toString());
         }
     }
 
@@ -1044,10 +1052,27 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         KillTrackerData data = this.getData(MRDataAttachments.KILL_TRACKER);
+        int currentLevel = data.getCurrentLevel();
 
-        Component nameComponent = Component.literal(entityName + " Lv. " + data.getCurrentLevel());
+        Component nameComponent = Component.literal(entityName + " Lv. " + currentLevel);
         this.setCustomName(nameComponent);
         this.setCustomNameVisible(true);
+    }
+
+    private void requestNameSyncFromClient() {
+        if (!this.level().isClientSide && this.entityData.get(INITIALIZED)) {
+            String currentName = this.getEntityName();
+
+            // If name is empty on server, request client to generate and send it
+            if (currentName == null || currentName.isEmpty()) {
+                // Send packet to all players tracking this entity to request name generation
+                PacketDistributor.sendToPlayersTrackingEntity(this,
+                        new SyncEntityLevelPacket(this.getId(), this.getUUID(),
+                                this.getData(MRDataAttachments.KILL_TRACKER).getCurrentLevel()));
+
+                MagicRealms.LOGGER.debug("Requested name sync from clients for entity {}", this.getUUID());
+            }
+        }
     }
 
     public int getStarLevel() {
@@ -1057,7 +1082,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public void setStarLevel(int starLevel) {
         if (starLevel >= 1 && starLevel <= 3) {
             this.entityData.set(STAR_LEVEL, starLevel);
-            updateCustomNameWithStars();
         }
     }
 
@@ -1255,6 +1279,18 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         return super.mobInteract(player, hand);
+    }
+
+    public void updateCustomNameWithLevel(int level) {
+        String entityName = this.entityData.get(ENTITY_NAME);
+
+        if (entityName.isEmpty()) {
+            return;
+        }
+
+        Component nameComponent = Component.literal(entityName + " Lv. " + level);
+        this.setCustomName(nameComponent);
+        this.setCustomNameVisible(true);
     }
 
     private boolean handleEmeraldTrade(Player player, ItemStack emeraldStack) {
@@ -1602,6 +1638,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void onAddedToLevel(){
+        MRUtils.syncPresetTextureName(this);
         super.onAddedToLevel();
     }
 

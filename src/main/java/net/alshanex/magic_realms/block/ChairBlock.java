@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -103,7 +104,6 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     public ChairBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        MagicRealms.LOGGER.debug("ChairBlock constructor called - Chair block created!");
     }
 
     @Override
@@ -131,98 +131,72 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        MagicRealms.LOGGER.debug("Chair placed at: " + context.getClickedPos());
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection());
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        MagicRealms.LOGGER.debug("Chair at " + pos + " was right-clicked by " + player.getName().getString());
-
         if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
             // Check if there's already an entity sitting in this chair
             RandomHumanEntity sittingEntity = getSittingEntity(serverLevel, pos);
             if (sittingEntity != null) {
                 // Make the entity unsit
                 sittingEntity.unsitFromChair();
-                player.sendSystemMessage(Component.literal("Entity unsit from chair"));
-                MagicRealms.LOGGER.debug("Entity unsit from chair at " + pos);
                 return InteractionResult.SUCCESS;
             }
 
             // Try to spawn an entity if conditions are met
             if (canSpawnEntity(serverLevel, pos)) {
                 spawnAndSitEntity(serverLevel, pos, state);
-                player.sendSystemMessage(Component.literal("Entity spawned and sitting!"));
-                MagicRealms.LOGGER.debug("Entity spawned and sitting at chair " + pos);
                 return InteractionResult.SUCCESS;
-            } else {
-                player.sendSystemMessage(Component.literal("Cannot spawn entity - check console for details"));
-                MagicRealms.LOGGER.debug("Failed to spawn entity at chair " + pos);
             }
         }
         return InteractionResult.PASS;
     }
 
     private void trySpawnEntity(ServerLevel level, BlockPos pos, BlockState state) {
-        MagicRealms.LOGGER.debug("Trying to spawn entity at chair " + pos);
         if (canSpawnEntity(level, pos)) {
             spawnAndSitEntity(level, pos, state);
-            MagicRealms.LOGGER.debug("Chair at " + pos + " spawned entity successfully!");
-        } else {
-            MagicRealms.LOGGER.debug("Chair at " + pos + " failed spawn conditions check");
         }
     }
 
     private boolean canSpawnEntity(ServerLevel level, BlockPos pos) {
-        MagicRealms.LOGGER.debug("Checking spawn conditions for chair at " + pos);
-
         // Check cooldown
         long currentTime = level.getGameTime();
         Long lastSpawnTime = SPAWN_COOLDOWNS.get(pos);
         if (lastSpawnTime != null && (currentTime - lastSpawnTime) < SPAWN_COOLDOWN_TICKS) {
-            long timeLeft = SPAWN_COOLDOWN_TICKS - (currentTime - lastSpawnTime);
-            MagicRealms.LOGGER.debug("Chair spawn failed: On cooldown. Time left: " + timeLeft + " ticks");
             return false;
         }
 
         // Check if chair is already occupied
         RandomHumanEntity sitting = getSittingEntity(level, pos);
         if (sitting != null) {
-            MagicRealms.LOGGER.debug("Chair spawn failed: Already occupied by " + sitting.getEntityName());
             return false;
         }
 
         // Check entity count in radius
         AABB searchArea = new AABB(pos).inflate(SPAWN_CHECK_RADIUS);
         List<RandomHumanEntity> nearbyEntities = level.getEntitiesOfClass(RandomHumanEntity.class, searchArea);
-        MagicRealms.LOGGER.debug("Found " + nearbyEntities.size() + " nearby entities in " + SPAWN_CHECK_RADIUS + " block radius");
 
         if (nearbyEntities.size() >= MAX_ENTITIES_IN_RADIUS) {
-            MagicRealms.LOGGER.debug("Chair spawn failed: Too many entities nearby (" + nearbyEntities.size() + "/" + MAX_ENTITIES_IN_RADIUS + ")");
             return false;
         }
-
-        MagicRealms.LOGGER.debug("Chair spawn conditions met! Entities nearby: " + nearbyEntities.size() + "/" + MAX_ENTITIES_IN_RADIUS);
         return true;
     }
 
     private void spawnAndSitEntity(ServerLevel level, BlockPos pos, BlockState state) {
-        MagicRealms.LOGGER.debug("Starting entity spawn process at chair " + pos);
-
         try {
             // Create the entity
             RandomHumanEntity entity = new RandomHumanEntity(MREntityRegistry.HUMAN.get(), level);
-            MagicRealms.LOGGER.debug("Created RandomHumanEntity instance");
 
             // Position the entity on the chair
             Vec3 sittingPos = getSittingPosition(pos, state);
-            entity.moveTo(sittingPos.x, sittingPos.y, sittingPos.z, getSittingYaw(state), 0);
-            MagicRealms.LOGGER.debug("Positioned entity at " + sittingPos);
+            entity.moveTo(sittingPos.x, sittingPos.y, sittingPos.z);
+
+            entity.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.COMMAND, null);
 
             // Spawn the entity first (this triggers finalizeSpawn)
             boolean spawned = level.addFreshEntity(entity);
-            MagicRealms.LOGGER.debug("Entity spawn result: " + spawned);
 
             // THEN make it sit (after it's properly initialized)
             if (spawned) {
@@ -230,15 +204,15 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
                 level.getServer().execute(() -> {
                     if (entity.isAlive() && !entity.isRemoved()) {
                         entity.sitInChair(pos);
-                        MagicRealms.LOGGER.debug("Entity seated after initialization");
+                        entity.setYHeadRot(getSittingYaw(state));
+                        entity.setYBodyRot(getSittingYaw(state));
+                        entity.setYRot(getSittingYaw(state));
                     }
                 });
             }
 
             // Update cooldown
             SPAWN_COOLDOWNS.put(pos.immutable(), level.getGameTime());
-
-            MagicRealms.LOGGER.debug("Successfully completed entity spawn at chair " + pos);
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error spawning entity at chair " + pos, e);
         }
@@ -246,7 +220,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
 
     public static Vec3 getSittingPosition(BlockPos chairPos, BlockState state) {
         // Get the center of the seat, with proper Y positioning
-        Vec3 center = Vec3.atBottomCenterOf(chairPos).add(0, 0.5, 0);
+        Vec3 center = Vec3.atBottomCenterOf(chairPos).add(0, 0, 0);
 
         // Adjust position slightly towards the backrest for better sitting position
         Direction facing = state.getValue(FACING);
@@ -263,9 +237,8 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
 
     public static float getSittingYaw(BlockState state) {
         // Face the direction opposite to the chair facing (so they face away from backrest)
-        Direction facing = state.getValue(FACING);
-        Direction sittingDirection = facing.getOpposite();
-        return sittingDirection.toYRot();
+        Direction facing = state.getValue(FACING).getOpposite();
+        return facing.toYRot();
     }
 
     @Nullable
@@ -303,19 +276,15 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        MagicRealms.LOGGER.debug("Chair block being removed at " + pos);
-
         if (!state.is(newState.getBlock()) && level instanceof ServerLevel serverLevel) {
             // Make any sitting entity unsit when chair is broken
             RandomHumanEntity sittingEntity = getSittingEntity(serverLevel, pos);
             if (sittingEntity != null) {
-                MagicRealms.LOGGER.debug("Making sitting entity unsit due to chair removal");
                 sittingEntity.unsitFromChair();
             }
 
             // Remove cooldown tracking
             SPAWN_COOLDOWNS.remove(pos);
-            MagicRealms.LOGGER.debug("Removed cooldown tracking for chair at " + pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -324,7 +293,6 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     public void tickSpawnLogic(ServerLevel level, BlockPos pos, BlockState state) {
         // 1% chance per tick (20 ticks per second, so roughly every 5 seconds on average)
         if (level.getRandom().nextFloat() < 0.01f) {
-            MagicRealms.LOGGER.debug("Block entity tick spawn attempt for chair at " + pos);
             trySpawnEntity(level, pos, state);
         }
     }

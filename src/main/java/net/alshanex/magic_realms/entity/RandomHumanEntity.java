@@ -1265,6 +1265,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         // Reset pose
         this.setPose(Pose.STANDING);
 
+        this.moveTo(this.getX(), this.getY() + 0.7, this.getZ());
+
         MagicRealms.LOGGER.debug("Entity {} unsit from chair, cooldown started", getEntityName());
     }
 

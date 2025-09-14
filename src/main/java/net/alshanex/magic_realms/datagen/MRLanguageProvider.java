@@ -1,6 +1,8 @@
 package net.alshanex.magic_realms.datagen;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.registry.MRBlocks;
+import net.alshanex.magic_realms.registry.MREffects;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.minecraft.data.PackOutput;
@@ -28,7 +30,9 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MREntityRegistry.HUMAN.get(), "Human");
         add(MREntityRegistry.TAVERNKEEP.get(), "Tavernkeep");
 
-        add("effect.magic_realms.stun", "Stunned");
+        add(MREffects.STUN.get(), "Stunned");
+
+        add(MRBlocks.WOODEN_CHAIR.get(), "Wooden Chair");
 
         add("itemGroup.magic_realms.main_tab", "Magic Realms");
 

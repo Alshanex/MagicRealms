@@ -7,11 +7,14 @@ import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.util.ContractTier;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.function.Supplier;
 
 public class MRItems {
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, MagicRealms.MODID);
@@ -71,4 +74,7 @@ public class MRItems {
 
     public static final DeferredHolder<Item, PermanentBloodPact> PERMANENT_BLOOD_PACT =
             ITEMS.register("permanent_blood_pact", PermanentBloodPact::new);
+
+    public static final Supplier<Item> WOODEN_CHAIR = ITEMS.register("wooden_chair", () ->
+            new BlockItem(MRBlocks.WOODEN_CHAIR.get(), new Item.Properties()));
 }

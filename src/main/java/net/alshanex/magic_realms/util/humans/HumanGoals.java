@@ -14,6 +14,7 @@ import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
@@ -118,6 +119,10 @@ public class HumanGoals {
             }
 
             if(this.entity.isStunned()){
+                return false;
+            }
+
+            if (entity.isSittingInChair()) {
                 return false;
             }
 
@@ -510,6 +515,10 @@ public class HumanGoals {
             }
 
             if(this.entity.isStunned()){
+                return false;
+            }
+
+            if (entity.isSittingInChair()) {
                 return false;
             }
 
@@ -1099,6 +1108,9 @@ public class HumanGoals {
             if(this.humanEntity.isStunned()){
                 return false;
             }
+            if (this.humanEntity.isSittingInChair()) {
+                return false;
+            }
             boolean canUse = super.canUse();
             if (canUse) {
                 humanEntity.setTarget(null);
@@ -1126,6 +1138,9 @@ public class HumanGoals {
         @Override
         public boolean canUse() {
             if(this.humanEntity.isStunned()){
+                return false;
+            }
+            if (this.humanEntity.isSittingInChair()) {
                 return false;
             }
             boolean canUse = super.canUse();
@@ -1175,6 +1190,10 @@ public class HumanGoals {
             }
 
             if(this.entity.isStunned()){
+                return false;
+            }
+
+            if (entity.isSittingInChair()) {
                 return false;
             }
 
@@ -1388,6 +1407,10 @@ public class HumanGoals {
             }
 
             if(this.human.isStunned()){
+                return false;
+            }
+
+            if (this.human.isSittingInChair()) {
                 return false;
             }
 
@@ -1670,7 +1693,7 @@ public class HumanGoals {
         }
 
         public boolean canUse() {
-            if(this.mob instanceof RandomHumanEntity human && human.isStunned()){
+            if(this.mob instanceof RandomHumanEntity human && (human.isStunned() || human.isSittingInChair())){
                 return false;
             }
             LivingEntity livingentity = this.mob.getTarget();
@@ -2410,6 +2433,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if (entity.isSittingInChair()) {
+                return false;
+            }
+
             // Don't gather if in combat, on standby, or recently failed
             if (entity.getTarget() != null) return false;
             if (entity.isPatrolMode()) return false;
@@ -3020,6 +3047,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if (this.humanEntity.isSittingInChair()) {
+                return false;
+            }
+
             Entity livingentity = this.ownerGetter.get();
             if (livingentity == null) {
                 return false;
@@ -3161,6 +3192,10 @@ public class HumanGoals {
             }
 
             if(this.entity.isStunned()){
+                return false;
+            }
+
+            if (entity.isSittingInChair()) {
                 return false;
             }
 
@@ -3397,6 +3432,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if (entity.isSittingInChair()) {
+                return false;
+            }
+
             // Check if entity has overflow emeralds and no unaffordable offers
             if (!hasOverflowEmeralds()) {
                 return false;
@@ -3591,6 +3630,225 @@ public class HumanGoals {
                 this.distance = distance;
                 this.priority = priority;
             }
+        }
+    }
+
+    public static class ChairSittingGoal extends Goal {
+        private final RandomHumanEntity entity;
+        private BlockPos targetChair;
+        private int searchCooldown = 0;
+        private int stuckTicks = 0;
+        private Vec3 lastPosition;
+
+        private static final int SEARCH_RADIUS = 16;
+        private static final int SEARCH_COOLDOWN = 100; // 5 seconds between searches
+        private static final int MAX_STUCK_TICKS = 60; // 3 seconds before giving up
+        private static final double MOVEMENT_THRESHOLD = 0.1;
+        private static final double CHAIR_REACH_DISTANCE = 2.0;
+
+        public ChairSittingGoal(RandomHumanEntity entity) {
+            this.entity = entity;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't try to sit if already sitting
+            if (entity.isSittingInChair()) {
+                return false;
+            }
+
+            // Don't sit if on cooldown
+            if (!entity.canSitInChair()) {
+                return false;
+            }
+
+            // Don't sit if in combat
+            if (entity.getTarget() != null) {
+                return false;
+            }
+
+            // Don't sit if stunned
+            if (entity.isStunned()) {
+                return false;
+            }
+
+            // Don't sit if in patrol mode (they're busy)
+            if (entity.isPatrolMode()) {
+                return false;
+            }
+
+            // Apply search cooldown
+            if (searchCooldown > 0) {
+                searchCooldown--;
+                return false;
+            }
+
+            // Only try to sit sometimes (20% chance when conditions are met)
+            if (entity.getRandom().nextFloat() > 0.2f) {
+                searchCooldown = SEARCH_COOLDOWN;
+                return false;
+            }
+
+            // Find a nearby empty chair
+            return findNearbyEmptyChair();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if we started sitting
+            if (entity.isSittingInChair()) {
+                return false;
+            }
+
+            // Stop if we entered combat
+            if (entity.getTarget() != null) {
+                return false;
+            }
+
+            // Stop if chair is no longer valid
+            if (targetChair == null || !isChairAvailable(targetChair)) {
+                return false;
+            }
+
+            // Stop if we've been stuck for too long
+            if (stuckTicks >= MAX_STUCK_TICKS) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public void start() {
+            if (targetChair != null) {
+                entity.getNavigation().moveTo(targetChair.getX(), targetChair.getY(), targetChair.getZ(), 1.0);
+                stuckTicks = 0;
+                lastPosition = entity.position();
+            }
+        }
+
+        @Override
+        public void stop() {
+            targetChair = null;
+            searchCooldown = SEARCH_COOLDOWN;
+            stuckTicks = 0;
+            lastPosition = null;
+            entity.getNavigation().stop();
+        }
+
+        @Override
+        public void tick() {
+            if (targetChair == null) {
+                return;
+            }
+
+            double distanceToChair = entity.distanceToSqr(targetChair.getX(), targetChair.getY(), targetChair.getZ());
+
+            // Check if we're close enough to sit
+            if (distanceToChair <= CHAIR_REACH_DISTANCE * CHAIR_REACH_DISTANCE) {
+                // Double-check the chair is still available
+                if (isChairAvailable(targetChair)) {
+                    sitInChair();
+                }
+                return;
+            }
+
+            // Check if we're stuck
+            Vec3 currentPosition = entity.position();
+            if (lastPosition != null) {
+                double movementDistance = currentPosition.distanceTo(lastPosition);
+                if (movementDistance < MOVEMENT_THRESHOLD) {
+                    stuckTicks++;
+                } else {
+                    stuckTicks = 0; // Reset if we're moving
+                }
+            }
+            lastPosition = currentPosition;
+
+            // Try to navigate to the chair
+            if (entity.getNavigation().isDone() || stuckTicks > 20) {
+                // Recalculate path if navigation is done or we've been stuck for a bit
+                entity.getNavigation().moveTo(targetChair.getX(), targetChair.getY(), targetChair.getZ(), 1.0);
+
+                // If we're really stuck, try finding a different chair
+                if (stuckTicks > 40) {
+                    findNearbyEmptyChair();
+                    if (targetChair != null) {
+                        entity.getNavigation().moveTo(targetChair.getX(), targetChair.getY(), targetChair.getZ(), 1.0);
+                    }
+                }
+            }
+        }
+
+        private boolean findNearbyEmptyChair() {
+            if (!(entity.level() instanceof ServerLevel serverLevel)) {
+                return false;
+            }
+
+            AABB searchArea = new AABB(entity.blockPosition()).inflate(SEARCH_RADIUS);
+            BlockPos entityPos = entity.blockPosition();
+            BlockPos closestChair = null;
+            double closestDistance = Double.MAX_VALUE;
+
+            // Search for chair blocks in the area
+            for (int x = (int) searchArea.minX; x <= searchArea.maxX; x++) {
+                for (int y = (int) searchArea.minY; y <= searchArea.maxY; y++) {
+                    for (int z = (int) searchArea.minZ; z <= searchArea.maxZ; z++) {
+                        BlockPos checkPos = new BlockPos(x, y, z);
+
+                        if (isChairAvailable(checkPos)) {
+                            double distance = entityPos.distSqr(checkPos);
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestChair = checkPos;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (closestChair != null) {
+                targetChair = closestChair;
+                return true;
+            }
+
+            return false;
+        }
+
+        private boolean isChairAvailable(BlockPos chairPos) {
+            if (!(entity.level() instanceof ServerLevel serverLevel)) {
+                return false;
+            }
+
+            // Check if it's actually a chair block
+            BlockState blockState = serverLevel.getBlockState(chairPos);
+            if (!(blockState.getBlock() instanceof ChairBlock)) {
+                return false;
+            }
+
+            // Check if chair is already occupied
+            RandomHumanEntity occupant = ChairBlock.getSittingEntity(serverLevel, chairPos);
+            return occupant == null;
+        }
+
+        private void sitInChair() {
+            if (targetChair == null || !(entity.level() instanceof ServerLevel serverLevel)) {
+                return;
+            }
+
+            // Final check that chair is available
+            if (!isChairAvailable(targetChair)) {
+                return;
+            }
+
+            // Position the entity properly and make them sit
+            BlockState chairState = serverLevel.getBlockState(targetChair);
+            Vec3 sittingPos = ChairBlock.getSittingPosition(targetChair, chairState);
+            float sittingYaw = ChairBlock.getSittingYaw(chairState);
+
+            entity.moveTo(sittingPos.x, sittingPos.y, sittingPos.z, sittingYaw, 0);
+            entity.sitInChair(targetChair);
         }
     }
 }

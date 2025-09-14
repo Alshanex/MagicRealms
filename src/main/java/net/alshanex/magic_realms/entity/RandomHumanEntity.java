@@ -19,6 +19,7 @@ import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.data.VillagerOffersData;
@@ -76,6 +77,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import software.bernie.geckolib.animation.*;
@@ -102,6 +104,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Boolean> IS_STUNNED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> STUN_TIMER = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> EMERALD_BALANCE = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_SITTING = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<BlockPos> CHAIR_POSITION = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<Integer> SITTING_TIME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> SIT_COOLDOWN = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
 
     private EntityType<?> fearedEntityType = null;
     private boolean fearGoalInitialized = false;
@@ -125,6 +131,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     private int regenTimer = 0;
     private static final int REGEN_INTERVAL = 100;
+
+    private static final int MIN_SITTING_TIME = 200; // 10 seconds
+    private static final int SIT_COOLDOWN_TIME = 600; // 30 seconds
+    private static final int MAX_SITTING_TIME = 1200; // 60 seconds
 
     public RandomHumanEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -232,8 +242,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.goalSelector.addGoal(7, new HumanGoals.SellItemsToVillagersGoal(this));
         this.goalSelector.addGoal(8, new HumanGoals.EmeraldOverflowGoal(this));
 
-        this.goalSelector.addGoal(9, new WaterAvoidingRandomStrollGoal(this, 0.8D));
-        this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(9, new HumanGoals.ChairSittingGoal(this));
+
+        this.goalSelector.addGoal(10, new WaterAvoidingRandomStrollGoal(this, 0.8D));
+        this.goalSelector.addGoal(11, new LookAtPlayerGoal(this, Player.class, 8.0F));
 
         this.targetSelector.addGoal(1, new GenericOwnerHurtByTargetGoal(this, this::getSummoner));
         this.targetSelector.addGoal(2, new GenericOwnerHurtTargetGoal(this, this::getSummoner));
@@ -803,6 +815,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean isImmobile() {
+        if (isSittingInChair()) {
+            return true; // Sitting entities can't move
+        }
         if (isStunned()) {
             return true; // Stunned entities can't move
         }
@@ -811,6 +826,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public Pose getPose() {
+        if (isSittingInChair()) {
+            return Pose.SITTING;
+        }
         if (isStunned()) {
             return Pose.SITTING;
         }
@@ -819,6 +837,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean canAttack(LivingEntity target) {
+        if (isSittingInChair()) {
+            return false; // Can't attack while sitting
+        }
         if (this.hasEffect(MREffects.STUN)) {
             return false;
         }
@@ -827,6 +848,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void setTarget(@Nullable LivingEntity target) {
+        if (isSittingInChair() && target != null) {
+            unsitFromChair();
+        }
         if (this.hasEffect(MREffects.STUN) && target != null) {
             return; // Don't set targets while stunned
         }
@@ -834,18 +858,87 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     }
 
     @Override
+    public boolean isPushable() {
+        if (isSittingInChair()) {
+            return false; // Don't push sitting entities
+        }
+        return super.isPushable();
+    }
+
+    @Override
     public void travel(Vec3 travelVector) {
+        if (isSittingInChair()) {
+            // Don't allow movement while sitting
+            super.travel(Vec3.ZERO);
+            return;
+        }
+
         if (this.hasEffect(MREffects.STUN)) {
             // Force entity to stay still
             super.travel(Vec3.ZERO);
             return;
         }
+
         super.travel(travelVector);
+    }
+
+    private void handleSittingTick() {
+        // Handle sit cooldown
+        int sitCooldown = getSitCooldown();
+        if (sitCooldown > 0) {
+            setSitCooldown(sitCooldown - 1);
+        }
+
+        // Handle sitting behavior
+        if (isSittingInChair()) {
+            int sittingTime = getSittingTime();
+            setSittingTime(sittingTime + 1);
+
+            // Validate chair still exists
+            BlockPos chairPos = getChairPosition();
+            if (!isValidChair(chairPos)) {
+                unsitFromChair();
+                return;
+            }
+
+            // Keep entity in sitting position
+            Vec3 sittingPos = ChairBlock.getSittingPosition(chairPos, level().getBlockState(chairPos));
+            if (this.position().distanceTo(sittingPos) > 0.5) {
+                this.moveTo(sittingPos.x, sittingPos.y, sittingPos.z, this.getYRot(), this.getXRot());
+            }
+
+            // Check if entity wants to unsit (after minimum time)
+            if (sittingTime >= MIN_SITTING_TIME) {
+                // 1% chance per tick to unsit after minimum time
+                // Higher chance if sitting for a long time
+                float unsitChance = 0.01f;
+                if (sittingTime > MAX_SITTING_TIME) {
+                    unsitChance = 0.1f; // 10% chance if sitting too long
+                }
+
+                if (this.getRandom().nextFloat() < unsitChance) {
+                    unsitFromChair();
+                }
+            }
+        }
+    }
+
+    private boolean isValidChair(BlockPos chairPos) {
+        if (chairPos == null || chairPos.equals(BlockPos.ZERO)) {
+            return false;
+        }
+
+        BlockState blockState = level().getBlockState(chairPos);
+        return blockState.getBlock() instanceof ChairBlock;
     }
 
     @Override
     public void tick() {
         super.tick();
+
+        if (!level().isClientSide) {
+            handleSittingTick();
+        }
 
         if(level().isClientSide() && this.isStunned()){
             StunParticleEffect.spawnStunParticles(this, (ClientLevel) level());
@@ -954,8 +1047,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(IS_STUNNED, false);
         pBuilder.define(STUN_TIMER, 0);
         pBuilder.define(EMERALD_BALANCE, 0);
+        pBuilder.define(IS_SITTING, false);
+        pBuilder.define(CHAIR_POSITION, BlockPos.ZERO);
+        pBuilder.define(SITTING_TIME, 0);
+        pBuilder.define(SIT_COOLDOWN, 0);
     }
-
 
     private void initializeRandomAppearance(RandomSource randomSource) {
         if (appearanceGenerated) {
@@ -1117,6 +1213,65 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return EntityClass.values()[this.entityData.get(ENTITY_CLASS)];
     }
 
+    public boolean isSittingInChair() {
+        return this.entityData.get(IS_SITTING);
+    }
+
+    public BlockPos getChairPosition() {
+        return this.entityData.get(CHAIR_POSITION);
+    }
+
+    public int getSittingTime() {
+        return this.entityData.get(SITTING_TIME);
+    }
+
+    public int getSitCooldown() {
+        return this.entityData.get(SIT_COOLDOWN);
+    }
+
+    public void setSittingTime(int time) {
+        this.entityData.set(SITTING_TIME, time);
+    }
+
+    public void setSitCooldown(int cooldown) {
+        this.entityData.set(SIT_COOLDOWN, cooldown);
+    }
+
+    public void sitInChair(BlockPos chairPos) {
+        this.entityData.set(IS_SITTING, true);
+        this.entityData.set(CHAIR_POSITION, chairPos);
+        this.entityData.set(SITTING_TIME, 0);
+
+        // Set sitting pose
+        this.setPose(Pose.SITTING);
+
+        // Stop navigation and clear target
+        this.getNavigation().stop();
+        this.setTarget(null);
+
+        MagicRealms.LOGGER.debug("Entity {} sat in chair at {}", getEntityName(), chairPos);
+    }
+
+    public void unsitFromChair() {
+        if (!isSittingInChair()) {
+            return;
+        }
+
+        this.entityData.set(IS_SITTING, false);
+        this.entityData.set(CHAIR_POSITION, BlockPos.ZERO);
+        this.entityData.set(SITTING_TIME, 0);
+        this.entityData.set(SIT_COOLDOWN, SIT_COOLDOWN_TIME);
+
+        // Reset pose
+        this.setPose(Pose.STANDING);
+
+        MagicRealms.LOGGER.debug("Entity {} unsit from chair, cooldown started", getEntityName());
+    }
+
+    public boolean canSitInChair() {
+        return !isSittingInChair() && getSitCooldown() <= 0 && !isStunned();
+    }
+
     private void initializeFearedEntity(RandomSource randomSource) {
         // 30% chance to fear an entity
         if (randomSource.nextFloat() >= 0.3f) {
@@ -1249,6 +1404,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (level().isClientSide()) return InteractionResult.FAIL;
 
         if (player.level().isClientSide()) return InteractionResult.FAIL;
+
+        if (isSittingInChair()) {
+            unsitFromChair();
+            return InteractionResult.SUCCESS;
+        }
 
         if (isStunned()) {
             return InteractionResult.FAIL;
@@ -1478,6 +1638,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putInt("StunTimer", this.entityData.get(STUN_TIMER));
 
         compound.putInt("EmeraldBalance", getEmeraldBalance());
+
+        compound.putBoolean("IsSitting", isSittingInChair());
+        compound.putLong("ChairPosition", getChairPosition().asLong());
+        compound.putInt("SittingTime", getSittingTime());
+        compound.putInt("SitCooldown", getSitCooldown());
     }
 
     @Override
@@ -1598,6 +1763,16 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         this.entityData.set(STUN_TIMER, compound.getInt("StunTimer"));
 
         setEmeraldBalance(compound.getInt("EmeraldBalance"));
+
+        this.entityData.set(IS_SITTING, compound.getBoolean("IsSitting"));
+        this.entityData.set(CHAIR_POSITION, BlockPos.of(compound.getLong("ChairPosition")));
+        this.entityData.set(SITTING_TIME, compound.getInt("SittingTime"));
+        this.entityData.set(SIT_COOLDOWN, compound.getInt("SitCooldown"));
+
+        // Validate chair position on load
+        if (isSittingInChair() && !isValidChair(getChairPosition())) {
+            unsitFromChair();
+        }
     }
 
     private boolean isAlliedHelper(Entity entity) {
@@ -1685,6 +1860,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public boolean hurt(DamageSource pSource, float pAmount) {
         if (isStunned()) {
             return false;
+        }
+
+        if (isSittingInChair() && pAmount > 0) {
+            unsitFromChair();
         }
 
         if (level().isClientSide) {

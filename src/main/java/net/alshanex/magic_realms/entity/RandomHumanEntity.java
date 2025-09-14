@@ -1638,7 +1638,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void onAddedToLevel(){
-        MRUtils.syncPresetTextureName(this);
+        if (this.level().isClientSide()) {
+            MRUtils.syncPresetTextureName(this);
+        }
         super.onAddedToLevel();
     }
 

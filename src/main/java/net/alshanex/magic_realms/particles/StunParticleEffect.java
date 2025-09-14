@@ -31,7 +31,7 @@ public class StunParticleEffect {
             // Spawn star particles
             level.addParticle(ParticleTypes.ELECTRIC_SPARK,
                     starX, entityY, starZ,
-                    0, 0, 0);
+                    0.1, 0, 0.1);
         }
     }
 }

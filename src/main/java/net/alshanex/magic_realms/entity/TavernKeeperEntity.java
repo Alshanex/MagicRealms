@@ -2,7 +2,9 @@ package net.alshanex.magic_realms.entity;
 
 import com.google.common.collect.Sets;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
+import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
 import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
@@ -10,6 +12,7 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.IMerchantWizard;
 import io.redspace.ironsspellbooks.item.FurledMapItem;
+import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
 import io.redspace.ironsspellbooks.player.AdditionalWanderingTrades;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
@@ -63,6 +66,9 @@ import software.bernie.geckolib.animation.AnimationState;
 import java.util.*;
 
 public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttacker, IMerchantWizard {
+    private long lastHurtTime = 0;
+    private static final int HEALING_DELAY_TICKS = 1200;
+
     public TavernKeeperEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         xpReward = 0;
@@ -82,7 +88,6 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         );
         this.goalSelector.addGoal(3, new PatrolNearLocationGoal(this, 5, .75f));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(10, new WizardRecoverGoal(this));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 1, true, false, this::isHostileTowards));
@@ -182,6 +187,39 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     @Override
     public Optional<SoundEvent> getAngerSound() {
         return Optional.of(SoundRegistry.TRADER_NO.get());
+    }
+
+    @Override
+    public boolean hurt(DamageSource pSource, float pAmount) {
+        boolean wasHurt = super.hurt(pSource, pAmount);
+        if (wasHurt) {
+            this.lastHurtTime = this.level().getGameTime();
+        }
+        return wasHurt;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        // Only run on server side
+        if (!this.level().isClientSide) {
+            // Check if entity is damaged and hasn't been hurt recently
+            if (this.getHealth() < this.getMaxHealth() && this.lastHurtTime > 0) {
+                long currentTime = this.level().getGameTime();
+                long timeSinceLastHurt = currentTime - this.lastHurtTime;
+
+                // If a minute has passed since last damage, heal to full
+                if (timeSinceLastHurt >= HEALING_DELAY_TICKS) {
+                    this.setHealth(this.getMaxHealth());
+                    this.lastHurtTime = 0; // Reset the timer
+
+                    serverTriggerAnimation("instant_self");
+                    this.playSound(SoundRegistry.CLEANSE_CAST.get(), 1.0F, 1.0F);
+                    MagicManager.spawnParticles(this.level(), new BlastwaveParticleOptions(SchoolRegistry.HOLY.get().getTargetingColor(), 3), this.getX(), this.getY() + .165f, this.getZ(), 1, 0, 0, 0, 0, true);
+                }
+            }
+        }
     }
 
     /**
@@ -460,12 +498,14 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
+        pCompound.putLong("LastHurtTime", this.lastHurtTime);
         serializeMerchant(pCompound, this.offers, this.lastRestockGameTime, this.numberOfRestocksToday);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
+        this.lastHurtTime = pCompound.getLong("LastHurtTime");
         deserializeMerchant(pCompound, c -> this.offers = c);
     }
 

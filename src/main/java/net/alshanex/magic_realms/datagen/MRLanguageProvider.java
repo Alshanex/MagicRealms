@@ -86,6 +86,11 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.trade_success", "%s: Thanks for the emerald! Take this in return");
 
         add("message.magic_realms.tavernkeep_tip", "Tavernkeep: I don't know the exact method, but i've heard rumours about a book called Necronomicon that has information regarding blood magic");
+        add("message.magic_realms.tavernkeep_tip.question_key", "how");
+        add("message.magic_realms.tavernkeep_tip.action_key_1", "get");
+        add("message.magic_realms.tavernkeep_tip.action_key_2", "obtain");
+        add("message.magic_realms.tavernkeep_tip.subject_key_1", "tavernkeep");
+        add("message.magic_realms.tavernkeep_tip.subject_key_2", "tavernkeeper");
 
         add("ui.magic_realms.blood_experiment_title", "Blood Infusing Experiment #1");
         add("ui.magic_realms.blood_experiment_text", "I've noticed that some blood spells have secondary effects on the caster, so i started an experiment to transform my offhand item into a different item by imbuing blood magic into it.");

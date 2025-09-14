@@ -38,11 +38,6 @@ public class ServerEvents {
         }
     }
 
-    private static final Pattern HOW_PATTERN = Pattern.compile("\\bhow\\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern GET_OBTAIN_PATTERN = Pattern.compile("\\b(get|obtain)\\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern TAVERNKEEP_PATTERN = Pattern.compile("\\b(tavernkeep|tavernkeeper)\\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern BLOOD_PACT_PATTERN = Pattern.compile("\\bblood pact\\b", Pattern.CASE_INSENSITIVE);
-
     private static final double SEARCH_RADIUS = 5.0;
 
     @SubscribeEvent
@@ -51,8 +46,28 @@ public class ServerEvents {
         String message = event.getMessage().getString().toLowerCase();
         Level level = player.level();
 
+        Pattern howPattern = Pattern.compile("\\b" +
+                        Component.translatable("message.magic_realms.tavernkeep_tip.question_key").getString() + "\\b",
+                Pattern.CASE_INSENSITIVE);
+
+        Pattern getObtainPattern = Pattern.compile("\\b(" +
+                Component.translatable("message.magic_realms.tavernkeep_tip.action_key_1").getString() +
+                "|" +
+                Component.translatable("message.magic_realms.tavernkeep_tip.action_key_2").getString() +
+                ")\\b", Pattern.CASE_INSENSITIVE);
+
+        Pattern tavernkeepPattern = Pattern.compile("\\b(" +
+                Component.translatable("message.magic_realms.tavernkeep_tip.subject_key_1").getString() +
+                "|" +
+                Component.translatable("message.magic_realms.tavernkeep_tip.subject_key_2").getString() +
+                ")\\b", Pattern.CASE_INSENSITIVE);
+
+        Pattern bloodPactPattern = Pattern.compile("\\b" +
+                        Component.translatable("item.magic_realms.blood_pact").getString() + "\\b",
+                Pattern.CASE_INSENSITIVE);
+
         // Check if the message contains all required words/phrases
-        if (containsAllRequiredWords(message)) {
+        if (containsAllRequiredWords(message, howPattern, getObtainPattern, tavernkeepPattern, bloodPactPattern)) {
             // Check for nearby TavernKeeperEntity
             if (hasTavernKeeperNearby(player, level)) {
                 // Send the response message to the player
@@ -61,11 +76,12 @@ public class ServerEvents {
         }
     }
 
-    private static boolean containsAllRequiredWords(String message) {
-        return HOW_PATTERN.matcher(message).find() &&
-                GET_OBTAIN_PATTERN.matcher(message).find() &&
-                TAVERNKEEP_PATTERN.matcher(message).find() &&
-                BLOOD_PACT_PATTERN.matcher(message).find();
+    private static boolean containsAllRequiredWords(String message, Pattern howPattern, Pattern getObtainPattern,
+                                                    Pattern tavernkeepPattern, Pattern bloodPactPattern) {
+        return howPattern.matcher(message).find() &&
+                getObtainPattern.matcher(message).find() &&
+                tavernkeepPattern.matcher(message).find() &&
+                bloodPactPattern.matcher(message).find();
     }
 
     private static boolean hasTavernKeeperNearby(Player player, Level level) {

@@ -1815,6 +1815,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                     level().addFreshEntity(itemEntity);
                 }
             }
+            CombinedTextureManager.removeEntityTexture(this.stringUUID, true);
         }
         super.die(damageSource);
     }

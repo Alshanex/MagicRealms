@@ -484,7 +484,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             schoolCount = 4; // 5% quadruple school
         }
 
-        List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().toList();
+        List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().filter(school -> ModTags.isSchoolInTag(school, ModTags.SCHOOL_WHITELIST)).toList();
 
         List<SchoolType> selectedSchools = new ArrayList<>();
         List<SchoolType> tempAvailable = new ArrayList<>(availableSchools);
@@ -682,7 +682,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             container.getActiveSpells().forEach(spellSlot -> {
                 AbstractSpell spell = spellSlot.spellData().getSpell();
                 // Only add if not blacklisted
-                if (!ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST)) {
+                if (!ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST) && ModTags.isSchoolInTag(spell.getSchoolType(), ModTags.SCHOOL_WHITELIST)) {
                     spells.add(spell);
                 }
             });
@@ -938,6 +938,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         if (!level().isClientSide) {
             handleSittingTick();
+        }
+
+        if (!level().isClientSide && tickCount % 20 == 0 && getTarget() == null) {
+            if(this.isAlliedTo(getTarget())) {
+                this.setTarget(null);
+            }
         }
 
         if(level().isClientSide() && this.isStunned()){
@@ -1370,7 +1376,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         ISpellContainer container = ISpellContainer.get(spellbook);
         if (container != null && !container.isEmpty()) {
             container.getActiveSpells().forEach(spellSlot -> {
-                spells.add(spellSlot.spellData().getSpell());
+                if (!ModTags.isSpellInTag(spellSlot.spellData().getSpell(), ModTags.SPELL_BLACKLIST) && ModTags.isSchoolInTag(spellSlot.spellData().getSpell().getSchoolType(), ModTags.SCHOOL_WHITELIST)) {
+                    spells.add(spellSlot.spellData().getSpell());
+                }
             });
         }
 

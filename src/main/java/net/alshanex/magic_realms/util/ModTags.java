@@ -1,7 +1,9 @@
 package net.alshanex.magic_realms.util;
 
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
+import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -56,6 +58,11 @@ public class ModTags {
     public static TagKey<AbstractSpell> UNSAFE_BUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/unsafe_buff"));
 
     public static TagKey<AbstractSpell> SPELL_BLACKLIST = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "blacklisted"));
+    public static TagKey<SchoolType> SCHOOL_WHITELIST = createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "school_whitelist"));
+
+    public static TagKey<SchoolType> createSchoolTag(ResourceLocation name) {
+        return new TagKey<SchoolType>(SchoolRegistry.SCHOOL_REGISTRY_KEY, name);
+    }
 
     public static TagKey<AbstractSpell> create(ResourceLocation name) {
         return new TagKey<AbstractSpell>(SpellRegistry.SPELL_REGISTRY_KEY, name);
@@ -137,6 +144,18 @@ public class ModTags {
         SpellRegistry.REGISTRY.getHolder(spell.getSpellResource()).ifPresent(a -> {
             if (a.is(tag)) {
                 list.add(spell);
+            }
+        });
+
+        return !list.isEmpty();
+    }
+
+    public static boolean isSchoolInTag(SchoolType schoolType, TagKey<SchoolType> tag) {
+        var list = new ArrayList<SchoolType>();
+
+        SchoolRegistry.REGISTRY.getHolder(schoolType.getId()).ifPresent(a -> {
+            if (a.is(tag)) {
+                list.add(schoolType);
             }
         });
 

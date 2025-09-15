@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.screens;
 
+import io.redspace.ironsspellbooks.item.SpellBook;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
@@ -281,6 +282,11 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
                     snapshot.entityClass == EntityClass.WARRIOR &&
                     snapshot.hasShield) {
                 return stack.getItem() instanceof ShieldItem;
+            }
+
+            if (snapshot != null &&
+                    snapshot.entityClass == EntityClass.MAGE) {
+                return stack.getItem() instanceof SpellBook;
             }
 
             return false;

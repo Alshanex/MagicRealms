@@ -10,14 +10,6 @@
     {
       "id": "#brewinandchewin:foods/cheese_wedge",
       "required": false
-    },
-    {
-      "id": "#brewinandchewin:foods/jerky_meat",
-      "required": false
-    },
-    {
-      "id": "#brewinandchewin:foods/horror_meat",
-      "required": false
     }
   ]
 }

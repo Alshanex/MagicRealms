@@ -940,7 +940,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             handleSittingTick();
         }
 
-        if (!level().isClientSide && tickCount % 20 == 0 && getTarget() == null) {
+        if (!level().isClientSide && tickCount % 20 == 0 && getTarget() != null) {
             if(this.isAlliedTo(getTarget())) {
                 this.setTarget(null);
             }
@@ -1792,6 +1792,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
         if (entity instanceof IMagicSummon magicSummon) {
             var otherOwner = magicSummon.getSummoner();
+            return otherOwner != null && (owner == otherOwner || otherOwner.isAlliedTo(otherOwner));
+        } else if (entity instanceof RandomHumanEntity humanEntity) {
+            var otherOwner = humanEntity.getSummoner();
             return otherOwner != null && (owner == otherOwner || otherOwner.isAlliedTo(otherOwner));
         } else if (entity instanceof OwnableEntity tamableAnimal) {
             var otherOwner = tamableAnimal.getOwner();

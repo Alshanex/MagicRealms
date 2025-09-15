@@ -1,0 +1,23 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:suspicious_stew",
+    "irons_spellbooks:fire_ale",
+    {
+      "id": "#brewinandchewin:fermented_drinks",
+      "required": false
+    },
+    {
+      "id": "#brewinandchewin:foods/cheese_wedge",
+      "required": false
+    },
+    {
+      "id": "#brewinandchewin:foods/jerky_meat",
+      "required": false
+    },
+    {
+      "id": "#brewinandchewin:foods/horror_meat",
+      "required": false
+    }
+  ]
+}

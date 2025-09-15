@@ -23,6 +23,7 @@ import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -50,6 +51,7 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
@@ -308,13 +310,15 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         if (this.offers == null) {
             this.offers = new MerchantOffers();
 
-            this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, new ItemStack(ItemRegistry.FIRE_ALE.get()), 3, 6).getOffer(this, this.random));
-            this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, new ItemStack(Items.SUSPICIOUS_STEW), 4, 8).getOffer(this, this.random));
+            List<ItemStack> basicItems = getRandomItemsFromTag(ModTags.TAVERNKEEP_SELLS, this.random);
+            for(ItemStack item : basicItems){
+                this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, item, 3, 8).getOffer(this, this.random));
+            }
 
             if(this.level() instanceof ServerLevel serverLevel){
                 List<ItemStack> furledMaps = getRandomFurledMaps(serverLevel, ModTags.FURLED_MAP_STRUCTURES, this.random);
                 for(ItemStack map : furledMaps){
-                    this.offers.add(new AdditionalWanderingTrades.SimpleSell(3, map, 8, 12).getOffer(this, this.random));
+                    this.offers.add(new AdditionalWanderingTrades.SimpleSell(1, map, 8, 12).getOffer(this, this.random));
                 }
             }
 
@@ -439,6 +443,40 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             MagicRealms.LOGGER.warn("Failed to cleanup structure name '{}': {}", structureId, e.getMessage());
             return "Unknown Structure";
         }
+    }
+
+    public List<ItemStack> getRandomItemsFromTag(TagKey<Item> itemTag, RandomSource random) {
+        List<Item> itemsInTag = new ArrayList<>();
+
+        for (Item item : BuiltInRegistries.ITEM) {
+            if (item.builtInRegistryHolder().is(itemTag)) {
+                itemsInTag.add(item);
+            }
+        }
+
+        List<ItemStack> result = new ArrayList<>();
+
+        if (itemsInTag.isEmpty()) {
+            return result;
+        }
+
+        if (itemsInTag.size() == 1) {
+            result.add(new ItemStack(itemsInTag.get(0)));
+            return result;
+        }
+
+        // Get first random item
+        Item firstItem = itemsInTag.get(random.nextInt(itemsInTag.size()));
+        result.add(new ItemStack(firstItem));
+
+        // Remove the first item from the list to ensure uniqueness
+        itemsInTag.remove(firstItem);
+
+        // Get second random item
+        Item secondItem = itemsInTag.get(random.nextInt(itemsInTag.size()));
+        result.add(new ItemStack(secondItem));
+
+        return result;
     }
 
     private static final List<VillagerTrades.ItemListing> fillerOffers = List.of(

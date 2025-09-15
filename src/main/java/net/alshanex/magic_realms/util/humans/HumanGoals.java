@@ -1939,10 +1939,10 @@ public class HumanGoals {
 
         protected AbstractSpell getNextSpellType() {
             NavigableMap<Integer, ArrayList<AbstractSpell>> weightedSpells = new TreeMap<>();
-            int attackWeight = getAttackWeight();
-            int defenseWeight = getDefenseWeight() - (lastSpellCategory == defenseSpells ? 100 : 0);
-            int movementWeight = getMovementWeight() - (lastSpellCategory == movementSpells ? 50 : 0);
-            int supportWeight = getSupportWeight() - (lastSpellCategory == supportSpells ? 100 : 0);
+            int attackWeight = Math.max(0, getAttackWeight());
+            int defenseWeight = Math.max(0, getDefenseWeight() - (lastSpellCategory == defenseSpells ? 100 : 0));
+            int movementWeight = Math.max(0, getMovementWeight() - (lastSpellCategory == movementSpells ? 50 : 0));
+            int supportWeight = Math.max(0, getSupportWeight() - (lastSpellCategory == supportSpells ? 100 : 0));
             int total = 0;
 
             if (!attackSpells.isEmpty() && attackWeight > 0) {
@@ -1962,21 +1962,43 @@ public class HumanGoals {
                 weightedSpells.put(total, getFilteredSupportSpells());
             }
 
-            if (total > 0) {
-                int seed = mob.getRandom().nextInt(total);
-                var spellList = weightedSpells.higherEntry(seed).getValue();
-                lastSpellCategory = spellList;
-
-                if (drinksPotions && spellList == supportSpells) {
-                    if (supportSpells.isEmpty() || mob.getRandom().nextFloat() < .5f) {
-                        spellCastingMob.startDrinkingPotion();
-                        return SpellRegistry.none();
-                    }
+            // Safety check: if total is still 0, fallback to attack spells
+            if (total <= 0) {
+                if (!attackSpells.isEmpty()) {
+                    lastSpellCategory = attackSpells;
+                    return attackSpells.get(mob.getRandom().nextInt(attackSpells.size()));
+                } else if (!defenseSpells.isEmpty()) {
+                    lastSpellCategory = defenseSpells;
+                    return defenseSpells.get(mob.getRandom().nextInt(defenseSpells.size()));
+                } else if (!movementSpells.isEmpty()) {
+                    lastSpellCategory = movementSpells;
+                    return movementSpells.get(mob.getRandom().nextInt(movementSpells.size()));
+                } else if (!supportSpells.isEmpty()) {
+                    lastSpellCategory = supportSpells;
+                    return supportSpells.get(mob.getRandom().nextInt(supportSpells.size()));
+                } else {
+                    // No spells available at all
+                    return SpellRegistry.none();
                 }
-                return spellList.get(mob.getRandom().nextInt(spellList.size()));
-            } else {
+            }
+
+            int seed = mob.getRandom().nextInt(total);
+            var spellList = weightedSpells.higherEntry(seed).getValue();
+            lastSpellCategory = spellList;
+
+            if (drinksPotions && spellList == supportSpells) {
+                if (supportSpells.isEmpty() || mob.getRandom().nextFloat() < .5f) {
+                    spellCastingMob.startDrinkingPotion();
+                    return SpellRegistry.none();
+                }
+            }
+
+            // Safety check for empty spell list
+            if (spellList.isEmpty()) {
                 return SpellRegistry.none();
             }
+
+            return spellList.get(mob.getRandom().nextInt(spellList.size()));
         }
 
         protected ArrayList<AbstractSpell> getFilteredAttackSpells() {
@@ -2253,14 +2275,15 @@ public class HumanGoals {
             double distanceSquared = this.mob.distanceToSqr(this.target.getX(), this.target.getY(), this.target.getZ());
             int distanceWeight = (int) (1 - (distanceSquared / spellcastingRangeSqr) * -60);
 
-            return baseWeight + targetHealthWeight + distanceWeight;
+            int result = baseWeight + targetHealthWeight + distanceWeight;
+            return Math.max(0, result); // Ensure never negative
         }
 
         protected int getDefenseWeight() {
             int baseWeight = -20;
 
             if (target == null) {
-                return baseWeight;
+                return 0;
             }
 
             int timeSinceHurt = mob.tickCount - lastHurtTime;
@@ -2279,7 +2302,8 @@ public class HumanGoals {
 
             int recentAttackBonus = 150;
 
-            return baseWeight + healthWeight + targetHealthWeight + threatWeight + recentAttackBonus;
+            int result = baseWeight + healthWeight + targetHealthWeight + threatWeight + recentAttackBonus;
+            return Math.max(0, result); // Ensure never negative
         }
 
         protected int getMovementWeight() {
@@ -2297,14 +2321,15 @@ public class HumanGoals {
             float distanceInverted = (float) (1 - distancePercent);
             int runWeight = (int) (400 * healthInverted * healthInverted * distanceInverted * distanceInverted);
 
-            return distanceWeight + losWeight + runWeight;
+            int result = distanceWeight + losWeight + runWeight;
+            return Math.max(0, result); // Ensure never negative
         }
 
         protected int getSupportWeight() {
             int baseWeight = -15;
 
             if (target == null) {
-                return baseWeight;
+                return 0;
             }
 
             float health = 1 - mob.getHealth() / mob.getMaxHealth();
@@ -2314,7 +2339,8 @@ public class HumanGoals {
             double distancePercent = Mth.clamp(distanceSquared / spellcastingRangeSqr, 0, 1);
             int distanceWeight = (int) ((1 - distancePercent) * -75);
 
-            return baseWeight + healthWeight + distanceWeight;
+            int result = baseWeight + healthWeight + distanceWeight;
+            return Math.max(0, result); // Ensure never negative
         }
 
         @Override

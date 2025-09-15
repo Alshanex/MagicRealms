@@ -1829,6 +1829,19 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (this.level().isClientSide()) {
             MRUtils.syncPresetTextureName(this);
         }
+
+        if (!this.level().isClientSide && this.entityData.get(INITIALIZED)) {
+            // Update spellbook spells for mages
+            if (this.getEntityClass() == EntityClass.MAGE) {
+                updateSpellbookSpells();
+            }
+
+            // Refresh spells after equipment change
+            refreshSpellsAfterEquipmentChange();
+
+            MagicRealms.LOGGER.debug("Entity {} refreshed spells on world load", getEntityName());
+        }
+
         super.onAddedToLevel();
     }
 

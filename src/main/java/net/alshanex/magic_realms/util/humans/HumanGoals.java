@@ -15,7 +15,6 @@ import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.block.ChairBlock;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.alshanex.magic_realms.util.MRUtils;
@@ -52,9 +51,6 @@ import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -2073,10 +2069,10 @@ public class HumanGoals {
             boolean hasCloseEnemies = hasEntitiesInRange(3);
 
             if (hasCloseEnemies) {
-                filteredSpells = filterSpellsByTags(defenseSpells, ModTags.ATTACK_BACK_DEFENSE);
+                filteredSpells = filterSpellsByTags(defenseSpells, ModTags.COUNTERATTACK_DEFENSE);
 
                 if (filteredSpells.isEmpty()) {
-                    List<AbstractSpell> escapeSpells = filterSpellsByTags(movementSpells, ModTags.ESCAPE_MOVEMENT);
+                    List<AbstractSpell> escapeSpells = filterSpellsByTags(movementSpells, ModTags.RETREAT_MOVEMENT);
                     if (!escapeSpells.isEmpty()) {
                         filteredSpells = escapeSpells;
                     } else {
@@ -2095,7 +2091,7 @@ public class HumanGoals {
                 if (!availableSelfBuffs.isEmpty()) {
                     filteredSpells = availableSelfBuffs;
                 } else {
-                    filteredSpells = filterSpellsByTags(defenseSpells, ModTags.ATTACK_BACK_DEFENSE);
+                    filteredSpells = filterSpellsByTags(defenseSpells, ModTags.COUNTERATTACK_DEFENSE);
                 }
             }
 
@@ -2116,19 +2112,19 @@ public class HumanGoals {
             List<AbstractSpell> filteredSpells = new ArrayList<>();
 
             if (hasCloseHostiles) {
-                filteredSpells = filterSpellsByTags(movementSpells, ModTags.ESCAPE_MOVEMENT);
+                filteredSpells = filterSpellsByTags(movementSpells, ModTags.RETREAT_MOVEMENT);
                 if (filteredSpells.isEmpty()) {
-                    filteredSpells = filterSpellsByTags(movementSpells, ModTags.CLOSE_DISTANCE_MOVEMENT);
+                    filteredSpells = filterSpellsByTags(movementSpells, ModTags.APPROACH_MOVEMENT);
                 }
             } else if (targetDistance > 5) {
-                filteredSpells = filterSpellsByTags(movementSpells, ModTags.CLOSE_DISTANCE_MOVEMENT);
+                filteredSpells = filterSpellsByTags(movementSpells, ModTags.APPROACH_MOVEMENT);
                 if (filteredSpells.isEmpty()) {
-                    filteredSpells = filterSpellsByTags(movementSpells, ModTags.ESCAPE_MOVEMENT);
+                    filteredSpells = filterSpellsByTags(movementSpells, ModTags.RETREAT_MOVEMENT);
                 }
             } else {
-                filteredSpells = filterSpellsByTags(movementSpells, ModTags.CLOSE_DISTANCE_MOVEMENT);
+                filteredSpells = filterSpellsByTags(movementSpells, ModTags.APPROACH_MOVEMENT);
                 if (filteredSpells.isEmpty()) {
-                    filteredSpells = filterSpellsByTags(movementSpells, ModTags.ESCAPE_MOVEMENT);
+                    filteredSpells = filterSpellsByTags(movementSpells, ModTags.RETREAT_MOVEMENT);
                 }
             }
 
@@ -2141,7 +2137,7 @@ public class HumanGoals {
 
             if (healthPercentage > 0.5f) {
                 // More than 50% health
-                List<AbstractSpell> safeBuffs = filterSpellsByTags(supportSpells, ModTags.SAFE_BUFF_BUFFING);
+                List<AbstractSpell> safeBuffs = filterSpellsByTags(supportSpells, ModTags.UNTHREATENED_BUFF_BUFFING);
                 List<AbstractSpell> availableSafeBuffs = filterSpellsWithoutExistingBuffs(safeBuffs, mob);
 
                 List<AbstractSpell> debuffs = filterSpellsByTags(supportSpells, ModTags.DEBUFF_BUFFING);
@@ -2151,7 +2147,7 @@ public class HumanGoals {
                 filteredSpells.addAll(availableDebuffs);
             } else {
                 // Less than 50% health
-                List<AbstractSpell> unsafeBuffs = filterSpellsByTags(supportSpells, ModTags.UNSAFE_BUFF_BUFFING);
+                List<AbstractSpell> unsafeBuffs = filterSpellsByTags(supportSpells, ModTags.THREATENED_BUFF_BUFFING);
                 List<AbstractSpell> availableUnsafeBuffs = filterSpellsWithoutExistingBuffs(unsafeBuffs, mob);
 
                 List<AbstractSpell> debuffs = filterSpellsByTags(supportSpells, ModTags.DEBUFF_BUFFING);

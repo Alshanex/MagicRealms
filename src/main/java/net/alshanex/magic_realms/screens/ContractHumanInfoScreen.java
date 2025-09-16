@@ -83,14 +83,14 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private static final int DAMAGE_X = 85;
     private static final int DAMAGE_Y = 136;
 
-    private static final int ATTRIBUTES_X = 125;
-    private static final int ATTRIBUTES_Y = 24;
-    private static final int ATTRIBUTES_WIDTH = 120;
-    private static final int ATTRIBUTES_HEIGHT = 135;
+    private static final int ATTRIBUTES_X = 132;
+    private static final int ATTRIBUTES_Y = 25;
+    private static final int ATTRIBUTES_WIDTH = 112;
+    private static final int ATTRIBUTES_HEIGHT = 124;
     private static final int LINE_HEIGHT = 9;
 
-    private static final int LABEL_WIDTH = 70;
-    private static final int VALUE_X_OFFSET = 72;
+    private static final int LABEL_WIDTH = 80;
+    private static final int VALUE_X_OFFSET = 82;
 
     private static final int SYMBOL_X = 98;
     private static final int SYMBOL_Y = 20;
@@ -141,25 +141,25 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // Intentar renderizar la entidad en 3D, con fallback a 2D
+        // Render entity and other elements first
         if (!renderEntity3D(guiGraphics)) {
             renderEntityFallback(guiGraphics);
         }
-
         renderStats(guiGraphics);
-
         renderClassSymbol(guiGraphics);
 
-        guiGraphics.enableScissor(
-                leftPos + ATTRIBUTES_X,
-                topPos + ATTRIBUTES_Y,
-                leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH,
-                topPos + ATTRIBUTES_Y + ATTRIBUTES_HEIGHT
-        );
+        // Calculate actual screen coordinates for scissor
+        int scissorLeft = leftPos + ATTRIBUTES_X;
+        int scissorTop = topPos + ATTRIBUTES_Y;
+        int scissorRight = scissorLeft + ATTRIBUTES_WIDTH;
+        int scissorBottom = scissorTop + ATTRIBUTES_HEIGHT;
 
+        // Enable scissor with correct coordinates
+        guiGraphics.enableScissor(scissorLeft, scissorTop, scissorRight, scissorBottom);
+
+        // Render scrollable content
         switch (currentTab) {
             case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
             case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
@@ -167,6 +167,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         guiGraphics.disableScissor();
 
+        // Render scroll indicator if needed
         if (maxScroll > 0) {
             renderScrollIndicator(guiGraphics);
         }
@@ -679,13 +680,12 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         guiGraphics.drawString(font, noEntityText, textX, textY, 0xAAAAAA, false);
     }
 
-    // Resto de métodos sin cambios...
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
-        // Tab clicking
+        // Tab clicking (existing code...)
         if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
             if (currentTab != Tab.IRON_SPELLS) {
@@ -706,7 +706,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             return true;
         }
 
-        // Scroll area clicking for dragging
         if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
                 relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
             isScrolling = true;
@@ -744,7 +743,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
-        // Check if mouse is over the attributes area
         if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
                 relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
 
@@ -829,10 +827,11 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private void renderScrollIndicator(GuiGraphics guiGraphics) {
-        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 4;
+        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 4; // Exactly 4 pixels from right edge
         int scrollBarY = topPos + ATTRIBUTES_Y;
         int scrollBarHeight = ATTRIBUTES_HEIGHT;
 
+        // Background track
         guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0x66000000);
 
         if (maxScroll > 0) {
@@ -883,7 +882,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
         y += 6;
-        guiGraphics.drawString(font, Component.literal("Magic Resistances:").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, Component.literal("Magic Resist:").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
         y += 10;
 
         try {
@@ -1026,28 +1025,38 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         String formattedValue = String.format(format, value);
 
-        String displayName = truncateText(name, LABEL_WIDTH - 5);
+        int totalAvailableWidth = ATTRIBUTES_WIDTH - 4;
+        int maxLabelWidth = LABEL_WIDTH;
+        int maxValueWidth = totalAvailableWidth - VALUE_X_OFFSET;
+
+        String displayName = truncateText(name, maxLabelWidth);
+        String displayValue = truncateText(formattedValue, maxValueWidth);
 
         Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE);
         guiGraphics.drawString(font, labelComponent, x, y, 0xFFFFFF, false);
 
-        Component valueComponent = Component.literal(formattedValue).withStyle(color);
+        Component valueComponent = Component.literal(displayValue).withStyle(color);
         guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, 0xFFFFFF, false);
 
         return y + LINE_HEIGHT;
     }
 
     private String truncateText(String text, int maxWidth) {
+        if (text == null || text.isEmpty()) return text;
+
         if (font.width(text) <= maxWidth) {
             return text;
         }
 
         String truncated = text;
-        while (font.width(truncated + "...") > maxWidth && truncated.length() > 1) {
+        String ellipsis = "...";
+        int ellipsisWidth = font.width(ellipsis);
+
+        while (font.width(truncated) + ellipsisWidth > maxWidth && truncated.length() > 1) {
             truncated = truncated.substring(0, truncated.length() - 1);
         }
 
-        return truncated + "...";
+        return truncated + ellipsis;
     }
 
     private String capitalizeFirst(String str) {

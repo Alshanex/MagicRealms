@@ -7,7 +7,6 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
@@ -47,15 +46,15 @@ public class ModTags {
     public static TagKey<AbstractSpell> MID_RANGE_ATTACKS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "attack/mid_range"));
     public static TagKey<AbstractSpell> LONG_RANGE_ATTACKS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "attack/long_range"));
 
-    public static TagKey<AbstractSpell> ATTACK_BACK_DEFENSE = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "defense/attack_back"));
+    public static TagKey<AbstractSpell> COUNTERATTACK_DEFENSE = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "defense/counterattack"));
     public static TagKey<AbstractSpell> SELF_BUFF_DEFENSE = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "defense/self_buff"));
 
-    public static TagKey<AbstractSpell> CLOSE_DISTANCE_MOVEMENT = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "movement/close_distance"));
-    public static TagKey<AbstractSpell> ESCAPE_MOVEMENT = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "movement/escape"));
+    public static TagKey<AbstractSpell> APPROACH_MOVEMENT = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "movement/approach"));
+    public static TagKey<AbstractSpell> RETREAT_MOVEMENT = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "movement/retreat"));
 
     public static TagKey<AbstractSpell> DEBUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/debuff"));
-    public static TagKey<AbstractSpell> SAFE_BUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/safe_buff"));
-    public static TagKey<AbstractSpell> UNSAFE_BUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/unsafe_buff"));
+    public static TagKey<AbstractSpell> UNTHREATENED_BUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/unthreatened"));
+    public static TagKey<AbstractSpell> THREATENED_BUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/threatened"));
 
     public static TagKey<AbstractSpell> SPELL_BLACKLIST = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "blacklisted"));
     public static TagKey<SchoolType> SCHOOL_WHITELIST = createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "school_whitelist"));
@@ -101,7 +100,7 @@ public class ModTags {
 
         for (var spell : spells) {
             SpellRegistry.REGISTRY.getHolder(spell.getSpellResource()).ifPresent(a -> {
-                if (a.is(ModTags.ATTACK_BACK_DEFENSE) || a.is(ModTags.SELF_BUFF_DEFENSE)) {
+                if (a.is(ModTags.COUNTERATTACK_DEFENSE) || a.is(ModTags.SELF_BUFF_DEFENSE)) {
                     list.add(spell);
                 }
             });
@@ -115,7 +114,7 @@ public class ModTags {
 
         for (var spell : spells) {
             SpellRegistry.REGISTRY.getHolder(spell.getSpellResource()).ifPresent(a -> {
-                if (a.is(ModTags.CLOSE_DISTANCE_MOVEMENT) || a.is(ModTags.ESCAPE_MOVEMENT)) {
+                if (a.is(ModTags.APPROACH_MOVEMENT) || a.is(ModTags.RETREAT_MOVEMENT)) {
                     list.add(spell);
                 }
             });
@@ -129,7 +128,7 @@ public class ModTags {
 
         for (var spell : spells) {
             SpellRegistry.REGISTRY.getHolder(spell.getSpellResource()).ifPresent(a -> {
-                if (a.is(ModTags.UNSAFE_BUFF_BUFFING) || a.is(ModTags.SAFE_BUFF_BUFFING) || a.is(ModTags.DEBUFF_BUFFING)) {
+                if (a.is(ModTags.THREATENED_BUFF_BUFFING) || a.is(ModTags.UNTHREATENED_BUFF_BUFFING) || a.is(ModTags.DEBUFF_BUFFING)) {
                     list.add(spell);
                 }
             });

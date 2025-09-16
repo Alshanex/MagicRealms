@@ -1,11 +1,11 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:abyssal_shroud",
     "irons_spellbooks:evasion",
+    "irons_spellbooks:fortify",
     "irons_spellbooks:heartstop",
     "irons_spellbooks:invisibility",
-    "irons_spellbooks:oakskin",
-    "irons_spellbooks:abyssal_shroud",
-    "irons_spellbooks:fortify"
+    "irons_spellbooks:oakskin"
   ]
 }

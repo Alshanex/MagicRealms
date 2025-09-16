@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:suspicious_stew",
+    {"id": "brewinandchewin:jerky","required": false},
+    {"id": "brewinandchewin:kimchi","required": false},
+    {"id": "brewinandchewin:pickled_pickles","required": false}
+  ]
+}

@@ -1,10 +1,4 @@
 {
   "replace": false,
-  "values": [
-    "#c:bosses",
-    "minecraft:ender_dragon",
-    "minecraft:wither",
-    "irons_spellbooks:dead_king",
-    "irons_spellbooks:fire_boss"
-  ]
+  "values": []
 }

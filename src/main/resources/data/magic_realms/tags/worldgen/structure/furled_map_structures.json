@@ -5,10 +5,6 @@
     "irons_spellbooks:mangrove_hut",
     "irons_spellbooks:ice_spider_den",
     "irons_spellbooks:evoker_fort",
-    "irons_spellbooks:impaled_icebreaker",
-    {
-      "id": "alshanex_familiars:hunter_campsite",
-      "required": false
-    }
+    {"id": "alshanex_familiars:hunter_campsite","required": false}
   ]
 }

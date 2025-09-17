@@ -31,6 +31,7 @@ import net.alshanex.magic_realms.particles.StunParticleEffect;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREffects;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ContractUtils;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.util.ModTags;
@@ -1438,6 +1439,31 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (heldItem.is(Items.EMERALD)) {
             boolean tradeSuccessful = handleEmeraldTrade(player, heldItem);
             return tradeSuccessful ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+        }
+
+        if (heldItem.is(MRItems.HELL_PASS.get())) {
+            if (this.isImmortal()) {
+                player.sendSystemMessage(Component.translatable("message.magic_realms.already_immortal",
+                        this.getEntityName()));
+                return InteractionResult.FAIL;
+            }
+
+            // Grant immortality
+            this.setImmortal(true);
+
+            // Consume the item
+            if (!player.getAbilities().instabuild) {
+                heldItem.shrink(1);
+            }
+
+            // Play sound and send message
+            player.playSound(SoundEvents.TOTEM_USE, 1.0F, 1.0F);
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.sendSystemMessage(Component.translatable("message.magic_realms.granted_immortality",
+                        this.getEntityName()));
+            }
+
+            return InteractionResult.SUCCESS;
         }
 
         if (heldItem.getItem() instanceof PermanentContractItem) {

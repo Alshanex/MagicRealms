@@ -1007,8 +1007,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             } else {
                 UUID previousContractorUUID = contractData.getContractorUUID();
                 if (previousContractorUUID != null && !contractData.isPermanent()) {
-                    contractData.clearContract();
-                    this.setSummoner(null);
+                    this.clearContract();
 
                     Player contractor = this.level().getPlayerByUUID(previousContractorUUID);
                     if (contractor instanceof ServerPlayer serverPlayer) {
@@ -1051,7 +1050,40 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     public void clearContract() {
         ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
         contractData.clearContract();
-        MagicRealms.LOGGER.debug("Contract manually cleared for entity {}", this.getEntityName());
+
+        this.setSummoner(null);
+
+        refreshSummonerDependentGoals();
+
+        if (this.getTarget() != null) {
+            this.setTarget(null);
+        }
+    }
+
+    private void refreshSummonerDependentGoals() {
+        // Clear all summoner-dependent targeting goals
+        this.targetSelector.removeAllGoals(goal ->
+                goal instanceof GenericOwnerHurtByTargetGoal ||
+                        goal instanceof GenericOwnerHurtTargetGoal ||
+                        goal instanceof GenericCopyOwnerTargetGoal ||
+                        goal instanceof GenericHurtByTargetGoal ||
+                        goal instanceof GenericProtectOwnerTargetGoal
+        );
+
+        // Clear summoner-dependent movement goals
+        this.goalSelector.removeAllGoals(goal ->
+                goal instanceof HumanGoals.HumanFollowOwnerGoal
+        );
+
+        // Re-add summoner-dependent targeting goals
+        this.targetSelector.addGoal(1, new GenericOwnerHurtByTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(2, new GenericOwnerHurtTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(3, new GenericCopyOwnerTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(4, (new GenericHurtByTargetGoal(this, (entity) -> entity == getSummoner())).setAlertOthers());
+        this.targetSelector.addGoal(5, new GenericProtectOwnerTargetGoal(this, this::getSummoner));
+
+        // Re-add follow owner goal
+        this.goalSelector.addGoal(3, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
     }
 
     @Override

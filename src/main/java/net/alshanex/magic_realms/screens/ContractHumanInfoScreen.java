@@ -945,7 +945,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Main header
         y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         CompoundTag attributes = snapshot.attributes;
 
@@ -965,7 +966,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Magic Resist section
         y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
@@ -985,7 +987,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // School Power section
         y = renderSectionHeader(guiGraphics, "School Power", x, y, ChatFormatting.RED);
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
@@ -1002,9 +1005,11 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Magic Schools section (for mages only)
         if (snapshot.entityClass == EntityClass.MAGE) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
             y = renderSectionHeader(guiGraphics, "Schools", x, y, ChatFormatting.GOLD);
 
-            y+=2;
+            // Section separator
+            y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
             if (snapshot.magicSchools.isEmpty()) {
                 renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
@@ -1027,9 +1032,11 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         // Spells section
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
         y = renderSectionHeader(guiGraphics, "Spells", x, y, ChatFormatting.YELLOW);
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         if (snapshot.entitySpells.isEmpty()) {
             renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
@@ -1071,7 +1078,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Main header
         y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.RED);
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         CompoundTag attributes = snapshot.attributes;
 
@@ -1092,7 +1100,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Survivability section
         y = renderSectionHeader(guiGraphics, "Survivability", x, y, ChatFormatting.GREEN);
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         y = renderAttributeWithTruncation(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
@@ -1104,7 +1113,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Ranged Combat section
         y = renderSectionHeader(guiGraphics, "Ranged Combat", x, y, ChatFormatting.GOLD);
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);

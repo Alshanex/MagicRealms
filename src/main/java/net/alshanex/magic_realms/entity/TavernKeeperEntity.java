@@ -310,9 +310,14 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         if (this.offers == null) {
             this.offers = new MerchantOffers();
 
-            List<ItemStack> basicItems = getRandomItemsFromTag(ModTags.TAVERNKEEP_SELLS, this.random);
-            for(ItemStack item : basicItems){
-                this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, item, 3, 8).getOffer(this, this.random));
+            ItemStack drink = getRandomItemsFromTag(ModTags.TAVERNKEEP_SELLS_DRINKS, this.random);
+            if(!drink.isEmpty()){
+                this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, drink, 3, 8).getOffer(this, this.random));
+            }
+
+            ItemStack food = getRandomItemsFromTag(ModTags.TAVERNKEEP_SELLS_FOOD, this.random);
+            if(!food.isEmpty()){
+                this.offers.add(new AdditionalWanderingTrades.SimpleSell(10, food, 7, 14).getOffer(this, this.random));
             }
 
             if(this.level() instanceof ServerLevel serverLevel){
@@ -445,7 +450,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         }
     }
 
-    public List<ItemStack> getRandomItemsFromTag(TagKey<Item> itemTag, RandomSource random) {
+    public ItemStack getRandomItemsFromTag(TagKey<Item> itemTag, RandomSource random) {
         List<Item> itemsInTag = new ArrayList<>();
 
         for (Item item : BuiltInRegistries.ITEM) {
@@ -454,29 +459,13 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             }
         }
 
-        List<ItemStack> result = new ArrayList<>();
-
-        if (itemsInTag.isEmpty()) {
-            return result;
-        }
-
-        if (itemsInTag.size() == 1) {
-            result.add(new ItemStack(itemsInTag.get(0)));
-            return result;
+        if(itemsInTag.isEmpty()){
+            return ItemStack.EMPTY;
         }
 
         // Get first random item
         Item firstItem = itemsInTag.get(random.nextInt(itemsInTag.size()));
-        result.add(new ItemStack(firstItem));
-
-        // Remove the first item from the list to ensure uniqueness
-        itemsInTag.remove(firstItem);
-
-        // Get second random item
-        Item secondItem = itemsInTag.get(random.nextInt(itemsInTag.size()));
-        result.add(new ItemStack(secondItem));
-
-        return result;
+        return new ItemStack(firstItem);
     }
 
     private static final List<VillagerTrades.ItemListing> fillerOffers = List.of(

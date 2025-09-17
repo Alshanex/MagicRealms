@@ -53,6 +53,18 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private static final ResourceLocation IRON_SPELLS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_iron_spells.png");
     private static final ResourceLocation APOTHIC_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_apothic.png");
 
+    // Color constants for improved readability
+    private static final int HEADER_COLOR = 0xFFD700;      // Gold for headers
+    private static final int LABEL_COLOR = 0xE0E0E0;       // Light gray for labels
+    private static final int VALUE_COLOR = 0xFFFFFF;       // White for values
+    private static final int POSITIVE_COLOR = 0x00FF88;    // Green for positive values
+    private static final int NEGATIVE_COLOR = 0xFF6B6B;    // Red for negative values
+    private static final int NEUTRAL_COLOR = 0x87CEEB;     // Sky blue for neutral values
+    private static final int BACKGROUND_TINT = 0x22000000; // Semi-transparent background
+    private static final int SECTION_BG = 0x33000000;      // Section background
+    private static final int SEPARATOR_COLOR = 0x66FFFFFF; // Line separator color
+    private static final int ALTERNATE_ROW = 0x11FFFFFF;   // Alternating row background
+
     private final EntitySnapshot snapshot;
     private final RandomHumanEntity entity;
     private Tab currentTab = Tab.IRON_SPELLS;
@@ -61,6 +73,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private int maxScroll = 0;
     private boolean isScrolling = false;
     private int lastMouseY = 0;
+    private int attributeRowCounter = 0; // For alternating row colors
 
     // Coordenadas y dimensiones para el área de renderizado 3D
     private static final int ENTITY_RENDER_X = 13;
@@ -87,10 +100,12 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private static final int ATTRIBUTES_Y = 25;
     private static final int ATTRIBUTES_WIDTH = 112;
     private static final int ATTRIBUTES_HEIGHT = 124;
-    private static final int LINE_HEIGHT = 9;
+    private static final int TEXT_HEIGHT = 9;
+    private static final int LINE_SPACING = 3;
+    private static final int LINE_HEIGHT = TEXT_HEIGHT + LINE_SPACING;
 
     private static final int LABEL_WIDTH = 80;
-    private static final int VALUE_X_OFFSET = 82;
+    private static final int VALUE_X_OFFSET = 76; // Moved left to avoid scrollbar collision
 
     private static final int SYMBOL_X = 98;
     private static final int SYMBOL_Y = 20;
@@ -159,6 +174,9 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Enable scissor with correct coordinates
         guiGraphics.enableScissor(scissorLeft, scissorTop, scissorRight, scissorBottom);
 
+        // Reset row counter for each render
+        attributeRowCounter = 0;
+
         // Render scrollable content
         switch (currentTab) {
             case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
@@ -173,6 +191,62 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    // Helper methods for improved visual rendering
+    private int renderSectionHeader(GuiGraphics guiGraphics, String title, int x, int y, ChatFormatting color) {
+        int backgroundStartX = x - 4;
+        int backgroundEndX = x + ATTRIBUTES_WIDTH - 10;
+        int backgroundStartY = y - 2;
+        int backgroundEndY = y + 11;
+
+        guiGraphics.fill(backgroundStartX, backgroundStartY, backgroundEndX, backgroundEndY, SECTION_BG);
+
+        Component headerComponent = Component.literal(title).withStyle(color, ChatFormatting.BOLD);
+        guiGraphics.drawString(font, headerComponent, x + 2, y + 1, HEADER_COLOR, true);
+
+        return y + 12;
+    }
+
+    private int renderSectionSeparator(GuiGraphics guiGraphics, int x, int y, int width) {
+        // Draw a subtle line separator
+        guiGraphics.fill(x, y, x + width - 10, y + 1, SEPARATOR_COLOR);
+        // Add some spacing
+        return y + 4;
+    }
+
+    private void renderAttributeBackground(GuiGraphics guiGraphics, int x, int y, int width, boolean alternate) {
+        if (alternate) {
+            // Background should only cover the text height plus 1 pixel padding above and below
+            guiGraphics.fill(x - 1, y - 1, x + width + 1, y + TEXT_HEIGHT + 1, ALTERNATE_ROW);
+        }
+    }
+
+    private int getValueColor(double value, boolean isPercentage, String attributeKey) {
+        // Color coding based on value type
+        if (attributeKey.contains("resist") || attributeKey.contains("armor") || attributeKey.contains("health")) {
+            return value > 0 ? POSITIVE_COLOR : NEUTRAL_COLOR;
+        } else if (attributeKey.contains("damage") || attributeKey.contains("power")) {
+            return value > (isPercentage ? 100 : 1) ? POSITIVE_COLOR : NEUTRAL_COLOR;
+        } else if (attributeKey.contains("regen") || attributeKey.contains("speed")) {
+            return value > (isPercentage ? 100 : 1) ? POSITIVE_COLOR : NEUTRAL_COLOR;
+        }
+        return VALUE_COLOR;
+    }
+
+    private ChatFormatting getImprovedSchoolColor(String schoolName) {
+        return switch (schoolName.toLowerCase()) {
+            case "fire" -> ChatFormatting.GOLD;
+            case "ice" -> ChatFormatting.AQUA;
+            case "lightning" -> ChatFormatting.BLUE;
+            case "holy" -> ChatFormatting.YELLOW;
+            case "ender" -> ChatFormatting.LIGHT_PURPLE;
+            case "blood" -> ChatFormatting.RED;
+            case "evocation" -> ChatFormatting.WHITE;
+            case "nature" -> ChatFormatting.GREEN;
+            case "eldritch" -> ChatFormatting.DARK_AQUA;
+            default -> ChatFormatting.WHITE;
+        };
     }
 
     private void renderClassSymbol(GuiGraphics guiGraphics) {
@@ -373,12 +447,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
             // Configurar posición para evitar warnings
             virtualEntity.setPos(0, 0, 0);
-/*
-            MagicRealms.LOGGER.debug("Created virtual entity for rendering: {} ({}) with texture UUID: {}",
-                    virtualEntity.getEntityName(),
-                    virtualEntity.getEntityClass().getName(),
-                    snapshot.textureUUID);
-*/
+
             return virtualEntity;
 
         } catch (Exception e) {
@@ -827,17 +896,21 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private void renderScrollIndicator(GuiGraphics guiGraphics) {
-        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 4; // Exactly 4 pixels from right edge
+        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 6; // Wider bar
         int scrollBarY = topPos + ATTRIBUTES_Y;
         int scrollBarHeight = ATTRIBUTES_HEIGHT;
 
-        // Background track
-        guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0x66000000);
+        // More visible background track
+        guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 5, scrollBarY + scrollBarHeight, 0x88000000);
 
         if (maxScroll > 0) {
-            int thumbHeight = Math.max(8, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
+            int thumbHeight = Math.max(12, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
             int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
-            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 3, thumbY + thumbHeight, 0xAA666666);
+
+            // More visible thumb with border
+            guiGraphics.fill(scrollBarX + 1, thumbY, scrollBarX + 4, thumbY + thumbHeight, 0xFFAAAAAA);
+            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 5, thumbY + 1, 0xFFFFFFFF); // Top border
+            guiGraphics.fill(scrollBarX, thumbY + thumbHeight - 1, scrollBarX + 5, thumbY + thumbHeight, 0xFFFFFFFF); // Bottom border
         }
     }
 
@@ -849,15 +922,15 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
         float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
         Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
-        guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false);
+        guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false); // No shadow
 
         double armor = attributes.contains("armor") ? attributes.getDouble("armor") : 0.0;
         Component armorComponent = Component.literal(String.format("%.1f", armor));
-        guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false);
+        guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false); // No shadow
 
         double damage = attributes.contains("attack_damage") ? attributes.getDouble("attack_damage") : 1.0;
         Component damageComponent = Component.literal(String.format("%.1f", damage));
-        guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
+        guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false); // No shadow
     }
 
     private void renderIronSpellsAttributesScrollable(GuiGraphics guiGraphics) {
@@ -866,12 +939,16 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        guiGraphics.drawString(font, Component.literal("Iron's Spells").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-        y += 12;
+        y+=2;
+
+        // Main header
+        y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
+
+        y+=2;
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Basic attributes
+        // Basic attributes section
         y = renderAttributeWithTruncation(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
         y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
         y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
@@ -881,64 +958,83 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
-        y += 6;
-        guiGraphics.drawString(font, Component.literal("Magic Resist:").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-        y += 10;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        // Magic Resist section
+        y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
+
+        y+=2;
 
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
             for (SchoolType school : schools) {
                 String resistKey = school.getId().getPath() + "_magic_resist";
                 String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getSchoolColor(school.getId().getPath());
-                y = renderAttributeWithTruncation(guiGraphics, schoolName + " Resist", attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
+                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
 
-        y += 6;
-        guiGraphics.drawString(font, Component.literal("School Power:").withStyle(ChatFormatting.RED, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-        y += 10;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        // School Power section
+        y = renderSectionHeader(guiGraphics, "School Power", x, y, ChatFormatting.RED);
+
+        y+=2;
 
         try {
             List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
             for (SchoolType school : schools) {
                 String powerKey = school.getId().getPath() + "_spell_power";
                 String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getSchoolColor(school.getId().getPath());
-                y = renderAttributeWithTruncation(guiGraphics, schoolName + " Power", attributes, powerKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
+                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, powerKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school powers: {}", e.getMessage());
         }
 
+        // Magic Schools section (for mages only)
         if (snapshot.entityClass == EntityClass.MAGE) {
-            y += 3;
-            guiGraphics.drawString(font, Component.literal("Schools:").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-            y += 10;
+            y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+            y = renderSectionHeader(guiGraphics, "Schools", x, y, ChatFormatting.BLUE);
+
+            y+=2;
 
             if (snapshot.magicSchools.isEmpty()) {
-                guiGraphics.drawString(font, Component.literal("None").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
-                y += 9;
+                renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+                guiGraphics.drawString(font, Component.literal("None").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, true);
+                y += LINE_HEIGHT;
+                attributeRowCounter++;
             } else {
                 for (String schoolId : snapshot.magicSchools) {
                     String schoolName = extractSchoolName(schoolId);
                     schoolName = capitalizeFirst(schoolName);
-                    ChatFormatting color = getSchoolColor(extractSchoolName(schoolId));
-                    guiGraphics.drawString(font, Component.literal("• " + schoolName).withStyle(color), x, y, 0xFFFFFF, false);
-                    y += 9;
+                    ChatFormatting color = getImprovedSchoolColor(extractSchoolName(schoolId));
+
+                    renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+                    guiGraphics.drawString(font, Component.literal("• " + schoolName).withStyle(color), x, y, 0xFFFFFF, true);
+                    y += LINE_HEIGHT;
+                    attributeRowCounter++;
                 }
             }
         }
 
-        // Nueva sección de Entity Spells
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("Spells:").withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-        y += 10;
+        // Spells section
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Spells", x, y, ChatFormatting.DARK_AQUA);
+
+        y+=2;
 
         if (snapshot.entitySpells.isEmpty()) {
-            guiGraphics.drawString(font, Component.literal("No spells").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, false);
+            renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+            guiGraphics.drawString(font, Component.literal("No spells").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, true);
+            y += LINE_HEIGHT;
+            attributeRowCounter++;
         } else {
             List<AbstractSpell> enabledSpells = SpellRegistry.getEnabledSpells();
 
@@ -952,8 +1048,11 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                     String componentId = foundSpell.getComponentId();
                     Component displayNameComponent = Component.translatable(componentId);
                     String displayName = truncateText(displayNameComponent.getString(), ATTRIBUTES_WIDTH - 10);
-                    guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, false);
-                    y += 9;
+
+                    renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+                    guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, true);
+                    y += LINE_HEIGHT;
+                    attributeRowCounter++;
                 }
             }
         }
@@ -965,8 +1064,12 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        guiGraphics.drawString(font, Component.literal("Combat Stats").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-        y += 12;
+        y+=2;
+
+        // Main header
+        y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.DARK_RED);
+
+        y+=2;
 
         CompoundTag attributes = snapshot.attributes;
 
@@ -975,27 +1078,36 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.BLUE, true);
 
-        y += 5;
+        // Penetration section
         y = renderAttributeWithTruncation(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
         y = renderAttributeWithTruncation(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.RED);
         y = renderAttributeWithTruncation(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
 
-        y += 5;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        // Survivability section
+        y = renderSectionHeader(guiGraphics, "Survivability", x, y, ChatFormatting.GREEN);
+
+        y+=2;
+
         y = renderAttributeWithTruncation(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.DARK_RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
         y = renderAttributeWithTruncation(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.GRAY, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Healing Received", attributes, "healing_received", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
-        y += 5;
 
-        // Ranged Combat
-        y += 3;
-        guiGraphics.drawString(font, Component.literal("Ranged Combat:").withStyle(ChatFormatting.BLUE, ChatFormatting.BOLD), x, y, 0xFFFFFF, false);
-        y += 10;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        // Ranged Combat section
+        y = renderSectionHeader(guiGraphics, "Ranged Combat", x, y, ChatFormatting.BLUE);
+
+        y+=2;
+
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Projectile Damage", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Projectile Dmg", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
     }
 
     private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
@@ -1032,12 +1144,19 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         String displayName = truncateText(name, maxLabelWidth);
         String displayValue = truncateText(formattedValue, maxValueWidth);
 
-        Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE);
-        guiGraphics.drawString(font, labelComponent, x, y, 0xFFFFFF, false);
+        // Render alternating background
+        renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
 
+        // Use improved colors and add text shadow for better readability
+        Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE); // Changed to WHITE
+        guiGraphics.drawString(font, labelComponent, x, y, LABEL_COLOR, true); // true for shadow
+
+        // Color-code values based on their meaning
+        int valueColor = getValueColor(value, isPercentage, attributeKey);
         Component valueComponent = Component.literal(displayValue).withStyle(color);
-        guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, 0xFFFFFF, false);
+        guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, valueColor, true);
 
+        attributeRowCounter++;
         return y + LINE_HEIGHT;
     }
 

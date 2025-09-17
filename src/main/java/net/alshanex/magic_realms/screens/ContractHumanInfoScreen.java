@@ -960,48 +960,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
-        // Section separator
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // Magic Resist section
-        y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
-
-        // Section separator
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        try {
-            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
-            for (SchoolType school : schools) {
-                String resistKey = school.getId().getPath() + "_magic_resist";
-                String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
-                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
-        }
-
-        // Section separator
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // School Power section
-        y = renderSectionHeader(guiGraphics, "School Power", x, y, ChatFormatting.RED);
-
-        // Section separator
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        try {
-            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
-            for (SchoolType school : schools) {
-                String powerKey = school.getId().getPath() + "_spell_power";
-                String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
-                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, powerKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Error rendering school powers: {}", e.getMessage());
-        }
-
         // Magic Schools section (for mages only)
         if (snapshot.entityClass == EntityClass.MAGE) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
@@ -1063,6 +1021,48 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                     attributeRowCounter++;
                 }
             }
+        }
+
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        // Magic Resist section
+        y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
+
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            for (SchoolType school : schools) {
+                String resistKey = school.getId().getPath() + "_magic_resist";
+                String schoolName = capitalizeFirst(school.getId().getPath());
+                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
+        }
+
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        // School Power section
+        y = renderSectionHeader(guiGraphics, "School Power", x, y, ChatFormatting.RED);
+
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            for (SchoolType school : schools) {
+                String powerKey = school.getId().getPath() + "_spell_power";
+                String schoolName = capitalizeFirst(school.getId().getPath());
+                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, powerKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Error rendering school powers: {}", e.getMessage());
         }
     }
 

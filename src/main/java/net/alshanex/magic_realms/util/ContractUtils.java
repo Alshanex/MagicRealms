@@ -250,6 +250,8 @@ public class ContractUtils {
 
         EntitySnapshot snapshot = EntitySnapshot.fromEntity(humanEntity);
 
+        humanEntity.setMenuState(true);
+
         player.openMenu(new ContractMenuProvider(snapshot, humanEntity), buf -> {
             CompoundTag snapshotNbt = snapshot.serialize();
             buf.writeNbt(snapshotNbt);

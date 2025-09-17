@@ -118,6 +118,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if(this.entity.isInMenuState()){
+                return false;
+            }
+
             if (entity.isSittingInChair()) {
                 return false;
             }
@@ -511,6 +515,10 @@ public class HumanGoals {
             }
 
             if(this.entity.isStunned()){
+                return false;
+            }
+
+            if(this.entity.isInMenuState()){
                 return false;
             }
 
@@ -1189,6 +1197,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if(this.entity.isInMenuState()){
+                return false;
+            }
+
             if (entity.isSittingInChair()) {
                 return false;
             }
@@ -1403,6 +1415,10 @@ public class HumanGoals {
             }
 
             if(this.human.isStunned()){
+                return false;
+            }
+
+            if(this.human.isInMenuState()){
                 return false;
             }
 
@@ -1689,7 +1705,7 @@ public class HumanGoals {
         }
 
         public boolean canUse() {
-            if(this.mob instanceof RandomHumanEntity human && (human.isStunned() || human.isSittingInChair())){
+            if(this.mob instanceof RandomHumanEntity human && (human.isStunned() || human.isSittingInChair() || human.isInMenuState())){
                 return false;
             }
             LivingEntity livingentity = this.mob.getTarget();
@@ -2459,6 +2475,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if(this.entity.isInMenuState()){
+                return false;
+            }
+
             // Don't gather if in combat, on standby, or recently failed
             if (entity.getTarget() != null) return false;
             if (entity.isPatrolMode()) return false;
@@ -3073,6 +3093,10 @@ public class HumanGoals {
                 return false;
             }
 
+            if(this.humanEntity.isInMenuState()){
+                return false;
+            }
+
             Entity livingentity = this.ownerGetter.get();
             if (livingentity == null) {
                 return false;
@@ -3218,6 +3242,10 @@ public class HumanGoals {
             }
 
             if (entity.isSittingInChair()) {
+                return false;
+            }
+
+            if(this.entity.isInMenuState()){
                 return false;
             }
 
@@ -3451,6 +3479,10 @@ public class HumanGoals {
             }
 
             if(this.entity.isStunned()){
+                return false;
+            }
+
+            if(this.entity.isInMenuState()){
                 return false;
             }
 
@@ -3692,6 +3724,10 @@ public class HumanGoals {
 
             // Don't sit if stunned
             if (entity.isStunned()) {
+                return false;
+            }
+
+            if(this.entity.isInMenuState()){
                 return false;
             }
 

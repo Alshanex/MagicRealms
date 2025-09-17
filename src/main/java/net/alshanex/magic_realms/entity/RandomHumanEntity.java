@@ -109,6 +109,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<BlockPos> CHAIR_POSITION = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<Integer> SITTING_TIME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SIT_COOLDOWN = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_IN_MENU_STATE = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
     private EntityType<?> fearedEntityType = null;
     private boolean fearGoalInitialized = false;
@@ -228,6 +229,20 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     public void setInitialized(boolean initialized) {
         this.entityData.set(INITIALIZED, initialized);
+    }
+
+    public boolean isInMenuState() {
+        return this.entityData.get(IS_IN_MENU_STATE);
+    }
+
+    public void setMenuState(boolean inMenu) {
+        this.entityData.set(IS_IN_MENU_STATE, inMenu);
+
+        if (inMenu) {
+            // Stop all movement when entering menu state
+            this.getNavigation().stop();
+            this.setTarget(null);
+        }
     }
 
     @Override
@@ -822,6 +837,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (isStunned()) {
             return true; // Stunned entities can't move
         }
+        if (isInMenuState()) {
+            return true; // Can't move while in menu state
+        }
         return super.isImmobile();
     }
 
@@ -868,6 +886,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public void travel(Vec3 travelVector) {
+        if (isInMenuState()) {
+            // Force entity to stay still during menu interaction
+            super.travel(Vec3.ZERO);
+            return;
+        }
+
         if (isSittingInChair()) {
             // Don't allow movement while sitting
             super.travel(Vec3.ZERO);
@@ -1058,6 +1082,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(CHAIR_POSITION, BlockPos.ZERO);
         pBuilder.define(SITTING_TIME, 0);
         pBuilder.define(SIT_COOLDOWN, 0);
+        pBuilder.define(IS_IN_MENU_STATE, false);
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -1679,6 +1704,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putLong("ChairPosition", getChairPosition().asLong());
         compound.putInt("SittingTime", getSittingTime());
         compound.putInt("SitCooldown", getSitCooldown());
+
+        compound.putBoolean("IsInMenuState", isInMenuState());
     }
 
     @Override
@@ -1809,6 +1836,12 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (isSittingInChair() && !isValidChair(getChairPosition())) {
             unsitFromChair();
         }
+
+        this.entityData.set(IS_IN_MENU_STATE, compound.getBoolean("IsInMenuState"));
+
+        if (isInMenuState()) {
+            setMenuState(false);
+        }
     }
 
     private boolean isAlliedHelper(Entity entity) {
@@ -1915,6 +1948,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             return false;
         }
 
+        if (isInMenuState()) {
+            forceCloseContractorMenu();
+        }
+
         if (isSittingInChair() && pAmount > 0) {
             unsitFromChair();
         }
@@ -1945,6 +1982,24 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         return super.hurt(pSource, pAmount);
+    }
+
+    private void forceCloseContractorMenu() {
+        if (!isInMenuState()) {
+            return;
+        }
+
+        UUID contractorUUID = this.summonerUUID;
+        if (contractorUUID != null && !level().isClientSide) {
+            Player contractor = level().getPlayerByUUID(contractorUUID);
+            if (contractor instanceof ServerPlayer serverPlayer) {
+                // Force close the menu on server side
+                serverPlayer.closeContainer();
+            }
+        }
+
+        // Clear menu state
+        setMenuState(false);
     }
 
     public void forceInitializeAppearance() {

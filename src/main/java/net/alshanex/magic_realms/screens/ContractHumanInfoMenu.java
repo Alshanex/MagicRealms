@@ -419,7 +419,15 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
         // Verificar que el contrato sigue activo
         ContractData contractData = entity.getData(MRDataAttachments.CONTRACT_DATA);
-        return contractData.isContractor(player.getUUID());
+        if (!contractData.isContractor(player.getUUID())) {
+            return false;
+        }
+
+        if (!entity.isInMenuState()) {
+            return false;
+        }
+
+        return true;
     }
 
     public EntitySnapshot getSnapshot() {
@@ -440,6 +448,12 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
         if (saveTimer != null) {
             saveTimer.cancel();
+        }
+
+        if (entity != null && !player.level().isClientSide) {
+            if (entity.isInMenuState()) {
+                entity.setMenuState(false);
+            }
         }
 
         saveEquipmentManually();

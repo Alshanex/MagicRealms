@@ -939,7 +939,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         // Main header
         y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
@@ -1001,7 +1002,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Magic Schools section (for mages only)
         if (snapshot.entityClass == EntityClass.MAGE) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-            y = renderSectionHeader(guiGraphics, "Schools", x, y, ChatFormatting.BLUE);
+            y = renderSectionHeader(guiGraphics, "Schools", x, y, ChatFormatting.GOLD);
 
             y+=2;
 
@@ -1026,7 +1027,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         // Spells section
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Spells", x, y, ChatFormatting.DARK_AQUA);
+        y = renderSectionHeader(guiGraphics, "Spells", x, y, ChatFormatting.YELLOW);
 
         y+=2;
 
@@ -1064,7 +1065,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        y+=2;
+        // Section separator
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         // Main header
         y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.DARK_RED);

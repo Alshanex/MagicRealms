@@ -754,7 +754,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
-        // Tab clicking (existing code...)
+        // Tab clicking
         if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
             if (currentTab != Tab.IRON_SPELLS) {
@@ -775,10 +775,31 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             return true;
         }
 
-        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
-                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
+        // Check if clicking on scroll bar specifically
+        int scrollBarX = ATTRIBUTES_X + ATTRIBUTES_WIDTH - 6;
+        int scrollBarY = ATTRIBUTES_Y;
+        int scrollBarHeight = ATTRIBUTES_HEIGHT;
+
+        if (relativeX >= scrollBarX && relativeX < scrollBarX + 5 &&
+                relativeY >= scrollBarY && relativeY < scrollBarY + scrollBarHeight && maxScroll > 0) {
             isScrolling = true;
             lastMouseY = (int) mouseY;
+
+            // Calculate thumb position and jump to clicked position
+            int thumbHeight = Math.max(12, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
+            int clickY = (int) relativeY - scrollBarY;
+
+            // Jump scroll position to where user clicked
+            float scrollRatio = (float) clickY / scrollBarHeight;
+            scrollOffset = Math.max(0, Math.min(maxScroll, (int) (scrollRatio * maxScroll)));
+
+            return true;
+        }
+
+        // Check if clicking anywhere in the scrollable area (for general interaction)
+        if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
+                relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
+            // Don't start scrolling here, just consume the click
             return true;
         }
 
@@ -795,11 +816,21 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (isScrolling && button == 0) {
+        if (isScrolling && button == 0 && maxScroll > 0) {
+            // Calculate the new scroll position based on mouse movement
             int currentMouseY = (int) mouseY;
-            int deltaScrollY = lastMouseY - currentMouseY;
+            int mouseDelta = currentMouseY - lastMouseY;
 
-            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + deltaScrollY));
+            // Convert mouse movement to scroll movement
+            // The scroll should be proportional to the mouse movement
+            int scrollBarHeight = ATTRIBUTES_HEIGHT;
+            int thumbHeight = Math.max(12, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
+
+            // Calculate scroll ratio: how much scrolling per pixel of mouse movement
+            float scrollRatio = (float) maxScroll / (scrollBarHeight - thumbHeight);
+            int scrollDelta = (int) (mouseDelta * scrollRatio);
+
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + scrollDelta));
             lastMouseY = currentMouseY;
 
             return true;

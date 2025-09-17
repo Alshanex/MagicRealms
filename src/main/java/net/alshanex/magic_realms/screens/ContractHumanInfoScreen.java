@@ -1069,7 +1069,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         // Main header
-        y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.DARK_RED);
+        y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.RED);
 
         y+=2;
 

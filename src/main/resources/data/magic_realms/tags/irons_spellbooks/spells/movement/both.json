@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:blood_step",
+    "irons_spellbooks:burning_dash",
+    "irons_spellbooks:teleport",
+    {"id": "aero_additions:wind_shield","required": false},
+    {"id": "cataclysm_spellbooks:cursed_rush","required": false},
+    {"id": "hazennstuff:cinderous_step","required": false}
+  ]
+}

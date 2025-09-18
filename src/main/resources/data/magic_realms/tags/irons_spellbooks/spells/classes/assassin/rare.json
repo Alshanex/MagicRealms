@@ -1,4 +1,5 @@
 {
+  "replace": false,
   "values": [
     "irons_spellbooks:blood_slash",
     "irons_spellbooks:evasion",

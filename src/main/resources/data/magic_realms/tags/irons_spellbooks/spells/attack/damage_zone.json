@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:earthquake",
+    "irons_spellbooks:magma_bomb",
+    "irons_spellbooks:poison_arrow",
+    "irons_spellbooks:poison_splash",
+    "irons_spellbooks:scorch",
+    "irons_spellbooks:snowball",
+    {"id": "aero_additions:wind_charge","required": false},
+    {"id": "cataclysm_spellbooks:depth_charge","required": false},
+    {"id": "cataclysm_spellbooks:gravity_storm","required": false},
+    {"id": "cataclysm_spellbooks:hellish_blade","required": false},
+    {"id": "endersequipment:field_of_everlasting_life","required": false},
+    {"id": "hazennstuff:crystal_volley","required": false},
+    {"id": "hazennstuff:ice_arrow","required": false},
+    {"id": "iss_magicfromtheeast:bagua_array_circle","required": false},
+    {"id": "iss_magicfromtheeast:bone_hands","required": false},
+    {"id": "iss_magicfromtheeast:underworld_aid","required": false}
+  ]
+}

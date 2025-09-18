@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:cleanse",
+    "irons_spellbooks:fortify",
+    "irons_spellbooks:greater_heal",
+    "irons_spellbooks:heal",
+    "irons_spellbooks:ice_tomb",
+    "irons_spellbooks:invisibility",
+    "irons_spellbooks:ray_of_siphoning",
+    {"id": "alshanex_familiars:guardian_angel","required": false},
+    {"id": "alshanex_familiars:lullaby","required": false},
+    {"id": "endersequipment:field_of_everlasting_life","required": false},
+    {"id": "iss_magicfromtheeast:drapes_of_reflection","required": false}
+  ]
+}

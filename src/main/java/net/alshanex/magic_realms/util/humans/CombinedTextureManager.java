@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.util.RandomSource;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -24,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class CombinedTextureManager {
-    private static final Map<String, ResourceLocation> COMBINED_TEXTURE_CACHE = new ConcurrentHashMap<>();
+    public static final Map<String, ResourceLocation> COMBINED_TEXTURE_CACHE = new ConcurrentHashMap<>();
     private static final Set<String> ACTIVE_ENTITIES = ConcurrentHashMap.newKeySet();
     // New cache to store texture names for entities that used preset textures
     private static final Map<String, String> ENTITY_TEXTURE_NAMES = new ConcurrentHashMap<>();
@@ -822,5 +824,137 @@ public class CombinedTextureManager {
 
     public static TextureResult getReceivedTexture(String entityUUID) {
         return RECEIVED_TEXTURE_CACHE.get(entityUUID);
+    }
+
+    public static TextureCreationResult createCompleteTextureWithNameDeterministic(Gender gender, EntityClass entityClass, RandomSource deterministicRandom) {
+        try {
+            // Use the deterministic random for texture type selection
+            double roll = deterministicRandom.nextDouble();
+            boolean useAdditionalTexture = roll < ADDITIONAL_TEXTURE_CHANCE;
+
+            MagicRealms.LOGGER.debug("DETERMINISTIC texture selection roll: {:.3f} (threshold: {:.3f}) - Using {}",
+                    roll, ADDITIONAL_TEXTURE_CHANCE, useAdditionalTexture ? "additional texture" : "layered texture");
+
+            // Try to use additional texture if selected
+            if (useAdditionalTexture && LayeredTextureManager.hasAdditionalTextures(gender)) {
+                LayeredTextureManager.TextureWithName additionalResult = LayeredTextureManager.getRandomAdditionalTextureWithName(gender, deterministicRandom);
+                if (additionalResult != null && additionalResult.getTexture() != null) {
+                    BufferedImage additionalImage = loadImage(additionalResult.getTexture());
+                    if (additionalImage != null) {
+                        MagicRealms.LOGGER.debug("Successfully loaded DETERMINISTIC additional {} texture: {} with name: {}",
+                                gender.getName(), additionalResult.getTexture(), additionalResult.getName());
+
+                        BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(additionalImage);
+                        return new TextureCreationResult(finalTexture, additionalResult.getName(), true);
+                    }
+                }
+            }
+
+            // Fallback to layered texture generation with deterministic random
+            BufferedImage layeredTexture = createLayeredTextureDeterministic(gender, entityClass, deterministicRandom);
+            return new TextureCreationResult(layeredTexture, null, false);
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error creating deterministic complete texture", e);
+            return null;
+        }
+    }
+
+    private static BufferedImage createLayeredTextureDeterministic(Gender gender, EntityClass entityClass, RandomSource deterministicRandom) {
+        try {
+            // Use deterministic random for ALL random selections
+            ResourceLocation skinTexture = getRandomTextureDeterministic("skin", deterministicRandom);
+            ResourceLocation clothesTexture = getRandomClothesTextureDeterministic(gender, entityClass, deterministicRandom);
+            ResourceLocation eyesTexture = getRandomTextureDeterministic("eyes", deterministicRandom);
+
+            // Calculate hair index using deterministic random
+            int hairIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName(), deterministicRandom);
+            ResourceLocation hairTexture = LayeredTextureManager.getTextureByIndex("hair_" + gender.getName(), hairIndex);
+
+            // Rest of texture creation logic remains the same
+            BufferedImage skinImage = loadImage(skinTexture);
+            if (skinImage == null) {
+                MagicRealms.LOGGER.error("Failed to load skin texture");
+                return null;
+            }
+
+            int width = skinImage.getWidth();
+            int height = skinImage.getHeight();
+            BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = combinedImage.createGraphics();
+
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+            g2d.setComposite(AlphaComposite.SrcOver);
+
+            g2d.setColor(new Color(0, 0, 0, 0));
+            g2d.fillRect(0, 0, width, height);
+
+            // Draw layers
+            g2d.drawImage(skinImage, 0, 0, null);
+
+            if (clothesTexture != null) {
+                BufferedImage clothesImage = loadImage(clothesTexture);
+                if (clothesImage != null) {
+                    g2d.drawImage(clothesImage, 0, 0, null);
+                }
+            }
+
+            if (eyesTexture != null) {
+                BufferedImage eyesImage = loadImage(eyesTexture);
+                if (eyesImage != null) {
+                    g2d.drawImage(eyesImage, 0, 0, null);
+                }
+            }
+
+            if (hairTexture != null) {
+                BufferedImage hairImage = loadImage(hairTexture);
+                if (hairImage != null) {
+                    g2d.drawImage(hairImage, 0, 0, null);
+                }
+            }
+
+            g2d.dispose();
+
+            BufferedImage finalTexture = ArmBackTextureFixer.fixArmBackStripes(combinedImage);
+            MagicRealms.LOGGER.debug("Successfully created DETERMINISTIC layered texture");
+
+            return finalTexture;
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Error creating deterministic layered texture", e);
+            return null;
+        }
+    }
+
+    private static ResourceLocation getRandomTextureDeterministic(String category, RandomSource random) {
+        java.util.List<ResourceLocation> textures = LayeredTextureManager.TEXTURE_CACHE.get(category);
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No textures found for category: " + category);
+            return null;
+        }
+        return textures.get(random.nextInt(textures.size()));
+    }
+
+    private static ResourceLocation getRandomClothesTextureDeterministic(Gender gender, EntityClass entityClass, RandomSource random) {
+        java.util.List<ResourceLocation> availableTextures = new ArrayList<>();
+
+        java.util.List<ResourceLocation> classTextures = LayeredTextureManager.TEXTURE_CACHE.get("clothes_" + entityClass.getName() + "_" + gender.getName());
+        if (classTextures != null && !classTextures.isEmpty()) {
+            availableTextures.addAll(classTextures);
+        }
+
+        if (availableTextures.isEmpty()) {
+            java.util.List<ResourceLocation> commonTextures = LayeredTextureManager.TEXTURE_CACHE.get("clothes_common_" + gender.getName());
+            if (commonTextures != null) {
+                availableTextures.addAll(commonTextures);
+            }
+        }
+
+        if (availableTextures.isEmpty()) {
+            return null;
+        }
+
+        return availableTextures.get(random.nextInt(availableTextures.size()));
     }
 }

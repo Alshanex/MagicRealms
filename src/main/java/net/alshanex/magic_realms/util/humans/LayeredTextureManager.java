@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.util.humans;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -85,6 +86,18 @@ public class LayeredTextureManager {
         TEXTURE_CACHE.put(category, textures);
     }
 
+    public static int getRandomHairTextureIndex(String category, RandomSource random) {
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No textures found for category: " + category);
+            return -1;
+        }
+        int index = random.nextInt(textures.size());
+        MagicRealms.LOGGER.debug("Selected DETERMINISTIC hair texture index {} from {} options for category: {}",
+                index, textures.size(), category);
+        return index;
+    }
+
     public static int getRandomHairTextureIndex(String category) {
         List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
         if (textures == null || textures.isEmpty()) {
@@ -92,7 +105,8 @@ public class LayeredTextureManager {
             return -1;
         }
         int index = new Random().nextInt(textures.size());
-        //MagicRealms.LOGGER.debug("Selected hair texture index {} from {} options for category: {}", index, textures.size(), category);
+        MagicRealms.LOGGER.warn("Using NON-DETERMINISTIC hair texture index {} for category: {} - this may cause sync issues!",
+                index, category);
         return index;
     }
 
@@ -119,8 +133,7 @@ public class LayeredTextureManager {
         return textures.get(new Random().nextInt(textures.size()));
     }
 
-    // New method that returns both texture and name
-    public static TextureWithName getRandomAdditionalTextureWithName(Gender gender) {
+    public static TextureWithName getRandomAdditionalTextureWithName(Gender gender, RandomSource random) {
         String category = "additional_" + gender.getName();
         List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
 
@@ -129,15 +142,18 @@ public class LayeredTextureManager {
             return null;
         }
 
-        ResourceLocation selectedTexture = textures.get(new Random().nextInt(textures.size()));
-
-        // Extract the texture name from the ResourceLocation path
+        ResourceLocation selectedTexture = textures.get(random.nextInt(textures.size()));
         String textureName = extractTextureNameFromPath(selectedTexture.getPath());
 
-        MagicRealms.LOGGER.debug("Selected additional texture: {} with name: {} for gender: {}",
+        MagicRealms.LOGGER.debug("Selected DETERMINISTIC additional texture: {} with name: {} for gender: {}",
                 selectedTexture, textureName, gender.getName());
 
         return new TextureWithName(selectedTexture, textureName);
+    }
+
+    public static TextureWithName getRandomAdditionalTextureWithName(Gender gender) {
+        MagicRealms.LOGGER.warn("Using NON-DETERMINISTIC additional texture selection for gender: {} - this may cause sync issues!", gender.getName());
+        return getRandomAdditionalTextureWithName(gender, RandomSource.create());
     }
 
     // Helper method to extract a clean texture name from the file path

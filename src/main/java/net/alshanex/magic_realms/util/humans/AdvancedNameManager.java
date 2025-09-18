@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.util.humans;
 
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
+import net.minecraft.util.RandomSource;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -18,6 +19,24 @@ public class AdvancedNameManager {
     private static final List<String> FALLBACK_FEMALE_NAMES = Arrays.asList(
             "Elle", "Moth", "M"
     );
+
+    public static String getRandomName(Gender gender, RandomSource deterministicRandom) {
+        List<String> names = getNamesByGender(gender);
+
+        if (names == null || names.isEmpty()) {
+            MagicRealms.LOGGER.warn("No names available for gender: {}, using fallback names", gender.getName());
+            names = getFallbackNames(gender);
+        }
+
+        if (names.isEmpty()) {
+            MagicRealms.LOGGER.error("Even fallback names are empty for gender: {}", gender.getName());
+            return "Unknown";
+        }
+
+        String selectedName = names.get(deterministicRandom.nextInt(names.size()));
+        MagicRealms.LOGGER.debug("Selected DETERMINISTIC name '{}' for gender '{}'", selectedName, gender.getName());
+        return selectedName;
+    }
 
     public static String getRandomName(Gender gender) {
         List<String> names = getNamesByGender(gender);

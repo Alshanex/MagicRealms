@@ -191,6 +191,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         };
     }
 
+    public RandomSource getDeterministicRandom() {
+        long seed = this.getUUID().getMostSignificantBits() ^ this.getUUID().getLeastSignificantBits();
+        return RandomSource.create(seed);
+    }
+
     @Override
     public HumanoidArm getMainArm() {
         return HumanoidArm.RIGHT;
@@ -1266,45 +1271,68 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             return;
         }
 
-        Gender gender = Gender.values()[randomSource.nextInt(Gender.values().length)];
-        EntityClass entityClass = EntityClass.values()[randomSource.nextInt(EntityClass.values().length)];
+        // IMPORTANT: Use deterministic random for appearance generation
+        RandomSource deterministicRandom = getDeterministicRandom();
+
+        Gender gender = Gender.values()[deterministicRandom.nextInt(Gender.values().length)];
+        EntityClass entityClass = EntityClass.values()[deterministicRandom.nextInt(EntityClass.values().length)];
 
         // Initialize basic appearance data
         this.entityData.set(GENDER, gender.ordinal());
         this.entityData.set(ENTITY_CLASS, entityClass.ordinal());
 
-        // Only create texture config on client side
+        // Only create texture config on client side with DETERMINISTIC random
         if (this.level().isClientSide()) {
-            this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass);
+            // The texture config will be created when first requested, ensuring deterministic generation
+            // For now, just try to determine if we'll have a preset texture to set the name
+            // This is approximate but will be corrected when texture config is actually created
+            try {
+                // Use deterministic random to check if we'll get a preset texture
+                double roll = deterministicRandom.nextDouble();
+                boolean willUseAdditionalTexture = roll < Config.customTextureChance;
 
-            // Check if we got a preset texture with a name
-            if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
-                // Use the texture name as the entity name
-                String textureName = this.textureConfig.getTextureName();
-                this.entityData.set(ENTITY_NAME, textureName);
-
-                MagicRealms.LOGGER.info("Entity {} assigned preset texture name: {}",
-                        this.getUUID().toString(), textureName);
-            } else {
-                // Use random generated name for layered textures
-                String randomName = AdvancedNameManager.getRandomName(gender);
+                if (willUseAdditionalTexture && LayeredTextureManager.hasAdditionalTextures(gender)) {
+                    LayeredTextureManager.TextureWithName additionalResult =
+                            LayeredTextureManager.getRandomAdditionalTextureWithName(gender, deterministicRandom);
+                    if (additionalResult != null && additionalResult.getName() != null) {
+                        this.entityData.set(ENTITY_NAME, additionalResult.getName());
+                        MagicRealms.LOGGER.debug("Entity {} will use preset texture name: {}",
+                                this.getUUID().toString(), additionalResult.getName());
+                    } else {
+                        // Use deterministic random for name generation
+                        String randomName = AdvancedNameManager.getRandomName(gender, deterministicRandom);
+                        this.entityData.set(ENTITY_NAME, randomName);
+                    }
+                } else {
+                    // Use deterministic random for name generation
+                    String randomName = AdvancedNameManager.getRandomName(gender, deterministicRandom);
+                    this.entityData.set(ENTITY_NAME, randomName);
+                    MagicRealms.LOGGER.debug("Entity {} assigned deterministic name: {} (layered texture)",
+                            this.getUUID().toString(), randomName);
+                }
+            } catch (Exception e) {
+                // Fallback to deterministic name generation
+                String randomName = AdvancedNameManager.getRandomName(gender, deterministicRandom);
                 this.entityData.set(ENTITY_NAME, randomName);
-
-                MagicRealms.LOGGER.debug("Entity {} assigned random name: {} (layered texture)",
+                MagicRealms.LOGGER.warn("Entity {} used fallback name generation: {}",
                         this.getUUID().toString(), randomName);
             }
         } else {
             // Server side - DON'T assign name yet, wait for client to determine texture type
             this.textureConfig = null;
-            // Leave ENTITY_NAME empty for now - it will be set when texture config is created
-            this.entityData.set(ENTITY_NAME, ""); // Empty name initially
+            this.entityData.set(ENTITY_NAME, "");
         }
 
         this.appearanceGenerated = true;
-
         MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}, Stars={}, Name={}",
                 this.getUUID().toString(), gender.getName(), entityClass.getName(),
                 this.entityData.get(STAR_LEVEL), this.entityData.get(ENTITY_NAME));
+    }
+
+    public int getDeterministicHairIndex() {
+        RandomSource deterministicRandom = getDeterministicRandom();
+        Gender gender = getGender();
+        return LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName(), deterministicRandom);
     }
 
     public void updateNameFromTexture() {
@@ -1768,14 +1796,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 return null;
             }
 
-            // Regenerate texture config
+            // FIXED: Use deterministic approach instead of non-deterministic
             try {
-                Gender gender = this.getGender();
-                EntityClass entityClass = this.getEntityClass();
-                int newHairTextureIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
-
-                this.textureConfig = new EntityTextureConfig(this.getUUID().toString(), gender, entityClass, newHairTextureIndex);
-                MagicRealms.LOGGER.debug("Regenerated texture config for entity {} with hair index: {}", this.getEntityName(), newHairTextureIndex);
+                // Use the entity-based constructor which uses deterministic random
+                this.textureConfig = new EntityTextureConfig(this);
+                MagicRealms.LOGGER.debug("Regenerated DETERMINISTIC texture config for entity {}", this.getEntityName());
 
                 // Update name based on texture type
                 updateNameFromTexture();
@@ -2246,7 +2271,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             Gender gender = this.getGender();
             EntityClass entityClass = this.getEntityClass();
 
-            MagicRealms.LOGGER.debug("Starting texture and name regeneration for entity {} (Gender: {}, Class: {})",
+            MagicRealms.LOGGER.debug("Starting DETERMINISTIC texture and name regeneration for entity {} (Gender: {}, Class: {})",
                     this.getEntityName(), gender.getName(), entityClass.getName());
 
             // Remove old texture from cache and delete file
@@ -2255,8 +2280,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             // Force regeneration by clearing cache and letting the system recreate
             this.textureConfig = null;
 
-            // Create new texture config (this will generate new texture and potentially new name)
-            this.textureConfig = new EntityTextureConfig(entityUUID, gender, entityClass);
+            // FIXED: Create new texture config using deterministic method (entity-based constructor)
+            this.textureConfig = new EntityTextureConfig(this);
 
             // Update name if we got a preset texture
             if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
@@ -2264,15 +2289,15 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
                 this.entityData.set(ENTITY_NAME, newTextureName);
                 MagicRealms.LOGGER.info("Entity {} got new preset texture name: {}", entityUUID, newTextureName);
             } else {
-                // Generate new random name for layered texture
-                String newRandomName = AdvancedNameManager.getRandomName(gender);
+                // Generate new random name using deterministic random
+                String newRandomName = AdvancedNameManager.getRandomName(gender, getDeterministicRandom());
                 this.entityData.set(ENTITY_NAME, newRandomName);
-                MagicRealms.LOGGER.info("Entity {} got new random name: {} (layered texture)", entityUUID, newRandomName);
+                MagicRealms.LOGGER.info("Entity {} got new deterministic random name: {} (layered texture)", entityUUID, newRandomName);
             }
 
             this.updateCustomNameWithStars();
 
-            MagicRealms.LOGGER.debug("Successfully completed texture and name regeneration for entity {}", this.getEntityName());
+            MagicRealms.LOGGER.debug("Successfully completed DETERMINISTIC texture and name regeneration for entity {}", this.getEntityName());
             return true;
 
         } catch (Exception e) {
@@ -2310,6 +2335,33 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         } else {
             super.handleEntityEvent(id);
         }
+    }
+
+    public void debugTextureGeneration() {
+        if (!this.level().isClientSide()) return;
+
+        MagicRealms.LOGGER.info("=== TEXTURE DEBUG for entity {} ===", this.getUUID());
+        MagicRealms.LOGGER.info("Gender: {}, Class: {}", getGender().getName(), getEntityClass().getName());
+
+        // Test deterministic random
+        RandomSource testRandom = getDeterministicRandom();
+        double testRoll = testRandom.nextDouble();
+        MagicRealms.LOGGER.info("Deterministic random test roll: {}", testRoll);
+
+        // Test hair index
+        int testHairIndex = getDeterministicHairIndex();
+        MagicRealms.LOGGER.info("Deterministic hair index: {}", testHairIndex);
+
+        // Check existing texture config
+        EntityTextureConfig config = this.textureConfig;
+        if (config != null) {
+            MagicRealms.LOGGER.info("Has texture config: true, Valid: {}, Preset: {}",
+                    config.hasValidTexture(), config.isPresetTexture());
+        } else {
+            MagicRealms.LOGGER.info("Has texture config: false");
+        }
+
+        MagicRealms.LOGGER.info("=== END TEXTURE DEBUG ===");
     }
 
     //GOALS

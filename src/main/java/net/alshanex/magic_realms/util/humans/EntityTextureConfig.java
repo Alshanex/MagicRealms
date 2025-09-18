@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.util.humans;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.RandomHumanEntity;
 import net.minecraft.resources.ResourceLocation;
 
 public class EntityTextureConfig {
@@ -39,6 +40,47 @@ public class EntityTextureConfig {
                 MagicRealms.LOGGER.error("Failed to get texture result for entity: {}", entityUUID);
             }
         } else {
+            this.completeTexture = null;
+            this.textureName = null;
+            this.isPresetTexture = false;
+        }
+    }
+
+    public EntityTextureConfig(RandomHumanEntity entity) {
+        this.entityUUID = entity.getUUID().toString();
+        this.gender = entity.getGender();
+        this.entityClass = entity.getEntityClass();
+
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+            // Use entity's deterministic random for hair selection
+            this.hairTextureIndex = entity.getDeterministicHairIndex();
+
+            // Use deterministic texture generation
+            CombinedTextureManager.TextureCreationResult result =
+                    CombinedTextureManager.createCompleteTextureWithNameDeterministic(
+                            gender, entityClass, entity.getDeterministicRandom());
+
+            if (result != null) {
+                this.completeTexture = DynamicTextureManager.registerDynamicTexture(entityUUID, result.getImage());
+                this.textureName = result.getTextureName();
+                this.isPresetTexture = result.isPresetTexture();
+
+                // Cache this result
+                if (this.completeTexture != null) {
+                    CombinedTextureManager.COMBINED_TEXTURE_CACHE.put(entityUUID, this.completeTexture);
+                }
+
+                MagicRealms.LOGGER.debug("Created DETERMINISTIC texture config for entity: {} -> texture: {}, hair index: {}, preset name: {}",
+                        entityUUID, this.completeTexture, hairTextureIndex, this.textureName);
+            } else {
+                this.completeTexture = null;
+                this.textureName = null;
+                this.isPresetTexture = false;
+                MagicRealms.LOGGER.error("Failed to get deterministic texture result for entity: {}", entityUUID);
+            }
+        } else {
+            // Server side
+            this.hairTextureIndex = -1;
             this.completeTexture = null;
             this.textureName = null;
             this.isPresetTexture = false;

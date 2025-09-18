@@ -17,6 +17,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -719,12 +720,13 @@ public class MRUtils {
             Gender gender = Gender.values()[genderOrdinal];
             EntityClass entityClass = EntityClass.values()[entityClassOrdinal];
 
-            // Generate texture on client side
-            int hairIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
+            // FIXED: Create deterministic random source based on entity UUID
+            long seed = entityUUID.getMostSignificantBits() ^ entityUUID.getLeastSignificantBits();
+            RandomSource deterministicRandom = RandomSource.create(seed);
 
-            // Use TextureCreationResult instead of TextureResult
+            // Use deterministic texture generation
             CombinedTextureManager.TextureCreationResult result =
-                    CombinedTextureManager.createCompleteTextureWithName(gender, entityClass, hairIndex);
+                    CombinedTextureManager.createCompleteTextureWithNameDeterministic(gender, entityClass, deterministicRandom);
 
             if (result != null && result.getImage() != null) {
                 // Convert BufferedImage to byte array
@@ -736,10 +738,10 @@ public class MRUtils {
                 PacketDistributor.sendToServer(new UploadEntityTexturePacket(
                         entityUUID, textureData, result.getTextureName(), result.isPresetTexture()));
 
-                MagicRealms.LOGGER.debug("Generated and uploaded texture for entity: {}", entityUUID);
+                MagicRealms.LOGGER.debug("Generated and uploaded DETERMINISTIC texture for entity: {}", entityUUID);
             }
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to generate texture for entity: {}", entityUUID, e);
+            MagicRealms.LOGGER.error("Failed to generate deterministic texture for entity: {}", entityUUID, e);
         }
     }
 

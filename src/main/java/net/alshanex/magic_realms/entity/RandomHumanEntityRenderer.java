@@ -40,36 +40,42 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
         if (entity instanceof RandomHumanEntity human) {
             String entityUUID = human.getUUID().toString();
             Minecraft mc = Minecraft.getInstance();
+            human.debugTextureGeneration();
 
-            // Always check received texture cache first (highest priority)
+            // Priority 1: Received server texture (multiplayer)
             CombinedTextureManager.TextureResult receivedTexture =
                     CombinedTextureManager.getReceivedTexture(entityUUID);
             if (receivedTexture != null) {
-                MagicRealms.LOGGER.debug("Using received server texture for entity: {}", entityUUID);
                 return receivedTexture.getTextureLocation();
             }
 
-            // Check main combined texture cache
+            // Priority 2: Entity's own texture config (should be deterministic)
+            EntityTextureConfig config = human.getTextureConfig();
+
+            // If config is null, try to create one using the entity (deterministic)
+            if (config == null && human.getGender() != null && human.getEntityClass() != null) {
+                try {
+                    // Create deterministic texture config using entity - this ensures consistency
+                    config = new EntityTextureConfig(human);
+                    MagicRealms.LOGGER.debug("Created deterministic texture config for entity in renderer: {}", entityUUID);
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.error("Failed to create texture config in renderer for entity: {}", entityUUID, e);
+                }
+            }
+
+            if (config != null && config.hasValidTexture()) {
+                MagicRealms.LOGGER.debug("Using entity texture config for entity: {}", entityUUID);
+                return config.getSkinTexture();
+            }
+
+            // Priority 3: Cached texture
             ResourceLocation cachedTexture = CombinedTextureManager.getCachedTexture(entityUUID);
             if (cachedTexture != null) {
                 MagicRealms.LOGGER.debug("Using cached texture for entity: {}", entityUUID);
                 return cachedTexture;
             }
 
-            // In multiplayer, show placeholder if no texture received yet
-            if (mc.getCurrentServer() == null && mc.getConnection() != null) {
-                if (!human.hasTexture()) {
-                    MagicRealms.LOGGER.debug("Entity {} waiting for server texture in multiplayer", entityUUID);
-                    return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
-                }
-            }
-
-            // Singleplayer fallback - try texture config
-            EntityTextureConfig config = human.getTextureConfig();
-            if (config != null && config.hasValidTexture()) {
-                MagicRealms.LOGGER.debug("Using texture config for entity: {}", entityUUID);
-                return config.getSkinTexture();
-            }
+            MagicRealms.LOGGER.warn("No texture available for entity: {}, using fallback", entityUUID);
         }
 
         return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");

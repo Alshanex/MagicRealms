@@ -21,17 +21,17 @@ public class ModTags {
     public static final TagKey<Item> TAVERNKEEP_SELLS_FOOD = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_foods"));
     public static final TagKey<Item> TAVERNKEEP_SELLS_DRINKS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_drinks"));
 
-    public static TagKey<AbstractSpell> COMMON_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "common_warrior_spells"));
-    public static TagKey<AbstractSpell> RARE_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "rare_warrior_spells"));
-    public static TagKey<AbstractSpell> LEGENDARY_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "legendary_warrior_spells"));
+    public static TagKey<AbstractSpell> COMMON_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/warrior/common"));
+    public static TagKey<AbstractSpell> RARE_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/warrior/rare"));
+    public static TagKey<AbstractSpell> LEGENDARY_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/warrior/legendary"));
 
-    public static TagKey<AbstractSpell> COMMON_ASSASSIN_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "common_assassin_spells"));
-    public static TagKey<AbstractSpell> RARE_ASSASSIN_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "rare_assassin_spells"));
-    public static TagKey<AbstractSpell> LEGENDARY_ASSASSIN_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "legendary_assassin_spells"));
+    public static TagKey<AbstractSpell> COMMON_ASSASSIN_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/assassin/common"));
+    public static TagKey<AbstractSpell> RARE_ASSASSIN_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/assassin/rare"));
+    public static TagKey<AbstractSpell> LEGENDARY_ASSASSIN_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/assassin/legendary"));
 
-    public static TagKey<AbstractSpell> COMMON_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "common_archer_spells"));
-    public static TagKey<AbstractSpell> RARE_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "rare_archer_spells"));
-    public static TagKey<AbstractSpell> LEGENDARY_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "common_archer_spells"));
+    public static TagKey<AbstractSpell> COMMON_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/archer/common"));
+    public static TagKey<AbstractSpell> RARE_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/archer/rare"));
+    public static TagKey<AbstractSpell> LEGENDARY_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/archer/legendary"));
 
     // Structures
     public static TagKey<Structure> FURLED_MAP_STRUCTURES = create("furled_map_structures");
@@ -47,8 +47,8 @@ public class ModTags {
     public static TagKey<AbstractSpell> MID_RANGE_ATTACKS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "attack/mid_range"));
     public static TagKey<AbstractSpell> LONG_RANGE_ATTACKS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "attack/long_range"));
 
-    public static TagKey<AbstractSpell> COUNTERATTACK_DEFENSE = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "defense/counterattack"));
-    public static TagKey<AbstractSpell> SELF_BUFF_DEFENSE = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "defense/self_buff"));
+    public static TagKey<AbstractSpell> COUNTERATTACK_DEFENSE = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "attack/counterattack"));
+    public static TagKey<AbstractSpell> SELF_BUFF_DEFENSE = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/restoration"));
 
     public static TagKey<AbstractSpell> APPROACH_MOVEMENT = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "movement/approach"));
     public static TagKey<AbstractSpell> RETREAT_MOVEMENT = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "movement/retreat"));

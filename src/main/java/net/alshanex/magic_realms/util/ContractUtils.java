@@ -3,7 +3,7 @@ package net.alshanex.magic_realms.util;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
@@ -19,13 +19,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 import javax.annotation.Nullable;
 
 public class ContractUtils {
     public static void handlePermanentContractCreation(Player player,
-                                                        RandomHumanEntity humanEntity,
+                                                       AbstractMercenaryEntity humanEntity,
                                                         ContractData contractData,
                                                         ItemStack heldItem) {
 
@@ -91,7 +90,7 @@ public class ContractUtils {
     }
 
     public static void handleTieredContractCreation(Player player,
-                                                     RandomHumanEntity humanEntity,
+                                                    AbstractMercenaryEntity humanEntity,
                                                      ContractData contractData,
                                                      ItemStack heldItem,
                                                      TieredContractItem contractItem) {
@@ -180,7 +179,7 @@ public class ContractUtils {
     }
 
     public static void handleContractInteraction(Player player,
-                                                  RandomHumanEntity humanEntity,
+                                                 AbstractMercenaryEntity humanEntity,
                                                   ContractData contractData) {
 
         if (!contractData.isContractor(player.getUUID())) {
@@ -259,7 +258,7 @@ public class ContractUtils {
         });
     }
 
-    public static void sendIntroductionMessage(ServerPlayer serverPlayer, RandomHumanEntity humanEntity, ContractData contractData) {
+    public static void sendIntroductionMessage(ServerPlayer serverPlayer, AbstractMercenaryEntity humanEntity, ContractData contractData) {
         String entityName = humanEntity.getEntityName();
         EntityClass entityClass = humanEntity.getEntityClass();
 
@@ -292,9 +291,9 @@ public class ContractUtils {
 
     private static class ContractMenuProvider implements MenuProvider {
         private final EntitySnapshot snapshot;
-        private final RandomHumanEntity entity;
+        private final AbstractMercenaryEntity entity;
 
-        public ContractMenuProvider(EntitySnapshot snapshot, RandomHumanEntity entity) {
+        public ContractMenuProvider(EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
             this.snapshot = snapshot;
             this.entity = entity;
         }

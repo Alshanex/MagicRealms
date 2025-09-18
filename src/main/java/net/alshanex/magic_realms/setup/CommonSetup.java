@@ -1,8 +1,8 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.entity.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

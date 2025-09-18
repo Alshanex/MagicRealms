@@ -1,6 +1,6 @@
 package net.alshanex.magic_realms.util.humans;
 
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -10,7 +10,7 @@ import net.minecraft.world.item.BowItem;
 
 import java.util.EnumSet;
 
-public class ChargeArrowAttackGoal<T extends RandomHumanEntity & RangedAttackMob> extends Goal {
+public class ChargeArrowAttackGoal<T extends AbstractMercenaryEntity & RangedAttackMob> extends Goal {
     private final T mob;
     private final double speedModifier;
     private int attackIntervalMin;

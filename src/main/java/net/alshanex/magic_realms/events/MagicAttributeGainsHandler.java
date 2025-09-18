@@ -3,7 +3,7 @@ package net.alshanex.magic_realms.events;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -26,7 +26,7 @@ public class MagicAttributeGainsHandler {
 
     @SubscribeEvent
     public static void onLivingDamage(LivingDamageEvent.Post event) {
-        if (!(event.getEntity() instanceof RandomHumanEntity humanEntity) || humanEntity.level().isClientSide) {
+        if (!(event.getEntity() instanceof AbstractMercenaryEntity humanEntity) || humanEntity.level().isClientSide) {
             return;
         }
 
@@ -38,7 +38,7 @@ public class MagicAttributeGainsHandler {
         }
     }
 
-    public static void handleSpellCast(RandomHumanEntity entity, SchoolType school) {
+    public static void handleSpellCast(AbstractMercenaryEntity entity, SchoolType school) {
         if (school == null) return;
 
         if (RANDOM.nextFloat() < 0.05f) {
@@ -46,13 +46,13 @@ public class MagicAttributeGainsHandler {
         }
     }
 
-    private static void handleSpellDamageReceived(RandomHumanEntity entity, SchoolType school) {
+    private static void handleSpellDamageReceived(AbstractMercenaryEntity entity, SchoolType school) {
         if (RANDOM.nextFloat() < 0.05f) {
             applySpellResistanceBonus(entity, school);
         }
     }
 
-    private static void applySpellPowerBonus(RandomHumanEntity entity, SchoolType school) {
+    private static void applySpellPowerBonus(AbstractMercenaryEntity entity, SchoolType school) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
 
@@ -84,7 +84,7 @@ public class MagicAttributeGainsHandler {
  */
     }
 
-    private static void applySpellResistanceBonus(RandomHumanEntity entity, SchoolType school) {
+    private static void applySpellResistanceBonus(AbstractMercenaryEntity entity, SchoolType school) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
 
@@ -116,7 +116,7 @@ public class MagicAttributeGainsHandler {
  */
     }
 
-    private static void applyAttributeBonus(RandomHumanEntity entity, Holder<Attribute> attributeHolder,
+    private static void applyAttributeBonus(AbstractMercenaryEntity entity, Holder<Attribute> attributeHolder,
                                             SchoolType school, double bonusPercentage, String type) {
         AttributeInstance instance = entity.getAttribute(attributeHolder);
         if (instance == null) {
@@ -146,7 +146,7 @@ public class MagicAttributeGainsHandler {
                 modifierId, bonusValue, entity.getEntityName());
     }
 
-    private static boolean hasReachedAttributeLimit(RandomHumanEntity entity, SchoolType school, String type) {
+    private static boolean hasReachedAttributeLimit(AbstractMercenaryEntity entity, SchoolType school, String type) {
         // Calcular el límite máximo: 50% + (10% * estrellas)
         int starLevel = entity.getStarLevel();
         double maxBonusPercentage = 50.0 + (10.0 * starLevel);

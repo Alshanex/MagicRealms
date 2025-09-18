@@ -3,8 +3,7 @@ package net.alshanex.magic_realms.util.humans;
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -14,7 +13,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public class HumanStatsManager {
 
-    public static void applyClassAttributes(RandomHumanEntity entity) {
+    public static void applyClassAttributes(AbstractMercenaryEntity entity) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
         RandomSource random = entity.level().getRandom();
@@ -32,7 +31,7 @@ public class HumanStatsManager {
         applyCommonAttributes(entity, starLevel, random);
     }
 
-    private static void applyMageAttributes(RandomHumanEntity entity, int starLevel, RandomSource random) {
+    private static void applyMageAttributes(AbstractMercenaryEntity entity, int starLevel, RandomSource random) {
         // Health base: 15
         addAttributeModifier(entity, Attributes.MAX_HEALTH,
                 "mage_health", 15.0, AttributeModifier.Operation.ADD_VALUE);
@@ -60,7 +59,7 @@ public class HumanStatsManager {
                 "mage_casting_movespeed", castingMovespeed, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     }
 
-    private static void applyWarriorAttributes(RandomHumanEntity entity, int starLevel, RandomSource random) {
+    private static void applyWarriorAttributes(AbstractMercenaryEntity entity, int starLevel, RandomSource random) {
         // Health base: 20
         addAttributeModifier(entity, Attributes.MAX_HEALTH,
                 "warrior_health", 20.0, AttributeModifier.Operation.ADD_VALUE);
@@ -78,7 +77,7 @@ public class HumanStatsManager {
                 "warrior_overheal", overheal, AttributeModifier.Operation.ADD_VALUE);
     }
 
-    private static void applyRogueAttributes(RandomHumanEntity entity, int starLevel, RandomSource random) {
+    private static void applyRogueAttributes(AbstractMercenaryEntity entity, int starLevel, RandomSource random) {
         // Health base: 10
         addAttributeModifier(entity, Attributes.MAX_HEALTH,
                 "rogue_health", 10.0, AttributeModifier.Operation.ADD_VALUE);
@@ -111,7 +110,7 @@ public class HumanStatsManager {
         }
     }
 
-    private static void applyCommonAttributes(RandomHumanEntity entity, int starLevel, RandomSource random) {
+    private static void applyCommonAttributes(AbstractMercenaryEntity entity, int starLevel, RandomSource random) {
         // Crit chance (común para todas las clases)
         double critChance = roundToTwoDecimals(getClassSpecificCritChance(entity.getEntityClass(), random));
         addAttributeModifier(entity, ALObjects.Attributes.CRIT_CHANCE,
@@ -244,7 +243,7 @@ public class HumanStatsManager {
         return Math.round(value * 100.0) / 100.0;
     }
 
-    private static void addAttributeModifier(RandomHumanEntity entity, Holder<Attribute> attributeHolder,
+    private static void addAttributeModifier(AbstractMercenaryEntity entity, Holder<Attribute> attributeHolder,
                                              String modifierName, double amount, AttributeModifier.Operation operation) {
         AttributeInstance instance = entity.getAttribute(attributeHolder);
         if (instance != null) {

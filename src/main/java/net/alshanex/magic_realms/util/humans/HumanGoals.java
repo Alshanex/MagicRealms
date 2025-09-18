@@ -16,7 +16,7 @@ import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.VillagerOffersData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.ModTags;
@@ -74,10 +74,10 @@ import java.util.function.Supplier;
 public class HumanGoals {
 
     /**
-     * Goal for RandomHumanEntity to sell unwanted items to employed villagers
+     * Goal for AbstractMercenaryEntity to sell unwanted items to employed villagers
      */
     public static class SellItemsToVillagersGoal extends Goal {
-        private final RandomHumanEntity entity;
+        private final AbstractMercenaryEntity entity;
         private Villager targetVillager;
         private int tradingCooldown = 0;
         private int searchCooldown = 0;
@@ -93,7 +93,7 @@ public class HumanGoals {
         private static final int MAX_DISTANCE_SQUARED = 256; // 16 blocks squared (more generous)
         private static final int TRADING_DISTANCE_SQUARED = 16; // 4 blocks squared for trading
 
-        public SellItemsToVillagersGoal(RandomHumanEntity entity) {
+        public SellItemsToVillagersGoal(AbstractMercenaryEntity entity) {
             this.entity = entity;
             this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
@@ -477,10 +477,10 @@ public class HumanGoals {
     }
 
     /**
-     * Goal for RandomHumanEntity to buy equipment from villagers with memory system
+     * Goal for AbstractMercenaryEntity to buy equipment from villagers with memory system
      */
     public static class BuyEquipmentFromVillagersGoal extends Goal {
-        private final RandomHumanEntity entity;
+        private final AbstractMercenaryEntity entity;
         private Villager targetVillager;
         private MerchantOffer targetOffer;
         private boolean fromMemory = false;
@@ -491,7 +491,7 @@ public class HumanGoals {
         private static final int TRADING_COOLDOWN = 300; // 15 seconds
         private static final int SEARCH_COOLDOWN = 100; // 5 seconds
 
-        public BuyEquipmentFromVillagersGoal(RandomHumanEntity entity) {
+        public BuyEquipmentFromVillagersGoal(AbstractMercenaryEntity entity) {
             this.entity = entity;
             this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
@@ -1099,9 +1099,9 @@ public class HumanGoals {
     }
 
     public static class CustomFearGoal extends AvoidEntityGoal<LivingEntity> {
-        private final RandomHumanEntity humanEntity;
+        private final AbstractMercenaryEntity humanEntity;
 
-        public CustomFearGoal(RandomHumanEntity humanEntity, float maxDistance, double walkSpeedModifier, double sprintSpeedModifier) {
+        public CustomFearGoal(AbstractMercenaryEntity humanEntity, float maxDistance, double walkSpeedModifier, double sprintSpeedModifier) {
             super(humanEntity, LivingEntity.class, maxDistance, walkSpeedModifier, sprintSpeedModifier,
                     (livingEntity) -> humanEntity.isAfraidOf(livingEntity));
             this.humanEntity = humanEntity;
@@ -1132,9 +1132,9 @@ public class HumanGoals {
     }
 
     public static class NoFearTargetGoal extends NearestAttackableTargetGoal<Monster> {
-        private final RandomHumanEntity humanEntity;
+        private final AbstractMercenaryEntity humanEntity;
 
-        public NoFearTargetGoal(RandomHumanEntity humanEntity) {
+        public NoFearTargetGoal(AbstractMercenaryEntity humanEntity) {
             super(humanEntity, Monster.class, true);
             this.humanEntity = humanEntity;
         }
@@ -1164,7 +1164,7 @@ public class HumanGoals {
     }
 
     public static class PickupMobDropsGoal extends Goal {
-        private final RandomHumanEntity entity;
+        private final AbstractMercenaryEntity entity;
         private ItemEntity targetItem;
         private int searchCooldown = 0;
         private int stuckTicks = 0;
@@ -1176,7 +1176,7 @@ public class HumanGoals {
         private static final double PICKUP_DISTANCE_SQ = 4.0; // 2 blocks
         private static final double MOVEMENT_THRESHOLD = 0.1; // Minimum movement to not be considered stuck
 
-        public PickupMobDropsGoal(RandomHumanEntity entity) {
+        public PickupMobDropsGoal(AbstractMercenaryEntity entity) {
             this.entity = entity;
             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
         }
@@ -1396,12 +1396,12 @@ public class HumanGoals {
     }
 
     public static class AlliedHumanDefenseGoal extends TargetGoal {
-        private final RandomHumanEntity human;
+        private final AbstractMercenaryEntity human;
         private LivingEntity targetMob;
         private int timestamp;
         private static final double HELP_RANGE = 16.0D;
 
-        public AlliedHumanDefenseGoal(RandomHumanEntity human) {
+        public AlliedHumanDefenseGoal(AbstractMercenaryEntity human) {
             super(human, false);
             this.human = human;
             this.setFlags(EnumSet.of(Flag.TARGET));
@@ -1428,8 +1428,8 @@ public class HumanGoals {
 
             // Look for allied humans in combat within range
             AABB searchArea = human.getBoundingBox().inflate(HELP_RANGE);
-            List<RandomHumanEntity> nearbyHumans = human.level().getEntitiesOfClass(
-                    RandomHumanEntity.class,
+            List<AbstractMercenaryEntity> nearbyHumans = human.level().getEntitiesOfClass(
+                    AbstractMercenaryEntity.class,
                     searchArea,
                     alliedHuman -> alliedHuman != human && // Not ourselves
                             human.isAlliedTo(alliedHuman) && // Allied to us
@@ -1439,10 +1439,10 @@ public class HumanGoals {
             );
 
             // Find the closest allied humans that needs help
-            RandomHumanEntity closestAlliedHuman = null;
+            AbstractMercenaryEntity closestAlliedHuman = null;
             double closestDistance = Double.MAX_VALUE;
 
-            for (RandomHumanEntity alliedHuman : nearbyHumans) {
+            for (AbstractMercenaryEntity alliedHuman : nearbyHumans) {
                 double distance = human.distanceToSqr(alliedHuman);
                 if (distance < closestDistance) {
                     closestDistance = distance;
@@ -1477,8 +1477,8 @@ public class HumanGoals {
 
             // Stop if no allied human is still fighting this target
             AABB searchArea = human.getBoundingBox().inflate(HELP_RANGE * 1.5);
-            List<RandomHumanEntity> alliedHumans = human.level().getEntitiesOfClass(
-                    RandomHumanEntity.class,
+            List<AbstractMercenaryEntity> alliedHumans = human.level().getEntitiesOfClass(
+                    AbstractMercenaryEntity.class,
                     searchArea,
                     alliedHuman -> alliedHuman != human &&
                             human.isAlliedTo(alliedHuman) &&
@@ -1528,10 +1528,10 @@ public class HumanGoals {
     }
 
     public static class HumanHurtByTargetGoal extends HurtByTargetGoal {
-        private final RandomHumanEntity human;
+        private final AbstractMercenaryEntity human;
         private static final double ALERT_RANGE = 20.0D;
 
-        public HumanHurtByTargetGoal(RandomHumanEntity human) {
+        public HumanHurtByTargetGoal(AbstractMercenaryEntity human) {
             super(human);
             this.human = human;
         }
@@ -1555,8 +1555,8 @@ public class HumanGoals {
             }
 
             AABB searchArea = human.getBoundingBox().inflate(ALERT_RANGE);
-            List<RandomHumanEntity> nearbyHumans = human.level().getEntitiesOfClass(
-                    RandomHumanEntity.class,
+            List<AbstractMercenaryEntity> nearbyHumans = human.level().getEntitiesOfClass(
+                    AbstractMercenaryEntity.class,
                     searchArea,
                     alliedHuman -> alliedHuman != human && // Not ourselves
                             human.isAlliedTo(alliedHuman) && // Allied to us
@@ -1564,7 +1564,7 @@ public class HumanGoals {
                                     alliedHuman.getTarget() == attacker) // Or already targeting this attacker
             );
 
-            for (RandomHumanEntity alliedHuman : nearbyHumans) {
+            for (AbstractMercenaryEntity alliedHuman : nearbyHumans) {
                 // Only set target if they can attack this entity
                 if (!alliedHuman.isAlliedTo(attacker) &&
                         alliedHuman.hasLineOfSight(attacker) &&
@@ -1705,7 +1705,7 @@ public class HumanGoals {
         }
 
         public boolean canUse() {
-            if(this.mob instanceof RandomHumanEntity human && (human.isStunned() || human.isSittingInChair() || human.isInMenuState())){
+            if(this.mob instanceof AbstractMercenaryEntity human && (human.isStunned() || human.isSittingInChair() || human.isInMenuState())){
                 return false;
             }
             LivingEntity livingentity = this.mob.getTarget();
@@ -2400,7 +2400,7 @@ public class HumanGoals {
                 return false;
             }
 
-            if (mob instanceof RandomHumanEntity human && human.isAlliedTo(entity)) {
+            if (mob instanceof AbstractMercenaryEntity human && human.isAlliedTo(entity)) {
                 return false;
             }
 
@@ -2414,7 +2414,7 @@ public class HumanGoals {
                     return true;
                 }
 
-                if (mob instanceof RandomHumanEntity human && human.isAlliedTo(hostileTarget)) {
+                if (mob instanceof AbstractMercenaryEntity human && human.isAlliedTo(hostileTarget)) {
                     return true;
                 }
 
@@ -2425,7 +2425,7 @@ public class HumanGoals {
         }
 
         protected LivingEntity findPriorityTarget(List<LivingEntity> potentialTargets) {
-            if (mob instanceof RandomHumanEntity human) {
+            if (mob instanceof AbstractMercenaryEntity human) {
                 for (LivingEntity entity : potentialTargets) {
                     if (entity instanceof Mob hostileMob) {
                         LivingEntity hostileTarget = hostileMob.getTarget();
@@ -2448,7 +2448,7 @@ public class HumanGoals {
     }
 
     public static class GatherResourcesGoal extends Goal {
-        protected final RandomHumanEntity entity;
+        protected final AbstractMercenaryEntity entity;
         protected BlockPos targetPos;
         protected Entity targetEntity;
         protected int gatheringTicks = 0;
@@ -2460,7 +2460,7 @@ public class HumanGoals {
         protected int failedAttempts = 0;
         protected int maxFailedAttempts = 3;
 
-        public GatherResourcesGoal(RandomHumanEntity entity) {
+        public GatherResourcesGoal(AbstractMercenaryEntity entity) {
             this.entity = entity;
             this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
@@ -3052,7 +3052,7 @@ public class HumanGoals {
     }
 
     public static class HumanFollowOwnerGoal extends Goal {
-        private final RandomHumanEntity humanEntity;
+        private final AbstractMercenaryEntity humanEntity;
         @Nullable
         private Entity owner;
         private Supplier<Entity> ownerGetter;
@@ -3065,7 +3065,7 @@ public class HumanGoals {
         private float teleportDistance;
         private boolean canFly;
 
-        public HumanFollowOwnerGoal(RandomHumanEntity humanEntity, Supplier<Entity> ownerGetter, double speedModifier,
+        public HumanFollowOwnerGoal(AbstractMercenaryEntity humanEntity, Supplier<Entity> ownerGetter, double speedModifier,
                                     float startDistance, float stopDistance, boolean canFly, float teleportDistance) {
             this.humanEntity = humanEntity;
             this.ownerGetter = ownerGetter;
@@ -3210,7 +3210,7 @@ public class HumanGoals {
     }
 
     public static class PatrolAroundPositionGoal extends Goal {
-        private final RandomHumanEntity entity;
+        private final AbstractMercenaryEntity entity;
         private final double speedModifier;
         private final int patrolRadius;
         private BlockPos targetPos;
@@ -3223,7 +3223,7 @@ public class HumanGoals {
         private static final double MOVEMENT_THRESHOLD = 0.1; // Minimum movement to not be considered stuck
         private static final double ARRIVAL_DISTANCE = 2.0; // How close to get to target position
 
-        public PatrolAroundPositionGoal(RandomHumanEntity entity, double speedModifier, int patrolRadius) {
+        public PatrolAroundPositionGoal(AbstractMercenaryEntity entity, double speedModifier, int patrolRadius) {
             this.entity = entity;
             this.speedModifier = speedModifier;
             this.patrolRadius = patrolRadius;
@@ -3431,7 +3431,7 @@ public class HumanGoals {
     }
 
     public static class EmeraldOverflowGoal extends Goal {
-        private final RandomHumanEntity entity;
+        private final AbstractMercenaryEntity entity;
         private Villager targetVillager;
         private int searchCooldown = 0;
         private int interactionCooldown = 0;
@@ -3462,7 +3462,7 @@ public class HumanGoals {
                 MobEffects.ABSORPTION
         );
 
-        public EmeraldOverflowGoal(RandomHumanEntity entity) {
+        public EmeraldOverflowGoal(AbstractMercenaryEntity entity) {
             this.entity = entity;
             this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
@@ -3688,7 +3688,7 @@ public class HumanGoals {
     }
 
     public static class ChairSittingGoal extends Goal {
-        private final RandomHumanEntity entity;
+        private final AbstractMercenaryEntity entity;
         private BlockPos targetChair;
         private int searchCooldown = 0;
         private int stuckTicks = 0;
@@ -3700,7 +3700,7 @@ public class HumanGoals {
         private static final double MOVEMENT_THRESHOLD = 0.1;
         private static final double CHAIR_REACH_DISTANCE = 2.0;
 
-        public ChairSittingGoal(RandomHumanEntity entity) {
+        public ChairSittingGoal(AbstractMercenaryEntity entity) {
             this.entity = entity;
             this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
@@ -3886,7 +3886,7 @@ public class HumanGoals {
             }
 
             // Check if chair is already occupied
-            RandomHumanEntity occupant = ChairBlock.getSittingEntity(serverLevel, chairPos);
+            AbstractMercenaryEntity occupant = ChairBlock.getSittingEntity(serverLevel, chairPos);
             return occupant == null;
         }
 

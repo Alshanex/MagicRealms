@@ -1,7 +1,7 @@
 package net.alshanex.magic_realms.util.humans;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.minecraft.resources.ResourceLocation;
 
 public class EntityTextureConfig {

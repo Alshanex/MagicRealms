@@ -1,8 +1,9 @@
 package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.entity.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.util.HumanEntityCommands;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.ChatFormatting;
@@ -30,7 +31,7 @@ public class ServerEvents {
 
     @SubscribeEvent
     public static void onEquipmentChangeEvent(LivingEquipmentChangeEvent event){
-        if (event.getEntity() instanceof RandomHumanEntity human && !human.level().isClientSide) {
+        if (event.getEntity() instanceof AbstractMercenaryEntity human && !human.level().isClientSide) {
             if(human.getEntityClass() == EntityClass.MAGE && event.getSlot() == EquipmentSlot.OFFHAND){
                 human.updateSpellbookSpells();
             }

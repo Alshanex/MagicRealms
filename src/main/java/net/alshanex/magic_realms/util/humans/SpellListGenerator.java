@@ -4,7 +4,7 @@ import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SpellListGenerator {
-    public static List<AbstractSpell> generateSpellsForEntity(RandomHumanEntity entity, RandomSource random) {
+    public static List<AbstractSpell> generateSpellsForEntity(AbstractMercenaryEntity entity, RandomSource random) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
 
@@ -35,7 +35,7 @@ public class SpellListGenerator {
         return spells;
     }
 
-    private static List<AbstractSpell> generateMageSpells(RandomHumanEntity entity, int starLevel, RandomSource random) {
+    private static List<AbstractSpell> generateMageSpells(AbstractMercenaryEntity entity, int starLevel, RandomSource random) {
         List<SchoolType> magicSchools = entity.getMagicSchools();
         if (magicSchools.isEmpty()) {
             MagicRealms.LOGGER.warn("Mage entity {} has no magic schools assigned", entity.getUUID());
@@ -145,7 +145,7 @@ public class SpellListGenerator {
         return selectedSpells;
     }
 
-    private static List<AbstractSpell> generateRogueSpells(RandomHumanEntity entity, int starLevel, RandomSource random) {
+    private static List<AbstractSpell> generateRogueSpells(AbstractMercenaryEntity entity, int starLevel, RandomSource random) {
         boolean isArcher = entity.isArcher();
         SpellRange range = getRogueSpellRange(starLevel);
         int spellCount = range.getRandomCount(random);

@@ -3,11 +3,11 @@ package net.alshanex.magic_realms.screens;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.EntityClass;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
@@ -25,7 +25,7 @@ import java.util.UUID;
 public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private final Container equipmentContainer;
     private final EntitySnapshot snapshot;
-    private final RandomHumanEntity entity;
+    private final AbstractMercenaryEntity entity;
     private final Player player;
     private java.util.Timer saveTimer;
 
@@ -34,7 +34,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_SLOTS = 36;
     private static final int TOTAL_SLOTS = EQUIPMENT_SLOTS + PLAYER_INVENTORY_SLOTS;
 
-    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot, RandomHumanEntity entity) {
+    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
         super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_HUMAN_INFO_MENU.get(), containerId);
         this.snapshot = snapshot;
         this.entity = entity;
@@ -95,10 +95,10 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         addPlayerHotbar(playerInventory);
     }
 
-    private RandomHumanEntity findEntityByUUID(Level level, UUID entityUUID) {
+    private AbstractMercenaryEntity findEntityByUUID(Level level, UUID entityUUID) {
         if (level instanceof ServerLevel serverLevel) {
             var entity = serverLevel.getEntity(entityUUID);
-            if (entity instanceof RandomHumanEntity humanEntity) {
+            if (entity instanceof AbstractMercenaryEntity humanEntity) {
                 return humanEntity;
             }
         }
@@ -438,7 +438,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         return equipmentContainer;
     }
 
-    public RandomHumanEntity getEntity() {
+    public AbstractMercenaryEntity getEntity() {
         return entity;
     }
 

@@ -6,7 +6,8 @@ import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.*;
@@ -74,7 +75,7 @@ public class MRUtils {
         return newValue > currentValue;
     }
 
-    public static boolean isWeaponBetter(ItemStack newWeapon, ItemStack currentWeapon, RandomHumanEntity entity) {
+    public static boolean isWeaponBetter(ItemStack newWeapon, ItemStack currentWeapon, AbstractMercenaryEntity entity) {
         if (!isWeapon(currentWeapon)) {
             return true;
         }
@@ -108,7 +109,7 @@ public class MRUtils {
         return getStaffSpellPower(newStaff) > getStaffSpellPower(currentStaff);
     }
 
-    public static boolean isSpellbookBetter(ItemStack newSpellbook, ItemStack currentSpellbook, RandomHumanEntity entity) {
+    public static boolean isSpellbookBetter(ItemStack newSpellbook, ItemStack currentSpellbook, AbstractMercenaryEntity entity) {
         if (!isSpellbook(currentSpellbook)) {
             return true;
         }
@@ -116,7 +117,7 @@ public class MRUtils {
         return getSpellbookScore(newSpellbook, entity) > getSpellbookScore(currentSpellbook, entity);
     }
 
-    public static double getSpellbookScore(ItemStack spellbook, RandomHumanEntity entity) {
+    public static double getSpellbookScore(ItemStack spellbook, AbstractMercenaryEntity entity) {
         if (!isSpellbook(spellbook)) {
             return 0.0;
         }
@@ -418,7 +419,7 @@ public class MRUtils {
         };
     }
 
-    public static void autoEquipBetterEquipment(RandomHumanEntity entity) {
+    public static void autoEquipBetterEquipment(AbstractMercenaryEntity entity) {
         SimpleContainer inventory = entity.getInventory();
 
         for (int i = 0; i < inventory.getContainerSize(); i++) {
@@ -431,7 +432,7 @@ public class MRUtils {
         }
     }
 
-    public static boolean shouldAutoEquip(ItemStack stack, RandomHumanEntity entity) {
+    public static boolean shouldAutoEquip(ItemStack stack, AbstractMercenaryEntity entity) {
         if (stack.isEmpty()) return false;
 
         // Don't equip equipped items
@@ -491,7 +492,7 @@ public class MRUtils {
         return false;
     }
 
-    private static boolean isEquipped(ItemStack stack, RandomHumanEntity entity) {
+    private static boolean isEquipped(ItemStack stack, AbstractMercenaryEntity entity) {
         return entity.getMainHandItem() == stack ||
                 entity.getOffhandItem() == stack ||
                 entity.getItemBySlot(EquipmentSlot.HEAD) == stack ||
@@ -500,7 +501,7 @@ public class MRUtils {
                 entity.getItemBySlot(EquipmentSlot.FEET) == stack;
     }
 
-    public static void equipItem(ItemStack newItem, int inventorySlot, RandomHumanEntity entity) {
+    public static void equipItem(ItemStack newItem, int inventorySlot, AbstractMercenaryEntity entity) {
         ItemStack oldItem = ItemStack.EMPTY;
 
         if (newItem.getItem() instanceof ArmorItem armorItem) {
@@ -543,7 +544,7 @@ public class MRUtils {
             ServerLevel level = serverPlayer.serverLevel();
             Entity entity = level.getEntity(entityUUID);
 
-            if (entity instanceof RandomHumanEntity humanEntity) {
+            if (entity instanceof AbstractMercenaryEntity humanEntity) {
                 // Update the entity name on server side
                 humanEntity.setEntityName(entityName);
 
@@ -558,7 +559,7 @@ public class MRUtils {
             ServerLevel level = serverPlayer.serverLevel();
             Entity entity = level.getEntity(entityUUID);
 
-            if (entity instanceof RandomHumanEntity humanEntity) {
+            if (entity instanceof AbstractMercenaryEntity humanEntity) {
                 KillTrackerData killData = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
                 int currentLevel = killData.getCurrentLevel();
 

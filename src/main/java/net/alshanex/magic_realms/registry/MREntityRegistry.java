@@ -1,8 +1,8 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.entity.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;

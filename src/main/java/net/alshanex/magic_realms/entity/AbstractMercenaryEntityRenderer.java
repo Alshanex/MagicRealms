@@ -4,14 +4,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
+import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobModel;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobRenderer;
-import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
-import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
@@ -20,7 +16,7 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 
-public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
+public class AbstractMercenaryEntityRenderer extends AbstractSpellCastingMobRenderer {
     private static final String LEFT_HAND = "bipedHandLeft";
     private static final String RIGHT_HAND = "bipedHandRight";
 
@@ -29,56 +25,10 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
     protected ItemStack hiddenShield = ItemStack.EMPTY;
     private boolean shieldWasHidden = false;
 
-    public RandomHumanEntityRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, new RandomHumanEntityModel());
+    public AbstractMercenaryEntityRenderer(EntityRendererProvider.Context renderManager, AbstractSpellCastingMobModel model) {
+        super(renderManager, model);
 
-        addRenderLayer(new CustomItemGeoLayer(this));
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(AbstractSpellCastingMob entity) {
-        if (entity instanceof RandomHumanEntity human) {
-            String entityUUID = human.getUUID().toString();
-            Minecraft mc = Minecraft.getInstance();
-            human.debugTextureGeneration();
-
-            // Priority 1: Received server texture (multiplayer)
-            CombinedTextureManager.TextureResult receivedTexture =
-                    CombinedTextureManager.getReceivedTexture(entityUUID);
-            if (receivedTexture != null) {
-                return receivedTexture.getTextureLocation();
-            }
-
-            // Priority 2: Entity's own texture config (should be deterministic)
-            EntityTextureConfig config = human.getTextureConfig();
-
-            // If config is null, try to create one using the entity (deterministic)
-            if (config == null && human.getGender() != null && human.getEntityClass() != null) {
-                try {
-                    // Create deterministic texture config using entity - this ensures consistency
-                    config = new EntityTextureConfig(human);
-                    MagicRealms.LOGGER.debug("Created deterministic texture config for entity in renderer: {}", entityUUID);
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.error("Failed to create texture config in renderer for entity: {}", entityUUID, e);
-                }
-            }
-
-            if (config != null && config.hasValidTexture()) {
-                MagicRealms.LOGGER.debug("Using entity texture config for entity: {}", entityUUID);
-                return config.getSkinTexture();
-            }
-
-            // Priority 3: Cached texture
-            ResourceLocation cachedTexture = CombinedTextureManager.getCachedTexture(entityUUID);
-            if (cachedTexture != null) {
-                MagicRealms.LOGGER.debug("Using cached texture for entity: {}", entityUUID);
-                return cachedTexture;
-            }
-
-            MagicRealms.LOGGER.warn("No texture available for entity: {}, using fallback", entityUUID);
-        }
-
-        return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
+        addRenderLayer(new AbstractMercenaryEntityRenderer.CustomItemGeoLayer(this));
     }
 
     @Override
@@ -97,7 +47,7 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
 
     private class CustomItemGeoLayer extends BlockAndItemGeoLayer<AbstractSpellCastingMob> {
 
-        public CustomItemGeoLayer(RandomHumanEntityRenderer renderer) {
+        public CustomItemGeoLayer(AbstractMercenaryEntityRenderer renderer) {
             super(renderer);
         }
 
@@ -107,8 +57,8 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
             return switch (bone.getName()) {
                 case LEFT_HAND -> {
                     ItemStack leftItem = animatable.isLeftHanded() ?
-                            RandomHumanEntityRenderer.this.mainHandItem :
-                            RandomHumanEntityRenderer.this.offhandItem;
+                            AbstractMercenaryEntityRenderer.this.mainHandItem :
+                            AbstractMercenaryEntityRenderer.this.offhandItem;
 
                     if (shouldRenderCustom(leftItem)) {
                         yield leftItem;
@@ -117,8 +67,8 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
                 }
                 case RIGHT_HAND -> {
                     ItemStack rightItem = animatable.isLeftHanded() ?
-                            RandomHumanEntityRenderer.this.offhandItem :
-                            RandomHumanEntityRenderer.this.mainHandItem;
+                            AbstractMercenaryEntityRenderer.this.offhandItem :
+                            AbstractMercenaryEntityRenderer.this.mainHandItem;
 
                     if (shouldRenderCustom(rightItem)) {
                         yield rightItem;
@@ -141,20 +91,20 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
         protected void renderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack,
                                           AbstractSpellCastingMob animatable, MultiBufferSource bufferSource,
                                           float partialTick, int packedLight, int packedOverlay) {
-            if (RandomHumanEntityRenderer.this.shieldWasHidden &&
-                    !RandomHumanEntityRenderer.this.hiddenShield.isEmpty()) {
+            if (AbstractMercenaryEntityRenderer.this.shieldWasHidden &&
+                    !AbstractMercenaryEntityRenderer.this.hiddenShield.isEmpty()) {
                 animatable.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND,
-                        RandomHumanEntityRenderer.this.hiddenShield);
+                        AbstractMercenaryEntityRenderer.this.hiddenShield);
             }
 
-            if (stack == RandomHumanEntityRenderer.this.mainHandItem) {
+            if (stack == AbstractMercenaryEntityRenderer.this.mainHandItem) {
                 poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
 
                 if (stack.getItem() instanceof ShieldItem) {
                     poseStack.translate(0, 0.125, -0.25);
                 }
             }
-            else if (stack == RandomHumanEntityRenderer.this.offhandItem) {
+            else if (stack == AbstractMercenaryEntityRenderer.this.offhandItem) {
                 poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
 
                 if (stack.getItem() instanceof ShieldItem) {
@@ -165,8 +115,8 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
 
             super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 
-            RandomHumanEntityRenderer.this.hiddenShield = ItemStack.EMPTY;
-            RandomHumanEntityRenderer.this.shieldWasHidden = false;
+            AbstractMercenaryEntityRenderer.this.hiddenShield = ItemStack.EMPTY;
+            AbstractMercenaryEntityRenderer.this.shieldWasHidden = false;
         }
 
         private boolean shouldRenderCustom(ItemStack stack) {

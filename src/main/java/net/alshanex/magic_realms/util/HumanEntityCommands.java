@@ -12,8 +12,8 @@ import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.events.KillTrackingHandler;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.LevelingStatsManager;
 import net.minecraft.commands.CommandSourceStack;
@@ -40,8 +40,8 @@ public class HumanEntityCommands {
         int levelsToAdd = IntegerArgumentType.getInteger(context, "levels");
         CommandSourceStack source = context.getSource();
 
-        if (!(target instanceof RandomHumanEntity humanEntity)) {
-            source.sendFailure(Component.literal("Target must be a RandomHumanEntity!"));
+        if (!(target instanceof AbstractMercenaryEntity humanEntity)) {
+            source.sendFailure(Component.literal("Target must be a AbstractMercenaryEntity!"));
             return 0;
         }
 
@@ -99,7 +99,7 @@ public class HumanEntityCommands {
         }
     }
 
-    private static void spawnLevelUpEffects(RandomHumanEntity entity) {
+    private static void spawnLevelUpEffects(AbstractMercenaryEntity entity) {
         if (entity.level().isClientSide) return;
 
         try {

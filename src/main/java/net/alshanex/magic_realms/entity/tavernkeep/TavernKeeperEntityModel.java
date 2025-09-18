@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.entity;
+package net.alshanex.magic_realms.entity.tavernkeep;
 
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobModel;

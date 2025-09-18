@@ -5,7 +5,7 @@ import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
@@ -15,7 +15,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public class LevelingStatsManager {
-    public static void applyLevelBasedAttributes(RandomHumanEntity entity, int level) {
+    public static void applyLevelBasedAttributes(AbstractMercenaryEntity entity, int level) {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
         KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
@@ -40,7 +40,7 @@ public class LevelingStatsManager {
         }
     }
 
-    private static void applyHealthBonus(RandomHumanEntity entity, int level) {
+    private static void applyHealthBonus(AbstractMercenaryEntity entity, int level) {
         int healthPerLevel = Config.healthAmount;
 
         int totalHealthBonus = Math.min(level * healthPerLevel, Config.maxLevel * healthPerLevel);
@@ -53,7 +53,7 @@ public class LevelingStatsManager {
         entity.setHealth(entity.getMaxHealth());
     }
 
-    private static void applyBossKillBonuses(RandomHumanEntity entity, int bossKills) {
+    private static void applyBossKillBonuses(AbstractMercenaryEntity entity, int bossKills) {
         if (bossKills == 0) return;
 
         int bossKillHealthMultiplier = Config.healthAmountBossKills;
@@ -82,7 +82,7 @@ public class LevelingStatsManager {
                 AttributeModifier.Operation.ADD_VALUE);
     }
 
-    private static void applyMageAttributes(RandomHumanEntity entity, int level) {
+    private static void applyMageAttributes(AbstractMercenaryEntity entity, int level) {
 
         double progressPercentage = Math.min(1.0, (double) level / Config.maxLevel);
         double currentSpellPowerBonusPercentage = Config.maxSpellPowerPercentage * progressPercentage;
@@ -99,7 +99,7 @@ public class LevelingStatsManager {
                 AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     }
 
-    private static void applyWarriorAttributes(RandomHumanEntity entity, int level, int starLevel) {
+    private static void applyWarriorAttributes(AbstractMercenaryEntity entity, int level, int starLevel) {
         int damageBonus = Math.min(level * Config.damageAmountWarriors, Config.damageAmountWarriorsTimes * Config.damageAmountWarriors);
 
         applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
@@ -116,7 +116,7 @@ public class LevelingStatsManager {
                 AttributeModifier.Operation.ADD_VALUE);
     }
 
-    private static void applyArcherAttributes(RandomHumanEntity entity, int level) {
+    private static void applyArcherAttributes(AbstractMercenaryEntity entity, int level) {
         double progressPercentage = Math.min(1.0, (double) level / Config.maxLevel);
 
         double currentArrowDamageBonusPercentage = Config.maxArrowDamagePercentage * progressPercentage;
@@ -150,7 +150,7 @@ public class LevelingStatsManager {
         }
     }
 
-    private static void applyAssassinAttributes(RandomHumanEntity entity, int level) {
+    private static void applyAssassinAttributes(AbstractMercenaryEntity entity, int level) {
         int damageBonus = Math.min(level * Config.damageAmountRogues, Config.damageAmountRoguesTimes * Config.damageAmountRogues);
 
         applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
@@ -181,7 +181,7 @@ public class LevelingStatsManager {
                 AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     }
 
-    private static void applyOrUpdateAttribute(RandomHumanEntity entity, Holder<Attribute> attributeHolder,
+    private static void applyOrUpdateAttribute(AbstractMercenaryEntity entity, Holder<Attribute> attributeHolder,
                                                String modifierName, double amount, AttributeModifier.Operation operation) {
         AttributeInstance instance = entity.getAttribute(attributeHolder);
         if (instance == null) {

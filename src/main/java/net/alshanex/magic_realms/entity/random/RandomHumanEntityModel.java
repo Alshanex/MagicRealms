@@ -1,11 +1,7 @@
-package net.alshanex.magic_realms.entity;
+package net.alshanex.magic_realms.entity.random;
 
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobModel;
-import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
-import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.cache.object.GeoBone;

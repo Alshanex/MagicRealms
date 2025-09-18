@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.entity;
+package net.alshanex.magic_realms.entity.tavernkeep;
 
 import com.google.common.collect.Sets;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
@@ -9,15 +9,14 @@ import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
 import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
-import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.IMerchantWizard;
 import io.redspace.ironsspellbooks.item.FurledMapItem;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
 import io.redspace.ironsspellbooks.player.AdditionalWanderingTrades;
-import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.Holder;
@@ -31,7 +30,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
@@ -60,7 +58,6 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.levelgen.structure.Structure;
-import net.neoforged.neoforge.event.EventHooks;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
@@ -155,7 +152,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     }
 
     private boolean isAlliedHelper(Entity entity) {
-        return entity instanceof RandomHumanEntity human && human.getSummoner() == null;
+        return entity instanceof AbstractMercenaryEntity human && human.getSummoner() == null;
     }
 
     @Override

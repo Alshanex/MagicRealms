@@ -5,19 +5,21 @@ import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.spells.devour_jaw.DevourJaw;
 import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
+import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.LevelingStatsManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -28,13 +30,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
-import static io.redspace.ironsspellbooks.api.util.Utils.random;
-
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class KillTrackingHandler {
     @SubscribeEvent
     public static void onHumanDeath(LivingDeathEvent event){
-        if(!(event.getEntity() instanceof RandomHumanEntity human && human.isImmortal())){
+        if(!(event.getEntity() instanceof AbstractMercenaryEntity human && human.isImmortal())){
             return;
         }
         event.setCanceled(true);
@@ -60,7 +60,7 @@ public class KillTrackingHandler {
         }
     }
 
-    private static void knockbackAndStun(DamageSource source, RandomHumanEntity entity) {
+    private static void knockbackAndStun(DamageSource source, AbstractMercenaryEntity entity) {
         // Apply knockback effect
         if (source.getEntity() != null) {
             double knockbackStrength = 1.5;
@@ -92,7 +92,7 @@ public class KillTrackingHandler {
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
-        if (!(event.getSource().getEntity() instanceof RandomHumanEntity humanEntity)) {
+        if (!(event.getSource().getEntity() instanceof AbstractMercenaryEntity humanEntity)) {
             return;
         }
 
@@ -124,7 +124,7 @@ public class KillTrackingHandler {
         }
     }
 
-    private static void spawnLevelUpEffects(RandomHumanEntity entity) {
+    private static void spawnLevelUpEffects(AbstractMercenaryEntity entity) {
         if (entity.level().isClientSide) return;
 
         try {
@@ -158,13 +158,13 @@ public class KillTrackingHandler {
             return;
         }
 
-        // Don't give XP for other RandomHumanEntities
-        if (deadEntity instanceof RandomHumanEntity) {
+        // Don't give XP for other AbstractMercenaryEntity
+        if (deadEntity instanceof AbstractMercenaryEntity) {
             return;
         }
 
-        // Find all RandomHumanEntity companions owned by this player within range
-        List<RandomHumanEntity> companions = findNearbyCompanions(killer, deadEntity);
+        // Find all AbstractMercenaryEntity companions owned by this player within range
+        List<AbstractMercenaryEntity> companions = findNearbyCompanions(killer, deadEntity);
 
         if (companions.isEmpty()) {
             return;
@@ -181,15 +181,15 @@ public class KillTrackingHandler {
         int sharedXp = Math.max(1, (int) (baseXp * SHARED_XP_MULTIPLIER));
 
         // Distribute XP to all companions
-        for (RandomHumanEntity companion : companions) {
+        for (AbstractMercenaryEntity companion : companions) {
             giveSharedExperience(companion, deadEntity, sharedXp, killer);
         }
 
         //MagicRealms.LOGGER.debug("Distributed {} shared XP to {} companions of player {} for killing {}", sharedXp, companions.size(), killer.getName().getString(), deadEntity.getType().getDescriptionId());
     }
 
-    private static List<RandomHumanEntity> findNearbyCompanions(Player owner, LivingEntity deadEntity) {
-        return deadEntity.level().getEntitiesOfClass(RandomHumanEntity.class,
+    private static List<AbstractMercenaryEntity> findNearbyCompanions(Player owner, LivingEntity deadEntity) {
+        return deadEntity.level().getEntitiesOfClass(AbstractMercenaryEntity.class,
                 deadEntity.getBoundingBox().inflate(64.0), // 64 block radius
                 companion -> {
                     // Check if this companion is owned by the player
@@ -231,7 +231,7 @@ public class KillTrackingHandler {
         }
     }
 
-    private static void giveSharedExperience(RandomHumanEntity companion, LivingEntity killedEntity,
+    private static void giveSharedExperience(AbstractMercenaryEntity companion, LivingEntity killedEntity,
                                              int sharedXp, Player owner) {
         KillTrackerData killTracker = companion.getData(MRDataAttachments.KILL_TRACKER);
 

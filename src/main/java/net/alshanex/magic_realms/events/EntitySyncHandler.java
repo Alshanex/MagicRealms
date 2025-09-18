@@ -2,7 +2,8 @@ package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
 import net.alshanex.magic_realms.network.SyncEntityTexturePacket;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
@@ -22,7 +23,7 @@ public class EntitySyncHandler {
 
     @SubscribeEvent
     public static void onStartTracking(PlayerEvent.StartTracking event) {
-        if (event.getTarget() instanceof RandomHumanEntity humanEntity &&
+        if (event.getTarget() instanceof AbstractMercenaryEntity humanEntity &&
                 event.getEntity() instanceof ServerPlayer serverPlayer) {
 
             // Send level sync
@@ -31,15 +32,17 @@ public class EntitySyncHandler {
             PacketDistributor.sendToPlayer(serverPlayer,
                     new SyncEntityLevelPacket(humanEntity.getId(), humanEntity.getUUID(), currentLevel));
 
-            // Handle texture
-            if (humanEntity.hasTexture()) {
-                // Send existing texture immediately
-                sendExistingTextureToPlayer(humanEntity, serverPlayer);
-            } else if (!humanEntity.isTextureRequested()) {
-                // This is the first player to track this entity, trigger texture generation
-                triggerTextureGeneration(humanEntity);
+            if(humanEntity instanceof RandomHumanEntity entity){
+                // Handle texture
+                if (entity.hasTexture()) {
+                    // Send existing texture immediately
+                    sendExistingTextureToPlayer(entity, serverPlayer);
+                } else if (!entity.isTextureRequested()) {
+                    // This is the first player to track this entity, trigger texture generation
+                    triggerTextureGeneration(entity);
+                }
+                // If texture is already requested but not ready, the player will receive it when it's done
             }
-            // If texture is already requested but not ready, the player will receive it when it's done
         }
     }
 

@@ -6,7 +6,8 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
@@ -16,13 +17,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.LevelResource;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -77,7 +81,7 @@ public class EntitySnapshot {
         this.entitySpells = entitySpells != null ? new ArrayList<>(entitySpells) : new ArrayList<>();
     }
 
-    public static EntitySnapshot fromEntity(RandomHumanEntity entity) {
+    public static EntitySnapshot fromEntity(AbstractMercenaryEntity entity) {
         KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
 
         List<String> schools = entity.getMagicSchools().stream()
@@ -99,18 +103,20 @@ public class EntitySnapshot {
 
         // Intentar capturar la ruta de textura guardada
         String savedTexturePath = null;
-        try {
-            if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-                // Verificar si existe una textura guardada para esta entidad
-                java.nio.file.Path gameDir = net.minecraft.client.Minecraft.getInstance().gameDirectory.toPath();
-                java.nio.file.Path textureDir = gameDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
-                java.nio.file.Path texturePath = textureDir.resolve(entity.getUUID().toString() + "_complete.png");
+
+        if (entity instanceof RandomHumanEntity human) {
+            if(!human.level().isClientSide) {
+                ServerLevel serverLevel = (ServerLevel) human.level();
+                Path worldDir = serverLevel.getServer().getWorldPath(LevelResource.ROOT);
+                Path texturePath = worldDir.resolve("magic_realms_textures")
+                        .resolve("entity").resolve("human")
+                        .resolve(human.getUUID() + "_complete.png");
                 if (java.nio.file.Files.exists(texturePath)) {
                     savedTexturePath = texturePath.toString();
                 }
             }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not check for saved texture: {}", e.getMessage());
+        } else {
+            savedTexturePath = entity.getTextureLocation();
         }
 
         return new EntitySnapshot(
@@ -133,7 +139,7 @@ public class EntitySnapshot {
         );
     }
 
-    private static void captureAttributes(RandomHumanEntity entity, CompoundTag attributes) {
+    private static void captureAttributes(AbstractMercenaryEntity entity, CompoundTag attributes) {
         try {
             // Capturar atributos básicos de Minecraft (siempre presentes)
             attributes.putDouble("health", entity.getHealth());
@@ -217,7 +223,7 @@ public class EntitySnapshot {
         }
     }
 
-    private static void captureAttributeValue(RandomHumanEntity entity, CompoundTag attributes, Holder<Attribute> attributeHolder, String key, double defaultValue) {
+    private static void captureAttributeValue(AbstractMercenaryEntity entity, CompoundTag attributes, Holder<Attribute> attributeHolder, String key, double defaultValue) {
         try {
             AttributeInstance instance = entity.getAttribute(attributeHolder);
             if (instance != null) {
@@ -234,7 +240,7 @@ public class EntitySnapshot {
         }
     }
 
-    private static void captureAllAttributeModifiers(RandomHumanEntity entity, CompoundTag attributes) {
+    private static void captureAllAttributeModifiers(AbstractMercenaryEntity entity, CompoundTag attributes) {
         try {
             CompoundTag modifiersTag = new CompoundTag();
 
@@ -308,7 +314,7 @@ public class EntitySnapshot {
         return attributeHolder;
     }
 
-    private static void captureEquipment(RandomHumanEntity entity, CompoundTag equipment) {
+    private static void captureEquipment(AbstractMercenaryEntity entity, CompoundTag equipment) {
         // Main hand
         ItemStack mainHandItem = entity.getMainHandItem();
         if (!mainHandItem.isEmpty()) {

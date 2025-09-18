@@ -1,8 +1,7 @@
 package net.alshanex.magic_realms.effects;
 
 import io.redspace.ironsspellbooks.effect.MagicMobEffect;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.minecraft.world.effect.MobEffect;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;

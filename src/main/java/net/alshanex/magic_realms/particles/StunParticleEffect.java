@@ -1,14 +1,13 @@
 package net.alshanex.magic_realms.particles;
 
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
 
 public class StunParticleEffect {
 
-    public static void spawnStunParticles(RandomHumanEntity entity, ClientLevel level) {
+    public static void spawnStunParticles(AbstractMercenaryEntity entity, ClientLevel level) {
         if (entity == null || !entity.isStunned()) {
             return;
         }

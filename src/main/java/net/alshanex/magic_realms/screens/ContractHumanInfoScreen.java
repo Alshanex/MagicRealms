@@ -7,9 +7,8 @@ import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
@@ -25,13 +24,11 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -66,7 +63,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private static final int ALTERNATE_ROW = 0x11FFFFFF;   // Alternating row background
 
     private final EntitySnapshot snapshot;
-    private final RandomHumanEntity entity;
+    private final AbstractMercenaryEntity entity;
     private Tab currentTab = Tab.IRON_SPELLS;
 
     private int scrollOffset = 0;
@@ -308,7 +305,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private boolean renderEntity3D(GuiGraphics guiGraphics) {
-        RandomHumanEntity entityToRender = entity;
+        AbstractMercenaryEntity entityToRender = entity;
 
         // Si no tenemos la entidad real, usar la entidad virtual con cache
         if (entityToRender == null && snapshot != null) {

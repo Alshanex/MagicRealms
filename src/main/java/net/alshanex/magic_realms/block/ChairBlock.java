@@ -2,13 +2,12 @@ package net.alshanex.magic_realms.block;
 
 import com.mojang.serialization.MapCodec;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
@@ -138,7 +137,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
             // Check if there's already an entity sitting in this chair
-            RandomHumanEntity sittingEntity = getSittingEntity(serverLevel, pos);
+            AbstractMercenaryEntity sittingEntity = getSittingEntity(serverLevel, pos);
             if (sittingEntity != null) {
                 // Make the entity unsit
                 sittingEntity.unsitFromChair();
@@ -169,14 +168,14 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
         }
 
         // Check if chair is already occupied
-        RandomHumanEntity sitting = getSittingEntity(level, pos);
+        AbstractMercenaryEntity sitting = getSittingEntity(level, pos);
         if (sitting != null) {
             return false;
         }
 
         // Check entity count in radius
         AABB searchArea = new AABB(pos).inflate(SPAWN_CHECK_RADIUS);
-        List<RandomHumanEntity> nearbyEntities = level.getEntitiesOfClass(RandomHumanEntity.class, searchArea);
+        List<AbstractMercenaryEntity> nearbyEntities = level.getEntitiesOfClass(AbstractMercenaryEntity.class, searchArea);
 
         if (nearbyEntities.size() >= MAX_ENTITIES_IN_RADIUS) {
             return false;
@@ -242,11 +241,11 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     }
 
     @Nullable
-    public static RandomHumanEntity getSittingEntity(ServerLevel level, BlockPos chairPos) {
+    public static AbstractMercenaryEntity getSittingEntity(ServerLevel level, BlockPos chairPos) {
         AABB searchArea = new AABB(chairPos).inflate(1.0);
-        List<RandomHumanEntity> entities = level.getEntitiesOfClass(RandomHumanEntity.class, searchArea);
+        List<AbstractMercenaryEntity> entities = level.getEntitiesOfClass(AbstractMercenaryEntity.class, searchArea);
 
-        for (RandomHumanEntity entity : entities) {
+        for (AbstractMercenaryEntity entity : entities) {
             if (entity.isSittingInChair() && chairPos.equals(entity.getChairPosition())) {
                 return entity;
             }
@@ -278,7 +277,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && level instanceof ServerLevel serverLevel) {
             // Make any sitting entity unsit when chair is broken
-            RandomHumanEntity sittingEntity = getSittingEntity(serverLevel, pos);
+            AbstractMercenaryEntity sittingEntity = getSittingEntity(serverLevel, pos);
             if (sittingEntity != null) {
                 sittingEntity.unsitFromChair();
             }

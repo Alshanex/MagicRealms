@@ -1,10 +1,7 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.network.RequestEntityLevelPacket;
-import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
-import net.alshanex.magic_realms.network.SyncPresetTextureNamePacket;
-import net.alshanex.magic_realms.network.UpdateEntityNamePacket;
+import net.alshanex.magic_realms.network.*;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -19,7 +16,10 @@ public class PayloadHandler {
         payloadRegistrar.playToServer(UpdateEntityNamePacket.TYPE, UpdateEntityNamePacket.STREAM_CODEC, UpdateEntityNamePacket::handle);
         payloadRegistrar.playToServer(RequestEntityLevelPacket.TYPE, RequestEntityLevelPacket.STREAM_CODEC, RequestEntityLevelPacket::handle);
         payloadRegistrar.playToServer(SyncPresetTextureNamePacket.TYPE, SyncPresetTextureNamePacket.STREAM_CODEC, SyncPresetTextureNamePacket::handle);
+        payloadRegistrar.playToServer(UploadEntityTexturePacket.TYPE, UploadEntityTexturePacket.STREAM_CODEC, UploadEntityTexturePacket::handle);
 
         payloadRegistrar.playToClient(SyncEntityLevelPacket.TYPE, SyncEntityLevelPacket.STREAM_CODEC, SyncEntityLevelPacket::handle);
+        payloadRegistrar.playToClient(RequestTextureGenerationPacket.TYPE, RequestTextureGenerationPacket.STREAM_CODEC, RequestTextureGenerationPacket::handle);
+        payloadRegistrar.playToClient(SyncEntityTexturePacket.TYPE, SyncEntityTexturePacket.STREAM_CODEC, SyncEntityTexturePacket::handle);
     }
 }

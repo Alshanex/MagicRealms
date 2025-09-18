@@ -36,6 +36,8 @@ public class CombinedTextureManager {
     // Chance to use additional texture
     private static final double ADDITIONAL_TEXTURE_CHANCE = Config.customTextureChance;
 
+    private static final Map<String, TextureResult> RECEIVED_TEXTURE_CACHE = new ConcurrentHashMap<>();
+
     // Result class to hold both texture and name information
     public static class TextureResult {
         private final ResourceLocation textureLocation;
@@ -264,7 +266,7 @@ public class CombinedTextureManager {
     }
 
     // Internal class for texture creation results
-    private static class TextureCreationResult {
+    public static class TextureCreationResult {
         final BufferedImage image;
         final String textureName;
         final boolean isPresetTexture;
@@ -274,9 +276,21 @@ public class CombinedTextureManager {
             this.textureName = textureName;
             this.isPresetTexture = isPresetTexture;
         }
+
+        public BufferedImage getImage() {
+            return image;
+        }
+
+        public String getTextureName() {
+            return textureName;
+        }
+
+        public boolean isPresetTexture() {
+            return isPresetTexture;
+        }
     }
 
-    private static TextureCreationResult createCompleteTextureWithName(Gender gender, EntityClass entityClass, int hairTextureIndex) {
+    public static TextureCreationResult createCompleteTextureWithName(Gender gender, EntityClass entityClass, int hairTextureIndex) {
         try {
             // Roll for texture type: 70% layered, 30% additional
             double roll = TEXTURE_RANDOM.nextDouble();
@@ -777,5 +791,36 @@ public class CombinedTextureManager {
     // Configuration methods
     public static double getAdditionalTextureChance() {
         return ADDITIONAL_TEXTURE_CHANCE;
+    }
+
+    public static ResourceLocation getCachedTexture(String entityUUID) {
+        return COMBINED_TEXTURE_CACHE.get(entityUUID);
+    }
+
+    public static void cacheReceivedTexture(String entityUUID, ResourceLocation location, String textureName, boolean isPresetTexture) {
+        // Check if we already have a texture registered for this entity
+        ResourceLocation existingTexture = COMBINED_TEXTURE_CACHE.get(entityUUID);
+
+        if (existingTexture != null && !existingTexture.equals(location)) {
+            // Only unregister if we're changing to a different ResourceLocation
+            DynamicTextureManager.unregisterTexture(entityUUID);
+            MagicRealms.LOGGER.debug("Unregistered old texture for entity: {}", entityUUID);
+        }
+
+        // Add the new texture (this will overwrite if same ResourceLocation)
+        COMBINED_TEXTURE_CACHE.put(entityUUID, location);
+        RECEIVED_TEXTURE_CACHE.put(entityUUID, new TextureResult(location, textureName, isPresetTexture));
+        ACTIVE_ENTITIES.add(entityUUID);
+
+        // Store texture name if present
+        if (textureName != null && !textureName.isEmpty()) {
+            ENTITY_TEXTURE_NAMES.put(entityUUID, textureName);
+        }
+
+        MagicRealms.LOGGER.debug("Cached received texture for entity {} (ResourceLocation: {})", entityUUID, location);
+    }
+
+    public static TextureResult getReceivedTexture(String entityUUID) {
+        return RECEIVED_TEXTURE_CACHE.get(entityUUID);
     }
 }

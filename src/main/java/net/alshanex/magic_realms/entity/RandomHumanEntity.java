@@ -15,6 +15,7 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.*;
 import io.redspace.ironsspellbooks.entity.mobs.goals.melee.AttackAnimationData;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
+import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.Config;
@@ -26,7 +27,9 @@ import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.network.RequestTextureGenerationPacket;
 import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
+import net.alshanex.magic_realms.network.SyncEntityTexturePacket;
 import net.alshanex.magic_realms.particles.StunParticleEffect;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREffects;
@@ -39,6 +42,7 @@ import net.alshanex.magic_realms.util.humans.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -48,6 +52,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
@@ -57,6 +62,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -76,15 +82,19 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
 
 import javax.annotation.Nullable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -110,6 +120,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
     private static final EntityDataAccessor<Integer> SITTING_TIME = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SIT_COOLDOWN = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_IN_MENU_STATE = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> HAS_TEXTURE = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> TEXTURE_REQUESTED = SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.BOOLEAN);
 
     private EntityType<?> fearedEntityType = null;
     private boolean fearGoalInitialized = false;
@@ -245,6 +257,22 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
     }
 
+    public boolean hasTexture() {
+        return this.entityData.get(HAS_TEXTURE);
+    }
+
+    public void setHasTexture(boolean hasTexture) {
+        this.entityData.set(HAS_TEXTURE, hasTexture);
+    }
+
+    public boolean isTextureRequested() {
+        return this.entityData.get(TEXTURE_REQUESTED);
+    }
+
+    public void setTextureRequested(boolean requested) {
+        this.entityData.set(TEXTURE_REQUESTED, requested);
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
@@ -287,6 +315,11 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             initializeClassSpecifics(randomsource);
             initializeDefaultEquipment();
             initializeFearedEntity(randomsource);
+
+            // Handle texture generation
+            if (!this.level().isClientSide) {
+                checkAndRequestTexture();
+            }
 
             HumanStatsManager.applyClassAttributes(this);
 
@@ -343,6 +376,71 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         }
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
+    }
+
+    private void checkAndRequestTexture() {
+        if (hasExistingServerTexture()) {
+            setHasTexture(true);
+            // Don't distribute yet - wait for players to track
+        } else {
+            // Mark as needing texture, but don't request yet if no players are tracking
+            setHasTexture(false);
+            setTextureRequested(false);
+
+            MagicRealms.LOGGER.debug("Entity {} spawned without texture, will generate when first tracked", this.getUUID());
+        }
+    }
+
+    private boolean hasExistingServerTexture() {
+        try {
+            ServerLevel serverLevel = (ServerLevel) this.level();
+            Path worldDir = serverLevel.getServer().getWorldPath(LevelResource.ROOT);
+            Path texturePath = worldDir.resolve("magic_realms_textures")
+                    .resolve("entity").resolve("human")
+                    .resolve(this.getUUID() + "_complete.png");
+
+            return Files.exists(texturePath) && Files.size(texturePath) > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void requestTextureGeneration() {
+        // Send request to the first player tracking this entity
+        ServerLevel serverLevel = (ServerLevel) this.level();
+        List<ServerPlayer> trackingPlayers = serverLevel.getChunkSource().chunkMap
+                .getPlayers(new ChunkPos(this.blockPosition()), false);
+
+        if (!trackingPlayers.isEmpty()) {
+            ServerPlayer firstPlayer = trackingPlayers.get(0);
+            PacketDistributor.sendToPlayer(firstPlayer,
+                    new RequestTextureGenerationPacket(this.getUUID(), getGender(), getEntityClass()));
+
+            MagicRealms.LOGGER.debug("Requested texture generation from player: {} for entity: {}",
+                    firstPlayer.getName().getString(), this.getUUID());
+        }
+    }
+
+    public void distributeExistingTexture() {
+        try {
+            ServerLevel serverLevel = (ServerLevel) this.level();
+            Path worldDir = serverLevel.getServer().getWorldPath(LevelResource.ROOT);
+            Path texturePath = worldDir.resolve("magic_realms_textures")
+                    .resolve("entity").resolve("human")
+                    .resolve(this.getUUID() + "_complete.png");
+
+            if (Files.exists(texturePath)) {
+                byte[] textureData = Files.readAllBytes(texturePath);
+
+                // Distribute to all tracking players
+                PacketDistributor.sendToPlayersTrackingEntity(this,
+                        new SyncEntityTexturePacket(this.getUUID(), this.getId(), textureData, this.getEntityName(), false));
+
+                MagicRealms.LOGGER.debug("Distributed existing texture for entity: {}", this.getUUID());
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to distribute existing texture for entity: {}", this.getUUID(), e);
+        }
     }
 
     public void giveStartingEmeralds() {
@@ -957,9 +1055,53 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         return blockState.getBlock() instanceof ChairBlock;
     }
 
+    private void handleTextureGeneration() {
+        // If we already have a texture, nothing to do
+        if (hasTexture()) {
+            return;
+        }
+
+        // If we haven't requested texture generation yet
+        if (!isTextureRequested()) {
+            // Check if any players are tracking us
+            if (hasTrackingPlayers()) {
+                if (hasExistingServerTexture()) {
+                    // We have a saved texture, distribute it
+                    setHasTexture(true);
+                    distributeExistingTexture();
+                } else {
+                    // Request texture generation
+                    requestTextureGeneration();
+                    setTextureRequested(true);
+                }
+            }
+        }
+    }
+
+    private boolean hasTrackingPlayers() {
+        try {
+            ServerLevel serverLevel = (ServerLevel) this.level();
+            List<ServerPlayer> trackingPlayers = serverLevel.getChunkSource().chunkMap
+                    .getPlayers(new ChunkPos(this.blockPosition()), false);
+
+            return !trackingPlayers.isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void invalidateTextureConfig() {
+        this.textureConfig = null;
+        MagicRealms.LOGGER.debug("Invalidated texture config for entity {}", this.getUUID());
+    }
+
     @Override
     public void tick() {
         super.tick();
+
+        if (!this.level().isClientSide && this.tickCount % 20 == 0) { // Check every second
+            handleTextureGeneration();
+        }
 
         if (!level().isClientSide) {
             handleSittingTick();
@@ -1115,6 +1257,8 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         pBuilder.define(SITTING_TIME, 0);
         pBuilder.define(SIT_COOLDOWN, 0);
         pBuilder.define(IS_IN_MENU_STATE, false);
+        pBuilder.define(HAS_TEXTURE, false);
+        pBuilder.define(TEXTURE_REQUESTED, false);
     }
 
     private void initializeRandomAppearance(RandomSource randomSource) {
@@ -1738,6 +1882,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         compound.putInt("SitCooldown", getSitCooldown());
 
         compound.putBoolean("IsInMenuState", isInMenuState());
+
+        compound.putBoolean("HasTexture", hasTexture());
+        compound.putBoolean("TextureRequested", isTextureRequested());
     }
 
     @Override
@@ -1874,6 +2021,9 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
         if (isInMenuState()) {
             setMenuState(false);
         }
+
+        this.entityData.set(HAS_TEXTURE, compound.getBoolean("HasTexture"));
+        this.entityData.set(TEXTURE_REQUESTED, compound.getBoolean("TextureRequested"));
     }
 
     private boolean isAlliedHelper(Entity entity) {

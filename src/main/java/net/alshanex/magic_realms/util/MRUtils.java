@@ -7,17 +7,14 @@ import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.RandomHumanEntity;
-import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
-import net.alshanex.magic_realms.network.SyncPresetTextureNamePacket;
-import net.alshanex.magic_realms.network.UpdateEntityNamePacket;
+import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
-import net.alshanex.magic_realms.util.humans.AdvancedNameManager;
-import net.alshanex.magic_realms.util.humans.EntityClass;
-import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
+import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
@@ -31,11 +28,18 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -666,6 +670,116 @@ public class MRUtils {
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error syncing preset texture name for entity {}: {}",
                     humanEntity.getUUID(), e.getMessage());
+        }
+    }
+
+    public static void handleServerSideTextureUpload(Player player, UUID entityUUID, byte[] textureData, String textureName, boolean isPresetTexture) {
+        try {
+            ServerPlayer serverPlayer = (ServerPlayer) player;
+            ServerLevel level = serverPlayer.serverLevel();
+
+            // Find the entity
+            Entity entity = level.getEntity(entityUUID);
+            if (!(entity instanceof RandomHumanEntity humanEntity)) {
+                MagicRealms.LOGGER.warn("Entity not found or not a RandomHumanEntity: {}", entityUUID);
+                return;
+            }
+
+            // Save texture to server world directory
+            Path worldDir = level.getServer().getWorldPath(LevelResource.ROOT);
+            Path textureDir = worldDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
+            Files.createDirectories(textureDir);
+
+            Path texturePath = textureDir.resolve(entityUUID + "_complete.png");
+            Files.write(texturePath, textureData);
+
+            // Mark entity as having texture
+            humanEntity.setHasTexture(true);
+
+            // Update entity name if it's a preset texture
+            if (isPresetTexture && !textureName.isEmpty()) {
+                humanEntity.setEntityName(textureName);
+            }
+
+            // Now distribute this texture to all players tracking this entity
+            PacketDistributor.sendToPlayersTrackingEntity(humanEntity,
+                    new SyncEntityTexturePacket(entityUUID, humanEntity.getId(), textureData, textureName, isPresetTexture));
+
+            MagicRealms.LOGGER.debug("Received, saved and distributed texture for entity: {} from player: {}",
+                    entityUUID, player.getName().getString());
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to handle texture upload for entity: {}", entityUUID, e);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void handleClientSideTextureGeneration(UUID entityUUID, int genderOrdinal, int entityClassOrdinal) {
+        try {
+            Gender gender = Gender.values()[genderOrdinal];
+            EntityClass entityClass = EntityClass.values()[entityClassOrdinal];
+
+            // Generate texture on client side
+            int hairIndex = LayeredTextureManager.getRandomHairTextureIndex("hair_" + gender.getName());
+
+            // Use TextureCreationResult instead of TextureResult
+            CombinedTextureManager.TextureCreationResult result =
+                    CombinedTextureManager.createCompleteTextureWithName(gender, entityClass, hairIndex);
+
+            if (result != null && result.getImage() != null) {
+                // Convert BufferedImage to byte array
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(result.getImage(), "PNG", baos);
+                byte[] textureData = baos.toByteArray();
+
+                // Send texture back to server
+                PacketDistributor.sendToServer(new UploadEntityTexturePacket(
+                        entityUUID, textureData, result.getTextureName(), result.isPresetTexture()));
+
+                MagicRealms.LOGGER.debug("Generated and uploaded texture for entity: {}", entityUUID);
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to generate texture for entity: {}", entityUUID, e);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void handleClientSideTextureSync(UUID entityUUID, int entityId, byte[] textureData, String textureName, boolean isPresetTexture) {
+        try {
+            // Convert byte array back to BufferedImage
+            ByteArrayInputStream bais = new ByteArrayInputStream(textureData);
+            BufferedImage texture = ImageIO.read(bais);
+
+            if (texture != null) {
+                // Register with DynamicTextureManager
+                ResourceLocation location = DynamicTextureManager.registerDynamicTexture(
+                        entityUUID.toString(), texture);
+
+                if (location != null) {
+                    // CRITICAL: Use entity ID to find and invalidate entity's texture config
+                    Minecraft mc = Minecraft.getInstance();
+                    if (mc.level != null) {
+                        Entity entity = mc.level.getEntity(entityId);
+                        if (entity instanceof RandomHumanEntity humanEntity) {
+                            humanEntity.invalidateTextureConfig();
+                            MagicRealms.LOGGER.debug("Invalidated texture config for entity {} (ID: {})",
+                                    entityUUID, entityId);
+                        }
+                    }
+
+                    // Store in client cache with forced invalidation
+                    CombinedTextureManager.cacheReceivedTexture(
+                            entityUUID.toString(),
+                            location,
+                            textureName,
+                            isPresetTexture
+                    );
+
+                    MagicRealms.LOGGER.debug("Received and cached texture for entity: {} (ID: {})", entityUUID, entityId);
+                }
+            }
+        } catch (IOException e) {
+            MagicRealms.LOGGER.error("Failed to process received texture for entity: {}", entityUUID, e);
         }
     }
 }

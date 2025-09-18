@@ -5,6 +5,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobRenderer;
+import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
+import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
@@ -32,8 +36,43 @@ public class RandomHumanEntityRenderer extends AbstractSpellCastingMobRenderer {
     }
 
     @Override
-    public ResourceLocation getTextureLocation(AbstractSpellCastingMob animatable) {
-        return ((RandomHumanEntity)animatable).getTextureConfig().getSkinTexture();
+    public ResourceLocation getTextureLocation(AbstractSpellCastingMob entity) {
+        if (entity instanceof RandomHumanEntity human) {
+            String entityUUID = human.getUUID().toString();
+            Minecraft mc = Minecraft.getInstance();
+
+            // Always check received texture cache first (highest priority)
+            CombinedTextureManager.TextureResult receivedTexture =
+                    CombinedTextureManager.getReceivedTexture(entityUUID);
+            if (receivedTexture != null) {
+                MagicRealms.LOGGER.debug("Using received server texture for entity: {}", entityUUID);
+                return receivedTexture.getTextureLocation();
+            }
+
+            // Check main combined texture cache
+            ResourceLocation cachedTexture = CombinedTextureManager.getCachedTexture(entityUUID);
+            if (cachedTexture != null) {
+                MagicRealms.LOGGER.debug("Using cached texture for entity: {}", entityUUID);
+                return cachedTexture;
+            }
+
+            // In multiplayer, show placeholder if no texture received yet
+            if (mc.getCurrentServer() == null && mc.getConnection() != null) {
+                if (!human.hasTexture()) {
+                    MagicRealms.LOGGER.debug("Entity {} waiting for server texture in multiplayer", entityUUID);
+                    return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
+                }
+            }
+
+            // Singleplayer fallback - try texture config
+            EntityTextureConfig config = human.getTextureConfig();
+            if (config != null && config.hasValidTexture()) {
+                MagicRealms.LOGGER.debug("Using texture config for entity: {}", entityUUID);
+                return config.getSkinTexture();
+            }
+        }
+
+        return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
     }
 
     @Override

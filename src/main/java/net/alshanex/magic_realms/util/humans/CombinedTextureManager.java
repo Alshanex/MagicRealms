@@ -33,6 +33,9 @@ public class CombinedTextureManager {
     private static Path textureOutputDir;
     private static String currentWorldName = null;
 
+    private static boolean isMultiplayerMode = false;
+    private static String multiplayerServerName = null;
+
     // Random instance for texture selection - can be made configurable later
     private static final Random TEXTURE_RANDOM = new Random();
     // Chance to use additional texture
@@ -59,6 +62,11 @@ public class CombinedTextureManager {
 
     // This will be called from WorldEventHandler when a world loads
     public static void setWorldDirectory(Path worldSaveDir, String worldName) {
+        if (isMultiplayerMode) {
+            MagicRealms.LOGGER.debug("Ignoring setWorldDirectory call in multiplayer mode");
+            return;
+        }
+
         try {
             textureOutputDir = worldSaveDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
             Files.createDirectories(textureOutputDir);
@@ -109,8 +117,34 @@ public class CombinedTextureManager {
         }
     }
 
+    public static void setMultiplayerMode(String serverName) {
+        isMultiplayerMode = true;
+        multiplayerServerName = serverName;
+        textureOutputDir = null; // Don't create local directories in multiplayer
+        currentWorldName = "multiplayer_" + serverName;
+
+        MagicRealms.LOGGER.info("Set multiplayer mode for server: {}", serverName);
+    }
+
+    public static boolean isMultiplayerMode() {
+        return isMultiplayerMode;
+    }
+
     // Modified method that now returns TextureResult with name information
     public static TextureResult getCombinedTextureWithHairAndName(String entityUUID, Gender gender, EntityClass entityClass, int hairTextureIndex) {
+        if (isMultiplayerMode) {
+            // Check if we have a received texture from server
+            TextureResult receivedTexture = getReceivedTexture(entityUUID);
+            if (receivedTexture != null) {
+                ACTIVE_ENTITIES.add(entityUUID);
+                return receivedTexture;
+            }
+
+            // If no received texture, we need to wait for server to send it
+            MagicRealms.LOGGER.debug("Multiplayer mode: waiting for texture from server for entity: {}", entityUUID);
+            return null;
+        }
+
         // SAFETY CHECK: Ensure we're using the correct world directory
         if (textureOutputDir == null) {
             MagicRealms.LOGGER.warn("Texture directory not set, attempting to initialize...");
@@ -144,24 +178,6 @@ public class CombinedTextureManager {
                     currentWorldName = server.getWorldData().getLevelName();
 
                     MagicRealms.LOGGER.debug("Corrected texture directory to: {}", textureOutputDir);
-                }
-            } else if (mc.getCurrentServer() != null) {
-                // Similar check for multiplayer
-                String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
-                Path expectedMultiplayerDir = mc.gameDirectory.toPath()
-                        .resolve("multiplayer_textures").resolve(serverName)
-                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
-
-                if (!textureOutputDir.equals(expectedMultiplayerDir)) {
-                    MagicRealms.LOGGER.warn("Multiplayer texture directory mismatch detected!");
-                    MagicRealms.LOGGER.warn("Current: {}", textureOutputDir);
-                    MagicRealms.LOGGER.warn("Expected: {}", expectedMultiplayerDir);
-
-                    textureOutputDir = expectedMultiplayerDir;
-                    Files.createDirectories(textureOutputDir);
-                    currentWorldName = "multiplayer_" + serverName;
-
-                    MagicRealms.LOGGER.debug("Corrected multiplayer texture directory to: {}", textureOutputDir);
                 }
             }
         } catch (Exception e) {
@@ -355,15 +371,6 @@ public class CombinedTextureManager {
                     MagicRealms.LOGGER.warn("Late initialization of world texture directory: {}", textureOutputDir);
                     currentWorldName = worldName;
                     return;
-                } else if (mc.getCurrentServer() != null) {
-                    // We're in multiplayer - use server-specific directory
-                    String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
-                    Path gameDir = mc.gameDirectory.toPath();
-                    textureOutputDir = gameDir.resolve("multiplayer_textures").resolve(serverName).resolve("magic_realms_textures").resolve("entity").resolve("human");
-                    Files.createDirectories(textureOutputDir);
-                    MagicRealms.LOGGER.warn("Late initialization of multiplayer texture directory: {}", textureOutputDir);
-                    currentWorldName = "multiplayer_" + serverName;
-                    return;
                 }
 
                 // Last resort fallback - this should rarely happen
@@ -379,10 +386,13 @@ public class CombinedTextureManager {
         }
     }
 
-    // Called when leaving a world
     public static void onWorldUnload() {
         MagicRealms.LOGGER.debug("World unloaded, clearing texture cache but preserving texture files");
         clearCache();
+
+        // Reset multiplayer mode
+        isMultiplayerMode = false;
+        multiplayerServerName = null;
 
         // Don't delete texture files - they should persist for when we rejoin the world
         // Reset world tracking
@@ -407,20 +417,6 @@ public class CombinedTextureManager {
                     return worldTexture;
                 } else {
                     MagicRealms.LOGGER.debug("Texture not found in world directory: {}", worldTexture);
-                }
-            } else if (mc.getCurrentServer() != null) {
-                // Multiplayer - check server-specific directory
-                String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
-                Path serverDir = mc.gameDirectory.toPath()
-                        .resolve("multiplayer_textures").resolve(serverName)
-                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
-                Path serverTexture = serverDir.resolve(entityUUID + "_complete.png");
-
-                if (Files.exists(serverTexture)) {
-                    MagicRealms.LOGGER.info("Found texture in multiplayer directory: {}", serverTexture);
-                    return serverTexture;
-                } else {
-                    MagicRealms.LOGGER.debug("Texture not found in multiplayer directory: {}", serverTexture);
                 }
             }
         } catch (Exception e) {
@@ -488,24 +484,6 @@ public class CombinedTextureManager {
                     currentWorldName = server.getWorldData().getLevelName();
 
                     MagicRealms.LOGGER.info("Corrected texture directory to: {}", textureOutputDir);
-                }
-            } else if (mc.getCurrentServer() != null) {
-                // Similar check for multiplayer
-                String serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
-                Path expectedMultiplayerDir = mc.gameDirectory.toPath()
-                        .resolve("multiplayer_textures").resolve(serverName)
-                        .resolve("magic_realms_textures").resolve("entity").resolve("human");
-
-                if (!textureOutputDir.equals(expectedMultiplayerDir)) {
-                    MagicRealms.LOGGER.warn("Multiplayer texture directory mismatch detected!");
-                    MagicRealms.LOGGER.warn("Current: {}", textureOutputDir);
-                    MagicRealms.LOGGER.warn("Expected: {}", expectedMultiplayerDir);
-
-                    textureOutputDir = expectedMultiplayerDir;
-                    Files.createDirectories(textureOutputDir);
-                    currentWorldName = "multiplayer_" + serverName;
-
-                    MagicRealms.LOGGER.info("Corrected multiplayer texture directory to: {}", textureOutputDir);
                 }
             }
         } catch (Exception e) {

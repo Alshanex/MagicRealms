@@ -1645,6 +1645,10 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         if (player.level().isClientSide()) return InteractionResult.FAIL;
 
+        if(!this.hasBeenInteracted()){
+            this.markAsInteracted();
+        }
+
         if (isSittingInChair()) {
             unsitFromChair();
             return InteractionResult.SUCCESS;
@@ -1652,10 +1656,6 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
         if (isStunned()) {
             return InteractionResult.FAIL;
-        }
-
-        if(!this.hasBeenInteracted()){
-            this.markAsInteracted();
         }
 
         ItemStack heldItem = player.getItemInHand(hand);
@@ -1815,12 +1815,17 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean requiresCustomPersistence() {
-        return this.entityData.get(HAS_BEEN_INTERACTED);
+        return true;
     }
 
     @Override
     public boolean removeWhenFarAway(double pDistanceToClosestPlayer) {
-        return !this.entityData.get(HAS_BEEN_INTERACTED);
+        // Don't remove when far away if they've been interacted with OR have a contract
+        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
+        boolean hasContract = contractData.hasActiveContract();
+        boolean hasBeenInteracted = this.hasBeenInteracted();
+
+        return !hasBeenInteracted && !hasContract;
     }
 
     public void markAsInteracted() {
@@ -1893,6 +1898,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
             compound.put("LastEquippedSpellbook", spellbookTag);
         }
 
+        compound.putBoolean("RequiresCustomPersistence", true);
         compound.putBoolean("HasBeenInteracted", this.entityData.get(HAS_BEEN_INTERACTED));
 
         compound.putBoolean("IsImmortal", this.entityData.get(IS_IMMORTAL));

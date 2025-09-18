@@ -46,24 +46,23 @@ public class WorldEventHandler {
                 MagicRealms.LOGGER.info("Player joined singleplayer world: '{}' - using texture directory: {}",
                         worldName, expectedTextureDir);
                 CombinedTextureManager.setWorldDirectory(worldSaveDir, worldName);
-            } else {
-                // Multiplayer world - create directory in multiplayer_textures folder
-                String serverName = "unknown_server";
-                if (mc.getCurrentServer() != null) {
-                    serverName = mc.getCurrentServer().name.replaceAll("[^a-zA-Z0-9._-]", "_");
-                }
+            } else if (mc.getCurrentServer() != null) {
+                // Multiplayer world - DON'T create local directories
+                String serverName = mc.getCurrentServer().name;
 
-                Path gameDir = mc.gameDirectory.toPath();
-                Path serverDir = gameDir.resolve("multiplayer_textures").resolve(serverName);
+                MagicRealms.LOGGER.info("Player joined multiplayer server: '{}' - textures will be received from server", serverName);
 
-                MagicRealms.LOGGER.info("Player joined multiplayer server: '{}' - using texture directory: {}",
-                        serverName, serverDir);
-                CombinedTextureManager.setWorldDirectory(serverDir, "multiplayer_" + serverName);
+                // Set a null/dummy directory to indicate we're in multiplayer mode
+                CombinedTextureManager.setMultiplayerMode(serverName);
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to determine world directory on player join", e);
-            // Fallback to default behavior
-            CombinedTextureManager.initializeDirectories();
+            // For multiplayer, don't create fallback directories
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.getSingleplayerServer() != null) {
+                // Only fallback for singleplayer
+                CombinedTextureManager.initializeDirectories();
+            }
         }
     }
 

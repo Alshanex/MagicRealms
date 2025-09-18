@@ -1,13 +1,16 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:blood",
+    "irons_spellbooks:ender",
+    "irons_spellbooks:evocation",
     "irons_spellbooks:fire",
+    "irons_spellbooks:holy",
     "irons_spellbooks:ice",
     "irons_spellbooks:lightning",
-    "irons_spellbooks:holy",
-    "irons_spellbooks:ender",
-    "irons_spellbooks:blood",
-    "irons_spellbooks:evocation",
-    "irons_spellbooks:nature"
+    "irons_spellbooks:nature",
+    {"id": "aero_additions:wind","required": false},
+    {"id": "cataclysm_spellbooks:abyssal","required": false},
+    {"id": "familiarslib:sound","required": false}
   ]
 }

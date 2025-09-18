@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:charge",
+    "irons_spellbooks:fortify",
+    "irons_spellbooks:heat_surge",
+    "irons_spellbooks:oakskin"
+  ]
+}

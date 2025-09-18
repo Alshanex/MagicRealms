@@ -1,9 +1,8 @@
 {
   "replace": false,
   "values": [
-    "irons_spellbooks:blood_step",
-    "irons_spellbooks:burning_dash",
-    "irons_spellbooks:frost_step",
-    "irons_spellbooks:volt_strike"
+    "#magic_realms:spells/movement/both",
+    "irons_spellbooks:volt_strike",
+    {"id": "endersequipment:quick_slice","required": false}
   ]
 }

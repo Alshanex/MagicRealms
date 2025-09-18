@@ -52,6 +52,16 @@
     {"id": "endersequipment:searing_slam","required": false},
     {"id": "endersequipment:slam","required": false},
     {"id": "endersequipment:slash","required": false},
-    {"id": "gametechbcs_spellbooks:shatterpoint","required": false}
+    {"id": "gametechbcs_spellbooks:shatterpoint","required": false},
+    {"id": "hazennstuff:energy_burst","required": false},
+    {"id": "hazennstuff:ice_arrow","required": false},
+    {"id": "hazennstuff:nights_edge_strike","required": false},
+    {"id": "hazennstuff:syringe_barrage","required": false},
+    {"id": "iss_magicfromtheeast:calamity_cut","required": false},
+    {"id": "iss_magicfromtheeast:dragon_glide","required": false},
+    {"id": "iss_magicfromtheeast:phantom_charge","required": false},
+    {"id": "iss_magicfromtheeast:soul_catalyst","required": false},
+    {"id": "iss_magicfromtheeast:sword_dance","required": false},
+    {"id": "iss_magicfromtheeast:underworld_aid","required": false}
   ]
 }

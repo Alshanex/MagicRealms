@@ -4,9 +4,16 @@
     "irons_spellbooks:gust",
     "irons_spellbooks:root",
     "irons_spellbooks:slow",
+    {"id": "aero_additions:wind_blade","required": false},
+    {"id": "aero_additions:wind_charge","required": false},
     {"id": "alshanex_familiars:lullaby","required": false},
     {"id": "cataclysm_spellbooks:desert_winds","required": false},
     {"id": "cataclysm_spellbooks:gravity_storm","required": false},
-    {"id": "gametechbcs_spellbooks:aerial_collapse","required": false}
+    {"id": "cataclysm_spellbooks:sandstorm","required": false},
+    {"id": "endersequipment:below_zero","required": false},
+    {"id": "gametechbcs_spellbooks:aerial_collapse","required": false},
+    {"id": "hazennstuff:crystal_volley","required": false},
+    {"id": "hazennstuff:ice_arrow","required": false},
+    {"id": "iss_magicfromtheeast:throw_up","required": false}
   ]
 }

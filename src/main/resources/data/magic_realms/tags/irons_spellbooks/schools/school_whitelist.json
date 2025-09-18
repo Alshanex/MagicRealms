@@ -11,6 +11,8 @@
     "irons_spellbooks:nature",
     {"id": "aero_additions:wind","required": false},
     {"id": "cataclysm_spellbooks:abyssal","required": false},
-    {"id": "familiarslib:sound","required": false}
+    {"id": "familiarslib:sound","required": false},
+    {"id": "iss_magicfromtheeast:spirit","required": false},
+    {"id": "iss_magicfromtheeast:symmetry","required": false}
   ]
 }

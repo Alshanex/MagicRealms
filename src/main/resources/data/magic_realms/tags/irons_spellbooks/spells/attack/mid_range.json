@@ -27,7 +27,13 @@
     {"id": "cataclysm_spellbooks:desert_winds","required": false},
     {"id": "cataclysm_spellbooks:infernal_strike","required": false},
     {"id": "cataclysm_spellbooks:sandstorm","required": false},
+    {"id": "ess_requiem:wretch","required": false},
+    {"id": "endersequipment:arrow_spray","required": false},
+    {"id": "endersequipment:bloodwave","required": false},
+    {"id": "endersequipment:eruption","required": false},
+    {"id": "endersequipment:sacred_slash","required": false},
     {"id": "gametechbcs_spellbooks:aerial_collapse","required": false},
-    {"id": "gametechbcs_spellbooks:ashen_breath","required": false}
+    {"id": "gametechbcs_spellbooks:ashen_breath","required": false},
+    {"id": "iss_magicfromtheeast:soul_burst","required": false}
   ]
 }

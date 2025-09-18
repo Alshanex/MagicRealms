@@ -45,6 +45,13 @@
     {"id": "discerning_the_eldritch:conjure_gaoler","required": false},
     {"id": "discerning_the_eldritch:exorcism","required": false},
     {"id": "discerning_the_eldritch:silence","required": false},
+    {"id": "ess_requiem:corpse_explosion","required": false},
+    {"id": "ess_requiem:decaying_will","required": false},
+    {"id": "ess_requiem:pact_of_the_dead","required": false},
+    {"id": "ess_requiem:reaper","required": false},
+    {"id": "ess_requiem:rip_and_tear","required": false},
+    {"id": "ess_requiem:strain","required": false},
+    {"id": "ess_requiem:summon_skulls","required": false},
     {"id": "endersequipment:anubis","required": false},
     {"id": "endersequipment:archangelsaid","required": false},
     {"id": "endersequipment:combustion","required": false},
@@ -66,6 +73,14 @@
     {"id": "gametechbcs_spellbooks:psychic_bolt","required": false},
     {"id": "gametechbcs_spellbooks:meteor_storm","required": false},
     {"id": "gametechbcs_spellbooks:reversal","required": false},
-    {"id": "gametechbcs_spellbooks:spectral_blink","required": false}
+    {"id": "gametechbcs_spellbooks:spectral_blink","required": false},
+    {"id": "hazennstuff:chaotic_teleport","required": false},
+    {"id": "iss_magicfromtheeast:ashigaru_squad","required": false},
+    {"id": "iss_magicfromtheeast:cloud_ride","required": false},
+    {"id": "iss_magicfromtheeast:jianshi_invoke","required": false},
+    {"id": "iss_magicfromtheeast:kitsune_pack","required": false},
+    {"id": "iss_magicfromtheeast:punishing_heaven","required": false},
+    {"id": "iss_magicfromtheeast:qigong_controlling","required": false},
+    {"id": "iss_magicfromtheeast:revenant_of_honour","required": false}
   ]
 }

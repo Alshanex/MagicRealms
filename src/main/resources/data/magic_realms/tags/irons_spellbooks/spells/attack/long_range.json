@@ -47,7 +47,26 @@
     {"id": "cataclysm_spellbooks:tidal_grab","required": false},
     {"id": "cataclysm_spellbooks:void_beam","required": false},
     {"id": "cataclysm_spellbooks:void_rune","required": false},
+    {"id": "endersequipment:flurry","required": false},
+    {"id": "endersequipment:heartwrench","required": false},
+    {"id": "endersequipment:petal_ward","required": false},
+    {"id": "endersequipment:sacred_slash","required": false},
     {"id": "gametechbcs_spellbooks:crimson_downpour","required": false},
-    {"id": "gametechbcs_spellbooks:shatterpoint","required": false}
+    {"id": "gametechbcs_spellbooks:shatterpoint","required": false},
+    {"id": "hazennstuff:brimstone_hellblast","required": false},
+    {"id": "hazennstuff:crystal_volley","required": false},
+    {"id": "hazennstuff:energy_burst","required": false},
+    {"id": "hazennstuff:ice_arrow","required": false},
+    {"id": "hazennstuff:syringe_barrage","required": false},
+    {"id": "hazennstuff:thorn_chakram","required": false},
+    {"id": "iss_magicfromtheeast:bagua_array_circle","required": false},
+    {"id": "iss_magicfromtheeast:bone_hands","required": false},
+    {"id": "iss_magicfromtheeast:calamity_cut","required": false},
+    {"id": "iss_magicfromtheeast:dragon_glide","required": false},
+    {"id": "iss_magicfromtheeast:jade_judgements","required": false},
+    {"id": "iss_magicfromtheeast:phantom_charge","required": false},
+    {"id": "iss_magicfromtheeast:soul_catalyst","required": false},
+    {"id": "iss_magicfromtheeast:sword_dance","required": false},
+    {"id": "iss_magicfromtheeast:underworld_aid","required": false}
   ]
 }

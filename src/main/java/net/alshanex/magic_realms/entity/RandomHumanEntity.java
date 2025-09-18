@@ -1820,12 +1820,7 @@ public class RandomHumanEntity extends NeutralWizard implements IAnimatedAttacke
 
     @Override
     public boolean removeWhenFarAway(double pDistanceToClosestPlayer) {
-        // Don't remove when far away if they've been interacted with OR have a contract
-        ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
-        boolean hasContract = contractData.hasActiveContract();
-        boolean hasBeenInteracted = this.hasBeenInteracted();
-
-        return !hasBeenInteracted && !hasContract;
+        return false;
     }
 
     public void markAsInteracted() {

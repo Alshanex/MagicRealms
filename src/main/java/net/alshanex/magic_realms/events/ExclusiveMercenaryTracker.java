@@ -19,8 +19,19 @@ public class ExclusiveMercenaryTracker {
     // Map: WorldKey -> Set<EntityType> of exclusive mercenaries present
     private static final Map<String, Set<EntityType<?>>> WORLD_EXCLUSIVE_REGISTRY = new ConcurrentHashMap<>();
 
-    // Map: WorldKey -> Map<EntityType, UUID> for tracking specific exclusive mercenary instances
-    private static final Map<String, Map<EntityType<?>, UUID>> WORLD_EXCLUSIVE_INSTANCES = new ConcurrentHashMap<>();
+    // Map: WorldKey -> Map<EntityType, ExclusiveMercenaryInfo> for tracking instances across dimensions
+    private static final Map<String, Map<EntityType<?>, ExclusiveMercenaryInfo>> WORLD_EXCLUSIVE_INSTANCES = new ConcurrentHashMap<>();
+
+    // Track entity info across dimensions
+    private static class ExclusiveMercenaryInfo {
+        final UUID entityUUID;
+        String currentDimension;
+
+        ExclusiveMercenaryInfo(UUID entityUUID, String currentDimension) {
+            this.entityUUID = entityUUID;
+            this.currentDimension = currentDimension;
+        }
+    }
 
     /**
      * Check if a specific exclusive mercenary type can be spawned in the given world
@@ -65,7 +76,11 @@ public class ExclusiveMercenaryTracker {
      */
     public static Map<EntityType<?>, UUID> getExclusiveMercenaryInstances(ServerLevel level) {
         String worldKey = getWorldKey(level);
-        return WORLD_EXCLUSIVE_INSTANCES.getOrDefault(worldKey, Collections.emptyMap());
+        Map<EntityType<?>, ExclusiveMercenaryInfo> instances = WORLD_EXCLUSIVE_INSTANCES.getOrDefault(worldKey, Collections.emptyMap());
+
+        Map<EntityType<?>, UUID> result = new HashMap<>();
+        instances.forEach((type, info) -> result.put(type, info.entityUUID));
+        return result;
     }
 
     @SubscribeEvent
@@ -81,15 +96,30 @@ public class ExclusiveMercenaryTracker {
         }
 
         String worldKey = getWorldKey(serverLevel);
+        String dimensionKey = getDimensionKey(serverLevel);
         EntityType<?> entityType = mercenary.getType();
         UUID entityUUID = mercenary.getUUID();
 
-        // Add to registry
-        WORLD_EXCLUSIVE_REGISTRY.computeIfAbsent(worldKey, k -> ConcurrentHashMap.newKeySet()).add(entityType);
-        WORLD_EXCLUSIVE_INSTANCES.computeIfAbsent(worldKey, k -> new ConcurrentHashMap<>()).put(entityType, entityUUID);
+        // Check if this entity is already tracked (dimension change vs new spawn)
+        Map<EntityType<?>, ExclusiveMercenaryInfo> worldInstances = WORLD_EXCLUSIVE_INSTANCES.get(worldKey);
+        if (worldInstances != null && worldInstances.containsKey(entityType)) {
+            ExclusiveMercenaryInfo existing = worldInstances.get(entityType);
+            if (existing.entityUUID.equals(entityUUID)) {
+                // Same entity changing dimensions - update location
+                existing.currentDimension = dimensionKey;
+                MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) moved to dimension {} in world {}",
+                        entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
+                return;
+            }
+        }
 
-        MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) joined world {} - now tracking",
-                entityType.getDescriptionId(), entityUUID, worldKey);
+        // New entity spawn - add to registry
+        WORLD_EXCLUSIVE_REGISTRY.computeIfAbsent(worldKey, k -> ConcurrentHashMap.newKeySet()).add(entityType);
+        WORLD_EXCLUSIVE_INSTANCES.computeIfAbsent(worldKey, k -> new ConcurrentHashMap<>())
+                .put(entityType, new ExclusiveMercenaryInfo(entityUUID, dimensionKey));
+
+        MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) spawned in dimension {} of world {} - now tracking",
+                entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
     }
 
     @SubscribeEvent
@@ -105,31 +135,44 @@ public class ExclusiveMercenaryTracker {
         }
 
         String worldKey = getWorldKey(serverLevel);
+        String dimensionKey = getDimensionKey(serverLevel);
         EntityType<?> entityType = mercenary.getType();
         UUID entityUUID = mercenary.getUUID();
 
-        // Remove from registry
-        Set<EntityType<?>> worldExclusives = WORLD_EXCLUSIVE_REGISTRY.get(worldKey);
-        if (worldExclusives != null) {
-            worldExclusives.remove(entityType);
-            if (worldExclusives.isEmpty()) {
-                WORLD_EXCLUSIVE_REGISTRY.remove(worldKey);
-            }
+        // Get tracking info
+        Map<EntityType<?>, ExclusiveMercenaryInfo> worldInstances = WORLD_EXCLUSIVE_INSTANCES.get(worldKey);
+        if (worldInstances == null || !worldInstances.containsKey(entityType)) {
+            return; // Not tracked
         }
 
-        Map<EntityType<?>, UUID> worldInstances = WORLD_EXCLUSIVE_INSTANCES.get(worldKey);
-        if (worldInstances != null) {
-            // Only remove if it's the same instance (in case of rare UUID conflicts)
-            if (Objects.equals(worldInstances.get(entityType), entityUUID)) {
-                worldInstances.remove(entityType);
-                if (worldInstances.isEmpty()) {
-                    WORLD_EXCLUSIVE_INSTANCES.remove(worldKey);
+        ExclusiveMercenaryInfo info = worldInstances.get(entityType);
+        if (!info.entityUUID.equals(entityUUID)) {
+            return; // Different entity
+        }
+
+        // Check if entity is actually removed/dead vs changing dimensions
+        if (mercenary.isRemoved() || !mercenary.isAlive()) {
+            // Entity is permanently gone - remove from all tracking
+            Set<EntityType<?>> worldExclusives = WORLD_EXCLUSIVE_REGISTRY.get(worldKey);
+            if (worldExclusives != null) {
+                worldExclusives.remove(entityType);
+                if (worldExclusives.isEmpty()) {
+                    WORLD_EXCLUSIVE_REGISTRY.remove(worldKey);
                 }
             }
-        }
 
-        MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) left world {} - no longer tracking",
-                entityType.getDescriptionId(), entityUUID, worldKey);
+            worldInstances.remove(entityType);
+            if (worldInstances.isEmpty()) {
+                WORLD_EXCLUSIVE_INSTANCES.remove(worldKey);
+            }
+
+            MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) permanently removed from world {} - no longer tracking",
+                    entityType.getDescriptionId(), entityUUID, worldKey);
+        } else {
+            // Entity is just changing dimensions - update will happen in join event
+            MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) leaving dimension {} in world {} (dimension change)",
+                    entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
+        }
     }
 
     @SubscribeEvent
@@ -141,9 +184,9 @@ public class ExclusiveMercenaryTracker {
 
         String worldKey = getWorldKey(serverLevel);
 
-        // Clean up tracking for this world
+        // Clean up tracking for this world when server shuts down
         Set<EntityType<?>> removed = WORLD_EXCLUSIVE_REGISTRY.remove(worldKey);
-        Map<EntityType<?>, UUID> removedInstances = WORLD_EXCLUSIVE_INSTANCES.remove(worldKey);
+        Map<EntityType<?>, ExclusiveMercenaryInfo> removedInstances = WORLD_EXCLUSIVE_INSTANCES.remove(worldKey);
 
         if (removed != null && !removed.isEmpty()) {
             MagicRealms.LOGGER.debug("Cleaned up exclusive mercenary tracking for world {} - removed {} types",
@@ -152,9 +195,17 @@ public class ExclusiveMercenaryTracker {
     }
 
     /**
-     * Create a unique key for the world
+     * Create a unique key for the entire world (across all dimensions)
      */
     private static String getWorldKey(ServerLevel level) {
+        return level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .getFileName().toString();
+    }
+
+    /**
+     * Get the dimension-specific key for logging/debugging
+     */
+    private static String getDimensionKey(ServerLevel level) {
         return level.dimension().location().toString();
     }
 }

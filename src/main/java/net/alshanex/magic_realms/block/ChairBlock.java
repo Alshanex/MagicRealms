@@ -160,6 +160,10 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
         return InteractionResult.PASS;
     }
 
+    private boolean isOverworld(ServerLevel level) {
+        return level.dimension() == Level.OVERWORLD;
+    }
+
     private void trySpawnEntity(ServerLevel level, BlockPos pos, BlockState state) {
         if (canSpawnEntity(level, pos)) {
             spawnRandomEntity(level, pos, state);
@@ -191,6 +195,10 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     }
 
     private void spawnRandomEntity(ServerLevel level, BlockPos pos, BlockState state) {
+        if (!isOverworld(level)) {
+            return;
+        }
+
         try {
             AbstractMercenaryEntity entityToSpawn = null;
 

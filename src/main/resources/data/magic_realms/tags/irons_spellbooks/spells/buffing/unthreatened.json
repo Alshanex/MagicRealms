@@ -10,6 +10,7 @@
     "irons_spellbooks:spider_aspect",
     {"id": "aero_additions:wind_shield","required": false},
     {"id": "alshanex_familiars:birds_spell","required": false},
+    {"id": "dreamless_spells:jadeskin","required": false},
     {"id": "endersequipment:minimize","required": false}
   ]
 }

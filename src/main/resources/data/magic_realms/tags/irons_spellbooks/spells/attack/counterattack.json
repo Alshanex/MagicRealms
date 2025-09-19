@@ -7,6 +7,12 @@
     "#magic_realms:spells/movement/approach",
     "irons_spellbooks:ascension",
     "irons_spellbooks:chain_creeper",
-    {"id": "ess_requiem:wretch","required": false}
+    "irons_spellbooks:gust",
+    {"id": "aero_additions:wind_blade","required": false},
+    {"id": "aero_additions:wind_charge","required": false},
+    {"id": "ess_requiem:wretch","required": false},
+    {"id": "firesenderexpansion:dragons_fury","required": false},
+    {"id": "iss_magicfromtheeast:throw_up","required": false},
+    {"id": "traveloptics:em_pulse","required": false}
   ]
 }

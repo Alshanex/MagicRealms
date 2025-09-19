@@ -125,6 +125,11 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         }
     }
 
+    @Override
+    protected boolean isExclusiveMercenary() {
+        return false;
+    }
+
     // Texture management methods
     public boolean hasTexture() {
         return this.entityData.get(HAS_TEXTURE);

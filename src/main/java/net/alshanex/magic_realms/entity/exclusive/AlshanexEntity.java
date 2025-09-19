@@ -93,6 +93,11 @@ public class AlshanexEntity extends AbstractMercenaryEntity {
     }
 
     @Override
+    protected boolean isExclusiveMercenary() {
+        return true;
+    }
+
+    @Override
     protected void defineSynchedData(SynchedEntityData.Builder pBuilder) {
         super.defineSynchedData(pBuilder);
     }

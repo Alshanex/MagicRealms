@@ -582,7 +582,7 @@ public class MRUtils {
             // Use entity ID to get the entity on client side
             Entity entity = world.getEntity(entityId);
 
-            if (entity instanceof RandomHumanEntity humanEntity) {
+            if (entity instanceof AbstractMercenaryEntity humanEntity) {
                 // Update the custom name with level first
                 humanEntity.updateCustomNameWithLevel(level);
 
@@ -592,7 +592,9 @@ public class MRUtils {
 
                 if (needsNameUpdate) {
                     // Try to get name from texture config first (for preset textures)
-                    humanEntity.updateNameFromTexture();
+                    if(humanEntity instanceof RandomHumanEntity randomHumanEntity) {
+                        randomHumanEntity.updateNameFromTexture();
+                    }
                     entityName = humanEntity.getEntityName();
 
                     // If still empty, generate a random name (for layered textures)

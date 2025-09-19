@@ -58,7 +58,7 @@ public class SpellListGenerator {
         for (SchoolType school : magicSchools) {
             List<AbstractSpell> schoolSpells = SpellRegistry.getSpellsForSchool(school);
             List<AbstractSpell> enabledSchoolSpells = schoolSpells.stream()
-                    .filter(spell -> spell.isEnabled() && !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST))
+                    .filter(spell -> spell.isEnabled() && !ModTags.isSpellInTag(spell, ModTags.SPELL_BLACKLIST) && ModTags.isSpellInTag(spell, ModTags.MAGE_SPELLS))
                     .toList();
 
             availableSpells.addAll(enabledSchoolSpells);

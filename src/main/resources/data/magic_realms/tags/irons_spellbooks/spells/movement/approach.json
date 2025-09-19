@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "#magic_realms:spells/movement/both",
+    "#magic_realms:movement/both",
     "irons_spellbooks:volt_strike",
     {"id": "endersequipment:quick_slice","required": false},
     {"id": "traveloptics:vortex_punch","required": false}

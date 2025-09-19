@@ -1,10 +1,10 @@
 {
   "replace": false,
   "values": [
-    "#magic_realms:spells/attack/close_range",
-    "#magic_realms:spells/attack/damage_zone",
-    "#magic_realms:spells/buffing/crowd_control",
-    "#magic_realms:spells/movement/approach",
+    "#magic_realms:attack/close_range",
+    "#magic_realms:attack/damage_zone",
+    "#magic_realms:buffing/crowd_control",
+    "#magic_realms:movement/approach",
     "irons_spellbooks:ascension",
     "irons_spellbooks:chain_creeper",
     "irons_spellbooks:gust",

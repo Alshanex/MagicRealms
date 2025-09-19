@@ -601,8 +601,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     return entityType != EntityType.PLAYER &&
                             entityType != EntityType.ITEM &&
                             entityType != EntityType.EXPERIENCE_ORB &&
-                            entityType != EntityType.AREA_EFFECT_CLOUD &&
-                            entityType != MREntityRegistry.HUMAN.get();
+                            entityType != EntityType.AREA_EFFECT_CLOUD;
                 })
                 .toList();
 

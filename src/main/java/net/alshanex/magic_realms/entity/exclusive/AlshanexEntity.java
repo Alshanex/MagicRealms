@@ -51,7 +51,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity {
 
     @Override
     protected void initializeFearedEntity(RandomSource randomSource) {
-        setFearedEntity(EntityRegistry.ICE_SPIDER.get());
+        setFearedEntity(EntityType.SPIDER);
     }
 
     @Override

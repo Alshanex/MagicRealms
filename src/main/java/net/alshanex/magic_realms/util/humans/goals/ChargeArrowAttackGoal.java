@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util.humans;
+package net.alshanex.magic_realms.util.humans.goals;
 
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.minecraft.sounds.SoundEvents;

@@ -1,6 +1,6 @@
 package net.alshanex.magic_realms.item;
 
-import net.alshanex.magic_realms.util.ContractTier;
+import net.alshanex.magic_realms.util.contracts.ContractTier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;

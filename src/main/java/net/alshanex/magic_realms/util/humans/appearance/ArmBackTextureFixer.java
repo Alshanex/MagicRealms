@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util;
+package net.alshanex.magic_realms.util.humans.appearance;
 
 import net.alshanex.magic_realms.MagicRealms;
 

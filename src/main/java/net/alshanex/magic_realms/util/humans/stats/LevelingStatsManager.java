@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util.humans;
+package net.alshanex.magic_realms.util.humans.stats;
 
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
@@ -7,6 +7,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;

@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util;
+package net.alshanex.magic_realms.util.contracts;
 
 import net.alshanex.magic_realms.Config;
 import net.minecraft.ChatFormatting;

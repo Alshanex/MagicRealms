@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util;
+package net.alshanex.magic_realms.util.contracts;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
@@ -9,6 +9,7 @@ import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;

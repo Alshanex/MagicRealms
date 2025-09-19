@@ -5,7 +5,7 @@ import net.alshanex.magic_realms.item.HellPass;
 import net.alshanex.magic_realms.item.PermanentBloodPact;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
-import net.alshanex.magic_realms.util.ContractTier;
+import net.alshanex.magic_realms.util.contracts.ContractTier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;

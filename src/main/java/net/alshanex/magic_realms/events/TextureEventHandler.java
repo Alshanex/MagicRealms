@@ -2,15 +2,13 @@ package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
-import net.alshanex.magic_realms.util.humans.AdvancedNameManager;
-import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
-import net.alshanex.magic_realms.util.humans.LayeredTextureManager;
+import net.alshanex.magic_realms.util.humans.appearance.AdvancedNameManager;
+import net.alshanex.magic_realms.util.humans.appearance.DynamicTextureManager;
+import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
-import net.neoforged.neoforge.event.level.LevelEvent;
 
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class TextureEventHandler {

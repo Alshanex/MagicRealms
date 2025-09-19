@@ -1,7 +1,8 @@
-package net.alshanex.magic_realms.util.humans;
+package net.alshanex.magic_realms.util.humans.appearance;
 
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.util.humans.Gender;
 import net.minecraft.util.RandomSource;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;

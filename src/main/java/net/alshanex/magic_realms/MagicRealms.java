@@ -2,7 +2,7 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.registry.*;
-import net.alshanex.magic_realms.util.humans.LayeredTextureManager;
+import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;

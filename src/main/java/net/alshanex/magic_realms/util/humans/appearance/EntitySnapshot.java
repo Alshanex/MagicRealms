@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util;
+package net.alshanex.magic_realms.util.humans.appearance;
 
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
@@ -11,14 +11,12 @@ import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
-import net.alshanex.magic_realms.util.humans.TextureComponents;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -26,9 +24,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.LevelResource;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util.humans;
+package net.alshanex.magic_realms.util.humans.goals;
 
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
@@ -20,6 +20,7 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.ModTags;
+import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;

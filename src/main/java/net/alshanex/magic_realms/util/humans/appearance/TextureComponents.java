@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util.humans;
+package net.alshanex.magic_realms.util.humans.appearance;
 
 import net.minecraft.nbt.CompoundTag;
 

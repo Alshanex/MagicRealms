@@ -547,18 +547,4 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         setHasTexture(compound.getBoolean("HasTexture"));
         setTextureRequested(compound.getBoolean("TextureRequested"));
     }
-
-    // Helper method to access the private initializeStarLevel from abstract class
-    private void initializeStarLevel(RandomSource randomSource) {
-        double roll = randomSource.nextDouble();
-        int starLevel;
-        if (roll < 0.6) {
-            starLevel = 1;
-        } else if (roll < 0.9) {
-            starLevel = 2;
-        } else {
-            starLevel = 3;
-        }
-        setStarLevel(starLevel);
-    }
 }

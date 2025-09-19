@@ -304,7 +304,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
-    private void initializeStarLevel(RandomSource randomSource) {
+    protected void initializeStarLevel(RandomSource randomSource) {
+        int starLevel = getInitialStarLevel(randomSource);
+        this.entityData.set(STAR_LEVEL, starLevel);
+    }
+
+    protected int getInitialStarLevel(RandomSource randomSource) {
         double roll = randomSource.nextDouble();
         int starLevel;
         if (roll < 0.6) {
@@ -314,7 +319,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         } else {
             starLevel = 3;
         }
-        this.entityData.set(STAR_LEVEL, starLevel);
+        return starLevel;
     }
 
     // Shield and archer properties
@@ -580,7 +585,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     // Fear system
-    private void initializeFearedEntity(RandomSource randomSource) {
+    protected void initializeFearedEntity(RandomSource randomSource) {
         if (randomSource.nextFloat() >= 0.3f) {
             MagicRealms.LOGGER.debug("Entity {} spawned without fear", getEntityName());
             return;
@@ -1080,6 +1085,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             return InteractionResult.SUCCESS;
         }
 
+        handleContractInteraction(player, contractData, heldItem);
+
+        return super.mobInteract(player, hand);
+    }
+
+    protected void handleContractInteraction(Player player, ContractData contractData, ItemStack heldItem) {
         if (heldItem.getItem() instanceof PermanentContractItem) {
             ContractUtils.handlePermanentContractCreation(player, this, contractData, heldItem);
         } else if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
@@ -1087,8 +1098,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         } else {
             ContractUtils.handleContractInteraction(player, this, contractData);
         }
-
-        return super.mobInteract(player, hand);
     }
 
     private boolean handleEmeraldTrade(Player player, ItemStack emeraldStack) {
@@ -1148,7 +1157,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         if (!this.entityData.get(INITIALIZED)) {
             initializeStarLevel(randomsource);
-            initializeAppearance(randomsource); // Abstract method for subclasses
+            initializeAppearance(randomsource);
             initializeClassSpecifics(randomsource);
             initializeDefaultEquipment();
             initializeFearedEntity(randomsource);
@@ -1168,24 +1177,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             giveStartingEmeralds();
             this.entityData.set(INITIALIZED, true);
 
-            if (!spellsGenerated) {
-                RandomSource randomSource = Utils.random;
-                List<AbstractSpell> spells = SpellListGenerator.generateSpellsForEntity(this, randomSource);
-                this.persistedSpells = new ArrayList<>(spells);
-                this.spellsGenerated = true;
-
-                if (this.getEntityClass() == EntityClass.MAGE) {
-                    setMageGoal(spells);
-                } else if (this.getEntityClass() == EntityClass.WARRIOR) {
-                    setWarriorGoal(spells);
-                } else if (this.getEntityClass() == EntityClass.ROGUE) {
-                    if (isArcher()) {
-                        setArcherGoal(spells);
-                    } else {
-                        setAssassinGoal(spells);
-                    }
-                }
-            }
+            initializeClassSpells();
 
             initializeFearGoal();
             goalsInitialized = true;
@@ -1220,7 +1212,32 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
-    private void initializeClassSpecifics(RandomSource randomSource) {
+    protected void initializeClassSpells(){
+        if (!spellsGenerated) {
+            RandomSource randomSource = Utils.random;
+            List<AbstractSpell> spells = generateSpellsForEntity(randomSource);
+            this.persistedSpells = new ArrayList<>(spells);
+            this.spellsGenerated = true;
+
+            if (this.getEntityClass() == EntityClass.MAGE) {
+                setMageGoal(spells);
+            } else if (this.getEntityClass() == EntityClass.WARRIOR) {
+                setWarriorGoal(spells);
+            } else if (this.getEntityClass() == EntityClass.ROGUE) {
+                if (isArcher()) {
+                    setArcherGoal(spells);
+                } else {
+                    setAssassinGoal(spells);
+                }
+            }
+        }
+    }
+
+    protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
+        return SpellListGenerator.generateSpellsForEntity(this, randomSource);
+    }
+
+    protected void initializeClassSpecifics(RandomSource randomSource) {
         EntityClass entityClass = getEntityClass();
         MagicRealms.LOGGER.debug("Initializing class specifics for {} (Class: {})",
                 getEntityName(), entityClass.getName());
@@ -1247,7 +1264,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
-    private void initializeDefaultEquipment() {
+    protected void initializeDefaultEquipment() {
         EntityClass entityClass = getEntityClass();
 
         switch (entityClass) {

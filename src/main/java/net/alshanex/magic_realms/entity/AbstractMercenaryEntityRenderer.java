@@ -16,7 +16,7 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 
-public class AbstractMercenaryEntityRenderer extends AbstractSpellCastingMobRenderer {
+public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCastingMobRenderer {
     private static final String LEFT_HAND = "bipedHandLeft";
     private static final String RIGHT_HAND = "bipedHandRight";
 

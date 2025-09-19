@@ -17,6 +17,7 @@ import java.util.List;
 
 public class ModTags {
     public static final TagKey<EntityType<?>> BOSSES_TAG = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "bosses"));
+    public static final TagKey<EntityType<?>> EXCLUSIVE_MERCENARIES = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "exclusive_mercenaries"));
 
     public static final TagKey<Item> TAVERNKEEP_SELLS_FOOD = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_foods"));
     public static final TagKey<Item> TAVERNKEEP_SELLS_DRINKS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_drinks"));

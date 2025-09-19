@@ -3,12 +3,13 @@ package net.alshanex.magic_realms.block;
 import com.mojang.serialization.MapCodec;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.exclusive.AlshanexEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.events.ExclusiveMercenaryTracker;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -36,7 +37,6 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Supplier;
 
 public class ChairBlock extends HorizontalDirectionalBlock implements EntityBlock {
     public static final MapCodec<ChairBlock> CODEC = simpleCodec(ChairBlock::new);
@@ -106,37 +106,6 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
 
     // Entity spawn chances
     private static final double EXCLUSIVE_MERCENARY_CHANCE = 0.10; // 10%
-
-    // Registry of exclusive mercenary entity types with their constructors
-    private static final List<ExclusiveMercenaryInfo> EXCLUSIVE_MERCENARIES = List.of(
-            new ExclusiveMercenaryInfo(() -> MREntityRegistry.ALSHANEX.get(), AlshanexEntity::new)
-    );
-
-    // Helper class to store exclusive mercenary information
-    private static class ExclusiveMercenaryInfo {
-        private final Supplier<EntityType<? extends AbstractMercenaryEntity>> entityTypeSupplier;
-        private final BiFunction<EntityType<? extends AbstractMercenaryEntity>, Level, ? extends AbstractMercenaryEntity> constructor;
-
-        public ExclusiveMercenaryInfo(Supplier<EntityType<? extends AbstractMercenaryEntity>> entityTypeSupplier,
-                                      BiFunction<EntityType<? extends AbstractMercenaryEntity>, Level, ? extends AbstractMercenaryEntity> constructor) {
-            this.entityTypeSupplier = entityTypeSupplier;
-            this.constructor = constructor;
-        }
-
-        public EntityType<? extends AbstractMercenaryEntity> getEntityType() {
-            return entityTypeSupplier.get();
-        }
-
-        public AbstractMercenaryEntity createEntity(Level level) {
-            return constructor.apply(getEntityType(), level);
-        }
-    }
-
-    // Functional interface for entity constructors
-    @FunctionalInterface
-    private interface BiFunction<T, U, R> {
-        R apply(T t, U u);
-    }
 
     public ChairBlock(BlockBehaviour.Properties properties) {
         super(properties);
@@ -229,8 +198,11 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
             double random = level.getRandom().nextDouble();
 
             if (random < EXCLUSIVE_MERCENARY_CHANCE) {
-                // Try to spawn an exclusive mercenary
-                entityToSpawn = tryCreateExclusiveMercenary(level);
+                // Try to spawn an exclusive mercenary using tags
+                entityToSpawn = tryCreateExclusiveMercenaryUsingTags(level);
+                MagicRealms.LOGGER.debug("Chair at {} rolled for exclusive mercenary ({}%), result: {}",
+                        pos, (int)(EXCLUSIVE_MERCENARY_CHANCE * 100),
+                        entityToSpawn != null ? entityToSpawn.getClass().getSimpleName() : "none available");
             }
 
             // If no exclusive mercenary could be spawned, default to RandomHumanEntity
@@ -248,19 +220,19 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     }
 
     @Nullable
-    private AbstractMercenaryEntity tryCreateExclusiveMercenary(ServerLevel level) {
-        if (EXCLUSIVE_MERCENARIES.isEmpty()) {
-            MagicRealms.LOGGER.debug("No exclusive mercenaries registered");
+    private AbstractMercenaryEntity tryCreateExclusiveMercenaryUsingTags(ServerLevel level) {
+        // Get all entity types tagged as exclusive mercenaries
+        List<EntityType<?>> exclusiveMercenaryTypes = BuiltInRegistries.ENTITY_TYPE.stream()
+                .filter(entityType -> entityType.is(ModTags.EXCLUSIVE_MERCENARIES))
+                .toList();
+
+        if (exclusiveMercenaryTypes.isEmpty()) {
+            MagicRealms.LOGGER.debug("No exclusive mercenaries found in tag");
             return null;
         }
 
-        // Get list of entity types that can be spawned (not already in world)
-        List<EntityType<?>> allExclusiveTypes = new ArrayList<>();
-        for (ExclusiveMercenaryInfo info : EXCLUSIVE_MERCENARIES) {
-            allExclusiveTypes.add(info.getEntityType());
-        }
-
-        List<EntityType<?>> availableTypes = ExclusiveMercenaryTracker.getAvailableExclusiveMercenaries(level, allExclusiveTypes);
+        // Get available types that aren't already in the world
+        List<EntityType<?>> availableTypes = ExclusiveMercenaryTracker.getAvailableExclusiveMercenaries(level, exclusiveMercenaryTypes);
 
         if (availableTypes.isEmpty()) {
             MagicRealms.LOGGER.debug("All exclusive mercenary types already exist in world");
@@ -270,16 +242,32 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
         // Randomly select one of the available types
         EntityType<?> selectedType = availableTypes.get(level.getRandom().nextInt(availableTypes.size()));
 
-        // Find the corresponding mercenary info and create the entity
-        for (ExclusiveMercenaryInfo mercenaryInfo : EXCLUSIVE_MERCENARIES) {
-            if (mercenaryInfo.getEntityType() == selectedType) {
-                AbstractMercenaryEntity entity = mercenaryInfo.createEntity(level);
-                MagicRealms.LOGGER.debug("Selected exclusive mercenary: {} (available in world)",
-                        selectedType.getDescriptionId());
-                return entity;
-            }
+        // Create the entity using the EntityType.create method
+        AbstractMercenaryEntity entity = createEntityFromType(selectedType, level);
+        if (entity != null) {
+            MagicRealms.LOGGER.debug("Selected exclusive mercenary: {} (available in world)",
+                    selectedType.getDescriptionId());
+            return entity;
         }
 
+        return null;
+    }
+
+    @Nullable
+    @SuppressWarnings("unchecked")
+    private AbstractMercenaryEntity createEntityFromType(EntityType<?> entityType, Level level) {
+        try {
+            // Try to create an entity of the given type
+            var entity = entityType.create(level);
+            if (entity instanceof AbstractMercenaryEntity mercenary && mercenary.isExclusiveMercenary()) {
+                return mercenary;
+            } else {
+                MagicRealms.LOGGER.warn("Entity type {} is tagged as exclusive mercenary but doesn't implement isExclusiveMercenary() correctly",
+                        entityType.getDescriptionId());
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to create entity of type: {}", entityType.getDescriptionId(), e);
+        }
         return null;
     }
 
@@ -305,10 +293,14 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
                         entity.setYRot(getSittingYaw(state));
                     }
                 });
+
+                MagicRealms.LOGGER.debug("Successfully spawned {} at chair {}",
+                        entity.getClass().getSimpleName(), pos);
             }
 
             // Update cooldown
             SPAWN_COOLDOWNS.put(pos.immutable(), level.getGameTime());
+
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error spawning entity {} at chair {}", entity.getClass().getSimpleName(), pos, e);
         }

@@ -8,9 +8,11 @@ import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.Abstra
 import io.redspace.ironsspellbooks.registries.EntityRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
+import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ContractUtils;
 import net.alshanex.magic_realms.util.humans.EntityClass;
@@ -84,7 +86,16 @@ public class AlshanexEntity extends AbstractMercenaryEntity {
 
     @Override
     protected void handlePostSpawnInitialization() {
-
+        if (!this.level().isClientSide) {
+            // Schedule the name update to happen after all initialization is complete
+            this.level().getServer().execute(() -> {
+                if (this.isAlive() && !this.isRemoved()) {
+                    KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
+                    int currentLevel = killData.getCurrentLevel();
+                    this.updateCustomNameWithLevel(currentLevel);
+                }
+            });
+        }
     }
 
     @Override

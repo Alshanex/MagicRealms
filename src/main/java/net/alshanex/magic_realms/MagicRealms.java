@@ -2,11 +2,7 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.registry.*;
-import net.alshanex.magic_realms.util.humans.AdvancedNameManager;
-import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
-import net.alshanex.magic_realms.events.TextureEventHandler;
 import net.alshanex.magic_realms.util.humans.LayeredTextureManager;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -91,17 +87,8 @@ public class MagicRealms
         public static void onClientSetup(FMLClientSetupEvent event)
         {
             event.enqueueWork(() -> {
-                // Load the base textures (world-specific directories will be set when joining a world)
                 LayeredTextureManager.loadTextures();
-
-                MagicRealms.LOGGER.debug("Client setup completed - texture directories will be initialized when joining a world");
-
-                // Log additional texture availability for debugging
-                int maleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.MALE);
-                int femaleAdditionalCount = LayeredTextureManager.getAdditionalTextureCount(net.alshanex.magic_realms.util.humans.Gender.FEMALE);
-
-                MagicRealms.LOGGER.debug("Additional textures loaded - Male: {}, Female: {}", maleAdditionalCount, femaleAdditionalCount);
-                MagicRealms.LOGGER.debug("Additional texture chance: {}%", (int)(CombinedTextureManager.getAdditionalTextureChance() * 100));
+                MagicRealms.LOGGER.debug("Client setup completed - loaded base textures");
             });
         }
     }

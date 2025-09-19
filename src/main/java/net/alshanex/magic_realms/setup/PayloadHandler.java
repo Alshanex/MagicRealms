@@ -15,11 +15,8 @@ public class PayloadHandler {
 
         payloadRegistrar.playToServer(UpdateEntityNamePacket.TYPE, UpdateEntityNamePacket.STREAM_CODEC, UpdateEntityNamePacket::handle);
         payloadRegistrar.playToServer(RequestEntityLevelPacket.TYPE, RequestEntityLevelPacket.STREAM_CODEC, RequestEntityLevelPacket::handle);
-        payloadRegistrar.playToServer(SyncPresetTextureNamePacket.TYPE, SyncPresetTextureNamePacket.STREAM_CODEC, SyncPresetTextureNamePacket::handle);
-        payloadRegistrar.playToServer(UploadEntityTexturePacket.TYPE, UploadEntityTexturePacket.STREAM_CODEC, UploadEntityTexturePacket::handle);
+        payloadRegistrar.playToServer(SyncPresetNamePacket.TYPE, SyncPresetNamePacket.STREAM_CODEC, SyncPresetNamePacket::handle);
 
         payloadRegistrar.playToClient(SyncEntityLevelPacket.TYPE, SyncEntityLevelPacket.STREAM_CODEC, SyncEntityLevelPacket::handle);
-        payloadRegistrar.playToClient(RequestTextureGenerationPacket.TYPE, RequestTextureGenerationPacket.STREAM_CODEC, RequestTextureGenerationPacket::handle);
-        payloadRegistrar.playToClient(SyncEntityTexturePacket.TYPE, SyncEntityTexturePacket.STREAM_CODEC, SyncEntityTexturePacket::handle);
     }
 }

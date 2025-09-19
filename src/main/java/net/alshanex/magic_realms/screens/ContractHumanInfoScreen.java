@@ -10,10 +10,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.util.EntitySnapshot;
-import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
-import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
-import net.alshanex.magic_realms.util.humans.EntityClass;
-import net.alshanex.magic_realms.util.humans.EntityTextureConfig;
+import net.alshanex.magic_realms.util.humans.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,6 +21,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -157,9 +155,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         // Render entity and other elements first
-        if (!renderEntity3D(guiGraphics)) {
-            renderEntityFallback(guiGraphics);
-        }
+        renderEntity3D(guiGraphics);
         renderStats(guiGraphics);
         renderClassSymbol(guiGraphics);
 
@@ -191,7 +187,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
-    // UPDATED: Generic virtual entity creation
     private AbstractMercenaryEntity getOrCreateVirtualEntity() {
         if (snapshot == null || minecraft.level == null) {
             return null;
@@ -210,8 +205,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             return cachedEntity;
         }
 
-        // Create new virtual entity based on type
-        AbstractMercenaryEntity virtualEntity = createVirtualEntityForRendering(entityType);
+        // Create new virtual entity
+        AbstractMercenaryEntity virtualEntity = createVirtualEntityForSnapshot();
         if (virtualEntity != null) {
             virtualEntityCache.put(cacheKey, virtualEntity);
 
@@ -225,74 +220,175 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         return virtualEntity;
     }
 
-    // UPDATED: Generic virtual entity creation method
-    private AbstractMercenaryEntity createVirtualEntityForRendering(EntityType<? extends AbstractMercenaryEntity> entityType) {
+    private AbstractMercenaryEntity createVirtualEntityForSnapshot() {
         if (snapshot == null || minecraft.level == null) {
             return null;
         }
 
         try {
-            // Create entity instance based on type
+            EntityType<? extends AbstractMercenaryEntity> entityType = menu.getEntityType();
             AbstractMercenaryEntity virtualEntity = entityType.create(minecraft.level);
             if (virtualEntity == null) {
                 MagicRealms.LOGGER.error("Failed to create virtual entity of type: {}", entityType);
                 return null;
             }
 
-            // Apply common configuration from snapshot
-            configureVirtualEntityFromSnapshot(virtualEntity);
+            // Configure basic properties
+            virtualEntity.setGender(snapshot.gender);
+            virtualEntity.setEntityClass(snapshot.entityClass);
+            virtualEntity.setEntityName(snapshot.entityName);
+            virtualEntity.setStarLevel(snapshot.starLevel);
+            virtualEntity.setHasShield(snapshot.hasShield);
+            virtualEntity.setIsArcher(snapshot.isArcher);
+            virtualEntity.setInitialized(true);
 
+            setEntityUUID(virtualEntity, snapshot.entityUUID);
+
+            // Handle texture components for RandomHumanEntity
+            if (virtualEntity instanceof RandomHumanEntity randomHuman && snapshot.textureComponents != null) {
+                // Set the texture metadata from snapshot
+                randomHuman.setTextureMetadata(snapshot.textureComponents);
+
+                // Force generate client-side texture components
+                forceGenerateTextureComponents(randomHuman, snapshot.textureComponents);
+            }
+
+            // Apply equipment
+            if (menu != null && menu.getEquipmentContainer() != null) {
+                applyEquipmentFromContainer(virtualEntity, menu.getEquipmentContainer());
+            }
+
+            virtualEntity.setPos(0, 0, 0);
             return virtualEntity;
 
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to create virtual entity of type {}: {}", entityType, e.getMessage(), e);
+            MagicRealms.LOGGER.error("Failed to create virtual entity: {}", e.getMessage(), e);
             return null;
         }
     }
 
-    // UPDATED: Generic configuration method
-    private void configureVirtualEntityFromSnapshot(AbstractMercenaryEntity virtualEntity) {
-        // Configure EXACTLY the same data from snapshot
-        virtualEntity.setGender(snapshot.gender);
-        virtualEntity.setEntityClass(snapshot.entityClass);
-        virtualEntity.setEntityName(snapshot.entityName);
-        virtualEntity.setStarLevel(snapshot.starLevel);
-        virtualEntity.setHasShield(snapshot.hasShield);
-        virtualEntity.setIsArcher(snapshot.isArcher);
-
-        setEntityUUID(virtualEntity, snapshot.entityUUID);
-
-        // Mark as initialized and configured BEFORE any generation
-        virtualEntity.setInitialized(true);
-
-        // Handle texture configuration - only for RandomHumanEntity
-        if (virtualEntity instanceof RandomHumanEntity randomHuman) {
-            setAppearanceGenerated(randomHuman, true);
-
-            if (snapshot.textureUUID != null) {
-                EntityTextureConfig textureConfig = new EntityTextureConfig(
-                        snapshot.textureUUID,
-                        snapshot.gender,
-                        snapshot.entityClass
-                );
-                setTextureConfigDirectly(randomHuman, textureConfig);
-            }
+    // Force texture generation for virtual entities
+    private void forceGenerateTextureComponents(RandomHumanEntity randomHuman, CompoundTag textureMetadata) {
+        if (!minecraft.level.isClientSide() || textureMetadata.isEmpty()) {
+            return;
         }
 
-        // Apply equipment visual AFTER configuring the texture
-        if (menu != null && menu.getEquipmentContainer() != null) {
-            applyEquipmentFromContainer(virtualEntity, menu.getEquipmentContainer());
-        }
+        try {
+            // Ensure textures are loaded
+            LayeredTextureManager.ensureTexturesLoaded();
 
-        // Configure position to avoid warnings
-        virtualEntity.setPos(0, 0, 0);
+            generateTextureComponentsFromMetadata(randomHuman, textureMetadata);
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to force generate texture components for virtual entity", e);
+        }
     }
 
-    // UPDATED: Cache key includes entity type
+    private void generateTextureComponentsFromMetadata(RandomHumanEntity randomHuman, CompoundTag metadata) {
+        try {
+            Gender gender = Gender.valueOf(metadata.getString("gender").toUpperCase());
+            EntityClass entityClass = EntityClass.valueOf(metadata.getString("entityClass").toUpperCase());
+
+            TextureComponents components;
+
+            if (metadata.getBoolean("usePreset")) {
+                // Generate preset texture
+                int presetIndex = metadata.getInt("presetIndex");
+                components = generatePresetFromIndex(gender, presetIndex);
+                if (components == null) {
+                    // Fallback to layered
+                    components = generateLayeredFallback(gender, entityClass, presetIndex);
+                }
+            } else {
+                // Generate layered texture
+                components = generateLayeredFromIndices(
+                        gender, entityClass,
+                        metadata.getInt("skinIndex"),
+                        metadata.getInt("clothesIndex"),
+                        metadata.getInt("eyesIndex"),
+                        metadata.getInt("hairIndex")
+                );
+            }
+
+            if (components != null) {
+                setTextureComponentsDirectly(randomHuman, components);
+                MagicRealms.LOGGER.debug("Generated texture components for virtual entity from metadata");
+            }
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to generate texture components from metadata", e);
+        }
+    }
+
+    // Helper methods for texture generation (copied from RandomHumanEntity)
+    private TextureComponents generatePresetFromIndex(Gender gender, int index) {
+        if (!LayeredTextureManager.hasAdditionalTextures(gender)) {
+            return null;
+        }
+
+        int count = LayeredTextureManager.getAdditionalTextureCount(gender);
+        if (count == 0) return null;
+
+        int actualIndex = index % count;
+        LayeredTextureManager.TextureWithName preset =
+                LayeredTextureManager.getAdditionalTextureByIndex(gender, actualIndex);
+
+        if (preset != null) {
+            return new TextureComponents(
+                    preset.getTexture().toString(),
+                    null, null, null,
+                    preset.getName(),
+                    true
+            );
+        }
+        return null;
+    }
+
+    private TextureComponents generateLayeredFromIndices(Gender gender, EntityClass entityClass,
+                                                         int skinIndex, int clothesIndex,
+                                                         int eyesIndex, int hairIndex) {
+        String skinTexture = LayeredTextureManager.getTextureByIndex("skin", skinIndex);
+        String clothesTexture = LayeredTextureManager.getClothesTextureByIndex(gender, entityClass, clothesIndex);
+        String eyesTexture = LayeredTextureManager.getTextureByIndex("eyes", eyesIndex);
+        String hairTexture = LayeredTextureManager.getHairTextureByIndex(gender, hairIndex);
+
+        return new TextureComponents(skinTexture, clothesTexture, eyesTexture, hairTexture, null, false);
+    }
+
+    private TextureComponents generateLayeredFallback(Gender gender, EntityClass entityClass, int seed) {
+        RandomSource fallbackRandom = RandomSource.create(seed);
+        return generateLayeredFromIndices(
+                gender, entityClass,
+                fallbackRandom.nextInt(10000),
+                fallbackRandom.nextInt(10000),
+                fallbackRandom.nextInt(10000),
+                fallbackRandom.nextInt(10000)
+        );
+    }
+
+    private void setTextureComponentsDirectly(RandomHumanEntity randomHuman, TextureComponents components) {
+        try {
+            java.lang.reflect.Field textureComponentsField = RandomHumanEntity.class.getDeclaredField("textureComponents");
+            textureComponentsField.setAccessible(true);
+            textureComponentsField.set(randomHuman, components);
+            MagicRealms.LOGGER.debug("Set texture components directly for virtual entity");
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to set texture components directly", e);
+        }
+    }
+
+    // Cache key
     private String createCacheKey() {
         StringBuilder keyBuilder = new StringBuilder();
         keyBuilder.append(menu.getEntityType().toString()).append("_");
-        keyBuilder.append(snapshot.textureUUID != null ? snapshot.textureUUID : "null");
+
+        // Use texture components hash instead of textureUUID
+        if (snapshot.textureComponents != null) {
+            keyBuilder.append(snapshot.textureComponents.hashCode());
+        } else {
+            keyBuilder.append("null");
+        }
+
         keyBuilder.append("_").append(snapshot.gender.name());
         keyBuilder.append("_").append(snapshot.entityClass.name());
         keyBuilder.append("_").append(snapshot.starLevel);
@@ -300,39 +396,16 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         keyBuilder.append("_").append(snapshot.isArcher);
         keyBuilder.append("_").append(snapshot.entityName);
         keyBuilder.append("_").append(snapshot.entityUUID);
+
+        // Also include equipment state since that affects rendering
+        if (menu != null && menu.getEquipmentContainer() != null) {
+            keyBuilder.append("_eq:");
+            for (int i = 0; i < 6; i++) { // 6 equipment slots
+                keyBuilder.append(menu.getEquipmentContainer().getItem(i).hashCode()).append(",");
+            }
+        }
+
         return keyBuilder.toString();
-    }
-
-    // UPDATED: Type-specific reflection methods
-    private void setAppearanceGenerated(AbstractMercenaryEntity entity, boolean generated) {
-        // Only apply to RandomHumanEntity
-        if (!(entity instanceof RandomHumanEntity)) {
-            return;
-        }
-
-        try {
-            java.lang.reflect.Field appearanceGeneratedField = RandomHumanEntity.class.getDeclaredField("appearanceGenerated");
-            appearanceGeneratedField.setAccessible(true);
-            appearanceGeneratedField.set(entity, generated);
-            MagicRealms.LOGGER.debug("Set appearanceGenerated to {} for virtual entity", generated);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.warn("Failed to set appearanceGenerated: {}", e.getMessage());
-        }
-    }
-
-    private void setTextureConfigDirectly(AbstractMercenaryEntity entity, EntityTextureConfig textureConfig) {
-        // Only apply to RandomHumanEntity
-        if (!(entity instanceof RandomHumanEntity)) {
-            return;
-        }
-
-        try {
-            java.lang.reflect.Field textureConfigField = RandomHumanEntity.class.getDeclaredField("textureConfig");
-            textureConfigField.setAccessible(true);
-            textureConfigField.set(entity, textureConfig);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.warn("Failed to set texture config directly: {}", e.getMessage());
-        }
     }
 
     // Updated to work with base class
@@ -370,7 +443,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
     }
 
-    // UPDATED: Main 3D rendering method
+    // Main 3D rendering method
     private boolean renderEntity3D(GuiGraphics guiGraphics) {
         AbstractMercenaryEntity entityToRender = entity;
 
@@ -418,107 +491,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error rendering entity 3D: {}", e.getMessage(), e);
             return false;
-        }
-    }
-
-    // Rest of the rendering methods remain the same...
-    private void renderEntityFallback(GuiGraphics guiGraphics) {
-        if (snapshot == null) {
-            renderEmptyArea(guiGraphics,
-                    leftPos + ENTITY_RENDER_X,
-                    topPos + ENTITY_RENDER_Y,
-                    ENTITY_RENDER_WIDTH,
-                    ENTITY_RENDER_HEIGHT);
-            return;
-        }
-
-        int entityX = leftPos + ENTITY_RENDER_X;
-        int entityY = topPos + ENTITY_RENDER_Y;
-
-        MagicRealms.LOGGER.debug("Using 2D fallback rendering");
-
-        if (!render2DEntityTexture(guiGraphics, entityX, entityY, ENTITY_RENDER_WIDTH, ENTITY_RENDER_HEIGHT)) {
-            renderEmptyArea(guiGraphics, entityX, entityY, ENTITY_RENDER_WIDTH, ENTITY_RENDER_HEIGHT);
-        }
-    }
-
-    private boolean render2DEntityTexture(GuiGraphics guiGraphics, int x, int y, int width, int height) {
-        try {
-            ResourceLocation textureLocation = getEntityTexture();
-            if (textureLocation != null) {
-                renderFullMinecraftSkin(guiGraphics, textureLocation, x, y, width, height);
-                return true;
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not render 2D entity texture: {}", e.getMessage());
-        }
-        return false;
-    }
-
-    private ResourceLocation getEntityTexture() {
-        if (snapshot.textureUUID != null) {
-            try {
-                ResourceLocation dynamicTexture = getDynamicTextureIfExists(snapshot.textureUUID);
-                if (dynamicTexture != null) {
-                    return dynamicTexture;
-                }
-
-                if (snapshot.savedTexturePath != null) {
-                    ResourceLocation savedTexture = loadSavedTexture(snapshot.savedTexturePath);
-                    if (savedTexture != null) {
-                        return savedTexture;
-                    }
-                }
-
-                if (snapshot.entityUUID != null) {
-                    ResourceLocation generatedTexture = generateVirtualEntityTexture();
-                    if (generatedTexture != null) {
-                        return generatedTexture;
-                    }
-                }
-            } catch (Exception e) {
-                MagicRealms.LOGGER.debug("Error getting entity texture: {}", e.getMessage());
-            }
-        }
-
-        return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
-    }
-
-    private ResourceLocation getDynamicTextureIfExists(String textureUUID) {
-        try {
-            return DynamicTextureManager.getTexture(textureUUID);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private ResourceLocation loadSavedTexture(String texturePath) {
-        try {
-            java.nio.file.Path path = java.nio.file.Paths.get(texturePath);
-            if (java.nio.file.Files.exists(path)) {
-                BufferedImage image = ImageIO.read(path.toFile());
-                if (image != null) {
-                    return DynamicTextureManager.registerDynamicTexture(
-                            snapshot.textureUUID, image);
-                }
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not load saved texture from {}: {}", texturePath, e.getMessage());
-        }
-        return null;
-    }
-
-    private ResourceLocation generateVirtualEntityTexture() {
-        try {
-            return CombinedTextureManager.getCombinedTextureWithHair(
-                    snapshot.textureUUID,
-                    snapshot.gender,
-                    snapshot.entityClass,
-                    0
-            );
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Could not generate virtual texture: {}", e.getMessage());
-            return null;
         }
     }
 
@@ -631,57 +603,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
     }
 
-    private void renderFullMinecraftSkin(GuiGraphics guiGraphics, ResourceLocation texture, int x, int y, int width, int height) {
-        int scale = Math.max(1, Math.min(width / 16, height / 32));
-
-        int headSize = 8 * scale;
-        int bodyWidth = 8 * scale;
-        int bodyHeight = 12 * scale;
-        int armWidth = 4 * scale;
-        int armHeight = 12 * scale;
-        int legWidth = 4 * scale;
-        int legHeight = 12 * scale;
-
-        int totalHeight = headSize + bodyHeight + legHeight;
-        int totalWidth = Math.max(headSize, bodyWidth + (armWidth * 2));
-
-        int startX = x + (width - totalWidth) / 2;
-        int startY = y + (height - totalHeight) / 2;
-
-        int currentY = startY;
-
-        // Head
-        int headX = startX + (totalWidth - headSize) / 2;
-        guiGraphics.blit(texture, headX, currentY, headSize, headSize, 8, 8, 8, 8, 64, 64);
-        guiGraphics.blit(texture, headX, currentY, headSize, headSize, 40, 8, 8, 8, 64, 64);
-        currentY += headSize;
-
-        // Body and arms
-        int bodyX = startX + (totalWidth - bodyWidth) / 2;
-
-        guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 20, 8, 12, 64, 64);
-        guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 36, 8, 12, 64, 64);
-
-        int rightArmX = bodyX - armWidth;
-        guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 20, 4, 12, 64, 64);
-        guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 36, 4, 12, 64, 64);
-
-        int leftArmX = bodyX + bodyWidth;
-        guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 36, 52, 4, 12, 64, 64);
-        guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 52, 52, 4, 12, 64, 64);
-
-        currentY += bodyHeight;
-
-        // Legs
-        int legsX = bodyX + (bodyWidth - (legWidth * 2)) / 2;
-
-        guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 20, 4, 12, 64, 64);
-        guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 36, 4, 12, 64, 64);
-
-        guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 20, 52, 4, 12, 64, 64);
-        guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 4, 52, 4, 12, 64, 64);
-    }
-
     public static void renderEntityInInventory(
             GuiGraphics guiGraphics,
             float x,
@@ -735,25 +656,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         Lighting.setupFor3DItems();
 
         guiGraphics.disableScissor();
-    }
-
-    private void renderEmptyArea(GuiGraphics guiGraphics, int x, int y, int width, int height) {
-        guiGraphics.fill(x, y, x + width, y + height, 0x22000000);
-
-        String debugText = "No Entity";
-        if (entity == null) {
-            debugText = "Entity: null";
-        } else if (!entity.isAlive()) {
-            debugText = "Entity: dead";
-        } else if (snapshot == null) {
-            debugText = "Snapshot: null";
-        }
-
-        Component noEntityText = Component.literal(debugText).withStyle(ChatFormatting.GRAY);
-        int textWidth = font.width(noEntityText);
-        int textX = x + (width - textWidth) / 2;
-        int textY = y + height / 2 - font.lineHeight / 2;
-        guiGraphics.drawString(font, noEntityText, textX, textY, 0xAAAAAA, false);
     }
 
     private void renderStats(GuiGraphics guiGraphics) {

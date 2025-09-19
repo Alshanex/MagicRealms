@@ -11,6 +11,7 @@ import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.alshanex.magic_realms.util.humans.TextureComponents;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -46,27 +47,16 @@ public class EntitySnapshot {
     public final List<String> magicSchools;
     public final CompoundTag attributes;
     public final CompoundTag equipment;
-    public final String textureUUID;
-    public final String savedTexturePath;
     public final List<String> entitySpells;
-    public final EntityType<? extends AbstractMercenaryEntity> entityType; // NEW FIELD
-
-    private EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
-                           int starLevel, int currentLevel, int totalKills, int experiencePoints,
-                           boolean hasShield, boolean isArcher, List<String> magicSchools,
-                           CompoundTag attributes, CompoundTag equipment, List<String> entitySpells,
-                           EntityType<? extends AbstractMercenaryEntity> entityType) {
-        this(entityUUID, entityName, gender, entityClass, starLevel, currentLevel, totalKills,
-                experiencePoints, hasShield, isArcher, magicSchools, attributes, equipment,
-                null, null, entitySpells, entityType);
-    }
+    public final EntityType<? extends AbstractMercenaryEntity> entityType;
+    public final CompoundTag textureComponents;
 
     public EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
                           int starLevel, int currentLevel, int totalKills, int experiencePoints,
                           boolean hasShield, boolean isArcher, List<String> magicSchools,
-                          CompoundTag attributes, CompoundTag equipment,
-                          String textureUUID, String savedTexturePath, List<String> entitySpells,
-                          EntityType<? extends AbstractMercenaryEntity> entityType) {
+                          CompoundTag attributes, CompoundTag equipment, List<String> entitySpells,
+                          EntityType<? extends AbstractMercenaryEntity> entityType,
+                          CompoundTag textureComponents) {
         this.entityUUID = entityUUID;
         this.entityName = entityName;
         this.gender = gender;
@@ -80,10 +70,9 @@ public class EntitySnapshot {
         this.magicSchools = magicSchools;
         this.attributes = attributes;
         this.equipment = equipment;
-        this.textureUUID = textureUUID != null ? textureUUID : entityUUID.toString();
-        this.savedTexturePath = savedTexturePath;
         this.entitySpells = entitySpells != null ? new ArrayList<>(entitySpells) : new ArrayList<>();
         this.entityType = entityType;
+        this.textureComponents = textureComponents;
     }
 
     public static EntitySnapshot fromEntity(AbstractMercenaryEntity entity) {
@@ -103,16 +92,18 @@ public class EntitySnapshot {
         CompoundTag equipment = new CompoundTag();
         captureEquipment(entity, equipment);
 
-        String savedTexturePath = null;
-
-        if(!entity.level().isClientSide) {
-            ServerLevel serverLevel = (ServerLevel) entity.level();
-            Path worldDir = serverLevel.getServer().getWorldPath(LevelResource.ROOT);
-            Path texturePath = worldDir.resolve("magic_realms_textures")
-                    .resolve("entity").resolve("human")
-                    .resolve(entity.getUUID() + "_complete.png");
-            if (java.nio.file.Files.exists(texturePath)) {
-                savedTexturePath = texturePath.toString();
+        CompoundTag textureComponents = null;
+        if (entity instanceof RandomHumanEntity randomHuman) {
+            // Get texture metadata instead of full components
+            CompoundTag metadata = randomHuman.getTextureMetadata();
+            if (metadata != null && !metadata.isEmpty()) {
+                textureComponents = metadata.copy();
+            } else {
+                // Fallback: try to get actual texture components if they exist
+                TextureComponents components = randomHuman.getTextureComponents();
+                if (components != null) {
+                    textureComponents = components.toNBT();
+                }
             }
         }
 
@@ -130,14 +121,11 @@ public class EntitySnapshot {
                 schools,
                 attributes,
                 equipment,
-                entity.getUUID().toString(),
-                savedTexturePath,
                 spells,
-                (EntityType<? extends AbstractMercenaryEntity>) entity.getType() // Capture entity type
+                (EntityType<? extends AbstractMercenaryEntity>) entity.getType(),
+                textureComponents
         );
     }
-
-    // ... existing captureAttributes and captureEquipment methods remain the same ...
 
     private static void captureAttributes(AbstractMercenaryEntity entity, CompoundTag attributes) {
         try {
@@ -375,13 +363,12 @@ public class EntitySnapshot {
 
         tag.put("attributes", attributes);
         tag.put("equipment", equipment);
-        tag.putString("texture_uuid", textureUUID);
-        if (savedTexturePath != null) {
-            tag.putString("saved_texture_path", savedTexturePath);
-        }
 
-        // Serialize entity type
         tag.putString("entity_type", BuiltInRegistries.ENTITY_TYPE.getKey(entityType).toString());
+
+        if (textureComponents != null) {
+            tag.put("texture_components", textureComponents);
+        }
 
         return tag;
     }
@@ -416,10 +403,7 @@ public class EntitySnapshot {
 
             CompoundTag attributes = tag.getCompound("attributes");
             CompoundTag equipment = tag.getCompound("equipment");
-            String textureUUID = tag.getString("texture_uuid");
-            String savedTexturePath = tag.contains("saved_texture_path") ? tag.getString("saved_texture_path") : null;
 
-            // Deserialize entity type
             EntityType<? extends AbstractMercenaryEntity> entityType;
             if (tag.contains("entity_type")) {
                 try {
@@ -431,14 +415,17 @@ public class EntitySnapshot {
                             ResourceLocation.fromNamespaceAndPath("magic_realms", "human_entity"));
                 }
             } else {
-                // Default fallback for old saves
+                // Default fallback
                 entityType = (EntityType<? extends AbstractMercenaryEntity>) BuiltInRegistries.ENTITY_TYPE.get(
                         ResourceLocation.fromNamespaceAndPath("magic_realms", "human_entity"));
             }
 
+            CompoundTag textureComponents = tag.contains("texture_components") ?
+                    tag.getCompound("texture_components") : null;
+
             return new EntitySnapshot(entityUUID, entityName, gender, entityClass, starLevel,
                     currentLevel, totalKills, experiencePoints, hasShield, isArcher,
-                    schools, attributes, equipment, textureUUID, savedTexturePath, spells, entityType);
+                    schools, attributes, equipment, spells, entityType, textureComponents);
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to deserialize EntitySnapshot: {}", e.getMessage());
             return null;

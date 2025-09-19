@@ -586,26 +586,33 @@ public class MRUtils {
                 // Update the custom name with level first
                 humanEntity.updateCustomNameWithLevel(level);
 
+                // For RandomHumanEntity, ensure textures are generated if needed
+                if (entity instanceof RandomHumanEntity randomHuman) {
+                    // Schedule texture generation if not already done
+                    if (randomHuman.getTextureComponents() == null) {
+                        Minecraft.getInstance().execute(() -> {
+                            // This will trigger generateTexturesFromMetadata if needed
+                            randomHuman.onAddedToLevel();
+                        });
+                    }
+                }
+
                 // Check if we need to generate/update the name
                 String entityName = humanEntity.getEntityName();
                 boolean needsNameUpdate = entityName == null || entityName.isEmpty();
 
                 if (needsNameUpdate) {
-                    // Try to get name from texture config first (for preset textures)
-                    if(humanEntity instanceof RandomHumanEntity randomHumanEntity) {
-                        randomHumanEntity.updateNameFromTexture();
-                    }
                     entityName = humanEntity.getEntityName();
 
-                    // If still empty, generate a random name (for layered textures)
+                    // If still empty, generate a random name
                     if (entityName == null || entityName.isEmpty()) {
                         entityName = AdvancedNameManager.getRandomName(humanEntity.getGender());
                         humanEntity.setEntityName(entityName);
 
-                        MagicRealms.LOGGER.debug("Generated random name '{}' for layered texture entity {}",
+                        MagicRealms.LOGGER.debug("Generated random name '{}' for entity {}",
                                 entityName, entityUUID);
                     } else {
-                        MagicRealms.LOGGER.debug("Used preset texture name '{}' for entity {}",
+                        MagicRealms.LOGGER.debug("Used existing name '{}' for entity {}",
                                 entityName, entityUUID);
                     }
 
@@ -622,169 +629,20 @@ public class MRUtils {
         }
     }
 
-    public static void handlePresetTextureNameSync(Player player, UUID entityUUID, String presetTextureName, boolean hasPresetTexture){
+    public static void handlePresetNameSync (Player player, UUID entityUUID, String presetName){
         if (player instanceof ServerPlayer serverPlayer) {
-            ServerLevel level = serverPlayer.serverLevel();
-            Entity entity = level.getEntity(entityUUID);
+            Entity entity = serverPlayer.serverLevel().getEntity(entityUUID);
 
-            if (entity instanceof RandomHumanEntity humanEntity) {
-                if (hasPresetTexture && !presetTextureName.isEmpty()) {
-                    // Set the preset texture name on server side
-                    humanEntity.setEntityName(presetTextureName);
+            if (entity instanceof RandomHumanEntity randomHuman) {
+                // Update the entity name on server side
+                randomHuman.setEntityName(presetName);
 
-                    MagicRealms.LOGGER.debug("Updated entity {} with preset texture name: {}",
-                            entityUUID, presetTextureName);
-                } else {
-                    MagicRealms.LOGGER.debug("Entity {} does not have a preset texture, name will be generated randomly",
-                            entityUUID);
-                }
+                // Update custom name with level
+                randomHuman.updateCustomNameWithStars();
+
+                MagicRealms.LOGGER.debug("Server updated preset name for entity {} to: {}",
+                        entityUUID, presetName);
             }
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static void syncPresetTextureName(RandomHumanEntity humanEntity) {
-        try {
-            // Get the texture config which contains preset texture information
-            EntityTextureConfig textureConfig = humanEntity.getTextureConfig();
-
-            if (textureConfig != null) {
-                String presetTextureName = textureConfig.getTextureName();
-                boolean hasPresetTexture = textureConfig.isPresetTexture();
-
-                if (hasPresetTexture && presetTextureName != null && !presetTextureName.isEmpty()) {
-                    // Send preset texture name to server
-                    PacketDistributor.sendToServer(new SyncPresetTextureNamePacket(
-                            humanEntity.getUUID(), presetTextureName, true));
-
-                    MagicRealms.LOGGER.debug("Sent preset texture name '{}' to server for entity {}",
-                            presetTextureName, humanEntity.getUUID());
-                } else {
-                    // Notify server that this entity doesn't have a preset texture
-                    PacketDistributor.sendToServer(new SyncPresetTextureNamePacket(
-                            humanEntity.getUUID(), "", false));
-
-                    MagicRealms.LOGGER.debug("Entity {} does not have preset texture, notified server",
-                            humanEntity.getUUID());
-                }
-            } else {
-                MagicRealms.LOGGER.debug("No texture config available for entity {}, skipping preset name sync",
-                        humanEntity.getUUID());
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Error syncing preset texture name for entity {}: {}",
-                    humanEntity.getUUID(), e.getMessage());
-        }
-    }
-
-    public static void handleServerSideTextureUpload(Player player, UUID entityUUID, byte[] textureData, String textureName, boolean isPresetTexture) {
-        try {
-            ServerPlayer serverPlayer = (ServerPlayer) player;
-            ServerLevel level = serverPlayer.serverLevel();
-
-            // Find the entity
-            Entity entity = level.getEntity(entityUUID);
-            if (!(entity instanceof RandomHumanEntity humanEntity)) {
-                MagicRealms.LOGGER.warn("Entity not found or not a RandomHumanEntity: {}", entityUUID);
-                return;
-            }
-
-            // Save texture to server world directory
-            Path worldDir = level.getServer().getWorldPath(LevelResource.ROOT);
-            Path textureDir = worldDir.resolve("magic_realms_textures").resolve("entity").resolve("human");
-            Files.createDirectories(textureDir);
-
-            Path texturePath = textureDir.resolve(entityUUID + "_complete.png");
-            Files.write(texturePath, textureData);
-
-            // Mark entity as having texture
-            humanEntity.setHasTexture(true);
-
-            // Update entity name if it's a preset texture
-            if (isPresetTexture && !textureName.isEmpty()) {
-                humanEntity.setEntityName(textureName);
-            }
-
-            // Now distribute this texture to all players tracking this entity
-            PacketDistributor.sendToPlayersTrackingEntity(humanEntity,
-                    new SyncEntityTexturePacket(entityUUID, humanEntity.getId(), textureData, textureName, isPresetTexture));
-
-            MagicRealms.LOGGER.debug("Received, saved and distributed texture for entity: {} from player: {}",
-                    entityUUID, player.getName().getString());
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to handle texture upload for entity: {}", entityUUID, e);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static void handleClientSideTextureGeneration(UUID entityUUID, int genderOrdinal, int entityClassOrdinal) {
-        try {
-            Gender gender = Gender.values()[genderOrdinal];
-            EntityClass entityClass = EntityClass.values()[entityClassOrdinal];
-
-            // FIXED: Create deterministic random source based on entity UUID
-            long seed = entityUUID.getMostSignificantBits() ^ entityUUID.getLeastSignificantBits();
-            RandomSource deterministicRandom = RandomSource.create(seed);
-
-            // Use deterministic texture generation
-            CombinedTextureManager.TextureCreationResult result =
-                    CombinedTextureManager.createCompleteTextureWithNameDeterministic(gender, entityClass, deterministicRandom);
-
-            if (result != null && result.getImage() != null) {
-                // Convert BufferedImage to byte array
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(result.getImage(), "PNG", baos);
-                byte[] textureData = baos.toByteArray();
-
-                // Send texture back to server
-                PacketDistributor.sendToServer(new UploadEntityTexturePacket(
-                        entityUUID, textureData, result.getTextureName(), result.isPresetTexture()));
-
-                MagicRealms.LOGGER.debug("Generated and uploaded DETERMINISTIC texture for entity: {}", entityUUID);
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to generate deterministic texture for entity: {}", entityUUID, e);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static void handleClientSideTextureSync(UUID entityUUID, int entityId, byte[] textureData, String textureName, boolean isPresetTexture) {
-        try {
-            // Convert byte array back to BufferedImage
-            ByteArrayInputStream bais = new ByteArrayInputStream(textureData);
-            BufferedImage texture = ImageIO.read(bais);
-
-            if (texture != null) {
-                // Register with DynamicTextureManager
-                ResourceLocation location = DynamicTextureManager.registerDynamicTexture(
-                        entityUUID.toString(), texture);
-
-                if (location != null) {
-                    // CRITICAL: Use entity ID to find and invalidate entity's texture config
-                    Minecraft mc = Minecraft.getInstance();
-                    if (mc.level != null) {
-                        Entity entity = mc.level.getEntity(entityId);
-                        if (entity instanceof RandomHumanEntity humanEntity) {
-                            humanEntity.invalidateTextureConfig();
-                            MagicRealms.LOGGER.debug("Invalidated texture config for entity {} (ID: {})",
-                                    entityUUID, entityId);
-                        }
-                    }
-
-                    // Store in client cache with forced invalidation
-                    CombinedTextureManager.cacheReceivedTexture(
-                            entityUUID.toString(),
-                            location,
-                            textureName,
-                            isPresetTexture
-                    );
-
-                    MagicRealms.LOGGER.debug("Received and cached texture for entity: {} (ID: {})", entityUUID, entityId);
-                }
-            }
-        } catch (IOException e) {
-            MagicRealms.LOGGER.error("Failed to process received texture for entity: {}", entityUUID, e);
         }
     }
 }

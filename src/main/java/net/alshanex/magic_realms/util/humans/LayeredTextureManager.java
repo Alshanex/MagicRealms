@@ -86,53 +86,7 @@ public class LayeredTextureManager {
         TEXTURE_CACHE.put(category, textures);
     }
 
-    public static int getRandomHairTextureIndex(String category, RandomSource random) {
-        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
-        if (textures == null || textures.isEmpty()) {
-            MagicRealms.LOGGER.debug("No textures found for category: " + category);
-            return -1;
-        }
-        int index = random.nextInt(textures.size());
-        MagicRealms.LOGGER.debug("Selected DETERMINISTIC hair texture index {} from {} options for category: {}",
-                index, textures.size(), category);
-        return index;
-    }
-
-    public static int getRandomHairTextureIndex(String category) {
-        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
-        if (textures == null || textures.isEmpty()) {
-            MagicRealms.LOGGER.debug("No textures found for category: " + category);
-            return -1;
-        }
-        int index = new Random().nextInt(textures.size());
-        MagicRealms.LOGGER.warn("Using NON-DETERMINISTIC hair texture index {} for category: {} - this may cause sync issues!",
-                index, category);
-        return index;
-    }
-
-    public static ResourceLocation getTextureByIndex(String category, int index) {
-        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
-        if (textures == null || textures.isEmpty()) {
-            MagicRealms.LOGGER.debug("No textures found for category: " + category);
-            return null;
-        }
-        if (index < 0 || index >= textures.size()) {
-            MagicRealms.LOGGER.warn("Invalid texture index {} for category {} (max: {})",
-                    index, category, textures.size() - 1);
-            return null;
-        }
-        return textures.get(index);
-    }
-
-    public static ResourceLocation getRandomTexture(String category) {
-        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
-        if (textures == null || textures.isEmpty()) {
-            MagicRealms.LOGGER.debug("No textures found for category: " + category);
-            return null;
-        }
-        return textures.get(new Random().nextInt(textures.size()));
-    }
-
+    // Existing random methods for backward compatibility
     public static TextureWithName getRandomAdditionalTextureWithName(Gender gender, RandomSource random) {
         String category = "additional_" + gender.getName();
         List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
@@ -145,15 +99,97 @@ public class LayeredTextureManager {
         ResourceLocation selectedTexture = textures.get(random.nextInt(textures.size()));
         String textureName = extractTextureNameFromPath(selectedTexture.getPath());
 
-        MagicRealms.LOGGER.debug("Selected DETERMINISTIC additional texture: {} with name: {} for gender: {}",
+        MagicRealms.LOGGER.debug("Selected random additional texture: {} with name: {} for gender: {}",
                 selectedTexture, textureName, gender.getName());
 
         return new TextureWithName(selectedTexture, textureName);
     }
 
-    public static TextureWithName getRandomAdditionalTextureWithName(Gender gender) {
-        MagicRealms.LOGGER.warn("Using NON-DETERMINISTIC additional texture selection for gender: {} - this may cause sync issues!", gender.getName());
-        return getRandomAdditionalTextureWithName(gender, RandomSource.create());
+    // NEW: Index-based methods for deterministic texture selection
+    public static String getTextureByIndex(String category, int index) {
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No textures found for category: {}", category);
+            return null;
+        }
+
+        int actualIndex = Math.abs(index % textures.size());
+        ResourceLocation selectedTexture = textures.get(actualIndex);
+
+        MagicRealms.LOGGER.debug("Selected texture by index for {}: {} (index {} -> {})",
+                category, selectedTexture, index, actualIndex);
+
+        return selectedTexture.toString();
+    }
+
+    public static TextureWithName getAdditionalTextureByIndex(Gender gender, int index) {
+        String category = "additional_" + gender.getName();
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No additional textures found for gender: {}", gender.getName());
+            return null;
+        }
+
+        int actualIndex = Math.abs(index % textures.size());
+        ResourceLocation selectedTexture = textures.get(actualIndex);
+        String textureName = extractTextureNameFromPath(selectedTexture.getPath());
+
+        MagicRealms.LOGGER.debug("Selected additional texture by index for {}: {} with name: {} (index {} -> {})",
+                gender.getName(), selectedTexture, textureName, index, actualIndex);
+
+        return new TextureWithName(selectedTexture, textureName);
+    }
+
+    public static String getClothesTextureByIndex(Gender gender, EntityClass entityClass, int index) {
+        List<ResourceLocation> availableTextures = new ArrayList<>();
+
+        // Try class-specific textures first
+        List<ResourceLocation> classTextures = TEXTURE_CACHE.get(
+                "clothes_" + entityClass.getName() + "_" + gender.getName());
+        if (classTextures != null && !classTextures.isEmpty()) {
+            availableTextures.addAll(classTextures);
+        }
+
+        // Fallback to common textures if no class-specific ones
+        if (availableTextures.isEmpty()) {
+            List<ResourceLocation> commonTextures = TEXTURE_CACHE.get(
+                    "clothes_common_" + gender.getName());
+            if (commonTextures != null) {
+                availableTextures.addAll(commonTextures);
+            }
+        }
+
+        if (availableTextures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No clothes textures found for {} {}", entityClass.getName(), gender.getName());
+            return null;
+        }
+
+        int actualIndex = Math.abs(index % availableTextures.size());
+        ResourceLocation selectedTexture = availableTextures.get(actualIndex);
+
+        MagicRealms.LOGGER.debug("Selected clothes texture by index for {} {}: {} (index {} -> {})",
+                entityClass.getName(), gender.getName(), selectedTexture, index, actualIndex);
+
+        return selectedTexture.toString();
+    }
+
+    public static String getHairTextureByIndex(Gender gender, int index) {
+        String category = "hair_" + gender.getName();
+        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
+
+        if (textures == null || textures.isEmpty()) {
+            MagicRealms.LOGGER.debug("No hair textures found for gender: {}", gender.getName());
+            return null;
+        }
+
+        int actualIndex = Math.abs(index % textures.size());
+        ResourceLocation selectedTexture = textures.get(actualIndex);
+
+        MagicRealms.LOGGER.debug("Selected hair texture by index for {}: {} (index {} -> {})",
+                gender.getName(), selectedTexture, index, actualIndex);
+
+        return selectedTexture.toString();
     }
 
     // Helper method to extract a clean texture name from the file path
@@ -189,6 +225,17 @@ public class LayeredTextureManager {
         } catch (Exception e) {
             MagicRealms.LOGGER.warn("Failed to extract texture name from path: " + path, e);
             return "Unknown";
+        }
+    }
+
+    // Utility methods
+    public static boolean areTexturesLoaded() {
+        return !TEXTURE_CACHE.isEmpty();
+    }
+
+    public static void ensureTexturesLoaded() {
+        if (!areTexturesLoaded()) {
+            loadTextures();
         }
     }
 

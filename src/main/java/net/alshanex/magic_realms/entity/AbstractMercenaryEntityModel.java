@@ -12,7 +12,7 @@ public abstract class AbstractMercenaryEntityModel extends AbstractSpellCastingM
     public void setCustomAnimations(AbstractSpellCastingMob entity, long instanceId, AnimationState<AbstractSpellCastingMob> animationState) {
         super.setCustomAnimations(entity, instanceId, animationState);
 
-        if (entity instanceof RandomHumanEntity human && human.isSittingInChair()) {
+        if (entity instanceof AbstractMercenaryEntity human && human.isSittingInChair()) {
             GeoBone rightLeg = getAnimationProcessor().getBone("right_leg");
             GeoBone leftLeg = getAnimationProcessor().getBone("left_leg");
 

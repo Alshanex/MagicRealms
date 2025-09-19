@@ -47,6 +47,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -1157,7 +1158,16 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     protected void handleContractInteraction(Player player, ContractData contractData, ItemStack heldItem) {
         if (heldItem.getItem() instanceof PermanentContractItem) {
-            ContractUtils.handlePermanentContractCreation(player, this, contractData, heldItem);
+            if(this.isExclusiveMercenary()){
+                if (player instanceof ServerPlayer serverPlayer) {
+                    MutableComponent message = Component.translatable("ui.magic_realms.contract_reject_permanent",
+                            this.getEntityName());
+
+                    serverPlayer.sendSystemMessage(message);
+                }
+            } else {
+                ContractUtils.handlePermanentContractCreation(player, this, contractData, heldItem);
+            }
         } else if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
             ContractUtils.handleTieredContractCreation(player, this, contractData, heldItem, tieredContract);
         } else {

@@ -60,7 +60,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("gui.magic_realms.human_info.damage", "Damage");
         add("gui.magic_realms.human_info.no_attributes", "No attributes");
 
-        // Contract messages (Action Bar)
+        // Contract messages
         add("ui.magic_realms.already_have_contract", "%s: Sorry, i'm already contracted by someone else");
         add("ui.magic_realms.contract_established", "%s: Okay, i'll accept the contract for %d minutes");
         add("ui.magic_realms.contract_extended", "%s: Fine, i'll extend our contract %d minutes");
@@ -73,6 +73,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.contract_failed", "Failed to establish contract - please try again!");
         add("ui.magic_realms.patrol_active", "PATROL MODE");
         add("ui.magic_realms.patrol_following", "FOLLOWING");
+        add("ui.magic_realms.contract_reject_permanent", "%s: Sorry but i don't want to be tied to anyone forever");
 
         //Human introductions
         add("ui.magic_realms.introduction.warrior", "%s: Hello, i'm a mercenary specialized in close range combat and my position is usually tank. I only accept a %s, which will last for %d minutes");

@@ -20,8 +20,11 @@ import net.alshanex.magic_realms.util.ContractUtils;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
@@ -77,19 +80,9 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     }
 
     @Override
-    protected void handleContractInteraction(Player player, ContractData contractData, ItemStack heldItem) {
-        if (heldItem.getItem() instanceof PermanentContractItem) {
-            ContractUtils.handlePermanentContractCreation(player, this, contractData, heldItem);
-        } else if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
-            ContractUtils.handleTieredContractCreation(player, this, contractData, heldItem, tieredContract);
-        } else {
-            ContractUtils.handleContractInteraction(player, this, contractData);
-        }
-    }
-
-    @Override
     protected void handlePostSpawnInitialization() {
         if (!this.level().isClientSide) {
+            this.setImmortal(true);
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {

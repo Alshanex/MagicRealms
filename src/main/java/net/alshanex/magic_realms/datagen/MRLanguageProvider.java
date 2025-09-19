@@ -81,6 +81,9 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.introduction.mage", "%s: Hello, i'm a mercenary specialized in fighting with magic. I only accept a %s, which will last for %d minutes");
         add("ui.magic_realms.introduction.default", "%s: Hello, i'm a mercenary ready to serve. I only accept a %s, which will last for %d minutes");
 
+        // Exclusive mercenaries introductions
+        add("ui.magic_realms.introduction.alshanex", "%s: Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because i saw the tavernkeep fighting like this and thought he looked very cool. I only accept a %s, which will last for %d minutes");
+
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?");
 

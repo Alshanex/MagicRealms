@@ -10,6 +10,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
@@ -29,7 +30,9 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-public class AlshanexEntity extends AbstractMercenaryEntity {
+public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
+    private final String name = "Alshanex";
+
     public AlshanexEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
     }
@@ -43,7 +46,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity {
     protected void initializeAppearance(RandomSource randomSource) {
         setGender(Gender.MALE);
         setEntityClass(EntityClass.MAGE);
-        setEntityName("Alshanex");
+        setEntityName(name);
     }
 
     @Override
@@ -121,5 +124,15 @@ public class AlshanexEntity extends AbstractMercenaryEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
+    }
+
+    @Override
+    public String getExclusiveMercenaryName() {
+        return name;
+    }
+
+    @Override
+    public String getExclusiveMercenaryPresentationMessage() {
+        return "ui.magic_realms.introduction.alshanex";
     }
 }

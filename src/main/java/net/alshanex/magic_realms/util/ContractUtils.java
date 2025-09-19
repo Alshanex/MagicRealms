@@ -4,6 +4,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
@@ -280,6 +281,10 @@ public class ContractUtils {
             }
             case MAGE -> messageKey = "ui.magic_realms.introduction.mage";
             default -> messageKey = "ui.magic_realms.introduction.default";
+        }
+
+        if(humanEntity instanceof IExclusiveMercenary exclusiveMercenary){
+            messageKey = exclusiveMercenary.getExclusiveMercenaryPresentationMessage();
         }
 
         MutableComponent message = Component.translatable(messageKey,

@@ -173,7 +173,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     protected abstract void initializeAppearance(RandomSource randomSource);
     protected abstract void handlePostSpawnInitialization();
     protected abstract void handleAppearanceSpecificTick();
-    protected abstract boolean isExclusiveMercenary();
+    public abstract boolean isExclusiveMercenary();
 
     // Core entity behavior methods
     protected LookControl createLookControl() {

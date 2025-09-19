@@ -104,7 +104,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity {
     }
 
     @Override
-    protected boolean isExclusiveMercenary() {
+    public boolean isExclusiveMercenary() {
         return true;
     }
 

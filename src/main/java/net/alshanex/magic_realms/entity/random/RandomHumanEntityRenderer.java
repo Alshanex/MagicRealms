@@ -20,7 +20,6 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
         if (entity instanceof RandomHumanEntity human) {
             String entityUUID = human.getUUID().toString();
             Minecraft mc = Minecraft.getInstance();
-            human.debugTextureGeneration();
 
             // Priority 1: Received server texture (multiplayer)
             CombinedTextureManager.TextureResult receivedTexture =

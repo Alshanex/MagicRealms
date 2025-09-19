@@ -77,8 +77,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
                             LayeredTextureManager.getRandomAdditionalTextureWithName(gender, deterministicRandom);
                     if (additionalResult != null && additionalResult.getName() != null) {
                         setEntityName(additionalResult.getName());
-                        MagicRealms.LOGGER.debug("Entity {} will use preset texture name: {}",
-                                this.getUUID().toString(), additionalResult.getName());
+                        //MagicRealms.LOGGER.debug("Entity {} will use preset texture name: {}", this.getUUID().toString(), additionalResult.getName());
                     } else {
                         // Use deterministic random for name generation
                         String randomName = AdvancedNameManager.getRandomName(gender, deterministicRandom);
@@ -88,15 +87,13 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
                     // Use deterministic random for name generation
                     String randomName = AdvancedNameManager.getRandomName(gender, deterministicRandom);
                     setEntityName(randomName);
-                    MagicRealms.LOGGER.debug("Entity {} assigned deterministic name: {} (layered texture)",
-                            this.getUUID().toString(), randomName);
+                    //MagicRealms.LOGGER.debug("Entity {} assigned deterministic name: {} (layered texture)", this.getUUID().toString(), randomName);
                 }
             } catch (Exception e) {
                 // Fallback to deterministic name generation
                 String randomName = AdvancedNameManager.getRandomName(gender, deterministicRandom);
                 setEntityName(randomName);
-                MagicRealms.LOGGER.warn("Entity {} used fallback name generation: {}",
-                        this.getUUID().toString(), randomName);
+                //MagicRealms.LOGGER.warn("Entity {} used fallback name generation: {}", this.getUUID().toString(), randomName);
             }
         } else {
             // Server side - DON'T assign name yet, wait for client to determine texture type
@@ -105,9 +102,12 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         }
 
         this.appearanceGenerated = true;
+        /*
         MagicRealms.LOGGER.debug("Initialized appearance for entity {}: Gender={}, Class={}, Stars={}, Name={}",
                 this.getUUID().toString(), getGender().getName(), getEntityClass().getName(),
                 getStarLevel(), getEntityName());
+
+         */
     }
 
     @Override
@@ -126,7 +126,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
     }
 
     @Override
-    protected boolean isExclusiveMercenary() {
+    public boolean isExclusiveMercenary() {
         return false;
     }
 
@@ -156,7 +156,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             setHasTexture(false);
             setTextureRequested(false);
 
-            MagicRealms.LOGGER.debug("Entity {} spawned without texture, will generate when first tracked", this.getUUID());
+            //MagicRealms.LOGGER.debug("Entity {} spawned without texture, will generate when first tracked", this.getUUID());
         }
     }
 
@@ -185,8 +185,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             PacketDistributor.sendToPlayer(firstPlayer,
                     new RequestTextureGenerationPacket(this.getUUID(), getGender(), getEntityClass()));
 
-            MagicRealms.LOGGER.debug("Requested texture generation from player: {} for entity: {}",
-                    firstPlayer.getName().getString(), this.getUUID());
+            //MagicRealms.LOGGER.debug("Requested texture generation from player: {} for entity: {}", firstPlayer.getName().getString(), this.getUUID());
         }
     }
 
@@ -205,7 +204,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
                 PacketDistributor.sendToPlayersTrackingEntity(this,
                         new SyncEntityTexturePacket(this.getUUID(), this.getId(), textureData, this.getEntityName(), false));
 
-                MagicRealms.LOGGER.debug("Distributed existing texture for entity: {}", this.getUUID());
+                //MagicRealms.LOGGER.debug("Distributed existing texture for entity: {}", this.getUUID());
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to distribute existing texture for entity: {}", this.getUUID(), e);
@@ -270,12 +269,10 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             String textureName = textureConfig.getTextureName();
             setEntityName(textureName);
 
-            MagicRealms.LOGGER.debug("Updated entity {} name to preset texture name: {}",
-                    this.getUUID().toString(), textureName);
+            //MagicRealms.LOGGER.debug("Updated entity {} name to preset texture name: {}", this.getUUID().toString(), textureName);
         } else {
             // No preset texture name available
-            MagicRealms.LOGGER.debug("Entity {} has no preset texture name available (layered texture)",
-                    this.getUUID().toString());
+            //MagicRealms.LOGGER.debug("Entity {} has no preset texture name available (layered texture)", this.getUUID().toString());
         }
     }
 
@@ -287,13 +284,13 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
     public EntityTextureConfig getTextureConfig() {
         if (textureConfig == null) {
             if (!isInitialized()) {
-                MagicRealms.LOGGER.warn("Trying to get texture config before entity is initialized: {}", this.getUUID().toString());
+                //MagicRealms.LOGGER.warn("Trying to get texture config before entity is initialized: {}", this.getUUID().toString());
                 return null;
             }
 
             // Only regenerate texture config on client side
             if (!this.level().isClientSide()) {
-                MagicRealms.LOGGER.debug("Server side - not creating texture config for entity {}", this.getEntityName());
+                //MagicRealms.LOGGER.debug("Server side - not creating texture config for entity {}", this.getEntityName());
                 return null;
             }
 
@@ -301,7 +298,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             try {
                 // Use the entity-based constructor which uses deterministic random
                 this.textureConfig = new EntityTextureConfig(this);
-                MagicRealms.LOGGER.debug("Regenerated DETERMINISTIC texture config for entity {}", this.getEntityName());
+                //MagicRealms.LOGGER.debug("Regenerated DETERMINISTIC texture config for entity {}", this.getEntityName());
 
                 // Update name based on texture type
                 updateNameFromTexture();
@@ -324,8 +321,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             Gender gender = this.getGender();
             EntityClass entityClass = this.getEntityClass();
 
-            MagicRealms.LOGGER.debug("Starting texture regeneration for entity {} (Gender: {}, Class: {})",
-                    this.getEntityName(), gender.getName(), entityClass.getName());
+            //MagicRealms.LOGGER.debug("Starting texture regeneration for entity {} (Gender: {}, Class: {})", this.getEntityName(), gender.getName(), entityClass.getName());
 
             // Remove old texture from cache and delete file
             CombinedTextureManager.removeEntityTexture(entityUUID, true); // true = delete file
@@ -336,8 +332,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             // Force regeneration by clearing cache and letting the system recreate
             this.textureConfig = null;
 
-            MagicRealms.LOGGER.debug("Successfully prepared texture regeneration for entity {} with hair index: {}",
-                    this.getEntityName(), newHairTextureIndex);
+            //MagicRealms.LOGGER.debug("Successfully prepared texture regeneration for entity {} with hair index: {}", this.getEntityName(), newHairTextureIndex);
 
             return true;
 
@@ -352,7 +347,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             if (this.regenerateTextureAndName()) {
                 // Send packet to client to regenerate texture
                 this.level().broadcastEntityEvent(this, (byte) 60); // Custom event ID for texture update
-                MagicRealms.LOGGER.debug("Broadcasted texture regeneration event for entity {}", this.getEntityName());
+                //MagicRealms.LOGGER.debug("Broadcasted texture regeneration event for entity {}", this.getEntityName());
             }
         }
     }
@@ -367,8 +362,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             Gender gender = this.getGender();
             EntityClass entityClass = this.getEntityClass();
 
-            MagicRealms.LOGGER.debug("Starting DETERMINISTIC texture and name regeneration for entity {} (Gender: {}, Class: {})",
-                    this.getEntityName(), gender.getName(), entityClass.getName());
+            //MagicRealms.LOGGER.debug("Starting DETERMINISTIC texture and name regeneration for entity {} (Gender: {}, Class: {})", this.getEntityName(), gender.getName(), entityClass.getName());
 
             // Remove old texture from cache and delete file
             CombinedTextureManager.removeEntityTexture(entityUUID, true); // true = delete file
@@ -376,24 +370,24 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             // Force regeneration by clearing cache and letting the system recreate
             this.textureConfig = null;
 
-            // FIXED: Create new texture config using deterministic method (entity-based constructor)
+            // Create new texture config using deterministic method (entity-based constructor)
             this.textureConfig = new EntityTextureConfig(this);
 
             // Update name if we got a preset texture
             if (this.textureConfig != null && this.textureConfig.hasTextureName()) {
                 String newTextureName = this.textureConfig.getTextureName();
                 setEntityName(newTextureName);
-                MagicRealms.LOGGER.debug("Entity {} got new preset texture name: {}", entityUUID, newTextureName);
+                //MagicRealms.LOGGER.debug("Entity {} got new preset texture name: {}", entityUUID, newTextureName);
             } else {
                 // Generate new random name using deterministic random
                 String newRandomName = AdvancedNameManager.getRandomName(gender, getDeterministicRandom());
                 setEntityName(newRandomName);
-                MagicRealms.LOGGER.debug("Entity {} got new deterministic random name: {} (layered texture)", entityUUID, newRandomName);
+                //MagicRealms.LOGGER.debug("Entity {} got new deterministic random name: {} (layered texture)", entityUUID, newRandomName);
             }
 
             this.updateCustomNameWithStars();
 
-            MagicRealms.LOGGER.debug("Successfully completed DETERMINISTIC texture and name regeneration for entity {}", this.getEntityName());
+            //MagicRealms.LOGGER.debug("Successfully completed DETERMINISTIC texture and name regeneration for entity {}", this.getEntityName());
             return true;
 
         } catch (Exception e) {
@@ -412,8 +406,6 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
                     Gender gender = this.getGender();
                     EntityClass entityClass = this.getEntityClass();
 
-                    MagicRealms.LOGGER.debug("Client-side texture regeneration started for entity {}", this.getEntityName());
-
                     // Remove old texture from client cache
                     CombinedTextureManager.removeEntityTexture(entityUUID, true); // true = delete file
 
@@ -422,7 +414,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
 
                     // The texture will be regenerated automatically
 
-                    MagicRealms.LOGGER.debug("Client-side texture regeneration completed for entity {}", this.getEntityName());
+                    //MagicRealms.LOGGER.debug("Client-side texture regeneration completed for entity {}", this.getEntityName());
 
                 } catch (Exception e) {
                     MagicRealms.LOGGER.error("Error during client-side texture regeneration for entity {}", this.getEntityName(), e);
@@ -431,33 +423,6 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         } else {
             super.handleEntityEvent(id);
         }
-    }
-
-    public void debugTextureGeneration() {
-        if (!this.level().isClientSide()) return;
-
-        MagicRealms.LOGGER.info("=== TEXTURE DEBUG for entity {} ===", this.getUUID());
-        MagicRealms.LOGGER.info("Gender: {}, Class: {}", getGender().getName(), getEntityClass().getName());
-
-        // Test deterministic random
-        RandomSource testRandom = getDeterministicRandom();
-        double testRoll = testRandom.nextDouble();
-        MagicRealms.LOGGER.info("Deterministic random test roll: {}", testRoll);
-
-        // Test hair index
-        int testHairIndex = getDeterministicHairIndex();
-        MagicRealms.LOGGER.info("Deterministic hair index: {}", testHairIndex);
-
-        // Check existing texture config
-        EntityTextureConfig config = this.textureConfig;
-        if (config != null) {
-            MagicRealms.LOGGER.info("Has texture config: true, Valid: {}, Preset: {}",
-                    config.hasValidTexture(), config.isPresetTexture());
-        } else {
-            MagicRealms.LOGGER.info("Has texture config: false");
-        }
-
-        MagicRealms.LOGGER.info("=== END TEXTURE DEBUG ===");
     }
 
     public void forceInitializeAppearance() {

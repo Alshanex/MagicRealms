@@ -16,10 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class ExclusiveMercenaryTracker {
 
-    // Map: WorldKey -> Set<EntityType> of exclusive mercenaries present
+    // Map: WorldKey -> Set<EntityType> of exclusive mercenaries present ANYWHERE in that world
     private static final Map<String, Set<EntityType<?>>> WORLD_EXCLUSIVE_REGISTRY = new ConcurrentHashMap<>();
 
-    // Map: WorldKey -> Map<EntityType, ExclusiveMercenaryInfo> for tracking instances across dimensions
+    // Map: WorldKey -> Map<EntityType, ExclusiveMercenaryInfo> for tracking specific instances
     private static final Map<String, Map<EntityType<?>, ExclusiveMercenaryInfo>> WORLD_EXCLUSIVE_INSTANCES = new ConcurrentHashMap<>();
 
     // Track entity info across dimensions
@@ -34,7 +34,7 @@ public class ExclusiveMercenaryTracker {
     }
 
     /**
-     * Check if a specific exclusive mercenary type can be spawned in the given world
+     * Check if a specific exclusive mercenary type can be spawned ANYWHERE in the world
      */
     public static boolean canSpawnExclusiveMercenary(ServerLevel level, EntityType<?> entityType) {
         String worldKey = getWorldKey(level);
@@ -43,8 +43,14 @@ public class ExclusiveMercenaryTracker {
         boolean canSpawn = exclusives == null || !exclusives.contains(entityType);
 
         if (!canSpawn) {
-            MagicRealms.LOGGER.debug("Cannot spawn exclusive mercenary {} - already exists in world {}",
-                    entityType.getDescriptionId(), worldKey);
+            // Find which dimension it's in for debugging
+            Map<EntityType<?>, ExclusiveMercenaryInfo> instances = WORLD_EXCLUSIVE_INSTANCES.get(worldKey);
+            String currentDim = instances != null && instances.containsKey(entityType)
+                    ? instances.get(entityType).currentDimension
+                    : "unknown";
+
+            MagicRealms.LOGGER.debug("Cannot spawn exclusive mercenary {} - already exists in dimension {} of world {}",
+                    entityType.getDescriptionId(), currentDim, worldKey);
         }
 
         return canSpawn;
@@ -105,20 +111,25 @@ public class ExclusiveMercenaryTracker {
         if (worldInstances != null && worldInstances.containsKey(entityType)) {
             ExclusiveMercenaryInfo existing = worldInstances.get(entityType);
             if (existing.entityUUID.equals(entityUUID)) {
-                // Same entity changing dimensions - update location
+                // Same entity changing dimensions or reloading - update location
                 existing.currentDimension = dimensionKey;
-                MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) moved to dimension {} in world {}",
+                MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) now in dimension {} of world {}",
                         entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
+                return;
+            } else {
+                // Different entity with same type - this shouldn't happen!
+                MagicRealms.LOGGER.warn("Duplicate exclusive mercenary {} detected! Existing: {}, New: {}",
+                        entityType.getDescriptionId(), existing.entityUUID, entityUUID);
                 return;
             }
         }
 
-        // New entity spawn - add to registry
+        // New entity spawn - add to world registry (regardless of dimension)
         WORLD_EXCLUSIVE_REGISTRY.computeIfAbsent(worldKey, k -> ConcurrentHashMap.newKeySet()).add(entityType);
         WORLD_EXCLUSIVE_INSTANCES.computeIfAbsent(worldKey, k -> new ConcurrentHashMap<>())
                 .put(entityType, new ExclusiveMercenaryInfo(entityUUID, dimensionKey));
 
-        MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) spawned in dimension {} of world {} - now tracking",
+        MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) spawned in dimension {} of world {} - now tracked world-wide",
                 entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
     }
 
@@ -152,7 +163,7 @@ public class ExclusiveMercenaryTracker {
 
         // Check if entity is actually removed/dead vs changing dimensions
         if (mercenary.isRemoved() || !mercenary.isAlive()) {
-            // Entity is permanently gone - remove from all tracking
+            // Entity is permanently gone - remove from world-wide tracking
             Set<EntityType<?>> worldExclusives = WORLD_EXCLUSIVE_REGISTRY.get(worldKey);
             if (worldExclusives != null) {
                 worldExclusives.remove(entityType);
@@ -166,11 +177,11 @@ public class ExclusiveMercenaryTracker {
                 WORLD_EXCLUSIVE_INSTANCES.remove(worldKey);
             }
 
-            MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) permanently removed from world {} - no longer tracking",
+            MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) permanently removed from world {} - world-wide tracking cleared",
                     entityType.getDescriptionId(), entityUUID, worldKey);
         } else {
-            // Entity is just changing dimensions - update will happen in join event
-            MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) leaving dimension {} in world {} (dimension change)",
+            // Entity is just changing dimensions - keep world-wide tracking, update will happen in join event
+            MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) leaving dimension {} in world {} (dimension change, keeping world-wide tracking)",
                     entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
         }
     }
@@ -184,20 +195,17 @@ public class ExclusiveMercenaryTracker {
 
         String worldKey = getWorldKey(serverLevel);
 
-        // Clean up tracking for this world when server shuts down
-        Set<EntityType<?>> removed = WORLD_EXCLUSIVE_REGISTRY.remove(worldKey);
-        Map<EntityType<?>, ExclusiveMercenaryInfo> removedInstances = WORLD_EXCLUSIVE_INSTANCES.remove(worldKey);
-
-        if (removed != null && !removed.isEmpty()) {
-            MagicRealms.LOGGER.debug("Cleaned up exclusive mercenary tracking for world {} - removed {} types",
-                    worldKey, removed.size());
-        }
+        // Don't clean up individual dimension unloads since we want world-wide tracking
+        // Only clean up when the entire server/world shuts down
+        MagicRealms.LOGGER.debug("Dimension unloaded for world {} but keeping world-wide exclusive mercenary tracking", worldKey);
     }
 
     /**
-     * Create a unique key for the entire world (across all dimensions)
+     * Create a unique key for the entire world (not per dimension)
+     * This ensures exclusive mercenaries are tracked across all dimensions
      */
     private static String getWorldKey(ServerLevel level) {
+        // Use the server's folder name as the world key to track across all dimensions
         return level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
                 .getFileName().toString();
     }

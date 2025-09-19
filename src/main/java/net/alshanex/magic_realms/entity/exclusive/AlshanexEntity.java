@@ -63,7 +63,8 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
         return List.of(
                 SpellRegistry.SUNBEAM_SPELL.get(),
-                SpellRegistry.EVASION_SPELL.get()
+                SpellRegistry.EVASION_SPELL.get(),
+                SpellRegistry.TELEPORT_SPELL.get()
         );
     }
 

@@ -10,6 +10,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.IEntityTagFearing;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
@@ -21,6 +22,8 @@ import net.alshanex.magic_realms.util.humans.Gender;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,9 +31,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
+public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IEntityTagFearing {
     private final String name = "Alshanex";
 
     public AlshanexEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
@@ -52,11 +56,6 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     @Override
     protected int getInitialStarLevel(RandomSource randomSource) {
         return 3;
-    }
-
-    @Override
-    protected void initializeFearedEntity(RandomSource randomSource) {
-        setFearedEntity(EntityType.SPIDER);
     }
 
     @Override
@@ -135,5 +134,20 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
         return "ui.magic_realms.introduction.alshanex";
+    }
+
+    @Override
+    protected void initializeFearedEntity(RandomSource randomSource) {
+        setFearedEntityTag(EntityTypeTags.ARTHROPOD);
+    }
+
+    @Override
+    public TagKey<EntityType<?>> getFearedEntityTag() {
+        return super.getFearedEntityTag();
+    }
+
+    @Override
+    public void setFearedEntityTag(@Nullable TagKey<EntityType<?>> entityTag) {
+        super.setFearedEntityTag(entityTag);
     }
 }

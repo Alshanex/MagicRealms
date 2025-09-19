@@ -42,6 +42,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -54,6 +55,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
@@ -118,9 +120,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private static final EntityDataAccessor<Integer> SITTING_TIME = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SIT_COOLDOWN = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_IN_MENU_STATE = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> FEARED_ENTITY_TAG = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
 
     // Entity state
     private EntityType<?> fearedEntityType = null;
+    private TagKey<EntityType<?>> fearedEntityTag = null;
     private boolean fearGoalInitialized = false;
     private List<SchoolType> magicSchools = new ArrayList<>();
     private AbstractSpell lastCastingSpell = null;
@@ -583,6 +587,14 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Fear system
     protected void initializeFearedEntity(RandomSource randomSource) {
+        // Only do random fear initialization for non-exclusive mercenaries
+        if (this.isExclusiveMercenary()) {
+            // Exclusive mercenaries should have their fear set manually in their constructor
+            // or through the setFearedEntityTag method
+            return;
+        }
+
+        // Original random fear logic for regular mercenaries
         if (randomSource.nextFloat() >= 0.3f) {
             MagicRealms.LOGGER.debug("Entity {} spawned without fear", getEntityName());
             return;
@@ -638,18 +650,75 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public boolean isAfraidOf(Entity entity) {
+        // First check individual entity type (for compatibility with random mercenaries)
         EntityType<?> feared = getFearedEntity();
-        return feared != null && entity.getType() == feared;
+        if (feared != null && entity.getType() == feared) {
+            return true;
+        }
+
+        // Then check entity tag (for exclusive mercenaries)
+        if (this instanceof IEntityTagFearing && this.isExclusiveMercenary()) {
+            TagKey<EntityType<?>> fearedTag = getFearedEntityTag();
+            if (fearedTag != null) {
+                return entity.getType().is(fearedTag);
+            }
+        }
+
+        return false;
+    }
+
+    public TagKey<EntityType<?>> getFearedEntityTag() {
+        if (!this.isExclusiveMercenary()) {
+            return null; // Only exclusive mercenaries can fear tags
+        }
+
+        if (fearedEntityTag == null) {
+            String tagId = this.entityData.get(FEARED_ENTITY_TAG);
+            if (!tagId.isEmpty()) {
+                try {
+                    ResourceLocation location = ResourceLocation.parse(tagId);
+                    fearedEntityTag = TagKey.create(Registries.ENTITY_TYPE, location);
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Failed to parse feared entity tag ID: {}", tagId, e);
+                }
+            }
+        }
+        return fearedEntityTag;
+    }
+
+    public void setFearedEntityTag(@Nullable TagKey<EntityType<?>> entityTag) {
+        if (!this.isExclusiveMercenary()) {
+            MagicRealms.LOGGER.warn("Attempted to set entity tag fear on non-exclusive mercenary: {}", this.getEntityName());
+            return;
+        }
+
+        this.fearedEntityTag = entityTag;
+        String tagId = entityTag != null ? entityTag.location().toString() : "";
+        this.entityData.set(FEARED_ENTITY_TAG, tagId);
+
+        if (this.level() != null && !this.level().isClientSide) {
+            initializeFearGoal();
+        }
     }
 
     public boolean hasFear() {
-        return getFearedEntity() != null;
+        // Check individual entity fear
+        if (getFearedEntity() != null) {
+            return true;
+        }
+
+        // Check tag fear for exclusive mercenaries
+        if (this.isExclusiveMercenary() && getFearedEntityTag() != null) {
+            return true;
+        }
+
+        return false;
     }
 
     private void initializeFearGoal() {
         if (getFearedEntity() != null && !fearGoalInitialized) {
             this.goalSelector.removeAllGoals(goal -> goal instanceof HumanGoals.CustomFearGoal);
-            this.goalSelector.addGoal(1, new HumanGoals.CustomFearGoal(this, 16.0f, 1.2, 1.6));
+            this.goalSelector.addGoal(1, new HumanGoals.CustomFearGoal(this, 16.0f, 1.5, 1.8));
             fearGoalInitialized = true;
         }
     }
@@ -2090,6 +2159,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         pBuilder.define(SITTING_TIME, 0);
         pBuilder.define(SIT_COOLDOWN, 0);
         pBuilder.define(IS_IN_MENU_STATE, false);
+        pBuilder.define(FEARED_ENTITY_TAG, "");
     }
 
     // NBT save/load
@@ -2161,6 +2231,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         compound.putInt("SittingTime", getSittingTime());
         compound.putInt("SitCooldown", getSitCooldown());
         compound.putBoolean("IsInMenuState", isInMenuState());
+
+        TagKey<EntityType<?>> fearedTag = getFearedEntityTag();
+        if (fearedTag != null) {
+            compound.putString("FearedEntityTag", fearedTag.location().toString());
+        }
     }
 
     @Override
@@ -2175,6 +2250,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         String fearedEntityId = compound.getString("FearedEntity");
         this.entityData.set(FEARED_ENTITY, fearedEntityId);
+        if (compound.contains("FearedEntityTag")) {
+            String tagId = compound.getString("FearedEntityTag");
+            this.entityData.set(FEARED_ENTITY_TAG, tagId);
+
+            // Clear cached tag to force re-parsing
+            this.fearedEntityTag = null;
+        }
         initializeFearGoal();
 
         List<SchoolType> schools = new ArrayList<>();

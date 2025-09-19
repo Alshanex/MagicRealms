@@ -8,6 +8,7 @@
     {"id": "aero_additions:wind_shield","required": false},
     {"id": "alshanex_familiars:guardian_angel","required": false},
     {"id": "cataclysm_spellbooks:abyssal_predator","required": false},
+    {"id": "dreamless_spells:jadeskin","required": false},
     {"id": "endersequipment:blizzard_armor","required": false},
     {"id": "endersequipment:field_of_everlasting_life","required": false},
     {"id": "endersequipment:gigantism","required": false},
@@ -16,6 +17,9 @@
     {"id": "endersequipment:sanctuary","required": false},
     {"id": "endersequipment:snow_grave","required": false},
     {"id": "endersequipment:sword_stance","required": false},
-    {"id": "endersequipment:withering_touch","required": false}
+    {"id": "endersequipment:withering_touch","required": false},
+    {"id": "gametechbcs_spellbooks:flames_reborn","required": false},
+    {"id": "gametechbcs_spellbooks:lingering_strain","required": false},
+    {"id": "traveloptics:lingering_strain","required": false}
   ]
 }

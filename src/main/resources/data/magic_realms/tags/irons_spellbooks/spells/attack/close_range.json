@@ -27,6 +27,9 @@
     {"id": "endersequipment:slash","required": false},
     {"id": "gametechbcs_spellbooks:nullflare","required": false},
     {"id": "hazennstuff:nights_edge_strike","required": false},
-    {"id": "iss_magicfromtheeast:soul_burst","required": false}
+    {"id": "iss_magicfromtheeast:soul_burst","required": false},
+    {"id": "traveloptics:gyro_slash","required": false},
+    {"id": "traveloptics:halberd_horizon","required": false},
+    {"id": "traveloptics:nullflare","required": false}
   ]
 }

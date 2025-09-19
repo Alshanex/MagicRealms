@@ -6,6 +6,7 @@
     "irons_spellbooks:teleport",
     {"id": "aero_additions:wind_shield","required": false},
     {"id": "cataclysm_spellbooks:cursed_rush","required": false},
+    {"id": "codex_of_champions:petal_step","required": false},
     {"id": "hazennstuff:cinderous_step","required": false}
   ]
 }

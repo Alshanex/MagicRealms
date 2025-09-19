@@ -47,6 +47,8 @@
     {"id": "cataclysm_spellbooks:tidal_grab","required": false},
     {"id": "cataclysm_spellbooks:void_beam","required": false},
     {"id": "cataclysm_spellbooks:void_rune","required": false},
+    {"id": "codex_of_champions:fire_cluster","required": false},
+    {"id": "codex_of_champions:missile_salvo","required": false},
     {"id": "endersequipment:flurry","required": false},
     {"id": "endersequipment:heartwrench","required": false},
     {"id": "endersequipment:petal_ward","required": false},
@@ -67,6 +69,11 @@
     {"id": "iss_magicfromtheeast:phantom_charge","required": false},
     {"id": "iss_magicfromtheeast:soul_catalyst","required": false},
     {"id": "iss_magicfromtheeast:sword_dance","required": false},
-    {"id": "iss_magicfromtheeast:underworld_aid","required": false}
+    {"id": "iss_magicfromtheeast:underworld_aid","required": false},
+    {"id": "traveloptics:burning_judgement","required": false},
+    {"id": "traveloptics:cursed_blast","required": false},
+    {"id": "traveloptics:cursed_minefield","required": false},
+    {"id": "traveloptics:death_laser","required": false},
+    {"id": "traveloptics:void_eruption","required": false}
   ]
 }

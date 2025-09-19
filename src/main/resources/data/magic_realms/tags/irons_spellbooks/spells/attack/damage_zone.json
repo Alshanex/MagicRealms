@@ -16,6 +16,9 @@
     {"id": "hazennstuff:ice_arrow","required": false},
     {"id": "iss_magicfromtheeast:bagua_array_circle","required": false},
     {"id": "iss_magicfromtheeast:bone_hands","required": false},
-    {"id": "iss_magicfromtheeast:underworld_aid","required": false}
+    {"id": "iss_magicfromtheeast:underworld_aid","required": false},
+    {"id": "traveloptics:burning_judgement","required": false},
+    {"id": "traveloptics:cursed_minefield","required": false},
+    {"id": "traveloptics:void_eruption","required": false}
   ]
 }

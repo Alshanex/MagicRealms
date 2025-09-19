@@ -59,6 +59,8 @@
     {"id": "endersequipment:searing_slam","required": false},
     {"id": "endersequipment:slam","required": false},
     {"id": "endersequipment:slash","required": false},
+    {"id": "firesenderexpansion:dragons_fury","required": false},
+    {"id": "firesenderexpansion:gate_of_ender","required": false},
     {"id": "gametechbcs_spellbooks:aerial_collapse","required": false},
     {"id": "gametechbcs_spellbooks:ashen_breath","required": false},
     {"id": "gametechbcs_spellbooks:nullflare","required": false},
@@ -71,6 +73,18 @@
     {"id": "iss_magicfromtheeast:bagua_array_circle","required": false},
     {"id": "iss_magicfromtheeast:bone_hands","required": false},
     {"id": "iss_magicfromtheeast:jade_judgements","required": false},
-    {"id": "iss_magicfromtheeast:soul_burst","required": false}
+    {"id": "iss_magicfromtheeast:soul_burst","required": false},
+    {"id": "traveloptics:aerial_collapse","required": false},
+    {"id": "traveloptics:ashen_breath","required": false},
+    {"id": "traveloptics:blood_howl","required": false},
+    {"id": "traveloptics:burning_judgement","required": false},
+    {"id": "traveloptics:cursed_minefield","required": false},
+    {"id": "traveloptics:em_pulse","required": false},
+    {"id": "traveloptics:gyro_slash","required": false},
+    {"id": "traveloptics:halberd_horizon","required": false},
+    {"id": "traveloptics:nullflare","required": false},
+    {"id": "traveloptics:orbital_void","required": false},
+    {"id": "traveloptics:stele_cascade","required": false},
+    {"id": "traveloptics:void_eruption","required": false}
   ]
 }

@@ -9,7 +9,6 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
-import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.CombinedTextureManager;
 import net.alshanex.magic_realms.util.humans.DynamicTextureManager;
@@ -27,6 +26,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -70,15 +70,14 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private int maxScroll = 0;
     private boolean isScrolling = false;
     private int lastMouseY = 0;
-    private int attributeRowCounter = 0; // For alternating row colors
+    private int attributeRowCounter = 0;
 
-    // Coordenadas y dimensiones para el área de renderizado 3D
+    // UI coordinates
     private static final int ENTITY_RENDER_X = 13;
     private static final int ENTITY_RENDER_Y = 30;
     private static final int ENTITY_RENDER_WIDTH = 56;
     private static final int ENTITY_RENDER_HEIGHT = 83;
 
-    // Otras coordenadas existentes...
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
     private static final int TAB_2_X = 162;
@@ -102,10 +101,13 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private static final int LINE_HEIGHT = TEXT_HEIGHT + LINE_SPACING;
 
     private static final int LABEL_WIDTH = 80;
-    private static final int VALUE_X_OFFSET = 76; // Moved left to avoid scrollbar collision
+    private static final int VALUE_X_OFFSET = 76;
 
     private static final int SYMBOL_X = 98;
     private static final int SYMBOL_Y = 20;
+
+    // Virtual entity cache - now uses base class
+    private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new HashMap<>();
 
     public ContractHumanInfoScreen(ContractHumanInfoMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -119,6 +121,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         MagicRealms.LOGGER.info("ContractHumanInfoScreen created:");
         MagicRealms.LOGGER.info("  - Snapshot: {}", snapshot != null ? "present" : "null");
         MagicRealms.LOGGER.info("  - Entity: {}", entity != null ? entity.getEntityName() : "null");
+        MagicRealms.LOGGER.info("  - Entity Type: {}", menu.getEntityType());
         if (entity != null) {
             MagicRealms.LOGGER.info("  - Entity UUID: {}", entity.getUUID());
             MagicRealms.LOGGER.info("  - Entity Class: {}", entity.getEntityClass());
@@ -128,10 +131,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     @Override
     protected void init() {
         super.init();
-
         this.inventoryLabelY = 10000;
         this.titleLabelY = 10000;
-
         this.scrollOffset = 0;
         calculateMaxScroll();
     }
@@ -190,129 +191,195 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
-    // Helper methods for improved visual rendering
-    private int renderSectionHeader(GuiGraphics guiGraphics, String title, int x, int y, ChatFormatting color) {
-        int backgroundStartX = x - 4;
-        int backgroundEndX = x + ATTRIBUTES_WIDTH - 10;
-        int backgroundStartY = y - 2;
-        int backgroundEndY = y + 11;
+    // UPDATED: Generic virtual entity creation
+    private AbstractMercenaryEntity getOrCreateVirtualEntity() {
+        if (snapshot == null || minecraft.level == null) {
+            return null;
+        }
 
-        guiGraphics.fill(backgroundStartX, backgroundStartY, backgroundEndX, backgroundEndY, SECTION_BG);
+        String cacheKey = createCacheKey();
+        EntityType<? extends AbstractMercenaryEntity> entityType = menu.getEntityType();
 
-        Component headerComponent = Component.literal(title).withStyle(color, ChatFormatting.BOLD);
-        guiGraphics.drawString(font, headerComponent, x + 2, y + 1, HEADER_COLOR, true);
+        // Check cache first
+        AbstractMercenaryEntity cachedEntity = virtualEntityCache.get(cacheKey);
+        if (cachedEntity != null && cachedEntity.level() == minecraft.level &&
+                cachedEntity.getType() == entityType) {
+            if (menu != null && menu.getEquipmentContainer() != null) {
+                applyEquipmentFromContainer(cachedEntity, menu.getEquipmentContainer());
+            }
+            return cachedEntity;
+        }
 
-        return y + 12;
+        // Create new virtual entity based on type
+        AbstractMercenaryEntity virtualEntity = createVirtualEntityForRendering(entityType);
+        if (virtualEntity != null) {
+            virtualEntityCache.put(cacheKey, virtualEntity);
+
+            // Clean cache if too large
+            if (virtualEntityCache.size() > 5) {
+                String oldestKey = virtualEntityCache.keySet().iterator().next();
+                virtualEntityCache.remove(oldestKey);
+            }
+        }
+
+        return virtualEntity;
     }
 
-    private int renderSectionSeparator(GuiGraphics guiGraphics, int x, int y, int width) {
-        // Draw a subtle line separator
-        guiGraphics.fill(x, y, x + width - 10, y + 1, SEPARATOR_COLOR);
-        // Add some spacing
-        return y + 4;
-    }
+    // UPDATED: Generic virtual entity creation method
+    private AbstractMercenaryEntity createVirtualEntityForRendering(EntityType<? extends AbstractMercenaryEntity> entityType) {
+        if (snapshot == null || minecraft.level == null) {
+            return null;
+        }
 
-    private void renderAttributeBackground(GuiGraphics guiGraphics, int x, int y, int width, boolean alternate) {
-        if (alternate) {
-            // Background should only cover the text height plus 1 pixel padding above and below
-            guiGraphics.fill(x - 1, y - 1, x + width + 1, y + TEXT_HEIGHT + 1, ALTERNATE_ROW);
+        try {
+            // Create entity instance based on type
+            AbstractMercenaryEntity virtualEntity = entityType.create(minecraft.level);
+            if (virtualEntity == null) {
+                MagicRealms.LOGGER.error("Failed to create virtual entity of type: {}", entityType);
+                return null;
+            }
+
+            // Apply common configuration from snapshot
+            configureVirtualEntityFromSnapshot(virtualEntity);
+
+            return virtualEntity;
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to create virtual entity of type {}: {}", entityType, e.getMessage(), e);
+            return null;
         }
     }
 
-    private int getValueColor(double value, boolean isPercentage, String attributeKey) {
-        // Color coding based on value type
-        if (attributeKey.contains("resist") || attributeKey.contains("armor") || attributeKey.contains("health")) {
-            return value > 0 ? POSITIVE_COLOR : NEUTRAL_COLOR;
-        } else if (attributeKey.contains("damage") || attributeKey.contains("power")) {
-            return value > (isPercentage ? 100 : 1) ? POSITIVE_COLOR : NEUTRAL_COLOR;
-        } else if (attributeKey.contains("regen") || attributeKey.contains("speed")) {
-            return value > (isPercentage ? 100 : 1) ? POSITIVE_COLOR : NEUTRAL_COLOR;
+    // UPDATED: Generic configuration method
+    private void configureVirtualEntityFromSnapshot(AbstractMercenaryEntity virtualEntity) {
+        // Configure EXACTLY the same data from snapshot
+        virtualEntity.setGender(snapshot.gender);
+        virtualEntity.setEntityClass(snapshot.entityClass);
+        virtualEntity.setEntityName(snapshot.entityName);
+        virtualEntity.setStarLevel(snapshot.starLevel);
+        virtualEntity.setHasShield(snapshot.hasShield);
+        virtualEntity.setIsArcher(snapshot.isArcher);
+
+        setEntityUUID(virtualEntity, snapshot.entityUUID);
+
+        // Mark as initialized and configured BEFORE any generation
+        virtualEntity.setInitialized(true);
+
+        // Handle texture configuration - only for RandomHumanEntity
+        if (virtualEntity instanceof RandomHumanEntity randomHuman) {
+            setAppearanceGenerated(randomHuman, true);
+
+            if (snapshot.textureUUID != null) {
+                EntityTextureConfig textureConfig = new EntityTextureConfig(
+                        snapshot.textureUUID,
+                        snapshot.gender,
+                        snapshot.entityClass
+                );
+                setTextureConfigDirectly(randomHuman, textureConfig);
+            }
         }
-        return VALUE_COLOR;
+
+        // Apply equipment visual AFTER configuring the texture
+        if (menu != null && menu.getEquipmentContainer() != null) {
+            applyEquipmentFromContainer(virtualEntity, menu.getEquipmentContainer());
+        }
+
+        // Configure position to avoid warnings
+        virtualEntity.setPos(0, 0, 0);
     }
 
-    private ChatFormatting getImprovedSchoolColor(String schoolName) {
-        return switch (schoolName.toLowerCase()) {
-            case "fire" -> ChatFormatting.GOLD;
-            case "ice" -> ChatFormatting.AQUA;
-            case "lightning" -> ChatFormatting.BLUE;
-            case "holy" -> ChatFormatting.YELLOW;
-            case "ender" -> ChatFormatting.LIGHT_PURPLE;
-            case "blood" -> ChatFormatting.RED;
-            case "evocation" -> ChatFormatting.WHITE;
-            case "nature" -> ChatFormatting.GREEN;
-            case "eldritch" -> ChatFormatting.DARK_AQUA;
-            default -> ChatFormatting.WHITE;
-        };
+    // UPDATED: Cache key includes entity type
+    private String createCacheKey() {
+        StringBuilder keyBuilder = new StringBuilder();
+        keyBuilder.append(menu.getEntityType().toString()).append("_");
+        keyBuilder.append(snapshot.textureUUID != null ? snapshot.textureUUID : "null");
+        keyBuilder.append("_").append(snapshot.gender.name());
+        keyBuilder.append("_").append(snapshot.entityClass.name());
+        keyBuilder.append("_").append(snapshot.starLevel);
+        keyBuilder.append("_").append(snapshot.hasShield);
+        keyBuilder.append("_").append(snapshot.isArcher);
+        keyBuilder.append("_").append(snapshot.entityName);
+        keyBuilder.append("_").append(snapshot.entityUUID);
+        return keyBuilder.toString();
     }
 
-    private void renderClassSymbol(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
+    // UPDATED: Type-specific reflection methods
+    private void setAppearanceGenerated(AbstractMercenaryEntity entity, boolean generated) {
+        // Only apply to RandomHumanEntity
+        if (!(entity instanceof RandomHumanEntity)) {
+            return;
+        }
 
-        ItemStack symbolItem = getSymbolItemForClass();
-        if (symbolItem.isEmpty()) return;
-
-        int symbolX = leftPos + SYMBOL_X;
-        int symbolY = topPos + SYMBOL_Y;
-
-        // Renderizar el ítem
-        guiGraphics.renderItem(symbolItem, symbolX, symbolY);
-    }
-
-    private ItemStack getSymbolItemForClass() {
-        EntityClass entityClass = snapshot.entityClass;
-
-        switch (entityClass) {
-            case MAGE -> {
-                try {
-                    return new ItemStack(
-                            BuiltInRegistries.ITEM.get(
-                                    ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "gold_spell_book")
-                            )
-                    );
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Could not find gold_spell_book item: {}", e.getMessage());
-                    return new ItemStack(Items.BOOK);
-                }
-            }
-            case WARRIOR -> {
-                if (snapshot.hasShield) {
-                    return new ItemStack(Items.SHIELD);
-                } else {
-                    return new ItemStack(Items.IRON_SWORD);
-                }
-            }
-            case ROGUE -> {
-                if (snapshot.isArcher) {
-                    return new ItemStack(Items.BOW);
-                } else {
-                    try {
-                        return new ItemStack(
-                                BuiltInRegistries.ITEM.get(
-                                        ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "weapon_parts")
-                                )
-                        );
-                    } catch (Exception e) {
-                        MagicRealms.LOGGER.warn("Could not find weapon_parts item: {}", e.getMessage());
-                        return new ItemStack(Items.GOLDEN_SWORD);
-                    }
-                }
-            }
-            default -> {
-                return ItemStack.EMPTY;
-            }
+        try {
+            java.lang.reflect.Field appearanceGeneratedField = RandomHumanEntity.class.getDeclaredField("appearanceGenerated");
+            appearanceGeneratedField.setAccessible(true);
+            appearanceGeneratedField.set(entity, generated);
+            MagicRealms.LOGGER.debug("Set appearanceGenerated to {} for virtual entity", generated);
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to set appearanceGenerated: {}", e.getMessage());
         }
     }
 
+    private void setTextureConfigDirectly(AbstractMercenaryEntity entity, EntityTextureConfig textureConfig) {
+        // Only apply to RandomHumanEntity
+        if (!(entity instanceof RandomHumanEntity)) {
+            return;
+        }
+
+        try {
+            java.lang.reflect.Field textureConfigField = RandomHumanEntity.class.getDeclaredField("textureConfig");
+            textureConfigField.setAccessible(true);
+            textureConfigField.set(entity, textureConfig);
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to set texture config directly: {}", e.getMessage());
+        }
+    }
+
+    // Updated to work with base class
+    private void setEntityUUID(AbstractMercenaryEntity entity, UUID originalUUID) {
+        try {
+            if (originalUUID != null) {
+                // Use reflection to set the exact UUID
+                java.lang.reflect.Field uuidField = Entity.class.getDeclaredField("uuid");
+                uuidField.setAccessible(true);
+                uuidField.set(entity, originalUUID);
+                MagicRealms.LOGGER.debug("Set exact UUID for virtual entity: {}", originalUUID);
+            }
+        } catch (IllegalArgumentException e) {
+            MagicRealms.LOGGER.warn("Invalid UUID format: {}, error: {}", originalUUID, e.getMessage());
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to set exact UUID: {}", e.getMessage());
+        }
+    }
+
+    // Updated to work with base class
+    private void applyEquipmentFromContainer(AbstractMercenaryEntity entity, Container equipmentContainer) {
+        try {
+            // Apply armor equipment
+            entity.setItemSlot(EquipmentSlot.HEAD, equipmentContainer.getItem(0).copy());
+            entity.setItemSlot(EquipmentSlot.CHEST, equipmentContainer.getItem(1).copy());
+            entity.setItemSlot(EquipmentSlot.LEGS, equipmentContainer.getItem(2).copy());
+            entity.setItemSlot(EquipmentSlot.FEET, equipmentContainer.getItem(3).copy());
+
+            // Apply hand equipment
+            entity.setItemSlot(EquipmentSlot.MAINHAND, equipmentContainer.getItem(4).copy());
+            entity.setItemSlot(EquipmentSlot.OFFHAND, equipmentContainer.getItem(5).copy());
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER.warn("Failed to apply equipment to virtual entity: {}", e.getMessage());
+        }
+    }
+
+    // UPDATED: Main 3D rendering method
     private boolean renderEntity3D(GuiGraphics guiGraphics) {
         AbstractMercenaryEntity entityToRender = entity;
 
-        // Si no tenemos la entidad real, usar la entidad virtual con cache
+        // If we don't have the real entity, use the virtual entity with cache
         if (entityToRender == null && snapshot != null) {
             try {
                 entityToRender = getOrCreateVirtualEntity();
                 if (entityToRender != null) {
-                    //MagicRealms.LOGGER.debug("Using cached/created virtual entity for 3D rendering");
+                    // MagicRealms.LOGGER.debug("Using cached/created virtual entity for 3D rendering");
                 }
             } catch (Exception e) {
                 MagicRealms.LOGGER.warn("Failed to get virtual entity: {}", e.getMessage());
@@ -354,170 +421,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
     }
 
-    private static final Map<String, RandomHumanEntity> virtualEntityCache = new HashMap<>();
-
-    private RandomHumanEntity getOrCreateVirtualEntity() {
-        if (snapshot == null || minecraft.level == null) {
-            return null;
-        }
-
-        String cacheKey = createCacheKey();
-
-        // Verificar si ya tenemos una entidad virtual en cache
-        RandomHumanEntity cachedEntity = virtualEntityCache.get(cacheKey);
-        if (cachedEntity != null && cachedEntity.level() == minecraft.level) {
-            if (menu != null && menu.getEquipmentContainer() != null) {
-                applyEquipmentFromContainer(cachedEntity, menu.getEquipmentContainer());
-            }
-            //MagicRealms.LOGGER.debug("Using cached virtual entity");
-            return cachedEntity;
-        }
-
-        // Crear nueva entidad virtual
-        RandomHumanEntity virtualEntity = createVirtualEntityForRendering();
-        if (virtualEntity != null) {
-            virtualEntityCache.put(cacheKey, virtualEntity);
-            //MagicRealms.LOGGER.debug("Created and cached new virtual entity");
-
-            // Limpiar cache viejo para evitar memory leaks
-            if (virtualEntityCache.size() > 5) { // Reducir tamaño de cache
-                String oldestKey = virtualEntityCache.keySet().iterator().next();
-                virtualEntityCache.remove(oldestKey);
-                MagicRealms.LOGGER.debug("Cleaned old cache entry");
-            }
-        }
-
-        return virtualEntity;
-    }
-
-    private String createCacheKey() {
-        StringBuilder keyBuilder = new StringBuilder();
-        keyBuilder.append(snapshot.textureUUID != null ? snapshot.textureUUID : "null");
-        keyBuilder.append("_").append(snapshot.gender.name());
-        keyBuilder.append("_").append(snapshot.entityClass.name());
-        keyBuilder.append("_").append(snapshot.starLevel);
-        keyBuilder.append("_").append(snapshot.hasShield);
-        keyBuilder.append("_").append(snapshot.isArcher);
-        keyBuilder.append("_").append(snapshot.entityName);
-        keyBuilder.append("_").append(snapshot.entityUUID);
-
-        return keyBuilder.toString();
-    }
-
-    private RandomHumanEntity createVirtualEntityForRendering() {
-        if (snapshot == null || minecraft.level == null) {
-            return null;
-        }
-
-        try {
-            // Crear una entidad temporal solo para renderizado
-            RandomHumanEntity virtualEntity = new RandomHumanEntity(MREntityRegistry.HUMAN.get(), minecraft.level);
-
-            // Configurar EXACTAMENTE los mismos datos del snapshot
-            virtualEntity.setGender(snapshot.gender);
-            virtualEntity.setEntityClass(snapshot.entityClass);
-            virtualEntity.setEntityName(snapshot.entityName);
-            virtualEntity.setStarLevel(snapshot.starLevel);
-            virtualEntity.setHasShield(snapshot.hasShield);
-            virtualEntity.setIsArcher(snapshot.isArcher);
-
-            setEntityUUID(virtualEntity, snapshot.entityUUID);
-
-            // IMPORTANTE: Marcar como inicializada y configurada ANTES de cualquier generación
-            virtualEntity.setInitialized(true);
-            setAppearanceGenerated(virtualEntity, true);
-
-            // Crear la configuración de textura usando los datos exactos del snapshot
-            if (snapshot.textureUUID != null) {
-                EntityTextureConfig textureConfig = new EntityTextureConfig(
-                        snapshot.textureUUID,
-                        snapshot.gender,
-                        snapshot.entityClass
-                );
-                setTextureConfigDirectly(virtualEntity, textureConfig);
-            }
-
-            // Aplicar equipamiento visual DESPUÉS de configurar la textura
-            if (menu != null && menu.getEquipmentContainer() != null) {
-                applyEquipmentFromContainer(virtualEntity, menu.getEquipmentContainer());
-            }
-
-            // Configurar posición para evitar warnings
-            virtualEntity.setPos(0, 0, 0);
-
-            return virtualEntity;
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to create virtual entity: {}", e.getMessage(), e);
-            return null;
-        }
-    }
-
-    private void setEntityUUID(RandomHumanEntity entity, UUID originalUUID) {
-        try {
-            if (originalUUID != null) {
-
-                // Usar reflection para establecer el UUID exacto
-                java.lang.reflect.Field uuidField = Entity.class.getDeclaredField("uuid");
-                uuidField.setAccessible(true);
-                uuidField.set(entity, originalUUID);
-
-                MagicRealms.LOGGER.debug("Set exact UUID for virtual entity: {}", originalUUID);
-            }
-        } catch (IllegalArgumentException e) {
-            MagicRealms.LOGGER.warn("Invalid UUID format: {}, error: {}", originalUUID, e.getMessage());
-        } catch (Exception e) {
-            MagicRealms.LOGGER.warn("Failed to set exact UUID: {}", e.getMessage());
-        }
-    }
-
-    private void setTextureConfigDirectly(RandomHumanEntity entity, EntityTextureConfig textureConfig) {
-        try {
-            // Usar reflection para acceder al campo privado textureConfig
-            java.lang.reflect.Field textureConfigField = RandomHumanEntity.class.getDeclaredField("textureConfig");
-            textureConfigField.setAccessible(true);
-            textureConfigField.set(entity, textureConfig);
-
-            //MagicRealms.LOGGER.debug("Set texture config directly for virtual entity");
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.warn("Failed to set texture config directly: {}", e.getMessage());
-        }
-    }
-
-    private void setAppearanceGenerated(RandomHumanEntity entity, boolean generated) {
-        try {
-            java.lang.reflect.Field appearanceGeneratedField = RandomHumanEntity.class.getDeclaredField("appearanceGenerated");
-            appearanceGeneratedField.setAccessible(true);
-            appearanceGeneratedField.set(entity, generated);
-
-            MagicRealms.LOGGER.debug("Set appearanceGenerated to {} for virtual entity", generated);
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.warn("Failed to set appearanceGenerated: {}", e.getMessage());
-        }
-    }
-
-    private void applyEquipmentFromContainer(RandomHumanEntity entity, Container equipmentContainer) {
-        try {
-            // Aplicar equipamiento de armadura
-            entity.setItemSlot(EquipmentSlot.HEAD, equipmentContainer.getItem(0).copy());
-            entity.setItemSlot(EquipmentSlot.CHEST, equipmentContainer.getItem(1).copy());
-            entity.setItemSlot(EquipmentSlot.LEGS, equipmentContainer.getItem(2).copy());
-            entity.setItemSlot(EquipmentSlot.FEET, equipmentContainer.getItem(3).copy());
-
-            // Aplicar equipamiento de manos
-            entity.setItemSlot(EquipmentSlot.MAINHAND, equipmentContainer.getItem(4).copy());
-            entity.setItemSlot(EquipmentSlot.OFFHAND, equipmentContainer.getItem(5).copy());
-
-            //MagicRealms.LOGGER.debug("Applied equipment to virtual entity without texture regeneration");
-
-        } catch (Exception e) {
-            MagicRealms.LOGGER.warn("Failed to apply equipment to virtual entity: {}", e.getMessage());
-        }
-    }
-
-
+    // Rest of the rendering methods remain the same...
     private void renderEntityFallback(GuiGraphics guiGraphics) {
         if (snapshot == null) {
             renderEmptyArea(guiGraphics,
@@ -549,57 +453,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             MagicRealms.LOGGER.debug("Could not render 2D entity texture: {}", e.getMessage());
         }
         return false;
-    }
-
-    private void renderFullMinecraftSkin(GuiGraphics guiGraphics, ResourceLocation texture, int x, int y, int width, int height) {
-        int scale = Math.max(1, Math.min(width / 16, height / 32));
-
-        int headSize = 8 * scale;
-        int bodyWidth = 8 * scale;
-        int bodyHeight = 12 * scale;
-        int armWidth = 4 * scale;
-        int armHeight = 12 * scale;
-        int legWidth = 4 * scale;
-        int legHeight = 12 * scale;
-
-        int totalHeight = headSize + bodyHeight + legHeight;
-        int totalWidth = Math.max(headSize, bodyWidth + (armWidth * 2));
-
-        int startX = x + (width - totalWidth) / 2;
-        int startY = y + (height - totalHeight) / 2;
-
-        int currentY = startY;
-
-        // Head
-        int headX = startX + (totalWidth - headSize) / 2;
-        guiGraphics.blit(texture, headX, currentY, headSize, headSize, 8, 8, 8, 8, 64, 64);
-        guiGraphics.blit(texture, headX, currentY, headSize, headSize, 40, 8, 8, 8, 64, 64);
-        currentY += headSize;
-
-        // Body and arms
-        int bodyX = startX + (totalWidth - bodyWidth) / 2;
-
-        guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 20, 8, 12, 64, 64);
-        guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 36, 8, 12, 64, 64);
-
-        int rightArmX = bodyX - armWidth;
-        guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 20, 4, 12, 64, 64);
-        guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 36, 4, 12, 64, 64);
-
-        int leftArmX = bodyX + bodyWidth;
-        guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 36, 52, 4, 12, 64, 64);
-        guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 52, 52, 4, 12, 64, 64);
-
-        currentY += bodyHeight;
-
-        // Legs
-        int legsX = bodyX + (bodyWidth - (legWidth * 2)) / 2;
-
-        guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 20, 4, 12, 64, 64);
-        guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 36, 4, 12, 64, 64);
-
-        guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 20, 52, 4, 12, 64, 64);
-        guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 4, 52, 4, 12, 64, 64);
     }
 
     private ResourceLocation getEntityTexture() {
@@ -669,6 +522,166 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
     }
 
+    // Helper methods for rendering UI elements
+    private int renderSectionHeader(GuiGraphics guiGraphics, String title, int x, int y, ChatFormatting color) {
+        int backgroundStartX = x - 4;
+        int backgroundEndX = x + ATTRIBUTES_WIDTH - 10;
+        int backgroundStartY = y - 2;
+        int backgroundEndY = y + 11;
+
+        guiGraphics.fill(backgroundStartX, backgroundStartY, backgroundEndX, backgroundEndY, SECTION_BG);
+
+        Component headerComponent = Component.literal(title).withStyle(color, ChatFormatting.BOLD);
+        guiGraphics.drawString(font, headerComponent, x + 2, y + 1, HEADER_COLOR, true);
+
+        return y + 12;
+    }
+
+    private int renderSectionSeparator(GuiGraphics guiGraphics, int x, int y, int width) {
+        guiGraphics.fill(x, y, x + width - 10, y + 1, SEPARATOR_COLOR);
+        return y + 4;
+    }
+
+    private void renderAttributeBackground(GuiGraphics guiGraphics, int x, int y, int width, boolean alternate) {
+        if (alternate) {
+            guiGraphics.fill(x - 1, y - 1, x + width + 1, y + TEXT_HEIGHT + 1, ALTERNATE_ROW);
+        }
+    }
+
+    private int getValueColor(double value, boolean isPercentage, String attributeKey) {
+        if (attributeKey.contains("resist") || attributeKey.contains("armor") || attributeKey.contains("health")) {
+            return value > 0 ? POSITIVE_COLOR : NEUTRAL_COLOR;
+        } else if (attributeKey.contains("damage") || attributeKey.contains("power")) {
+            return value > (isPercentage ? 100 : 1) ? POSITIVE_COLOR : NEUTRAL_COLOR;
+        } else if (attributeKey.contains("regen") || attributeKey.contains("speed")) {
+            return value > (isPercentage ? 100 : 1) ? POSITIVE_COLOR : NEUTRAL_COLOR;
+        }
+        return VALUE_COLOR;
+    }
+
+    private ChatFormatting getImprovedSchoolColor(String schoolName) {
+        return switch (schoolName.toLowerCase()) {
+            case "fire" -> ChatFormatting.GOLD;
+            case "ice" -> ChatFormatting.AQUA;
+            case "lightning" -> ChatFormatting.BLUE;
+            case "holy" -> ChatFormatting.YELLOW;
+            case "ender" -> ChatFormatting.LIGHT_PURPLE;
+            case "blood" -> ChatFormatting.RED;
+            case "evocation" -> ChatFormatting.WHITE;
+            case "nature" -> ChatFormatting.GREEN;
+            case "eldritch" -> ChatFormatting.DARK_AQUA;
+            default -> ChatFormatting.WHITE;
+        };
+    }
+
+    private void renderClassSymbol(GuiGraphics guiGraphics) {
+        if (snapshot == null) return;
+
+        ItemStack symbolItem = getSymbolItemForClass();
+        if (symbolItem.isEmpty()) return;
+
+        int symbolX = leftPos + SYMBOL_X;
+        int symbolY = topPos + SYMBOL_Y;
+
+        guiGraphics.renderItem(symbolItem, symbolX, symbolY);
+    }
+
+    private ItemStack getSymbolItemForClass() {
+        EntityClass entityClass = snapshot.entityClass;
+
+        switch (entityClass) {
+            case MAGE -> {
+                try {
+                    return new ItemStack(
+                            BuiltInRegistries.ITEM.get(
+                                    ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "gold_spell_book")
+                            )
+                    );
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Could not find gold_spell_book item: {}", e.getMessage());
+                    return new ItemStack(Items.BOOK);
+                }
+            }
+            case WARRIOR -> {
+                if (snapshot.hasShield) {
+                    return new ItemStack(Items.SHIELD);
+                } else {
+                    return new ItemStack(Items.IRON_SWORD);
+                }
+            }
+            case ROGUE -> {
+                if (snapshot.isArcher) {
+                    return new ItemStack(Items.BOW);
+                } else {
+                    try {
+                        return new ItemStack(
+                                BuiltInRegistries.ITEM.get(
+                                        ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "weapon_parts")
+                                )
+                        );
+                    } catch (Exception e) {
+                        MagicRealms.LOGGER.warn("Could not find weapon_parts item: {}", e.getMessage());
+                        return new ItemStack(Items.GOLDEN_SWORD);
+                    }
+                }
+            }
+            default -> {
+                return ItemStack.EMPTY;
+            }
+        }
+    }
+
+    private void renderFullMinecraftSkin(GuiGraphics guiGraphics, ResourceLocation texture, int x, int y, int width, int height) {
+        int scale = Math.max(1, Math.min(width / 16, height / 32));
+
+        int headSize = 8 * scale;
+        int bodyWidth = 8 * scale;
+        int bodyHeight = 12 * scale;
+        int armWidth = 4 * scale;
+        int armHeight = 12 * scale;
+        int legWidth = 4 * scale;
+        int legHeight = 12 * scale;
+
+        int totalHeight = headSize + bodyHeight + legHeight;
+        int totalWidth = Math.max(headSize, bodyWidth + (armWidth * 2));
+
+        int startX = x + (width - totalWidth) / 2;
+        int startY = y + (height - totalHeight) / 2;
+
+        int currentY = startY;
+
+        // Head
+        int headX = startX + (totalWidth - headSize) / 2;
+        guiGraphics.blit(texture, headX, currentY, headSize, headSize, 8, 8, 8, 8, 64, 64);
+        guiGraphics.blit(texture, headX, currentY, headSize, headSize, 40, 8, 8, 8, 64, 64);
+        currentY += headSize;
+
+        // Body and arms
+        int bodyX = startX + (totalWidth - bodyWidth) / 2;
+
+        guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 20, 8, 12, 64, 64);
+        guiGraphics.blit(texture, bodyX, currentY, bodyWidth, bodyHeight, 20, 36, 8, 12, 64, 64);
+
+        int rightArmX = bodyX - armWidth;
+        guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 20, 4, 12, 64, 64);
+        guiGraphics.blit(texture, rightArmX, currentY, armWidth, armHeight, 44, 36, 4, 12, 64, 64);
+
+        int leftArmX = bodyX + bodyWidth;
+        guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 36, 52, 4, 12, 64, 64);
+        guiGraphics.blit(texture, leftArmX, currentY, armWidth, armHeight, 52, 52, 4, 12, 64, 64);
+
+        currentY += bodyHeight;
+
+        // Legs
+        int legsX = bodyX + (bodyWidth - (legWidth * 2)) / 2;
+
+        guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 20, 4, 12, 64, 64);
+        guiGraphics.blit(texture, legsX, currentY, legWidth, legHeight, 4, 36, 4, 12, 64, 64);
+
+        guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 20, 52, 4, 12, 64, 64);
+        guiGraphics.blit(texture, legsX + legWidth, currentY, legWidth, legHeight, 4, 52, 4, 12, 64, 64);
+    }
+
     public static void renderEntityInInventory(
             GuiGraphics guiGraphics,
             float x,
@@ -683,7 +696,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             int scissorX2,
             int scissorY2
     ) {
-        // Habilitar scissor para limitar el área de renderizado
         guiGraphics.enableScissor(scissorX1, scissorY1, scissorX2, scissorY2);
 
         guiGraphics.pose().pushPose();
@@ -722,14 +734,12 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         guiGraphics.pose().popPose();
         Lighting.setupFor3DItems();
 
-        // Deshabilitar scissor
         guiGraphics.disableScissor();
     }
 
     private void renderEmptyArea(GuiGraphics guiGraphics, int x, int y, int width, int height) {
         guiGraphics.fill(x, y, x + width, y + height, 0x22000000);
 
-        // Información de debug más útil
         String debugText = "No Entity";
         if (entity == null) {
             debugText = "Entity: null";
@@ -746,6 +756,26 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         guiGraphics.drawString(font, noEntityText, textX, textY, 0xAAAAAA, false);
     }
 
+    private void renderStats(GuiGraphics guiGraphics) {
+        if (snapshot == null) return;
+
+        CompoundTag attributes = snapshot.attributes;
+
+        float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
+        float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
+        Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
+        guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false);
+
+        double armor = attributes.contains("armor") ? attributes.getDouble("armor") : 0.0;
+        Component armorComponent = Component.literal(String.format("%.1f", armor));
+        guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false);
+
+        double damage = attributes.contains("attack_damage") ? attributes.getDouble("attack_damage") : 1.0;
+        Component damageComponent = Component.literal(String.format("%.1f", damage));
+        guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
+    }
+
+    // Input handling methods
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         double relativeX = mouseX - leftPos;
@@ -772,7 +802,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             return true;
         }
 
-        // Check if clicking on scroll bar specifically
+        // Check if clicking on scroll bar
         int scrollBarX = ATTRIBUTES_X + ATTRIBUTES_WIDTH - 6;
         int scrollBarY = ATTRIBUTES_Y;
         int scrollBarHeight = ATTRIBUTES_HEIGHT;
@@ -782,21 +812,17 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             isScrolling = true;
             lastMouseY = (int) mouseY;
 
-            // Calculate thumb position and jump to clicked position
             int thumbHeight = Math.max(12, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
             int clickY = (int) relativeY - scrollBarY;
 
-            // Jump scroll position to where user clicked
             float scrollRatio = (float) clickY / scrollBarHeight;
             scrollOffset = Math.max(0, Math.min(maxScroll, (int) (scrollRatio * maxScroll)));
 
             return true;
         }
 
-        // Check if clicking anywhere in the scrollable area (for general interaction)
         if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
                 relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
-            // Don't start scrolling here, just consume the click
             return true;
         }
 
@@ -814,16 +840,12 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (isScrolling && button == 0 && maxScroll > 0) {
-            // Calculate the new scroll position based on mouse movement
             int currentMouseY = (int) mouseY;
             int mouseDelta = currentMouseY - lastMouseY;
 
-            // Convert mouse movement to scroll movement
-            // The scroll should be proportional to the mouse movement
             int scrollBarHeight = ATTRIBUTES_HEIGHT;
             int thumbHeight = Math.max(12, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
 
-            // Calculate scroll ratio: how much scrolling per pixel of mouse movement
             float scrollRatio = (float) maxScroll / (scrollBarHeight - thumbHeight);
             int scrollDelta = (int) (mouseDelta * scrollRatio);
 
@@ -851,6 +873,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
+    // Utility methods
     private ResourceLocation getCurrentTexture() {
         return switch (currentTab) {
             case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
@@ -899,10 +922,9 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             lines += 2;
             lines += Math.max(1, snapshot.magicSchools.size());
         }
-        // Añadir líneas para los spells
-        lines += 2; // Header
+        lines += 2;
         if (snapshot != null) {
-            lines += Math.max(1, snapshot.entitySpells.size()); // Spells list
+            lines += Math.max(1, snapshot.entitySpells.size());
         }
         return lines;
     }
@@ -924,61 +946,35 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private void renderScrollIndicator(GuiGraphics guiGraphics) {
-        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 6; // Wider bar
+        int scrollBarX = leftPos + ATTRIBUTES_X + ATTRIBUTES_WIDTH - 6;
         int scrollBarY = topPos + ATTRIBUTES_Y;
         int scrollBarHeight = ATTRIBUTES_HEIGHT;
 
-        // More visible background track
         guiGraphics.fill(scrollBarX, scrollBarY, scrollBarX + 5, scrollBarY + scrollBarHeight, 0x88000000);
 
         if (maxScroll > 0) {
             int thumbHeight = Math.max(12, (scrollBarHeight * scrollBarHeight) / (scrollBarHeight + maxScroll));
             int thumbY = scrollBarY + (int)((scrollBarHeight - thumbHeight) * (scrollOffset / (float)maxScroll));
 
-            // More visible thumb with border
             guiGraphics.fill(scrollBarX + 1, thumbY, scrollBarX + 4, thumbY + thumbHeight, 0xFFAAAAAA);
-            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 5, thumbY + 1, 0xFFFFFFFF); // Top border
-            guiGraphics.fill(scrollBarX, thumbY + thumbHeight - 1, scrollBarX + 5, thumbY + thumbHeight, 0xFFFFFFFF); // Bottom border
+            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 5, thumbY + 1, 0xFFFFFFFF);
+            guiGraphics.fill(scrollBarX, thumbY + thumbHeight - 1, scrollBarX + 5, thumbY + thumbHeight, 0xFFFFFFFF);
         }
     }
 
-    private void renderStats(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
-
-        CompoundTag attributes = snapshot.attributes;
-
-        float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
-        float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
-        Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
-        guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false); // No shadow
-
-        double armor = attributes.contains("armor") ? attributes.getDouble("armor") : 0.0;
-        Component armorComponent = Component.literal(String.format("%.1f", armor));
-        guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false); // No shadow
-
-        double damage = attributes.contains("attack_damage") ? attributes.getDouble("attack_damage") : 1.0;
-        Component damageComponent = Component.literal(String.format("%.1f", damage));
-        guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false); // No shadow
-    }
-
+    // Scrollable content rendering methods
     private void renderIronSpellsAttributesScrollable(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // Main header
         y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
-
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Basic attributes section
         y = renderAttributeWithTruncation(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
         y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
         y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
@@ -988,13 +984,9 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
-        // Magic Schools section (for mages only)
         if (snapshot.entityClass == EntityClass.MAGE) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
             y = renderSectionHeader(guiGraphics, "Schools", x, y, ChatFormatting.GOLD);
-
-            // Section separator
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
             if (snapshot.magicSchools.isEmpty()) {
@@ -1016,12 +1008,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             }
         }
 
-        // Spells section
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
         y = renderSectionHeader(guiGraphics, "Spells", x, y, ChatFormatting.YELLOW);
-
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         if (snapshot.entitySpells.isEmpty()) {
@@ -1051,13 +1039,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             }
         }
 
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // Magic Resist section
         y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
-
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         try {
@@ -1072,13 +1055,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
 
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // School Power section
         y = renderSectionHeader(guiGraphics, "School Power", x, y, ChatFormatting.RED);
-
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         try {
@@ -1100,48 +1078,31 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // Main header
         y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.RED);
-
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Combat stats
         y = renderAttributeWithTruncation(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
         y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.AQUA, true);
 
-        // Penetration section
         y = renderAttributeWithTruncation(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.GOLD);
         y = renderAttributeWithTruncation(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.GOLD, true);
         y = renderAttributeWithTruncation(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.GOLD);
         y = renderAttributeWithTruncation(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.GOLD, true);
 
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // Survivability section
         y = renderSectionHeader(guiGraphics, "Survivability", x, y, ChatFormatting.GREEN);
-
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         y = renderAttributeWithTruncation(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
         y = renderAttributeWithTruncation(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
 
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        // Ranged Combat section
         y = renderSectionHeader(guiGraphics, "Ranged Combat", x, y, ChatFormatting.GOLD);
-
-        // Section separator
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
@@ -1184,14 +1145,11 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         String displayName = truncateText(name, maxLabelWidth);
         String displayValue = truncateText(formattedValue, maxValueWidth);
 
-        // Render alternating background
         renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
 
-        // Use improved colors and add text shadow for better readability
-        Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE); // Changed to WHITE
-        guiGraphics.drawString(font, labelComponent, x, y, LABEL_COLOR, true); // true for shadow
+        Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE);
+        guiGraphics.drawString(font, labelComponent, x, y, LABEL_COLOR, true);
 
-        // Color-code values based on their meaning
         int valueColor = getValueColor(value, isPercentage, attributeKey);
         Component valueComponent = Component.literal(displayValue).withStyle(color);
         guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, valueColor, true);
@@ -1221,21 +1179,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private String capitalizeFirst(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1);
-    }
-
-    private ChatFormatting getSchoolColor(String schoolName) {
-        return switch (schoolName.toLowerCase()) {
-            case "fire" -> ChatFormatting.RED;
-            case "ice" -> ChatFormatting.AQUA;
-            case "lightning" -> ChatFormatting.BLUE;
-            case "holy" -> ChatFormatting.YELLOW;
-            case "ender" -> ChatFormatting.DARK_PURPLE;
-            case "blood" -> ChatFormatting.DARK_RED;
-            case "evocation" -> ChatFormatting.GRAY;
-            case "nature" -> ChatFormatting.GREEN;
-            case "eldritch" -> ChatFormatting.DARK_AQUA;
-            default -> ChatFormatting.WHITE;
-        };
     }
 
     private String extractSchoolName(String schoolId) {

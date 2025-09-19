@@ -289,10 +289,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
-    public String getTextureLocation() {
-        return "";
-    }
-
     // Star level management
     public int getStarLevel() {
         return this.entityData.get(STAR_LEVEL);

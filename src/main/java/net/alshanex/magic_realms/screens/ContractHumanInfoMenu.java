@@ -12,6 +12,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -27,6 +28,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private final EntitySnapshot snapshot;
     private final AbstractMercenaryEntity entity;
     private final Player player;
+    private final EntityType<? extends AbstractMercenaryEntity> entityType;
     private java.util.Timer saveTimer;
 
     // Slot indices
@@ -34,11 +36,20 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_SLOTS = 36;
     private static final int TOTAL_SLOTS = EQUIPMENT_SLOTS + PLAYER_INVENTORY_SLOTS;
 
+    // Constructor for when you have the real entity (server-side usually)
     public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
+        this(containerId, playerInventory, snapshot, entity,
+                entity != null ? (EntityType<? extends AbstractMercenaryEntity>) entity.getType() : snapshot.entityType);
+    }
+
+    // Full constructor with explicit entity type
+    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot,
+                                 AbstractMercenaryEntity entity, EntityType<? extends AbstractMercenaryEntity> entityType) {
         super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_HUMAN_INFO_MENU.get(), containerId);
         this.snapshot = snapshot;
         this.entity = entity;
         this.player = playerInventory.player;
+        this.entityType = entityType;
 
         // Crear el container
         this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS) {
@@ -60,6 +71,12 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         addPlayerHotbar(playerInventory);
     }
 
+    // Constructor for client-side (from snapshot only)
+    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot) {
+        this(containerId, playerInventory, snapshot, null, snapshot.entityType);
+    }
+
+    // Network constructor
     public ContractHumanInfoMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_HUMAN_INFO_MENU.get(), containerId);
 
@@ -67,9 +84,11 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         this.snapshot = EntitySnapshot.deserialize(buf.readNbt());
         UUID entityUUID = buf.readUUID();
         this.player = playerInventory.player;
+        this.entityType = snapshot != null ? snapshot.entityType : null;
 
         MagicRealms.LOGGER.info("ContractHumanInfoMenu client constructor:");
         MagicRealms.LOGGER.info("  - Entity UUID: {}", entityUUID);
+        MagicRealms.LOGGER.info("  - Entity Type: {}", entityType);
         MagicRealms.LOGGER.info("  - Player level: {}", playerInventory.player.level());
         MagicRealms.LOGGER.info("  - Is client side: {}", playerInventory.player.level().isClientSide);
 
@@ -83,16 +102,36 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
         if (entity != null) {
             loadEquipmentFromEntity();
+        } else if (snapshot != null && snapshot.equipment != null) {
+            // Load equipment from snapshot if entity not available
+            loadEquipmentFromSnapshot();
         } else {
             MagicRealms.LOGGER.warn("Entity not found with UUID: {}", entityUUID);
-            // En el cliente, la entidad podría no estar cargada aún
-            // Esto es normal en algunos casos
         }
 
         // Add slots
         addEquipmentSlots();
         addPlayerInventory(playerInventory);
         addPlayerHotbar(playerInventory);
+    }
+
+    // NEW: Helper method to create equipment container from any entity
+    public static SimpleContainer createEquipmentContainer(AbstractMercenaryEntity entity) {
+        SimpleContainer container = new SimpleContainer(6);
+        if (entity != null) {
+            container.setItem(0, entity.getItemBySlot(EquipmentSlot.HEAD).copy());
+            container.setItem(1, entity.getItemBySlot(EquipmentSlot.CHEST).copy());
+            container.setItem(2, entity.getItemBySlot(EquipmentSlot.LEGS).copy());
+            container.setItem(3, entity.getItemBySlot(EquipmentSlot.FEET).copy());
+            container.setItem(4, entity.getMainHandItem().copy());
+            container.setItem(5, entity.getOffhandItem().copy());
+        }
+        return container;
+    }
+
+    // NEW: Get entity type
+    public EntityType<? extends AbstractMercenaryEntity> getEntityType() {
+        return entityType;
     }
 
     private AbstractMercenaryEntity findEntityByUUID(Level level, UUID entityUUID) {
@@ -120,6 +159,39 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             MagicRealms.LOGGER.debug("Loaded equipment from entity {} for contract menu", entity.getEntityName());
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to load equipment from entity: {}", e.getMessage());
+        }
+    }
+
+    // NEW: Load equipment from snapshot NBT data
+    private void loadEquipmentFromSnapshot() {
+        if (snapshot == null || snapshot.equipment == null) return;
+
+        try {
+            // Load equipment from snapshot's NBT data
+            var registryAccess = player.level().registryAccess();
+
+            if (snapshot.equipment.contains("head")) {
+                equipmentContainer.setItem(0, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("head")));
+            }
+            if (snapshot.equipment.contains("chest")) {
+                equipmentContainer.setItem(1, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("chest")));
+            }
+            if (snapshot.equipment.contains("legs")) {
+                equipmentContainer.setItem(2, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("legs")));
+            }
+            if (snapshot.equipment.contains("boots")) {
+                equipmentContainer.setItem(3, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("boots")));
+            }
+            if (snapshot.equipment.contains("main_hand")) {
+                equipmentContainer.setItem(4, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("main_hand")));
+            }
+            if (snapshot.equipment.contains("off_hand")) {
+                equipmentContainer.setItem(5, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("off_hand")));
+            }
+
+            MagicRealms.LOGGER.debug("Loaded equipment from snapshot for contract menu");
+        } catch (Exception e) {
+            MagicRealms.LOGGER.error("Failed to load equipment from snapshot: {}", e.getMessage());
         }
     }
 
@@ -161,8 +233,11 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             entity.setItemSlot(EquipmentSlot.OFFHAND, offHand.copy());
             MagicRealms.LOGGER.debug("Set off hand: {}", offHand.isEmpty() ? "EMPTY" : offHand.getDisplayName().getString());
 
-            // Marcar como persistente el equipamiento (si es necesario en tu implementación)
+            // Marcar como persistente el equipamiento
             entity.setPersistenceRequired();
+
+            // Refresh spells after equipment change
+            entity.refreshSpellsAfterEquipmentChange();
 
             MagicRealms.LOGGER.info("Successfully updated equipment for contracted entity {}", entity.getEntityName());
 
@@ -200,7 +275,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         this.addSlot(new OffHandSlot(equipmentContainer, 5, 91, 96, snapshot));
     }
 
-    // Reutilizar las clases de slots del HumanInfoMenu original
+    // Slot classes remain the same but are now more generic
     private static class RestrictedSlot extends Slot {
         private final EquipmentSlot equipmentSlot;
 

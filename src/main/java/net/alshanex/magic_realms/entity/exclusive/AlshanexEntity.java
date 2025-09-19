@@ -28,8 +28,6 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 public class AlshanexEntity extends AbstractMercenaryEntity {
-    public static final ResourceLocation textureResource = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/entity/exclusive_mercenaries/alshanex.png");
-
     public AlshanexEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
     }
@@ -82,11 +80,6 @@ public class AlshanexEntity extends AbstractMercenaryEntity {
         } else {
             ContractUtils.handleContractInteraction(player, this, contractData);
         }
-    }
-
-    @Override
-    public String getTextureLocation() {
-        return textureResource.toString();
     }
 
     @Override

@@ -15,6 +15,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -25,8 +26,8 @@ import javax.annotation.Nullable;
 public class ContractUtils {
     public static void handlePermanentContractCreation(Player player,
                                                        AbstractMercenaryEntity humanEntity,
-                                                        ContractData contractData,
-                                                        ItemStack heldItem) {
+                                                       ContractData contractData,
+                                                       ItemStack heldItem) {
 
         if (!contractData.hasMinimumContractTime(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
@@ -91,9 +92,9 @@ public class ContractUtils {
 
     public static void handleTieredContractCreation(Player player,
                                                     AbstractMercenaryEntity humanEntity,
-                                                     ContractData contractData,
-                                                     ItemStack heldItem,
-                                                     TieredContractItem contractItem) {
+                                                    ContractData contractData,
+                                                    ItemStack heldItem,
+                                                    TieredContractItem contractItem) {
 
         if (!contractData.canEstablishTemporaryContract(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
@@ -180,7 +181,7 @@ public class ContractUtils {
 
     public static void handleContractInteraction(Player player,
                                                  AbstractMercenaryEntity humanEntity,
-                                                  ContractData contractData) {
+                                                 ContractData contractData) {
 
         if (!contractData.isContractor(player.getUUID())) {
             if (contractData.hasActiveContract()) {
@@ -292,17 +293,24 @@ public class ContractUtils {
     private static class ContractMenuProvider implements MenuProvider {
         private final EntitySnapshot snapshot;
         private final AbstractMercenaryEntity entity;
+        private final EntityType<? extends AbstractMercenaryEntity> entityType; // NEW
 
         public ContractMenuProvider(EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
             this.snapshot = snapshot;
             this.entity = entity;
+            this.entityType = entity != null ?
+                    (EntityType<? extends AbstractMercenaryEntity>) entity.getType() :
+                    (snapshot != null ? snapshot.entityType : null);
         }
 
         @Override
         public Component getDisplayName() {
-            String starDisplay = "★".repeat(entity.getStarLevel());
+            String starDisplay = "★".repeat(entity != null ? entity.getStarLevel() :
+                    (snapshot != null ? snapshot.starLevel : 1));
             MutableComponent title = Component.translatable("gui.magic_realms.human_info.title");
-            MutableComponent entityInfo = Component.literal(starDisplay + " " + (entity != null ? entity.getEntityName() : "Unknown"));
+            String entityName = entity != null ? entity.getEntityName() :
+                    (snapshot != null ? snapshot.entityName : "Unknown");
+            MutableComponent entityInfo = Component.literal(starDisplay + " " + entityName);
             entityInfo = entityInfo.withStyle(ChatFormatting.AQUA);
 
             return Component.literal(title.getString() + " - " + entityInfo.getString());
@@ -311,7 +319,48 @@ public class ContractUtils {
         @Nullable
         @Override
         public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-            return new ContractHumanInfoMenu(containerId, playerInventory, snapshot, entity);
+            // UPDATED: Use new constructor with entity type support
+            return new ContractHumanInfoMenu(containerId, playerInventory, snapshot, entity, entityType);
         }
+    }
+
+    // Convenience method for opening contract screen with any entity type
+    public static void openContractScreen(Player player, AbstractMercenaryEntity entity) {
+        if (player.level().isClientSide()) return;
+
+        EntitySnapshot snapshot = EntitySnapshot.fromEntity(entity);
+        entity.setMenuState(true);
+
+        player.openMenu(new ContractMenuProvider(snapshot, entity), buf -> {
+            CompoundTag snapshotNbt = snapshot.serialize();
+            buf.writeNbt(snapshotNbt);
+            buf.writeUUID(entity.getUUID());
+        });
+    }
+
+    // NEW: Method for opening screen from snapshot only (useful for client-side or when entity unavailable)
+    public static void openContractScreenFromSnapshot(Player player, EntitySnapshot snapshot) {
+        if (player.level().isClientSide()) return;
+
+        player.openMenu(new MenuProvider() {
+            @Override
+            public Component getDisplayName() {
+                String starDisplay = "★".repeat(snapshot.starLevel);
+                MutableComponent title = Component.translatable("gui.magic_realms.human_info.title");
+                MutableComponent entityInfo = Component.literal(starDisplay + " " + snapshot.entityName);
+                entityInfo = entityInfo.withStyle(ChatFormatting.AQUA);
+                return Component.literal(title.getString() + " - " + entityInfo.getString());
+            }
+
+            @Nullable
+            @Override
+            public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+                return new ContractHumanInfoMenu(containerId, playerInventory, snapshot);
+            }
+        }, buf -> {
+            CompoundTag snapshotNbt = snapshot.serialize();
+            buf.writeNbt(snapshotNbt);
+            buf.writeUUID(snapshot.entityUUID);
+        });
     }
 }

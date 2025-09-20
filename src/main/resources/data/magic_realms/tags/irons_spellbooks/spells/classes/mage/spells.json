@@ -1,6 +1,17 @@
 {
   "replace": false,
   "values": [
-
+    "#magic_realms:attack/aoe",
+    "#magic_realms:attack/single_target",
+    "#magic_realms:buffing/debuff",
+    "#magic_realms:buffing/restoration",
+    "#magic_realms:buffing/threatened",
+    "#magic_realms:buffing/unthreatened",
+    "#magic_realms:movement/both",
+    "#magic_realms:movement/retreat"
+  ],
+  "remove": [
+    "#magic_realms:attack/melee",
+    "#magic_realms:uncraftable"
   ]
 }

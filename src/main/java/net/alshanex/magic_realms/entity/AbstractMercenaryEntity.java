@@ -461,7 +461,18 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.entityData.set(SIT_COOLDOWN, SIT_COOLDOWN_TIME);
         this.setPose(Pose.STANDING);
         this.moveTo(this.getX(), this.getY() + 0.7, this.getZ());
-        MagicRealms.LOGGER.debug("Entity {} unsit from chair, cooldown started", getEntityName());
+
+        // Notify the chair sitting goal that this was a manual unseat
+        notifyChairSittingGoalOfManualUnseat();
+    }
+
+    private void notifyChairSittingGoalOfManualUnseat() {
+        // Find and notify the chair sitting goal
+        this.goalSelector.getAvailableGoals().forEach(wrappedGoal -> {
+            if (wrappedGoal.getGoal() instanceof HumanGoals.ChairSittingGoal chairGoal) {
+                chairGoal.notifyManualUnseat();
+            }
+        });
     }
 
     public boolean canSitInChair() {

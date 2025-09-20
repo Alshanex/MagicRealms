@@ -3694,9 +3694,11 @@ public class HumanGoals {
         private int searchCooldown = 0;
         private int stuckTicks = 0;
         private Vec3 lastPosition;
+        private boolean wasManuallyUnseated = false; // Track if entity was manually unseated
 
         private static final int SEARCH_RADIUS = 16;
         private static final int SEARCH_COOLDOWN = 100; // 5 seconds between searches
+        private static final int MANUAL_UNSEAT_COOLDOWN = 600; // 30 seconds after manual unseating
         private static final int MAX_STUCK_TICKS = 60; // 3 seconds before giving up
         private static final double MOVEMENT_THRESHOLD = 0.1;
         private static final double CHAIR_REACH_DISTANCE = 2.0;
@@ -3713,7 +3715,7 @@ public class HumanGoals {
                 return false;
             }
 
-            // Don't sit if on cooldown
+            // Don't sit if on cooldown (this now includes manual unseat cooldown)
             if (!entity.canSitInChair()) {
                 return false;
             }
@@ -3838,6 +3840,14 @@ public class HumanGoals {
                     }
                 }
             }
+        }
+
+        // Method to notify this goal that entity was manually unseated
+        public void notifyManualUnseat() {
+            wasManuallyUnseated = true;
+            searchCooldown = MANUAL_UNSEAT_COOLDOWN; // Set longer cooldown
+            targetChair = null;
+            entity.getNavigation().stop();
         }
 
         private boolean findNearbyEmptyChair() {

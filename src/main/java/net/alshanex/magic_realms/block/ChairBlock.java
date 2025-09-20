@@ -146,7 +146,6 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
             // Check if there's already an entity sitting in this chair
             AbstractMercenaryEntity sittingEntity = getSittingEntity(serverLevel, pos);
             if (sittingEntity != null) {
-                // Make the entity unsit
                 sittingEntity.unsitFromChair();
                 return InteractionResult.SUCCESS;
             }

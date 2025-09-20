@@ -93,6 +93,7 @@
     {"id": "traveloptics:astral_sense","required": false},
     {"id": "traveloptics:axe_of_the_doomed","required": false},
     {"id": "traveloptics:blackout","required": false},
+    {"id": "traveloptics:call_forth_the_dead_king","required": false},
     {"id": "traveloptics:cursed_revenants","required": false},
     {"id": "traveloptics:eternal_sentinel","required": false},
     {"id": "traveloptics:ignited_onslaught","required": false},

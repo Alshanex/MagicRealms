@@ -1,15 +1,12 @@
 {
   "replace": false,
   "values": [
-    "irons_spellbooks:divine_smite",
+    "#magic_realms:attack:melee",
     "irons_spellbooks:fang_ward",
-    "irons_spellbooks:flaming_strike",
     "irons_spellbooks:frostwave",
-    "irons_spellbooks:flaming_strike",
     "irons_spellbooks:heat_surge",
     "irons_spellbooks:raise_hell",
     "irons_spellbooks:shockwave",
-    {"id": "cataclysm_spellbooks:abyssal_slash","required": false},
     {"id": "cataclysm_spellbooks:ashen_breath","required": false},
     {"id": "cataclysm_spellbooks:bone_storm","required": false},
     {"id": "cataclysm_spellbooks:depth_charge","required": false},
@@ -20,15 +17,8 @@
     {"id": "cataclysm_spellbooks:void_bulwark","required": false},
     {"id": "ess_requiem:necrotic_burst","required": false},
     {"id": "endersequipment:bloodwave","required": false},
-    {"id": "endersequipment:frosted_slam","required": false},
-    {"id": "endersequipment:overwhelming_force","required": false},
-    {"id": "endersequipment:searing_slam","required": false},
-    {"id": "endersequipment:slam","required": false},
-    {"id": "endersequipment:slash","required": false},
     {"id": "gametechbcs_spellbooks:nullflare","required": false},
-    {"id": "hazennstuff:nights_edge_strike","required": false},
     {"id": "iss_magicfromtheeast:soul_burst","required": false},
-    {"id": "traveloptics:gyro_slash","required": false},
     {"id": "traveloptics:halberd_horizon","required": false},
     {"id": "traveloptics:nullflare","required": false}
   ]

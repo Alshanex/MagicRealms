@@ -83,11 +83,6 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     }
 
     @Override
-    protected void handleAppearanceSpecificTick() {
-
-    }
-
-    @Override
     public boolean isExclusiveMercenary() {
         return true;
     }

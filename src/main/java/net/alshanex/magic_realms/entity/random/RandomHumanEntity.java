@@ -272,11 +272,6 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
     }
 
     @Override
-    protected void handleAppearanceSpecificTick() {
-        // No longer needed - textures are generated once on client side
-    }
-
-    @Override
     public boolean isExclusiveMercenary() {
         return false;
     }

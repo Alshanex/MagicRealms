@@ -107,7 +107,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private static final EntityDataAccessor<Boolean> PATROL_MODE = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<BlockPos> PATROL_POSITION = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Boolean> HAS_BEEN_INTERACTED = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_IMMORTAL = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_STUNNED = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> STUN_TIMER = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
@@ -173,7 +172,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     // Abstract methods for subclasses to implement
     protected abstract void initializeAppearance(RandomSource randomSource);
     protected abstract void handlePostSpawnInitialization();
-    protected abstract void handleAppearanceSpecificTick();
     public abstract boolean isExclusiveMercenary();
 
     // Core entity behavior methods
@@ -1064,15 +1062,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         };
     }
 
-    // Contract and interaction handling
-    public boolean hasBeenInteracted() {
-        return this.entityData.get(HAS_BEEN_INTERACTED);
-    }
-
-    public void markAsInteracted() {
-        this.entityData.set(HAS_BEEN_INTERACTED, true);
-    }
-
     public void updateCustomNameWithStars() {
         String entityName = this.entityData.get(ENTITY_NAME);
         if (entityName.isEmpty()) {
@@ -1101,10 +1090,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (level().isClientSide()) return InteractionResult.FAIL;
         if (player.level().isClientSide()) return InteractionResult.FAIL;
-
-        if(!this.hasBeenInteracted()){
-            this.markAsInteracted();
-        }
 
         if (isSittingInChair()) {
             unsitFromChair();
@@ -1391,8 +1376,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public void tick() {
         super.tick();
-
-        handleAppearanceSpecificTick(); // Abstract method for subclasses
 
         if (!level().isClientSide) {
             handleSittingTick();
@@ -2155,7 +2138,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         pBuilder.define(PATROL_MODE, false);
         pBuilder.define(PATROL_POSITION, BlockPos.ZERO);
         pBuilder.define(FEARED_ENTITY, "");
-        pBuilder.define(HAS_BEEN_INTERACTED, false);
         pBuilder.define(IS_IMMORTAL, false);
         pBuilder.define(IS_STUNNED, false);
         pBuilder.define(STUN_TIMER, 0);
@@ -2227,7 +2209,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         compound.putBoolean("RequiresCustomPersistence", true);
-        compound.putBoolean("HasBeenInteracted", this.entityData.get(HAS_BEEN_INTERACTED));
         compound.putBoolean("IsImmortal", this.entityData.get(IS_IMMORTAL));
         compound.putBoolean("IsStunned", this.entityData.get(IS_STUNNED));
         compound.putInt("StunTimer", this.entityData.get(STUN_TIMER));
@@ -2354,7 +2335,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             this.lastEquippedSpellbook = ItemStack.EMPTY;
         }
 
-        this.entityData.set(HAS_BEEN_INTERACTED, compound.getBoolean("HasBeenInteracted"));
         this.entityData.set(IS_IMMORTAL, compound.getBoolean("IsImmortal"));
         this.entityData.set(IS_STUNNED, compound.getBoolean("IsStunned"));
         this.entityData.set(STUN_TIMER, compound.getInt("StunTimer"));

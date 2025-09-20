@@ -101,15 +101,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Integer> STAR_LEVEL = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<String> MAGIC_SCHOOLS = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<BlockPos> PATROL_POSITION = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Integer> STUN_TIMER = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> EMERALD_BALANCE = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<BlockPos> CHAIR_POSITION = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BLOCK_POS);
-    private static final EntityDataAccessor<Integer> SITTING_TIME = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> SIT_COOLDOWN = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> FEARED_ENTITY_TAG = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
 
     // Flags
@@ -132,6 +124,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private boolean goalsInitialized = false;
     private boolean wasChargingArrow = false;
     private boolean shouldPlayChargeAnimation = false;
+    private int starLevel = 1;
+    private BlockPos patrolPosition = BlockPos.ZERO;
+    private int stunTimer = 0;
+    private int emeraldBalance = 0;
+    private BlockPos chairPosition = BlockPos.ZERO;
+    private int sittingTime = 0;
+    private int sitCooldown = 0;
 
     // Inventory and items
     private static final int INVENTORY_SIZE = 27;
@@ -266,11 +265,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public void setPatrolPosition(BlockPos position) {
-        this.entityData.set(PATROL_POSITION, position);
+        this.patrolPosition = position;
     }
 
     public BlockPos getPatrolPosition() {
-        return this.entityData.get(PATROL_POSITION);
+        return this.patrolPosition;
     }
 
     public void setInitialized(boolean initialized) {
@@ -295,18 +294,18 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Star level management
     public int getStarLevel() {
-        return this.entityData.get(STAR_LEVEL);
+        return this.starLevel;
     }
 
     public void setStarLevel(int starLevel) {
         if (starLevel >= 1 && starLevel <= 3) {
-            this.entityData.set(STAR_LEVEL, starLevel);
+            this.starLevel = starLevel;
         }
     }
 
     protected void initializeStarLevel(RandomSource randomSource) {
         int starLevel = getInitialStarLevel(randomSource);
-        this.entityData.set(STAR_LEVEL, starLevel);
+        this.starLevel = starLevel;
     }
 
     protected int getInitialStarLevel(RandomSource randomSource) {
@@ -345,51 +344,15 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Magic schools management
     public List<SchoolType> getMagicSchools() {
-        if (magicSchools.isEmpty()) {
-            String serialized = this.entityData.get(MAGIC_SCHOOLS);
-            if (!serialized.isEmpty()) {
-                magicSchools = deserializeSchools(serialized);
-            }
-        }
         return new ArrayList<>(magicSchools);
     }
 
     public void setMagicSchools(List<SchoolType> schools) {
         this.magicSchools = new ArrayList<>(schools);
-        String serialized = serializeSchools(schools);
-        this.entityData.set(MAGIC_SCHOOLS, serialized);
     }
 
     public boolean hasSchool(SchoolType school) {
         return getMagicSchools().contains(school);
-    }
-
-    private String serializeSchools(List<SchoolType> schools) {
-        if (schools.isEmpty()) return "";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < schools.size(); i++) {
-            if (i > 0) sb.append(",");
-            sb.append(schools.get(i).getId().toString());
-        }
-        return sb.toString();
-    }
-
-    private List<SchoolType> deserializeSchools(String serialized) {
-        List<SchoolType> schools = new ArrayList<>();
-        if (serialized.isEmpty()) return schools;
-        String[] schoolIds = serialized.split(",");
-        for (String schoolId : schoolIds) {
-            try {
-                ResourceLocation location = ResourceLocation.parse(schoolId.trim());
-                SchoolType school = SchoolRegistry.getSchool(location);
-                if (school != null) {
-                    schools.add(school);
-                }
-            } catch (Exception e) {
-                MagicRealms.LOGGER.warn("Failed to parse school ID: {}", schoolId, e);
-            }
-        }
-        return schools;
     }
 
     private List<SchoolType> generateMagicSchools(RandomSource random) {
@@ -426,29 +389,29 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public BlockPos getChairPosition() {
-        return this.entityData.get(CHAIR_POSITION);
+        return this.chairPosition;
     }
 
     public int getSittingTime() {
-        return this.entityData.get(SITTING_TIME);
+        return this.sittingTime;
     }
 
     public int getSitCooldown() {
-        return this.entityData.get(SIT_COOLDOWN);
+        return this.sitCooldown;
     }
 
     public void setSittingTime(int time) {
-        this.entityData.set(SITTING_TIME, time);
+        this.sittingTime = time;
     }
 
     public void setSitCooldown(int cooldown) {
-        this.entityData.set(SIT_COOLDOWN, cooldown);
+        this.sitCooldown = cooldown;
     }
 
     public void sitInChair(BlockPos chairPos) {
         setFlag(FLAG_IS_SITTING, true);
-        this.entityData.set(CHAIR_POSITION, chairPos);
-        this.entityData.set(SITTING_TIME, 0);
+        this.chairPosition = chairPos;
+        this.sittingTime = 0;
         this.setPose(Pose.SITTING);
         this.getNavigation().stop();
         this.setTarget(null);
@@ -460,9 +423,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             return;
         }
         setFlag(FLAG_IS_SITTING, false);
-        this.entityData.set(CHAIR_POSITION, BlockPos.ZERO);
-        this.entityData.set(SITTING_TIME, 0);
-        this.entityData.set(SIT_COOLDOWN, SIT_COOLDOWN_TIME);
+        this.chairPosition = BlockPos.ZERO;
+        this.sittingTime = 0;
+        this.sitCooldown = SIT_COOLDOWN_TIME;
         this.setPose(Pose.STANDING);
         this.moveTo(this.getX(), this.getY() + 0.7, this.getZ());
         notifyChairSittingGoalOfManualUnseat();
@@ -506,29 +469,29 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         setFlag(FLAG_IS_STUNNED, stunned);
         if (stunned) {
             int duration = Config.immortalStunDuration * 20;
-            this.entityData.set(STUN_TIMER, duration);
+            this.stunTimer = duration;
             this.setPose(Pose.SITTING);
             this.addEffect(new MobEffectInstance(MREffects.STUN, duration, 0, false, false, true));
             this.setTarget(null);
             this.stopUsingItem();
             this.getNavigation().stop();
         } else {
-            this.entityData.set(STUN_TIMER, 0);
+            this.stunTimer = 0;
             this.setPose(Pose.STANDING);
         }
     }
 
     public int getStunTimer() {
-        return this.entityData.get(STUN_TIMER);
+        return this.stunTimer;
     }
 
     // Emerald management
     public int getEmeraldBalance() {
-        return this.entityData.get(EMERALD_BALANCE);
+        return this.emeraldBalance;
     }
 
     public void setEmeraldBalance(int balance) {
-        this.entityData.set(EMERALD_BALANCE, Math.max(0, balance));
+        this.emeraldBalance = Math.max(0, balance);
     }
 
     public void addEmeralds(int amount) {
@@ -1492,11 +1455,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private void handleStunTick() {
         if (!isStunned()) return;
 
-        int currentTimer = getStunTimer();
-        if (currentTimer > 0) {
-            currentTimer--;
-            this.entityData.set(STUN_TIMER, currentTimer);
-            if (currentTimer <= 0) {
+        if (stunTimer > 0) {
+            stunTimer--;
+            if (stunTimer <= 0) {
                 setStunned(false);
                 this.heal(this.getMaxHealth() * 0.5f);
             }
@@ -1504,14 +1465,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     private void handleSittingTick() {
-        int sitCooldown = getSitCooldown();
         if (sitCooldown > 0) {
-            setSitCooldown(sitCooldown - 1);
+            sitCooldown--;
         }
 
         if (isSittingInChair()) {
-            int sittingTime = getSittingTime();
-            setSittingTime(sittingTime + 1);
+            sittingTime++;
 
             BlockPos chairPos = getChairPosition();
             if (!isValidChair(chairPos)) {
@@ -2144,15 +2103,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         pBuilder.define(GENDER, 0);
         pBuilder.define(ENTITY_CLASS, 0);
         pBuilder.define(ENTITY_NAME, "");
-        pBuilder.define(STAR_LEVEL, 1);
-        pBuilder.define(MAGIC_SCHOOLS, "");
-        pBuilder.define(PATROL_POSITION, BlockPos.ZERO);
         pBuilder.define(FEARED_ENTITY, "");
-        pBuilder.define(STUN_TIMER, 0);
-        pBuilder.define(EMERALD_BALANCE, 0);
-        pBuilder.define(CHAIR_POSITION, BlockPos.ZERO);
-        pBuilder.define(SITTING_TIME, 0);
-        pBuilder.define(SIT_COOLDOWN, 0);
         pBuilder.define(FEARED_ENTITY_TAG, "");
     }
 
@@ -2171,16 +2122,21 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         compound.putInt("Gender", this.entityData.get(GENDER));
         compound.putInt("EntityClass", this.entityData.get(ENTITY_CLASS));
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
-        compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
+        compound.putInt("StarLevel", this.starLevel);
+        compound.putInt("StunTimer", this.stunTimer);
+        compound.putInt("EmeraldBalance", this.emeraldBalance);
+        compound.putInt("SittingTime", this.sittingTime);
+        compound.putInt("SitCooldown", this.sitCooldown);
+        compound.putLong("ChairPosition", this.chairPosition.asLong());
 
-        BlockPos patrolPos = this.entityData.get(PATROL_POSITION);
-        if (patrolPos != null && !patrolPos.equals(BlockPos.ZERO)) {
-            compound.putLong("PatrolPosition", patrolPos.asLong());
+        if (!this.patrolPosition.equals(BlockPos.ZERO)) {
+            compound.putLong("PatrolPosition", this.patrolPosition.asLong());
         }
+
         compound.putString("FearedEntity", this.entityData.get(FEARED_ENTITY));
 
         ListTag schoolsTag = new ListTag();
-        for (SchoolType school : getMagicSchools()) {
+        for (SchoolType school : this.magicSchools) {
             schoolsTag.add(StringTag.valueOf(school.getId().toString()));
         }
         compound.put("MagicSchools", schoolsTag);
@@ -2219,7 +2175,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         compound.putBoolean("RequiresCustomPersistence", true);
-        compound.putInt("StunTimer", this.entityData.get(STUN_TIMER));
         compound.putInt("EmeraldBalance", getEmeraldBalance());
         compound.putBoolean("IsSitting", isSittingInChair());
         compound.putLong("ChairPosition", getChairPosition().asLong());
@@ -2252,7 +2207,16 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.entityData.set(ENTITY_CLASS, compound.getInt("EntityClass"));
 
         int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
-        this.entityData.set(STAR_LEVEL, starLevel);
+        this.starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
+        this.stunTimer = compound.getInt("StunTimer");
+        this.emeraldBalance = compound.getInt("EmeraldBalance");
+        this.sittingTime = compound.getInt("SittingTime");
+        this.sitCooldown = compound.getInt("SitCooldown");
+        this.chairPosition = BlockPos.of(compound.getLong("ChairPosition"));
+
+        if (compound.contains("PatrolPosition")) {
+            this.patrolPosition = BlockPos.of(compound.getLong("PatrolPosition"));
+        }
 
         String fearedEntityId = compound.getString("FearedEntity");
         this.entityData.set(FEARED_ENTITY, fearedEntityId);
@@ -2265,7 +2229,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
         initializeFearGoal();
 
-        List<SchoolType> schools = new ArrayList<>();
+        this.magicSchools.clear();
         if (compound.contains("MagicSchools")) {
             ListTag schoolsTag = compound.getList("MagicSchools", 8);
             for (int i = 0; i < schoolsTag.size(); i++) {
@@ -2273,14 +2237,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     ResourceLocation location = ResourceLocation.parse(schoolsTag.getString(i));
                     SchoolType school = SchoolRegistry.getSchool(location);
                     if (school != null) {
-                        schools.add(school);
+                        this.magicSchools.add(school);
                     }
                 } catch (Exception e) {
                     MagicRealms.LOGGER.warn("Failed to parse school from NBT: {}", schoolsTag.getString(i), e);
                 }
             }
         }
-        setMagicSchools(schools);
 
         String savedName = compound.getString("EntityName");
         this.entityData.set(ENTITY_NAME, savedName);
@@ -2351,11 +2314,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             this.lastEquippedSpellbook = ItemStack.EMPTY;
         }
 
-        this.entityData.set(STUN_TIMER, compound.getInt("StunTimer"));
         setEmeraldBalance(compound.getInt("EmeraldBalance"));
-        this.entityData.set(CHAIR_POSITION, BlockPos.of(compound.getLong("ChairPosition")));
-        this.entityData.set(SITTING_TIME, compound.getInt("SittingTime"));
-        this.entityData.set(SIT_COOLDOWN, compound.getInt("SitCooldown"));
 
         if (isSittingInChair() && !isValidChair(getChairPosition())) {
             unsitFromChair();

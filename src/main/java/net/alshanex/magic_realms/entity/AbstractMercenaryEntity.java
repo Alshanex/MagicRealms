@@ -96,27 +96,31 @@ import java.util.stream.Collectors;
 public abstract class AbstractMercenaryEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, InventoryCarrier {
 
     // Core entity data
+    private static final EntityDataAccessor<Byte> DATA_FLAGS_ID = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BYTE);
+
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> INITIALIZED = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> STAR_LEVEL = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> MAGIC_SCHOOLS = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Boolean> HAS_SHIELD = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_ARCHER = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> PATROL_MODE = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<BlockPos> PATROL_POSITION = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Boolean> IS_IMMORTAL = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_STUNNED = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> STUN_TIMER = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> EMERALD_BALANCE = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> IS_SITTING = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<BlockPos> CHAIR_POSITION = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<Integer> SITTING_TIME = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SIT_COOLDOWN = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> IS_IN_MENU_STATE = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> FEARED_ENTITY_TAG = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
+
+    // Flags
+    private static final byte FLAG_INITIALIZED = 1;
+    private static final byte FLAG_HAS_SHIELD = 2;
+    private static final byte FLAG_IS_ARCHER = 4;
+    private static final byte FLAG_PATROL_MODE = 8;
+    private static final byte FLAG_IS_IMMORTAL = 16;
+    private static final byte FLAG_IS_STUNNED = 32;
+    private static final byte FLAG_IS_SITTING = 64;
+    private static final byte FLAG_IS_IN_MENU_STATE = -128;
 
     // Entity state
     private EntityType<?> fearedEntityType = null;
@@ -250,15 +254,15 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         return this.entityData.get(ENTITY_NAME);
     }
 
+    public Boolean isPatrolMode() {
+        return getFlag(FLAG_PATROL_MODE);
+    }
+
     public void setPatrolMode(Boolean patrolMode) {
-        this.entityData.set(PATROL_MODE, patrolMode);
+        setFlag(FLAG_PATROL_MODE, patrolMode);
         if (patrolMode) {
             setPatrolPosition(this.blockPosition());
         }
-    }
-
-    public Boolean isPatrolMode() {
-        return this.entityData.get(PATROL_MODE);
     }
 
     public void setPatrolPosition(BlockPos position) {
@@ -270,19 +274,19 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public void setInitialized(boolean initialized) {
-        this.entityData.set(INITIALIZED, initialized);
+        setFlag(FLAG_INITIALIZED, initialized);
     }
 
     public boolean isInitialized() {
-        return this.entityData.get(INITIALIZED);
+        return getFlag(FLAG_INITIALIZED);
     }
 
     public boolean isInMenuState() {
-        return this.entityData.get(IS_IN_MENU_STATE);
+        return getFlag(FLAG_IS_IN_MENU_STATE);
     }
 
     public void setMenuState(boolean inMenu) {
-        this.entityData.set(IS_IN_MENU_STATE, inMenu);
+        setFlag(FLAG_IS_IN_MENU_STATE, inMenu);
         if (inMenu) {
             this.getNavigation().stop();
             this.setTarget(null);
@@ -320,19 +324,19 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Shield and archer properties
     public boolean hasShield() {
-        return this.entityData.get(HAS_SHIELD);
+        return getFlag(FLAG_HAS_SHIELD);
     }
 
     public void setHasShield(boolean hasShield) {
-        this.entityData.set(HAS_SHIELD, hasShield);
+        setFlag(FLAG_HAS_SHIELD, hasShield);
     }
 
     public boolean isArcher() {
-        return this.entityData.get(IS_ARCHER);
+        return getFlag(FLAG_IS_ARCHER);
     }
 
     public void setIsArcher(boolean isArcher) {
-        this.entityData.set(IS_ARCHER, isArcher);
+        setFlag(FLAG_IS_ARCHER, isArcher);
     }
 
     public boolean isAssassin() {
@@ -418,7 +422,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Chair sitting management
     public boolean isSittingInChair() {
-        return this.entityData.get(IS_SITTING);
+        return getFlag(FLAG_IS_SITTING);
     }
 
     public BlockPos getChairPosition() {
@@ -442,7 +446,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public void sitInChair(BlockPos chairPos) {
-        this.entityData.set(IS_SITTING, true);
+        setFlag(FLAG_IS_SITTING, true);
         this.entityData.set(CHAIR_POSITION, chairPos);
         this.entityData.set(SITTING_TIME, 0);
         this.setPose(Pose.SITTING);
@@ -455,14 +459,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (!isSittingInChair()) {
             return;
         }
-        this.entityData.set(IS_SITTING, false);
+        setFlag(FLAG_IS_SITTING, false);
         this.entityData.set(CHAIR_POSITION, BlockPos.ZERO);
         this.entityData.set(SITTING_TIME, 0);
         this.entityData.set(SIT_COOLDOWN, SIT_COOLDOWN_TIME);
         this.setPose(Pose.STANDING);
         this.moveTo(this.getX(), this.getY() + 0.7, this.getZ());
-
-        // Notify the chair sitting goal that this was a manual unseat
         notifyChairSittingGoalOfManualUnseat();
     }
 
@@ -489,19 +491,19 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Immortality and stunning
     public boolean isImmortal() {
-        return this.entityData.get(IS_IMMORTAL);
+        return getFlag(FLAG_IS_IMMORTAL);
     }
 
     public void setImmortal(boolean immortal) {
-        this.entityData.set(IS_IMMORTAL, immortal);
+        setFlag(FLAG_IS_IMMORTAL, immortal);
     }
 
     public boolean isStunned() {
-        return this.entityData.get(IS_STUNNED);
+        return getFlag(FLAG_IS_STUNNED);
     }
 
     public void setStunned(boolean stunned) {
-        this.entityData.set(IS_STUNNED, stunned);
+        setFlag(FLAG_IS_STUNNED, stunned);
         if (stunned) {
             int duration = Config.immortalStunDuration * 20;
             this.entityData.set(STUN_TIMER, duration);
@@ -1222,7 +1224,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData) {
         RandomSource randomsource = Utils.random;
 
-        if (!this.entityData.get(INITIALIZED)) {
+        if (!this.isInitialized()) {
             initializeStarLevel(randomsource);
             initializeAppearance(randomsource);
             initializeClassSpecifics(randomsource);
@@ -1242,7 +1244,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
             MagicRealms.LOGGER.info("Entity spawned at level {} (from KillTrackerData)", spawnLevel);
             giveStartingEmeralds();
-            this.entityData.set(INITIALIZED, true);
+            this.setInitialized(true);
 
             initializeClassSpells();
 
@@ -1268,7 +1270,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     protected void requestNameSyncFromClient() {
-        if (!this.level().isClientSide && this.entityData.get(INITIALIZED)) {
+        if (!this.level().isClientSide && this.isInitialized()) {
             String currentName = this.getEntityName();
             if (currentName == null || currentName.isEmpty()) {
                 PacketDistributor.sendToPlayersTrackingEntity(this,
@@ -1402,7 +1404,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             StunParticleEffect.spawnStunParticles(this, (ClientLevel) level());
         }
 
-        if (!level().isClientSide && !goalsInitialized && this.entityData.get(INITIALIZED)) {
+        if (!level().isClientSide && !goalsInitialized && this.isInitialized()) {
             reinitializeGoalsAfterLoad();
             goalsInitialized = true;
         }
@@ -1740,7 +1742,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     public void onAddedToLevel(){
-        if (!this.level().isClientSide && this.entityData.get(INITIALIZED)) {
+        if (!this.level().isClientSide && this.isInitialized()) {
             if (this.getEntityClass() == EntityClass.MAGE) {
                 updateSpellbookSpells();
             }
@@ -1959,7 +1961,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     }
                 }
             }
-        } else if (this.entityData.get(INITIALIZED)) {
+        } else if (this.isInitialized()) {
             MagicRealms.LOGGER.warn("Entity {} was initialized but has no spells, regenerating...", getEntityName());
             generateAndApplySpells();
         }
@@ -2138,26 +2140,19 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder pBuilder) {
         super.defineSynchedData(pBuilder);
+        pBuilder.define(DATA_FLAGS_ID, (byte)0);
         pBuilder.define(GENDER, 0);
         pBuilder.define(ENTITY_CLASS, 0);
-        pBuilder.define(INITIALIZED, false);
         pBuilder.define(ENTITY_NAME, "");
         pBuilder.define(STAR_LEVEL, 1);
         pBuilder.define(MAGIC_SCHOOLS, "");
-        pBuilder.define(HAS_SHIELD, false);
-        pBuilder.define(IS_ARCHER, false);
-        pBuilder.define(PATROL_MODE, false);
         pBuilder.define(PATROL_POSITION, BlockPos.ZERO);
         pBuilder.define(FEARED_ENTITY, "");
-        pBuilder.define(IS_IMMORTAL, false);
-        pBuilder.define(IS_STUNNED, false);
         pBuilder.define(STUN_TIMER, 0);
         pBuilder.define(EMERALD_BALANCE, 0);
-        pBuilder.define(IS_SITTING, false);
         pBuilder.define(CHAIR_POSITION, BlockPos.ZERO);
         pBuilder.define(SITTING_TIME, 0);
         pBuilder.define(SIT_COOLDOWN, 0);
-        pBuilder.define(IS_IN_MENU_STATE, false);
         pBuilder.define(FEARED_ENTITY_TAG, "");
     }
 
@@ -2165,12 +2160,18 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
+        compound.putBoolean("Initialized", isInitialized());
+        compound.putBoolean("HasShield", hasShield());
+        compound.putBoolean("IsArcher", isArcher());
+        compound.putBoolean("PatrolMode", isPatrolMode());
+        compound.putBoolean("IsImmortal", isImmortal());
+        compound.putBoolean("IsStunned", isStunned());
+        compound.putBoolean("IsSitting", isSittingInChair());
+        compound.putBoolean("IsInMenuState", isInMenuState());
         compound.putInt("Gender", this.entityData.get(GENDER));
         compound.putInt("EntityClass", this.entityData.get(ENTITY_CLASS));
-        compound.putBoolean("Initialized", this.entityData.get(INITIALIZED));
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("StarLevel", this.entityData.get(STAR_LEVEL));
-        compound.putBoolean("PatrolMode", this.entityData.get(PATROL_MODE));
 
         BlockPos patrolPos = this.entityData.get(PATROL_POSITION);
         if (patrolPos != null && !patrolPos.equals(BlockPos.ZERO)) {
@@ -2183,8 +2184,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             schoolsTag.add(StringTag.valueOf(school.getId().toString()));
         }
         compound.put("MagicSchools", schoolsTag);
-        compound.putBoolean("HasShield", this.entityData.get(HAS_SHIELD));
-        compound.putBoolean("IsArcher", this.entityData.get(IS_ARCHER));
 
         compound.putBoolean("SpellsGenerated", this.spellsGenerated);
         compound.putBoolean("GoalsInitialized", this.goalsInitialized);
@@ -2220,8 +2219,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         compound.putBoolean("RequiresCustomPersistence", true);
-        compound.putBoolean("IsImmortal", this.entityData.get(IS_IMMORTAL));
-        compound.putBoolean("IsStunned", this.entityData.get(IS_STUNNED));
         compound.putInt("StunTimer", this.entityData.get(STUN_TIMER));
         compound.putInt("EmeraldBalance", getEmeraldBalance());
         compound.putBoolean("IsSitting", isSittingInChair());
@@ -2239,9 +2236,20 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
+
+        byte flags = 0;
+        if (compound.getBoolean("Initialized")) flags |= FLAG_INITIALIZED;
+        if (compound.getBoolean("HasShield")) flags |= FLAG_HAS_SHIELD;
+        if (compound.getBoolean("IsArcher")) flags |= FLAG_IS_ARCHER;
+        if (compound.getBoolean("PatrolMode")) flags |= FLAG_PATROL_MODE;
+        if (compound.getBoolean("IsImmortal")) flags |= FLAG_IS_IMMORTAL;
+        if (compound.getBoolean("IsStunned")) flags |= FLAG_IS_STUNNED;
+        if (compound.getBoolean("IsSitting")) flags |= FLAG_IS_SITTING;
+        if (compound.getBoolean("IsInMenuState")) flags |= FLAG_IS_IN_MENU_STATE;
+        this.entityData.set(DATA_FLAGS_ID, flags);
+
         this.entityData.set(GENDER, compound.getInt("Gender"));
         this.entityData.set(ENTITY_CLASS, compound.getInt("EntityClass"));
-        this.entityData.set(INITIALIZED, compound.getBoolean("Initialized"));
 
         int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
         this.entityData.set(STAR_LEVEL, starLevel);
@@ -2273,9 +2281,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             }
         }
         setMagicSchools(schools);
-
-        this.entityData.set(HAS_SHIELD, compound.getBoolean("HasShield"));
-        this.entityData.set(IS_ARCHER, compound.getBoolean("IsArcher"));
 
         String savedName = compound.getString("EntityName");
         this.entityData.set(ENTITY_NAME, savedName);
@@ -2346,11 +2351,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             this.lastEquippedSpellbook = ItemStack.EMPTY;
         }
 
-        this.entityData.set(IS_IMMORTAL, compound.getBoolean("IsImmortal"));
-        this.entityData.set(IS_STUNNED, compound.getBoolean("IsStunned"));
         this.entityData.set(STUN_TIMER, compound.getInt("StunTimer"));
         setEmeraldBalance(compound.getInt("EmeraldBalance"));
-        this.entityData.set(IS_SITTING, compound.getBoolean("IsSitting"));
         this.entityData.set(CHAIR_POSITION, BlockPos.of(compound.getLong("ChairPosition")));
         this.entityData.set(SITTING_TIME, compound.getInt("SittingTime"));
         this.entityData.set(SIT_COOLDOWN, compound.getInt("SitCooldown"));
@@ -2359,9 +2361,22 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             unsitFromChair();
         }
 
-        this.entityData.set(IS_IN_MENU_STATE, compound.getBoolean("IsInMenuState"));
         if (isInMenuState()) {
             setMenuState(false);
+        }
+    }
+
+    // Helper methods for flag management
+    private boolean getFlag(byte flag) {
+        return (this.entityData.get(DATA_FLAGS_ID) & flag) != 0;
+    }
+
+    private void setFlag(byte flag, boolean value) {
+        byte currentFlags = this.entityData.get(DATA_FLAGS_ID);
+        if (value) {
+            this.entityData.set(DATA_FLAGS_ID, (byte)(currentFlags | flag));
+        } else {
+            this.entityData.set(DATA_FLAGS_ID, (byte)(currentFlags & ~flag));
         }
     }
 }

@@ -7,7 +7,6 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.IEntityTagFearing;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -25,7 +24,7 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IEntityTagFearing {
+public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
     private final String name = "Alshanex";
 
     public AlshanexEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
@@ -71,6 +70,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     protected void handlePostSpawnInitialization() {
         if (!this.level().isClientSide) {
             this.setImmortal(true);
+            setFearedEntityTag(EntityTypeTags.ARTHROPOD);
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
@@ -110,11 +110,6 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
         return "ui.magic_realms.introduction.alshanex";
-    }
-
-    @Override
-    protected void initializeFearedEntity(RandomSource randomSource) {
-        setFearedEntityTag(EntityTypeTags.ARTHROPOD);
     }
 
     @Override

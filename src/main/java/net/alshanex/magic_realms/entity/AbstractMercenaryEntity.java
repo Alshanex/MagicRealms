@@ -628,7 +628,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         // Then check entity tag (for exclusive mercenaries)
-        if (this instanceof IEntityTagFearing && this.isExclusiveMercenary()) {
+        if (this.isExclusiveMercenary()) {
             TagKey<EntityType<?>> fearedTag = getFearedEntityTag();
             if (fearedTag != null) {
                 return entity.getType().is(fearedTag);
@@ -687,9 +687,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     private void initializeFearGoal() {
-        if (getFearedEntity() != null && !fearGoalInitialized) {
+        boolean hasFear = (getFearedEntity() != null) || (this.isExclusiveMercenary() && getFearedEntityTag() != null);
+
+        if (hasFear && !fearGoalInitialized) {
             this.goalSelector.removeAllGoals(goal -> goal instanceof HumanGoals.CustomFearGoal);
-            this.goalSelector.addGoal(1, new HumanGoals.CustomFearGoal(this, 16.0f, 1.8, 2.0));
+            this.goalSelector.addGoal(1, new HumanGoals.CustomFearGoal(this, 10.0f, 1.8, 2.0));
             fearGoalInitialized = true;
         }
     }

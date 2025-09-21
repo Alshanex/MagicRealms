@@ -661,7 +661,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         if (hasFear && !fearGoalInitialized) {
             this.goalSelector.removeAllGoals(goal -> goal instanceof HumanGoals.CustomFearGoal);
-            this.goalSelector.addGoal(1, new HumanGoals.CustomFearGoal(this, 10.0f, 1.8, 2.0));
+            this.goalSelector.addGoal(1, new HumanGoals.CustomFearGoal(this, 8.0f, 1.8, 2.0));
             fearGoalInitialized = true;
         }
     }

@@ -32,6 +32,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MREntityRegistry.ALSHANEX.get(), "Alshanex");
         add(MREntityRegistry.ALIANA.get(), "Aliana");
         add(MREntityRegistry.CATAS.get(), "Catas");
+        add(MREntityRegistry.AMADEUS.get(), "Amadeus Voidwalker");
 
         add(MREffects.STUN.get(), "Stunned");
 
@@ -86,9 +87,10 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.introduction.default", "%s: Hello, i'm a mercenary ready to serve. I only accept a %s, which will last for %d minutes");
 
         // Exclusive mercenaries introductions
-        add("ui.magic_realms.introduction.alshanex", "%s: Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because i saw the tavernkeep fighting like this and thought he looked very cool. If you want to contract me, i only accept a %s, which will last for %d minutes");
-        add("ui.magic_realms.introduction.aliana","%s: MtheNinja? No no no that's not me..... But I am available for hire though!!! If you want to contract me i only accept a %s, which will last for %d minutes");
-        add("ui.magic_realms.introduction.catas","%s: I don’t know why I’m here, I don’t drink and I don’t really know anyone. Anyways, if you want to contract me i only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.alshanex", "%s: Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because i saw the tavernkeep fighting like this and thought he looked very cool. If you want to contract me, i'll only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.aliana","%s: MtheNinja? No no no that's not me..... But I am available for hire though!!! If you want to contract me, i'll only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.catas","%s: I don’t know why I’m here, I don’t drink and I don’t really know anyone. Anyways, if you want to contract me, i'll only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.amadeus","%s: Salutations! I am Amadeus, the  Starfire Sorcerer! If you wish to contract me, i'll only accept a %s, which will last for %d minutes");
 
         // Catas keywords
         add("message.magic_realms.catas.moth.keyword", "moth");
@@ -100,6 +102,14 @@ public class MRLanguageProvider extends LanguageProvider {
         add("message.magic_realms.catas.geology.keyword_5", "blackstone");
         add("message.magic_realms.catas.geology.response", "%s: Isn’t geology just super cool? I mean like, it’s incredible that you can tell the history of rock just by looking at it!");
         add("message.magic_realms.catas.pumpkin_pie.response", "%s: You have pumpkin pie?! Can I have some?! Please!?");
+
+        // Amadeus phrases
+        add("message.magic_realms.amadeus.combat.entering", "%s: This is the Spell passed down in the Voidwalker Family for generations!");
+        add("message.magic_realms.amadeus.combat.contractor_low_health", "%s: Hang in there, %s! You can do it!");
+        add("message.magic_realms.amadeus.enderman.scared", "%s: If only Astias were still here, she was an Archmage familiar you know?");
+        add("message.magic_realms.amadeus.enderman.killed", "%s: You know, you remind me of my Archmage Familiar Astias, she’s in a better place now.");
+        add("message.magic_realms.amadeus.boss.killed", "%s: By the Arbiter, that was a difficult fight!");
+        add("message.magic_realms.amadeus.ally.killed", "%s: Rest well comrade.");
 
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?");

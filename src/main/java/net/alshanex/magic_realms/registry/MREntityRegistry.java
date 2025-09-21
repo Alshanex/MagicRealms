@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.registry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
+import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
@@ -50,4 +51,10 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_entity").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AmadeusEntity>> AMADEUS =
+            ENTITIES.register("amadeus_entity", () -> EntityType.Builder.<AmadeusEntity>of(AmadeusEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "amadeus_entity").toString()));
 }

@@ -17,12 +17,14 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
@@ -51,6 +53,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -359,7 +362,7 @@ public class HumanGoals {
                 }
             }
 
-            MagicRealms.LOGGER.debug("Entity {} found no suitable villagers for selling", entity.getEntityName());
+            //MagicRealms.LOGGER.debug("Entity {} found no suitable villagers for selling", entity.getEntityName());
             return false;
         }
 
@@ -1121,6 +1124,36 @@ public class HumanGoals {
                 humanEntity.setTarget(null);
             }
             return canUse;
+        }
+
+        @Override
+        public void start() {
+            if(this.humanEntity instanceof AmadeusEntity amadeusEntity && !amadeusEntity.level().isClientSide && amadeusEntity.getSummoner() != null){
+                if(hasContractorNearby(amadeusEntity, amadeusEntity.getSummoner(), amadeusEntity.level())){
+                    amadeusEntity.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.enderman.scared", amadeusEntity.getDisplayName()));
+                }
+            }
+            super.start();
+        }
+
+        private boolean hasContractorNearby(AmadeusEntity amadeus, LivingEntity entity, Level level) {
+            double SEARCH_RADIUS = 16.0;
+            AABB searchArea = new AABB(
+                    amadeus.getX() - SEARCH_RADIUS,
+                    amadeus.getY() - SEARCH_RADIUS,
+                    amadeus.getZ() - SEARCH_RADIUS,
+                    amadeus.getX() + SEARCH_RADIUS,
+                    amadeus.getY() + SEARCH_RADIUS,
+                    amadeus.getZ() + SEARCH_RADIUS
+            );
+
+            List<Player> nearbyContractor = level.getEntitiesOfClass(
+                    Player.class,
+                    searchArea,
+                    player1 -> player1.is(entity)
+            );
+
+            return !nearbyContractor.isEmpty();
         }
 
         @Override

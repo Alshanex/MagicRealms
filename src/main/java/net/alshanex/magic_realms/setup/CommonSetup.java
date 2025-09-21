@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.setup;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
+import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
@@ -19,6 +20,7 @@ public class CommonSetup {
         event.put(MREntityRegistry.ALSHANEX.get(), AlshanexEntity.prepareAttributes().build());
         event.put(MREntityRegistry.ALIANA.get(), AlianaEntity.prepareAttributes().build());
         event.put(MREntityRegistry.CATAS.get(), CatasEntity.prepareAttributes().build());
+        event.put(MREntityRegistry.AMADEUS.get(), AmadeusEntity.prepareAttributes().build());
         event.put(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntity.prepareAttributes().build());
     }
 }

@@ -20,12 +20,44 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @EventBusSubscriber(modid = MagicRealms.MODID)
 public class ServerEvents {
+    private static final Map<Integer, List<Runnable>> delayedResponses = new HashMap<>();
+    private static int currentTick = 0;
+    private static final int TICK_RESET_THRESHOLD = 1_000_000; // Reset every ~13.9 hours
+
+    @SubscribeEvent
+    public static void onServerTick(ServerTickEvent.Post event) {
+        currentTick++;
+
+        // Execute any delayed responses that are ready
+        List<Runnable> responsesToExecute = delayedResponses.remove(currentTick);
+        if (responsesToExecute != null) {
+            responsesToExecute.forEach(Runnable::run);
+        }
+
+        // Reset tick counter periodically to prevent overflow (extremely rare but safe)
+        if (currentTick >= TICK_RESET_THRESHOLD) {
+            // Only reset if no pending responses exist
+            if (delayedResponses.isEmpty()) {
+                currentTick = 0;
+            }
+        }
+    }
+
+    private static void scheduleDelayedResponse(Runnable responseAction, int tickDelay) {
+        int executionTick = currentTick + tickDelay;
+        delayedResponses.computeIfAbsent(executionTick, k -> new ArrayList<>()).add(responseAction);
+    }
+
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         HumanEntityCommands.register(event.getDispatcher());
@@ -102,20 +134,22 @@ public class ServerEvents {
         if (containsAllRequiredWords(message, howPattern, getObtainPattern, tavernkeepPattern, bloodPactPattern)) {
             // Check for nearby TavernKeeperEntity
             if (hasTavernKeeperNearby(player, level)) {
-                // Send the response message to the player
-                sendTavernKeeperResponse(player);
+                // Schedule the response to be sent after a delay
+                scheduleDelayedResponse(() -> sendTavernKeeperResponse(player), 20);
             }
         }
 
         if(mothPattern.matcher(message).find()){
             if (isMothNearby(player, level)) {
-                sendMothResponse(player, Component.translatable("message.magic_realms.catas.moth.response", "Catas"));
+                Component response = Component.translatable("message.magic_realms.catas.moth.response", "Catas");
+                scheduleDelayedResponse(() -> sendMothResponse(player, response), 20);
             }
         }
 
         if(geologyPattern.matcher(message).find()){
             if (isMothNearby(player, level)) {
-                sendMothResponse(player, Component.translatable("message.magic_realms.catas.geology.response", "Catas"));
+                Component response = Component.translatable("message.magic_realms.catas.geology.response", "Catas");
+                scheduleDelayedResponse(() -> sendMothResponse(player, response), 20);
             }
         }
     }

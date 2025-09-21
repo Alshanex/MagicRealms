@@ -111,6 +111,11 @@ public class MRLanguageProvider extends LanguageProvider {
         add("message.magic_realms.amadeus.boss.killed", "%s: By the Arbiter, that was a difficult fight!");
         add("message.magic_realms.amadeus.ally.killed", "%s: Rest well comrade.");
 
+        // Aliana phrases
+        add("message.magic_realms.aliana.combat.root", "%s: I love rooting people! It's my favorite spell!");
+        add("message.magic_realms.aliana.eat.poison_potatoes", "%s: Despite common belief poisonous potatoes can't kill you! They taste bad though.......");
+        add("message.magic_realms.aliana.travel.nether", "%s: PLEASE don't take me to a fortress......");
+
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?");
 

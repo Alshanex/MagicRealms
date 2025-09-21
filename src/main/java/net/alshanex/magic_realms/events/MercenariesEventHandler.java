@@ -9,6 +9,7 @@ import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
@@ -28,6 +29,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -41,6 +43,15 @@ public class MercenariesEventHandler {
         if(event.getEntity() instanceof Player player && !player.level().isClientSide && (player.getHealth() - event.getOriginalDamage()) < 6){
             if(hasContractedAmadeusNearby(player, player.level())){
                 player.sendSystemMessage(Component.translatable("message.magic_realms.amadeus.combat.contractor_low_health", "Amadeus Voidwalker", player.getDisplayName()));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChangedDimension(EntityJoinLevelEvent event){
+        if(event.getEntity() instanceof AlianaEntity aliana && !aliana.level().isClientSide && event.getLevel().dimension() == Level.NETHER){
+            if(aliana.getSummoner() != null && hasContractorNearby(aliana, aliana.getSummoner(), aliana.level())){
+                aliana.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.aliana.travel.nether", aliana.getExclusiveMercenaryName()));
             }
         }
     }
@@ -89,15 +100,15 @@ public class MercenariesEventHandler {
         return null;
     }
 
-    private static boolean hasContractorNearby(AmadeusEntity amadeus, LivingEntity entity, Level level) {
+    private static boolean hasContractorNearby(AbstractMercenaryEntity mercenary, LivingEntity entity, Level level) {
         double SEARCH_RADIUS = 20.0;
         AABB searchArea = new AABB(
-                amadeus.getX() - SEARCH_RADIUS,
-                amadeus.getY() - SEARCH_RADIUS,
-                amadeus.getZ() - SEARCH_RADIUS,
-                amadeus.getX() + SEARCH_RADIUS,
-                amadeus.getY() + SEARCH_RADIUS,
-                amadeus.getZ() + SEARCH_RADIUS
+                mercenary.getX() - SEARCH_RADIUS,
+                mercenary.getY() - SEARCH_RADIUS,
+                mercenary.getZ() - SEARCH_RADIUS,
+                mercenary.getX() + SEARCH_RADIUS,
+                mercenary.getY() + SEARCH_RADIUS,
+                mercenary.getZ() + SEARCH_RADIUS
         );
 
         List<Player> nearbyContractor = level.getEntitiesOfClass(

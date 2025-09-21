@@ -2,8 +2,8 @@ package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.util.HumanEntityCommands;
 import net.alshanex.magic_realms.util.humans.EntityClass;
@@ -75,11 +75,18 @@ public class ServerEvents {
     }
 
     @SubscribeEvent
-    public static void onPieEaten(LivingEntityUseItemEvent.Start event){
+    public static void onFoodEaten(LivingEntityUseItemEvent.Start event){
         if (event.getEntity() instanceof Player player && !player.level().isClientSide && event.getItem().is(Items.PUMPKIN_PIE)) {
             Level level = player.level();
             if (isMothNearby(player, level)) {
-                sendMothResponse(player, Component.translatable("message.magic_realms.catas.pumpkin_pie.response", "Catas"));
+                sendPlayerResponse(player, Component.translatable("message.magic_realms.catas.pumpkin_pie.response", "Catas"));
+            }
+        }
+
+        if (event.getEntity() instanceof Player player && !player.level().isClientSide && event.getItem().is(Items.POISONOUS_POTATO)) {
+            Level level = player.level();
+            if (isAlianaNearby(player, level)) {
+                sendPlayerResponse(player, Component.translatable("message.magic_realms.aliana.eat.poison_potatoes", "Aliana"));
             }
         }
     }
@@ -142,14 +149,14 @@ public class ServerEvents {
         if(mothPattern.matcher(message).find()){
             if (isMothNearby(player, level)) {
                 Component response = Component.translatable("message.magic_realms.catas.moth.response", "Catas");
-                scheduleDelayedResponse(() -> sendMothResponse(player, response), 20);
+                scheduleDelayedResponse(() -> sendPlayerResponse(player, response), 20);
             }
         }
 
         if(geologyPattern.matcher(message).find()){
             if (isMothNearby(player, level)) {
                 Component response = Component.translatable("message.magic_realms.catas.geology.response", "Catas");
-                scheduleDelayedResponse(() -> sendMothResponse(player, response), 20);
+                scheduleDelayedResponse(() -> sendPlayerResponse(player, response), 20);
             }
         }
     }
@@ -188,7 +195,7 @@ public class ServerEvents {
         player.sendSystemMessage(responseMessage);
     }
 
-    private static void sendMothResponse(Player player, Component message) {
+    private static void sendPlayerResponse(Player player, Component message) {
         player.sendSystemMessage(message);
     }
 
@@ -210,5 +217,25 @@ public class ServerEvents {
         );
 
         return !nearbyCatas.isEmpty();
+    }
+
+    private static boolean isAlianaNearby(Player player, Level level) {
+        // Create a bounding box around the player
+        AABB searchArea = new AABB(
+                player.getX() - SEARCH_RADIUS,
+                player.getY() - SEARCH_RADIUS,
+                player.getZ() - SEARCH_RADIUS,
+                player.getX() + SEARCH_RADIUS,
+                player.getY() + SEARCH_RADIUS,
+                player.getZ() + SEARCH_RADIUS
+        );
+
+        // Get all TavernKeeperEntity instances in the area
+        List<AlianaEntity> nearbyAliana = level.getEntitiesOfClass(
+                AlianaEntity.class,
+                searchArea
+        );
+
+        return !nearbyAliana.isEmpty();
     }
 }

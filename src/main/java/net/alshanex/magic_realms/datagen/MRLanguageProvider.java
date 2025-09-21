@@ -31,6 +31,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MREntityRegistry.TAVERNKEEP.get(), "Tavernkeep");
         add(MREntityRegistry.ALSHANEX.get(), "Alshanex");
         add(MREntityRegistry.ALIANA.get(), "Aliana");
+        add(MREntityRegistry.CATAS.get(), "Catas");
 
         add(MREffects.STUN.get(), "Stunned");
 
@@ -86,7 +87,19 @@ public class MRLanguageProvider extends LanguageProvider {
 
         // Exclusive mercenaries introductions
         add("ui.magic_realms.introduction.alshanex", "%s: Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because i saw the tavernkeep fighting like this and thought he looked very cool. If you want to contract me, i only accept a %s, which will last for %d minutes");
-        add("ui.magic_realms.introduction.aliana","%s: Hey, i'm hungry. Do you have any familiar i can eat? You don't? Anyways, if you want to contract me i only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.aliana","%s: MtheNinja? No no no that's not me..... But I am available for hire though!!! If you want to contract me i only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.catas","%s: I don’t know why I’m here, I don’t drink and I don’t really know anyone. Anyways, if you want to contract me i only accept a %s, which will last for %d minutes");
+
+        // Catas keywords
+        add("message.magic_realms.catas.moth.keyword", "moth");
+        add("message.magic_realms.catas.moth.response", "%s: I love moths! Very adorable creatures, did you know that most of them don’t even have a mouth? it’s really interesti- you don’t care? Oh…");
+        add("message.magic_realms.catas.geology.keyword_1", "volcano");
+        add("message.magic_realms.catas.geology.keyword_2", "stone");
+        add("message.magic_realms.catas.geology.keyword_3", "basalt");
+        add("message.magic_realms.catas.geology.keyword_4", "andesite");
+        add("message.magic_realms.catas.geology.keyword_5", "blackstone");
+        add("message.magic_realms.catas.geology.response", "%s: Isn’t geology just super cool? I mean like, it’s incredible that you can tell the history of rock just by looking at it!");
+        add("message.magic_realms.catas.pumpkin_pie.response", "%s: You have pumpkin pie?! Can I have some?! Please!?");
 
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?");

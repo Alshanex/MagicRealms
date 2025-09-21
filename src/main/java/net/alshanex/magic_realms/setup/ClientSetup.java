@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.setup;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntityRenderer;
+import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntityRenderer;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntityRenderer;
 import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
@@ -22,6 +23,7 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.ALSHANEX.get(), AlshanexEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.ALIANA.get(), AlianaEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.CATAS.get(), CatasEntityRenderer::new);
     }
 
     @SubscribeEvent

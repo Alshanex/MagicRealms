@@ -22,6 +22,7 @@ public class ModTags {
     // Fears
     public static final TagKey<EntityType<?>> ALSHANEX_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "alshanex_fears"));
     public static final TagKey<EntityType<?>> ALIANA_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "aliana_fears"));
+    public static final TagKey<EntityType<?>> CATAS_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_fears"));
 
     public static final TagKey<Item> TAVERNKEEP_SELLS_FOOD = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_foods"));
     public static final TagKey<Item> TAVERNKEEP_SELLS_DRINKS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_drinks"));

@@ -1,7 +1,8 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.exclusive.AlshanexEntity;
+import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
+import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.minecraft.core.registries.Registries;
@@ -36,4 +37,10 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "alshanex_entity").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AlianaEntity>> ALIANA =
+            ENTITIES.register("aliana_entity", () -> EntityType.Builder.<AlianaEntity>of(AlianaEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "aliana_entity").toString()));
 }

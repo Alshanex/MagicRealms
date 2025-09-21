@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.entity.exclusive;
+package net.alshanex.magic_realms.entity.exclusive.alshanex;
 
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;

@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.entity.exclusive;
+package net.alshanex.magic_realms.entity.exclusive.alshanex;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
@@ -10,6 +10,7 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
 import net.minecraft.nbt.CompoundTag;
@@ -70,7 +71,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     protected void handlePostSpawnInitialization() {
         if (!this.level().isClientSide) {
             this.setImmortal(true);
-            setFearedEntityTag(EntityTypeTags.ARTHROPOD);
+            setFearedEntityTag(ModTags.ALSHANEX_FEARS);
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
@@ -110,15 +111,5 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
         return "ui.magic_realms.introduction.alshanex";
-    }
-
-    @Override
-    public TagKey<EntityType<?>> getFearedEntityTag() {
-        return super.getFearedEntityTag();
-    }
-
-    @Override
-    public void setFearedEntityTag(@Nullable TagKey<EntityType<?>> entityTag) {
-        super.setFearedEntityTag(entityTag);
     }
 }

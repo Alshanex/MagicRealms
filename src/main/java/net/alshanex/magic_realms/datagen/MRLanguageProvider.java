@@ -29,6 +29,8 @@ public class MRLanguageProvider extends LanguageProvider {
 
         add(MREntityRegistry.HUMAN.get(), "Human");
         add(MREntityRegistry.TAVERNKEEP.get(), "Tavernkeep");
+        add(MREntityRegistry.ALSHANEX.get(), "Alshanex");
+        add(MREntityRegistry.ALIANA.get(), "Aliana");
 
         add(MREffects.STUN.get(), "Stunned");
 
@@ -83,7 +85,8 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.introduction.default", "%s: Hello, i'm a mercenary ready to serve. I only accept a %s, which will last for %d minutes");
 
         // Exclusive mercenaries introductions
-        add("ui.magic_realms.introduction.alshanex", "%s: Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because i saw the tavernkeep fighting like this and thought he looked very cool. I only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.alshanex", "%s: Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because i saw the tavernkeep fighting like this and thought he looked very cool. If you want to contract me, i only accept a %s, which will last for %d minutes");
+        add("ui.magic_realms.introduction.aliana","%s: Hey, i'm hungry. Do you have any familiar i can eat? You don't? Anyways, if you want to contract me i only accept a %s, which will last for %d minutes");
 
         // New permanent contract requirement messages
         add("ui.magic_realms.permanent_contract_insufficient_time", "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?");

@@ -102,6 +102,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("message.magic_realms.catas.geology.keyword_5", "blackstone");
         add("message.magic_realms.catas.geology.response", "%s: Isn’t geology just super cool? I mean like, it’s incredible that you can tell the history of rock just by looking at it!");
         add("message.magic_realms.catas.pumpkin_pie.response", "%s: You have pumpkin pie?! Can I have some?! Please!?");
+        add("message.magic_realms.catas.pumpkin_pie.thanks", "%s: YIPPEE! Thank you! I love pumpkin pie!");
 
         // Amadeus phrases
         add("message.magic_realms.amadeus.combat.entering", "%s: This is the Spell passed down in the Voidwalker Family for generations!");

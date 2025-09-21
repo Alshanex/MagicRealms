@@ -6,22 +6,34 @@ import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
+import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
@@ -81,6 +93,34 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
                     this.updateCustomNameWithLevel(currentLevel);
                 }
             });
+        }
+    }
+
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack heldItem = player.getItemInHand(hand);
+        if(heldItem.is(Items.PUMPKIN_PIE)){
+            if(!this.level().isClientSide) {
+                player.sendSystemMessage(Component.translatable("message.magic_realms.catas.pumpkin_pie.thanks", getExclusiveMercenaryName()));
+                heldItem.shrink(1);
+                playSound(SoundEvents.GENERIC_EAT, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            } else {
+                spawnParticles();
+            }
+            return InteractionResult.SUCCESS;
+        }
+
+        return super.mobInteract(player, hand);
+    }
+
+    protected void spawnParticles() {
+        ParticleOptions particleoptions = ParticleTypes.HEART;
+
+        for (int i = 0; i < 7; i++) {
+            double d0 = this.random.nextGaussian() * 0.02;
+            double d1 = this.random.nextGaussian() * 0.02;
+            double d2 = this.random.nextGaussian() * 0.02;
+            this.level().addParticle(particleoptions, this.getRandomX(1.0), this.getRandomY() + 0.5, this.getRandomZ(1.0), d0, d1, d2);
         }
     }
 

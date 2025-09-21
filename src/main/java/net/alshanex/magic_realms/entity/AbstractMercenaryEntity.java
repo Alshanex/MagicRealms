@@ -101,8 +101,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private static final EntityDataAccessor<Integer> GENDER = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ENTITY_CLASS = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> ENTITY_NAME = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<String> FEARED_ENTITY = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<String> FEARED_ENTITY_TAG = SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.STRING);
 
     // Flags
     private static final byte FLAG_INITIALIZED = 1;
@@ -598,25 +596,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     public void setFearedEntity(EntityType<?> entityType) {
         this.fearedEntityType = entityType;
-        String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entityType).toString();
-        this.entityData.set(FEARED_ENTITY, entityId);
         if (this.level() != null && !this.level().isClientSide) {
             initializeFearGoal();
         }
     }
 
     public EntityType<?> getFearedEntity() {
-        if (fearedEntityType == null) {
-            String entityId = this.entityData.get(FEARED_ENTITY);
-            if (!entityId.isEmpty()) {
-                try {
-                    ResourceLocation location = ResourceLocation.parse(entityId);
-                    fearedEntityType = BuiltInRegistries.ENTITY_TYPE.get(location);
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Failed to parse feared entity ID: {}", entityId, e);
-                }
-            }
-        }
         return fearedEntityType;
     }
 
@@ -642,18 +627,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (!this.isExclusiveMercenary()) {
             return null; // Only exclusive mercenaries can fear tags
         }
-
-        if (fearedEntityTag == null) {
-            String tagId = this.entityData.get(FEARED_ENTITY_TAG);
-            if (!tagId.isEmpty()) {
-                try {
-                    ResourceLocation location = ResourceLocation.parse(tagId);
-                    fearedEntityTag = TagKey.create(Registries.ENTITY_TYPE, location);
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Failed to parse feared entity tag ID: {}", tagId, e);
-                }
-            }
-        }
         return fearedEntityTag;
     }
 
@@ -664,9 +637,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         this.fearedEntityTag = entityTag;
-        String tagId = entityTag != null ? entityTag.location().toString() : "";
-        this.entityData.set(FEARED_ENTITY_TAG, tagId);
-
         if (this.level() != null && !this.level().isClientSide) {
             initializeFearGoal();
         }
@@ -2105,8 +2075,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         pBuilder.define(GENDER, 0);
         pBuilder.define(ENTITY_CLASS, 0);
         pBuilder.define(ENTITY_NAME, "");
-        pBuilder.define(FEARED_ENTITY, "");
-        pBuilder.define(FEARED_ENTITY_TAG, "");
     }
 
     // NBT save/load
@@ -2135,7 +2103,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             compound.putLong("PatrolPosition", this.patrolPosition.asLong());
         }
 
-        compound.putString("FearedEntity", this.entityData.get(FEARED_ENTITY));
+        if (fearedEntityType != null) {
+            compound.putString("FearedEntity", BuiltInRegistries.ENTITY_TYPE.getKey(fearedEntityType).toString());
+        }
+
+        if (fearedEntityTag != null) {
+            compound.putString("FearedEntityTag", fearedEntityTag.location().toString());
+        }
 
         ListTag schoolsTag = new ListTag();
         for (SchoolType school : this.magicSchools) {
@@ -2183,11 +2157,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         compound.putInt("SittingTime", getSittingTime());
         compound.putInt("SitCooldown", getSitCooldown());
         compound.putBoolean("IsInMenuState", isInMenuState());
-
-        TagKey<EntityType<?>> fearedTag = getFearedEntityTag();
-        if (fearedTag != null) {
-            compound.putString("FearedEntityTag", fearedTag.location().toString());
-        }
     }
 
     @Override
@@ -2220,14 +2189,24 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             this.patrolPosition = BlockPos.of(compound.getLong("PatrolPosition"));
         }
 
-        String fearedEntityId = compound.getString("FearedEntity");
-        this.entityData.set(FEARED_ENTITY, fearedEntityId);
+        if (compound.contains("FearedEntity")) {
+            String entityId = compound.getString("FearedEntity");
+            try {
+                ResourceLocation location = ResourceLocation.parse(entityId);
+                this.fearedEntityType = BuiltInRegistries.ENTITY_TYPE.get(location);
+            } catch (Exception e) {
+                MagicRealms.LOGGER.warn("Failed to parse feared entity ID: {}", entityId, e);
+            }
+        }
+
         if (compound.contains("FearedEntityTag")) {
             String tagId = compound.getString("FearedEntityTag");
-            this.entityData.set(FEARED_ENTITY_TAG, tagId);
-
-            // Clear cached tag to force re-parsing
-            this.fearedEntityTag = null;
+            try {
+                ResourceLocation location = ResourceLocation.parse(tagId);
+                this.fearedEntityTag = TagKey.create(Registries.ENTITY_TYPE, location);
+            } catch (Exception e) {
+                MagicRealms.LOGGER.warn("Failed to parse feared entity tag ID: {}", tagId, e);
+            }
         }
         initializeFearGoal();
 

@@ -39,6 +39,7 @@ import net.alshanex.magic_realms.util.humans.*;
 import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
 import net.alshanex.magic_realms.util.humans.stats.HumanStatsManager;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -1063,7 +1064,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (heldItem.is(MRItems.HELL_PASS.get())) {
             if (this.isImmortal()) {
                 player.sendSystemMessage(Component.translatable("message.magic_realms.already_immortal",
-                        this.getEntityName()));
+                        this.getEntityName()).withStyle(ChatFormatting.GOLD));
                 return InteractionResult.FAIL;
             }
 
@@ -1075,7 +1076,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             player.playSound(SoundEvents.TOTEM_USE, 1.0F, 1.0F);
             if (player instanceof ServerPlayer serverPlayer) {
                 serverPlayer.sendSystemMessage(Component.translatable("message.magic_realms.granted_immortality",
-                        this.getEntityName()));
+                        this.getEntityName()).withStyle(ChatFormatting.GOLD));
             }
             return InteractionResult.SUCCESS;
         }
@@ -1090,7 +1091,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             if(this.isExclusiveMercenary()){
                 if (player instanceof ServerPlayer serverPlayer) {
                     MutableComponent message = Component.translatable("ui.magic_realms.contract_reject_permanent",
-                            this.getEntityName());
+                            this.getEntityName()).withStyle(ChatFormatting.GOLD);
 
                     serverPlayer.sendSystemMessage(message);
                 }
@@ -1119,7 +1120,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         if (availableSlots.isEmpty()) {
             if (player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.no_items_to_trade", this.getEntityName()));
+                serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.no_items_to_trade", this.getEntityName()).withStyle(ChatFormatting.GOLD));
             }
             return false;
         }
@@ -1149,7 +1150,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.playSound(SoundEvents.VILLAGER_TRADE, 1.0F, 1.0F);
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.trade_success",
-                    this.getEntityName()));
+                    this.getEntityName()).withStyle(ChatFormatting.GOLD));
         }
         return true;
     }
@@ -1375,7 +1376,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
                     Player contractor = this.level().getPlayerByUUID(previousContractorUUID);
                     if (contractor instanceof ServerPlayer serverPlayer) {
-                        serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.contract_expired", this.getEntityName()));
+                        serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.contract_expired", this.getEntityName()).withStyle(ChatFormatting.GOLD));
                     }
                 }
             }

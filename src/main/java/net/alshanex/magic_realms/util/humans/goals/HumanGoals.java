@@ -22,6 +22,7 @@ import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -1130,7 +1131,7 @@ public class HumanGoals {
         public void start() {
             if(this.humanEntity instanceof AmadeusEntity amadeusEntity && !amadeusEntity.level().isClientSide && amadeusEntity.getSummoner() != null){
                 if(hasContractorNearby(amadeusEntity, amadeusEntity.getSummoner(), amadeusEntity.level())){
-                    amadeusEntity.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.enderman.scared", amadeusEntity.getDisplayName()));
+                    amadeusEntity.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.enderman.scared", amadeusEntity.getDisplayName()).withStyle(ChatFormatting.GOLD));
                 }
             }
             super.start();

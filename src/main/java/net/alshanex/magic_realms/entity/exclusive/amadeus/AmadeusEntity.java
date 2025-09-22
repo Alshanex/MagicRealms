@@ -15,6 +15,7 @@ import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -131,7 +132,7 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
     public void initiateCastSpell(AbstractSpell spell, int spellLevel) {
         if (!this.level().isClientSide && this.getSummoner() != null && this.random.nextFloat() < 0.5f) {
             if(hasContractorNearby(this.getSummoner(), this.level())) {
-                getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.combat.entering", getExclusiveMercenaryName()));
+                getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.combat.entering", getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
             }
         }
         super.initiateCastSpell(spell, spellLevel);

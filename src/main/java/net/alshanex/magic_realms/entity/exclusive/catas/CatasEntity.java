@@ -16,6 +16,7 @@ import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -101,7 +102,7 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
         ItemStack heldItem = player.getItemInHand(hand);
         if(heldItem.is(Items.PUMPKIN_PIE)){
             if(!this.level().isClientSide) {
-                player.sendSystemMessage(Component.translatable("message.magic_realms.catas.pumpkin_pie.thanks", getExclusiveMercenaryName()));
+                player.sendSystemMessage(Component.translatable("message.magic_realms.catas.pumpkin_pie.thanks", getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
                 heldItem.shrink(1);
                 playSound(SoundEvents.GENERIC_EAT, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             } else {

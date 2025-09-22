@@ -15,6 +15,7 @@ import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
 import net.alshanex.magic_realms.util.humans.SpellListGenerator;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -78,7 +79,7 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
     public void initiateCastSpell(AbstractSpell spell, int spellLevel) {
         if (!this.level().isClientSide && this.getSummoner() != null && spell == SpellRegistry.ROOT_SPELL.get()) {
             if(hasContractorNearby(this.getSummoner(), this.level())) {
-                getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.aliana.combat.root", getExclusiveMercenaryName()));
+                getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.aliana.combat.root", getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
             }
         }
         super.initiateCastSpell(spell, spellLevel);

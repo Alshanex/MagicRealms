@@ -148,14 +148,14 @@ public class ServerEvents {
 
         if(mothPattern.matcher(message).find()){
             if (isMothNearby(player, level)) {
-                Component response = Component.translatable("message.magic_realms.catas.moth.response", "Catas");
+                Component response = Component.translatable("message.magic_realms.catas.moth.response", "Catas").withStyle(ChatFormatting.GOLD);
                 scheduleDelayedResponse(() -> sendPlayerResponse(player, response), 20);
             }
         }
 
         if(geologyPattern.matcher(message).find()){
             if (isMothNearby(player, level)) {
-                Component response = Component.translatable("message.magic_realms.catas.geology.response", "Catas");
+                Component response = Component.translatable("message.magic_realms.catas.geology.response", "Catas").withStyle(ChatFormatting.GOLD);
                 scheduleDelayedResponse(() -> sendPlayerResponse(player, response), 20);
             }
         }

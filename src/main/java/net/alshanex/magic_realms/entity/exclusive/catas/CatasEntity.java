@@ -16,6 +16,7 @@ import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.alshanex.magic_realms.util.humans.SpellListGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -65,20 +66,16 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
     @Override
     protected void initializeClassSpecifics(RandomSource randomSource) {
         List<SchoolType> schools = List.of(
-                SchoolRegistry.HOLY.get()
+                SchoolRegistry.HOLY.get(),
+                SchoolRegistry.FIRE.get(),
+                SchoolRegistry.LIGHTNING.get()
         );
         setMagicSchools(schools);
     }
 
     @Override
     protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
-        return List.of(
-                SpellRegistry.HEAL_SPELL.get(),
-                SpellRegistry.BLESSING_OF_LIFE_SPELL.get(),
-                SpellRegistry.FORTIFY_SPELL.get(),
-                SpellRegistry.SUNBEAM_SPELL.get(),
-                SpellRegistry.GUIDING_BOLT_SPELL.get()
-        );
+        return SpellListGenerator.getSpellsFromTag(ModTags.CATAS_SPELLS);
     }
 
     @Override

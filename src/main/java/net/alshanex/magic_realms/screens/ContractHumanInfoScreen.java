@@ -872,21 +872,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        CompoundTag attributes = snapshot.attributes;
-
-        y = renderAttributeWithTruncation(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
-        y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
-        y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.0f%%", x, y, ChatFormatting.LIGHT_PURPLE, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
-
         if (snapshot.entityClass == EntityClass.MAGE) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
             y = renderSectionHeader(guiGraphics, "Schools", x, y, ChatFormatting.GOLD);
@@ -943,20 +928,19 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
+        y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
-        try {
-            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
-            for (SchoolType school : schools) {
-                String resistKey = school.getId().getPath() + "_magic_resist";
-                String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
-                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
-        }
+        CompoundTag attributes = snapshot.attributes;
+
+        y = renderAttributeWithTruncation(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
+        y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
+        y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.0f%%", x, y, ChatFormatting.LIGHT_PURPLE, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
         y = renderSectionHeader(guiGraphics, "School Power", x, y, ChatFormatting.RED);
@@ -972,6 +956,22 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school powers: {}", e.getMessage());
+        }
+
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            for (SchoolType school : schools) {
+                String resistKey = school.getId().getPath() + "_magic_resist";
+                String schoolName = capitalizeFirst(school.getId().getPath());
+                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
     }
 

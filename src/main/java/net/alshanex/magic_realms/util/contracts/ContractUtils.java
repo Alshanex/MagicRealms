@@ -31,18 +31,6 @@ public class ContractUtils {
                                                        ContractData contractData,
                                                        ItemStack heldItem) {
 
-        if (!contractData.hasMinimumContractTime(player.getUUID())) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID());
-
-                MutableComponent message = Component.translatable("ui.magic_realms.permanent_contract_insufficient_time",
-                        humanEntity.getEntityName(), remainingMinutes).withStyle(ChatFormatting.GOLD);
-
-                serverPlayer.sendSystemMessage(message);
-            }
-            return;
-        }
-
         if (!contractData.canEstablishPermanentContract(player.getUUID())) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
@@ -59,6 +47,20 @@ public class ContractUtils {
                 serverPlayer.sendSystemMessage(message);
             }
             return;
+        }
+
+        if(!player.getAbilities().instabuild){
+            if (!contractData.hasMinimumContractTime(player.getUUID())) {
+                if (player instanceof ServerPlayer serverPlayer) {
+                    int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID());
+
+                    MutableComponent message = Component.translatable("ui.magic_realms.permanent_contract_insufficient_time",
+                            humanEntity.getEntityName(), remainingMinutes).withStyle(ChatFormatting.GOLD);
+
+                    serverPlayer.sendSystemMessage(message);
+                }
+                return;
+            }
         }
 
         boolean isUpgrade = contractData.hasActiveContract() && contractData.isContractor(player.getUUID());

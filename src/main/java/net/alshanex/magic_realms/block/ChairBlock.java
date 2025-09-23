@@ -105,7 +105,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     private static final int SPAWN_CHECK_RADIUS = 20;
 
     // Entity spawn chances
-    private static final double EXCLUSIVE_MERCENARY_CHANCE = 0.10; // 10%
+    private static final double EXCLUSIVE_MERCENARY_CHANCE = 0.01; // 1%
 
     public ChairBlock(BlockBehaviour.Properties properties) {
         super(properties);

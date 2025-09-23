@@ -47,6 +47,7 @@ import java.util.UUID;
 public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHumanInfoMenu> {
     private static final ResourceLocation IRON_SPELLS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_iron_spells.png");
     private static final ResourceLocation APOTHIC_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_apothic.png");
+    private static final ResourceLocation INVENTORY_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_inventory.png");
 
     // Color constants for improved readability
     private static final int HEADER_COLOR = 0xFFD700;      // Gold for headers

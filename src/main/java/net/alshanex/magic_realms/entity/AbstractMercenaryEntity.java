@@ -132,7 +132,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private int sitCooldown = 0;
 
     // Inventory and items
-    private static final int INVENTORY_SIZE = 27;
+    public static final int INVENTORY_SIZE = 42;
     private final SimpleContainer inventory = new SimpleContainer(INVENTORY_SIZE);
     private List<AbstractSpell> spellbookSpells = new ArrayList<>();
     private ItemStack lastEquippedSpellbook = ItemStack.EMPTY;

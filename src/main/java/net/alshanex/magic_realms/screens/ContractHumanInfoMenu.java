@@ -173,11 +173,6 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private void saveEquipmentToEntity() {
         if (entity == null) return;
 
-        ContractData contractData = entity.getData(MRDataAttachments.CONTRACT_DATA);
-        if (!contractData.isContractor(player.getUUID())) {
-            return;
-        }
-
         try {
             entity.setItemSlot(EquipmentSlot.HEAD, equipmentContainer.getItem(0).copy());
             entity.setItemSlot(EquipmentSlot.CHEST, equipmentContainer.getItem(1).copy());
@@ -324,10 +319,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
         if (entity == null) return false;
 
-        ContractData contractData = entity.getData(MRDataAttachments.CONTRACT_DATA);
-        if (!contractData.isContractor(player.getUUID())) {
-            return false;
-        }
+        if(entity.getSummoner() == null) return false;
 
         return entity.isInMenuState();
     }

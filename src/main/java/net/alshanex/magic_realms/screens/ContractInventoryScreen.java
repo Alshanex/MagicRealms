@@ -68,6 +68,13 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
     private static final int SYMBOL_X = 98;
     private static final int SYMBOL_Y = 20;
 
+    private float mouseX = 0.0f;
+    private float mouseY = 0.0f;
+    private float targetHeadYaw = 0.0f;
+    private float targetHeadPitch = 0.0f;
+    private float currentHeadYaw = 0.0f;
+    private float currentHeadPitch = 0.0f;
+
     private final EntitySnapshot snapshot;
     private final AbstractMercenaryEntity entity;
     private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new HashMap<>();
@@ -112,7 +119,7 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
-    private void renderEntity3D(GuiGraphics guiGraphics) {
+    private boolean renderEntity3D(GuiGraphics guiGraphics) {
         AbstractMercenaryEntity entityToRender = entity;
 
         // If we don't have the real entity, use the virtual entity with cache
@@ -120,20 +127,31 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
             try {
                 entityToRender = getOrCreateVirtualEntity();
                 if (entityToRender != null) {
-                    MagicRealms.LOGGER.debug("Using virtual entity for 3D rendering in inventory screen");
+                    // MagicRealms.LOGGER.debug("Using cached/created virtual entity for 3D rendering");
                 }
             } catch (Exception e) {
                 MagicRealms.LOGGER.warn("Failed to get virtual entity: {}", e.getMessage());
-                return;
+                return false;
             }
         }
 
         if (entityToRender == null) {
-            MagicRealms.LOGGER.debug("Cannot render 3D: no entity available in inventory screen");
-            return;
+            MagicRealms.LOGGER.debug("Cannot render 3D: no entity available");
+            return false;
         }
 
         try {
+            // Update head rotation based on mouse position
+            updateHeadRotation(0); // You can pass partialTick if available
+
+            // Store original head rotation
+            float originalHeadYaw = entityToRender.getYHeadRot();
+            float originalHeadPitch = entityToRender.getXRot();
+
+            // Apply mouse look rotation
+            entityToRender.setYHeadRot(currentHeadYaw);
+            entityToRender.setXRot(currentHeadPitch);
+
             int entityX = leftPos + ENTITY_RENDER_X;
             int entityY = topPos + ENTITY_RENDER_Y;
 
@@ -154,11 +172,54 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
                     entityToRender, entityX, entityY, entityX + ENTITY_RENDER_WIDTH, entityY + ENTITY_RENDER_HEIGHT
             );
 
-            MagicRealms.LOGGER.debug("Successfully rendered 3D entity in inventory screen");
+            // Restore original head rotation to avoid affecting the actual entity
+            entityToRender.setYHeadRot(originalHeadYaw);
+            entityToRender.setXRot(originalHeadPitch);
+
+            return true;
 
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Error rendering entity 3D in inventory screen: {}", e.getMessage(), e);
+            MagicRealms.LOGGER.error("Error rendering entity 3D: {}", e.getMessage(), e);
+            return false;
         }
+    }
+
+    private void updateMouseLookTarget() {
+        // Get entity render bounds
+        int entityCenterX = leftPos + ENTITY_RENDER_X + ENTITY_RENDER_WIDTH / 2;
+        int entityCenterY = topPos + ENTITY_RENDER_Y + ENTITY_RENDER_HEIGHT / 2;
+
+        // Calculate relative mouse position
+        float relativeX = mouseX - entityCenterX;
+        float relativeY = mouseY - entityCenterY;
+
+        // Convert to angles (adjust sensitivity as needed)
+        float sensitivity = 0.8f;
+        targetHeadYaw = -relativeX * sensitivity; // Negative for correct direction
+        targetHeadPitch = relativeY * sensitivity * 0.5f; // Reduced vertical sensitivity
+
+        // Clamp angles to reasonable limits
+        targetHeadYaw = Math.max(-45.0f, Math.min(45.0f, targetHeadYaw));
+        targetHeadPitch = Math.max(-20.0f, Math.min(20.0f, targetHeadPitch));
+    }
+
+    private void updateHeadRotation(float partialTick) {
+        float lerpSpeed = 0.15f; // Adjust for smoother/snappier movement
+
+        currentHeadYaw = lerp(currentHeadYaw, targetHeadYaw, lerpSpeed);
+        currentHeadPitch = lerp(currentHeadPitch, targetHeadPitch, lerpSpeed);
+    }
+
+    private float lerp(float start, float end, float factor) {
+        return start + factor * (end - start);
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        super.mouseMoved(mouseX, mouseY);
+        this.mouseX = (float) mouseX;
+        this.mouseY = (float) mouseY;
+        updateMouseLookTarget();
     }
 
     private AbstractMercenaryEntity getOrCreateVirtualEntity() {

@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 
@@ -32,7 +33,9 @@ public class ContractUtils {
                                                        ContractData contractData,
                                                        ItemStack heldItem) {
 
-        if (!contractData.canEstablishPermanentContract(player.getUUID())) {
+        Level level = humanEntity.level();  // Get the level from the entity
+
+        if (!contractData.canEstablishPermanentContract(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
                 message = Component.translatable("ui.magic_realms.already_have_contract").withStyle(ChatFormatting.GOLD);
@@ -41,7 +44,7 @@ public class ContractUtils {
             return;
         }
 
-        if (contractData.isPermanent() && contractData.isContractor(player.getUUID())) {
+        if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_already_permanent",
                         humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
@@ -51,9 +54,9 @@ public class ContractUtils {
         }
 
         if(!player.getAbilities().instabuild){
-            if (!contractData.hasMinimumContractTime(player.getUUID())) {
+            if (!contractData.hasMinimumContractTime(player.getUUID(), level)) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID());
+                    int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID(), level);
 
                     MutableComponent message = Component.translatable("ui.magic_realms.permanent_contract_insufficient_time",
                             humanEntity.getEntityName(), remainingMinutes).withStyle(ChatFormatting.GOLD);
@@ -64,9 +67,9 @@ public class ContractUtils {
             }
         }
 
-        boolean isUpgrade = contractData.hasActiveContract() && contractData.isContractor(player.getUUID());
+        boolean isUpgrade = contractData.hasActiveContract(level) && contractData.isContractor(player.getUUID(), level);
 
-        boolean success = contractData.trySetPermanentContract(player.getUUID());
+        boolean success = contractData.trySetPermanentContract(player.getUUID(), level);
 
         if (!success) {
             if (player instanceof ServerPlayer serverPlayer) {
@@ -101,11 +104,13 @@ public class ContractUtils {
                                                     ItemStack heldItem,
                                                     TieredContractItem contractItem) {
 
-        if (!contractData.canEstablishTemporaryContract(player.getUUID())) {
+        Level level = humanEntity.level();  // Get the level from the entity
+
+        if (!contractData.canEstablishTemporaryContract(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
                 if (contractData.isPermanent()) {
-                    if (contractData.isContractor(player.getUUID())) {
+                    if (contractData.isContractor(player.getUUID(), level)) {
                         message = Component.translatable("ui.magic_realms.contract_already_permanent",
                                 humanEntity.getEntityName());
                     } else {
@@ -140,16 +145,16 @@ public class ContractUtils {
 
         int starLevel = humanEntity.getStarLevel();
         int additionalMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
-        boolean isRenewal = contractData.isContractor(player.getUUID());
+        boolean isRenewal = contractData.isContractor(player.getUUID(), level);
 
         boolean success;
         if (isRenewal) {
-            success = contractData.renewContract(player.getUUID(), starLevel);
+            success = contractData.renewContract(player.getUUID(), starLevel, level);
             if(success){
                 humanEntity.addEmeralds(additionalMinutes);
             }
         } else {
-            success = contractData.trySetTemporaryContract(player.getUUID(), starLevel);
+            success = contractData.trySetTemporaryContract(player.getUUID(), starLevel, level);
             if (success) {
                 humanEntity.addEmeralds(additionalMinutes);
                 humanEntity.setSummoner(player);
@@ -188,8 +193,10 @@ public class ContractUtils {
                                                  AbstractMercenaryEntity humanEntity,
                                                  ContractData contractData) {
 
-        if (!contractData.isContractor(player.getUUID())) {
-            if (contractData.hasActiveContract()) {
+        Level level = humanEntity.level();  // Get the level from the entity
+
+        if (!contractData.isContractor(player.getUUID(), level)) {
+            if (contractData.hasActiveContract(level)) {
                 if (player instanceof ServerPlayer serverPlayer) {
                     MutableComponent message = Component.translatable("ui.magic_realms.already_have_contract",
                             humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
@@ -233,8 +240,8 @@ public class ContractUtils {
                 serverPlayer.sendSystemMessage(message);
             }
         } else {
-            int minutes = contractData.getRemainingMinutes();
-            int seconds = contractData.getRemainingSeconds();
+            int minutes = contractData.getRemainingMinutes(level);
+            int seconds = contractData.getRemainingSeconds(level);
 
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",
@@ -328,7 +335,7 @@ public class ContractUtils {
     private static class ContractMenuProvider implements MenuProvider {
         private final EntitySnapshot snapshot;
         private final AbstractMercenaryEntity entity;
-        private final EntityType<? extends AbstractMercenaryEntity> entityType; // NEW
+        private final EntityType<? extends AbstractMercenaryEntity> entityType;
 
         public ContractMenuProvider(EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
             this.snapshot = snapshot;
@@ -354,7 +361,6 @@ public class ContractUtils {
         @Nullable
         @Override
         public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-            // UPDATED: Use new constructor with entity type support
             return new ContractHumanInfoMenu(containerId, playerInventory, snapshot, entity, entityType);
         }
     }
@@ -399,7 +405,7 @@ public class ContractUtils {
         });
     }
 
-    // NEW: Method for opening screen from snapshot only (useful for client-side or when entity unavailable)
+    // Method for opening screen from snapshot only (useful for client-side or when entity unavailable)
     public static void openContractScreenFromSnapshot(Player player, EntitySnapshot snapshot) {
         if (player.level().isClientSide()) return;
 

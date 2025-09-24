@@ -1363,10 +1363,10 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (!level().isClientSide && this.tickCount % 20 == 0) {
             ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
 
-            if (contractData.hasActiveContract()) {
+            if (contractData.hasActiveContract(this.level())) {
                 if (!contractData.isPermanent()) {
                     if (this.tickCount % 200 == 0) {
-                        contractData.periodicTimeUpdate();
+                        contractData.periodicTimeUpdate(this.level());
                     }
                 }
             } else {
@@ -1483,7 +1483,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     public void clearContract() {
         ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
-        contractData.clearContract();
+        contractData.clearContract(this.level()); // Pass level parameter
         this.setSummoner(null);
         if (this.getTarget() != null) {
             this.setTarget(null);

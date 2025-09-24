@@ -1485,31 +1485,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         ContractData contractData = this.getData(MRDataAttachments.CONTRACT_DATA);
         contractData.clearContract();
         this.setSummoner(null);
-        refreshSummonerDependentGoals();
         if (this.getTarget() != null) {
             this.setTarget(null);
         }
-    }
-
-    private void refreshSummonerDependentGoals() {
-        this.targetSelector.removeAllGoals(goal ->
-                goal instanceof GenericOwnerHurtByTargetGoal ||
-                        goal instanceof GenericOwnerHurtTargetGoal ||
-                        goal instanceof GenericCopyOwnerTargetGoal ||
-                        goal instanceof GenericHurtByTargetGoal ||
-                        goal instanceof GenericProtectOwnerTargetGoal
-        );
-
-        this.goalSelector.removeAllGoals(goal ->
-                goal instanceof HumanGoals.HumanFollowOwnerGoal
-        );
-
-        this.targetSelector.addGoal(1, new GenericOwnerHurtByTargetGoal(this, this::getSummoner));
-        this.targetSelector.addGoal(2, new GenericOwnerHurtTargetGoal(this, this::getSummoner));
-        this.targetSelector.addGoal(3, new GenericCopyOwnerTargetGoal(this, this::getSummoner));
-        this.targetSelector.addGoal(4, (new GenericHurtByTargetGoal(this, (entity) -> entity == getSummoner())).setAlertOthers());
-        this.targetSelector.addGoal(5, new GenericProtectOwnerTargetGoal(this, this::getSummoner));
-        this.goalSelector.addGoal(3, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
     }
 
     // Overridden behavior methods

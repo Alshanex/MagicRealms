@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.screens;
 
+import com.mojang.datafixers.util.Pair;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
@@ -8,6 +9,7 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -16,6 +18,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
@@ -380,10 +383,27 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         public int getMaxStackSize() {
             return 1;
         }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            ResourceLocation atlas = InventoryMenu.BLOCK_ATLAS;
+            ResourceLocation sprite = switch (equipmentSlot) {
+                case HEAD -> InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
+                case CHEST -> InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE;
+                case LEGS -> InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS;
+                case FEET -> InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
+                default -> null;
+            };
+
+            return sprite != null ? Pair.of(atlas, sprite) : null;
+        }
     }
 
     private static class MainHandSlot extends Slot {
         private final EntitySnapshot snapshot;
+
+        private static final ResourceLocation EMPTY_SLOT_SWORD =
+                ResourceLocation.withDefaultNamespace("item/empty_slot_sword");
 
         public MainHandSlot(Container container, int slot, int x, int y, EntitySnapshot snapshot) {
             super(container, slot, x, y);
@@ -412,10 +432,18 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         public int getMaxStackSize() {
             return 1;
         }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_SLOT_SWORD);
+        }
     }
 
     private static class OffHandSlot extends Slot {
         private final EntitySnapshot snapshot;
+
+        private static final ResourceLocation EMPTY_SLOT_SPELLBOOK =
+                ResourceLocation.fromNamespaceAndPath("curios", "slot/spellbook_slot");
 
         public OffHandSlot(Container container, int slot, int x, int y, EntitySnapshot snapshot) {
             super(container, slot, x, y);
@@ -431,7 +459,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
                     return stack.getItem() instanceof ShieldItem;
                 } else if (snapshot.entityClass.name().equals("MAGE")) {
                     try {
-                        return stack.getItem().getClass().getSimpleName().equals("SpellBook");
+                        return stack.getItem() instanceof SpellBook;
                     } catch (Exception e) {
                         return false;
                     }
@@ -444,6 +472,14 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         @Override
         public int getMaxStackSize() {
             return 1;
+        }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            if(snapshot.entityClass.name().equals("MAGE")){
+                return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_SLOT_SPELLBOOK);
+            }
+            return Pair.of(InventoryMenu.BLOCK_ATLAS, InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD);
         }
     }
 }

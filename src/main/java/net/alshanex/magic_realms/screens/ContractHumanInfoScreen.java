@@ -6,6 +6,7 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
@@ -607,12 +608,17 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private void renderClassSymbol(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
+        ResourceLocation frame = ResourceLocation.withDefaultNamespace("advancements/challenge_frame_obtained");
+
         ItemStack symbolItem = getSymbolItemForClass();
         if (symbolItem.isEmpty()) return;
 
+        int frameX = leftPos + SYMBOL_X - 4;
+        int frameY = topPos + SYMBOL_Y - 4;
         int symbolX = leftPos + SYMBOL_X;
         int symbolY = topPos + SYMBOL_Y;
 
+        guiGraphics.blitSprite(frame, frameX, frameY, 24, 24);
         guiGraphics.renderItem(symbolItem, symbolX, symbolY);
     }
 
@@ -622,11 +628,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         switch (entityClass) {
             case MAGE -> {
                 try {
-                    return new ItemStack(
-                            BuiltInRegistries.ITEM.get(
-                                    ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "gold_spell_book")
-                            )
-                    );
+                    return new ItemStack(ItemRegistry.GOLD_SPELL_BOOK.get());
                 } catch (Exception e) {
                     MagicRealms.LOGGER.warn("Could not find gold_spell_book item: {}", e.getMessage());
                     return new ItemStack(Items.BOOK);
@@ -636,19 +638,15 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                 if (snapshot.hasShield) {
                     return new ItemStack(Items.SHIELD);
                 } else {
-                    return new ItemStack(Items.IRON_SWORD);
+                    return new ItemStack(Items.IRON_AXE);
                 }
             }
             case ROGUE -> {
                 if (snapshot.isArcher) {
-                    return new ItemStack(Items.BOW);
+                    return new ItemStack(Items.ARROW);
                 } else {
                     try {
-                        return new ItemStack(
-                                BuiltInRegistries.ITEM.get(
-                                        ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "weapon_parts")
-                                )
-                        );
+                        return new ItemStack(ItemRegistry.WEAPON_PARTS.get());
                     } catch (Exception e) {
                         MagicRealms.LOGGER.warn("Could not find weapon_parts item: {}", e.getMessage());
                         return new ItemStack(Items.GOLDEN_SWORD);

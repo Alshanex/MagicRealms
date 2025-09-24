@@ -8,6 +8,10 @@ import io.redspace.ironsspellbooks.api.spells.ISpellContainerMutable;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericCopyOwnerTargetGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericOwnerHurtByTargetGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericOwnerHurtTargetGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericProtectOwnerTargetGoal;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
@@ -2461,6 +2465,10 @@ public class HumanGoals {
 
         protected LivingEntity findPriorityTarget(List<LivingEntity> potentialTargets) {
             if (mob instanceof AbstractMercenaryEntity human) {
+                if (human.getSummoner() == null) {
+                    return null;
+                }
+
                 for (LivingEntity entity : potentialTargets) {
                     if (entity instanceof Mob hostileMob) {
                         LivingEntity hostileTarget = hostileMob.getTarget();
@@ -3135,7 +3143,13 @@ public class HumanGoals {
             Entity livingentity = this.ownerGetter.get();
             if (livingentity == null) {
                 return false;
-            } else if (this.humanEntity.distanceToSqr(livingentity) < (double) (this.startDistance * this.startDistance)) {
+            }
+
+            if (!livingentity.isAlive()) {
+                return false;
+            }
+
+            if (this.humanEntity.distanceToSqr(livingentity) < (double) (this.startDistance * this.startDistance)) {
                 return false;
             } else {
                 this.owner = livingentity;
@@ -3145,10 +3159,19 @@ public class HumanGoals {
 
         @Override
         public boolean canContinueToUse() {
-            // Stop following if entering patrol mode
+            // Don't follow if in patrol mode
             if (humanEntity.isPatrolMode()) {
                 return false;
             }
+
+            // Check if owner is still valid
+            Entity currentOwner = this.ownerGetter.get();
+            if (currentOwner == null || !currentOwner.isAlive()) {
+                return false;
+            }
+
+            // Update owner reference
+            this.owner = currentOwner;
 
             if (this.navigation.isDone()) {
                 return false;
@@ -3171,8 +3194,16 @@ public class HumanGoals {
             this.humanEntity.setPathfindingMalus(PathType.WATER, this.oldWaterCost);
         }
 
-        @Override
         public void tick() {
+            // Additional safety check
+            Entity currentOwner = this.ownerGetter.get();
+            if (currentOwner == null || !currentOwner.isAlive()) {
+                // Force stop the goal
+                return;
+            }
+
+            this.owner = currentOwner; // Update reference
+
             boolean flag = this.shouldTryTeleportToOwner();
             if (!flag) {
                 this.humanEntity.getLookControl().setLookAt(this.owner, 10.0F, (float) this.humanEntity.getMaxHeadXRot());
@@ -3195,14 +3226,16 @@ public class HumanGoals {
 
         public void tryToTeleportToOwner() {
             Entity livingentity = this.ownerGetter.get();
-            if (livingentity != null) {
+            if (livingentity != null && livingentity.isAlive()) {
                 this.teleportToAroundBlockPos(livingentity.blockPosition());
             }
         }
 
         public boolean shouldTryTeleportToOwner() {
             Entity livingentity = this.ownerGetter.get();
-            return livingentity != null && humanEntity.distanceToSqr(livingentity) >= teleportDistance * teleportDistance;
+            return livingentity != null &&
+                    livingentity.isAlive() &&
+                    humanEntity.distanceToSqr(livingentity) >= teleportDistance * teleportDistance;
         }
 
         private void teleportToAroundBlockPos(BlockPos pPos) {
@@ -3952,6 +3985,142 @@ public class HumanGoals {
 
             entity.moveTo(sittingPos.x, sittingPos.y, sittingPos.z, sittingYaw, 0);
             entity.sitInChair(targetChair);
+        }
+    }
+
+    public static class SafeGenericOwnerHurtByTargetGoal extends GenericOwnerHurtByTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericOwnerHurtByTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
+        }
+    }
+
+    public static class SafeGenericOwnerHurtTargetGoal extends GenericOwnerHurtTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericOwnerHurtTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
+        }
+    }
+
+    public static class SafeGenericCopyOwnerTargetGoal extends GenericCopyOwnerTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericCopyOwnerTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
+        }
+    }
+
+    public static class SafeGenericProtectOwnerTargetGoal extends GenericProtectOwnerTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericProtectOwnerTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
         }
     }
 }

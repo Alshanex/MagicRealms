@@ -1311,11 +1311,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.goalSelector.addGoal(10, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(11, new LookAtPlayerGoal(this, Player.class, 8.0F));
 
-        this.targetSelector.addGoal(1, new GenericOwnerHurtByTargetGoal(this, this::getSummoner));
-        this.targetSelector.addGoal(2, new GenericOwnerHurtTargetGoal(this, this::getSummoner));
-        this.targetSelector.addGoal(3, new GenericCopyOwnerTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(1, new HumanGoals.SafeGenericOwnerHurtByTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(2, new HumanGoals.SafeGenericOwnerHurtTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(3, new HumanGoals.SafeGenericCopyOwnerTargetGoal(this, this::getSummoner));
         this.targetSelector.addGoal(4, (new GenericHurtByTargetGoal(this, (entity) -> entity == getSummoner())).setAlertOthers());
-        this.targetSelector.addGoal(5, new GenericProtectOwnerTargetGoal(this, this::getSummoner));
+        this.targetSelector.addGoal(5, new HumanGoals.SafeGenericProtectOwnerTargetGoal(this, this::getSummoner));
         this.targetSelector.addGoal(5, new HumanGoals.HumanHurtByTargetGoal(this));
         this.targetSelector.addGoal(6, new HumanGoals.AlliedHumanDefenseGoal(this));
         this.targetSelector.addGoal(1, new HumanGoals.NoFearTargetGoal(this));

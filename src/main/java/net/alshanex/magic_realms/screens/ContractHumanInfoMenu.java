@@ -32,7 +32,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
     // Tab management - REMOVED INVENTORY TAB
     public enum Tab {
-        IRON_SPELLS, APOTHIC
+        IRON_SPELLS
     }
 
     private Tab currentTab = Tab.IRON_SPELLS;

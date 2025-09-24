@@ -80,8 +80,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
-    private static final int TAB_2_X = 162;
-    private static final int TAB_2_Y = 3;
     private static final int TAB_3_X = 204;
     private static final int TAB_3_Y = 3;
     private static final int TAB_WIDTH = 42;
@@ -176,10 +174,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         attributeRowCounter = 0;
 
         // Render scrollable content
-        switch (currentTab) {
-            case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
-            case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
-        }
+        renderIronSpellsAttributesScrollable(guiGraphics);
 
         guiGraphics.disableScissor();
 
@@ -688,19 +683,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         double relativeY = mouseY - topPos;
 
         // Tab clicking
-        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
+        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + (TAB_WIDTH + 2) * 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
-            if (currentTab != ContractHumanInfoMenu.Tab.IRON_SPELLS) {
-                switchToTab(ContractHumanInfoMenu.Tab.IRON_SPELLS);
-            }
-            return true;
-        }
-
-        if (relativeX >= TAB_2_X - 2 && relativeX < TAB_2_X + TAB_WIDTH + 2 &&
-                relativeY >= TAB_2_Y - 2 && relativeY < TAB_2_Y + TAB_HEIGHT + 2) {
-            if (currentTab != ContractHumanInfoMenu.Tab.APOTHIC) {
-                switchToTab(ContractHumanInfoMenu.Tab.APOTHIC);
-            }
             return true;
         }
 
@@ -735,24 +719,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    private void switchToTab(ContractHumanInfoMenu.Tab newTab) {
-        // Only handle IRON_SPELLS and APOTHIC tabs - inventory is handled separately
-        if (newTab != ContractHumanInfoMenu.Tab.IRON_SPELLS && newTab != ContractHumanInfoMenu.Tab.APOTHIC) {
-            return;
-        }
-
-        currentTab = newTab;
-        scrollOffset = 0;
-        calculateMaxScroll();
-
-        // Send packet to server to sync tab change
-        if (minecraft.level.isClientSide()) {
-            PacketDistributor.sendToServer(new SwitchTabPacket(newTab));
-        }
-
-        MagicRealms.LOGGER.debug("Client-side switched to tab: {}", newTab);
     }
 
     private void switchToInventoryMenu() {
@@ -812,7 +778,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private ResourceLocation getCurrentTexture() {
         return switch (currentTab) {
             case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
-            case APOTHIC -> APOTHIC_TEXTURE;
         };
     }
 
@@ -825,10 +790,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private int getTotalAttributeLines() {
         switch (currentTab) {
             case IRON_SPELLS -> {
-                return getIronSpellsAttributeLines();
-            }
-            case APOTHIC -> {
-                return getApothicAttributeLines();
+                return getIronSpellsAttributeLines() + getApothicAttributeLines();
             }
             default -> {
                 return 0;
@@ -870,13 +832,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         lines += 2;
         lines += 4;
         lines += 2;
-        lines += 3;
-        lines += 2;
         lines += 4;
-        lines += 2;
-        lines += 4;
-        lines += 2;
-        lines += 3;
         return lines;
     }
 
@@ -1005,19 +961,10 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
-    }
-
-    private void renderApothicAttributesScrollable(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
-
-        int x = leftPos + ATTRIBUTES_X;
-        int y = topPos + ATTRIBUTES_Y - scrollOffset;
 
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
         y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.RED);
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        CompoundTag attributes = snapshot.attributes;
 
         y = renderAttributeWithTruncation(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
         y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.RED, true);

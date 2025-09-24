@@ -6,13 +6,11 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.SwitchAttributesMenuPacket;
-import net.alshanex.magic_realms.network.SwitchTabPacket;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
 import net.alshanex.magic_realms.util.humans.appearance.TextureComponents;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -55,8 +53,6 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
 
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
-    private static final int TAB_2_X = 162;
-    private static final int TAB_2_Y = 3;
     private static final int TAB_3_X = 204;
     private static final int TAB_3_Y = 3;
     private static final int TAB_WIDTH = 42;
@@ -535,15 +531,9 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
         double relativeY = mouseY - topPos;
 
         // Tab clicking - switch to attributes menu for non-inventory tabs
-        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
+        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + (TAB_WIDTH + 2) * 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
             switchToAttributesMenu(ContractHumanInfoMenu.Tab.IRON_SPELLS);
-            return true;
-        }
-
-        if (relativeX >= TAB_2_X - 2 && relativeX < TAB_2_X + TAB_WIDTH + 2 &&
-                relativeY >= TAB_2_Y - 2 && relativeY < TAB_2_Y + TAB_HEIGHT + 2) {
-            switchToAttributesMenu(ContractHumanInfoMenu.Tab.APOTHIC);
             return true;
         }
 

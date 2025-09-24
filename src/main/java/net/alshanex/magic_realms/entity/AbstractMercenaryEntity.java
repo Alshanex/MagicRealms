@@ -1056,7 +1056,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             return InteractionResult.FAIL;
         }
 
-        if (heldItem.is(Items.EMERALD)) {
+        if (heldItem.is(Items.EMERALD) && !isInMenuState()) {
             boolean tradeSuccessful = handleEmeraldTrade(player, heldItem);
             return tradeSuccessful ? InteractionResult.SUCCESS : InteractionResult.FAIL;
         }

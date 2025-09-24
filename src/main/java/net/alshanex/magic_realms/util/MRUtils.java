@@ -10,6 +10,9 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
+import net.alshanex.magic_realms.screens.ContractInventoryMenu;
+import net.alshanex.magic_realms.util.contracts.ContractUtils;
 import net.alshanex.magic_realms.util.humans.*;
 import net.alshanex.magic_realms.util.humans.appearance.AdvancedNameManager;
 import net.minecraft.client.Minecraft;
@@ -633,6 +636,47 @@ public class MRUtils {
 
                 MagicRealms.LOGGER.debug("Server updated preset name for entity {} to: {}",
                         entityUUID, presetName);
+            }
+        }
+    }
+
+    public static void handleTabSwitch(Player player, String tabName){
+        // Handle special case for switching TO inventory menu
+        if ("INVENTORY".equals(tabName)) {
+            if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
+                AbstractMercenaryEntity entity = attributesMenu.getEntity();
+                if (entity != null) {
+                    player.closeContainer();
+                    ContractUtils.openInventoryScreen(player, entity);
+                    MagicRealms.LOGGER.debug("Server: Switched from attributes to inventory menu");
+                }
+            }
+            return;
+        }
+
+        // Handle normal tab switching within attributes menu
+        if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
+            try {
+                ContractHumanInfoMenu.Tab tab = ContractHumanInfoMenu.Tab.valueOf(tabName);
+                attributesMenu.switchToTabServerSide(tab);
+                MagicRealms.LOGGER.debug("Server: Switched to tab {} within attributes menu", tab);
+            } catch (IllegalArgumentException e) {
+                MagicRealms.LOGGER.warn("Invalid tab name received: {}", tabName);
+            }
+        }
+    }
+
+    public static void switchToAttributesScreen(Player player, ContractHumanInfoMenu.Tab tab){
+        if (player.containerMenu instanceof ContractInventoryMenu inventoryMenu) {
+            AbstractMercenaryEntity entity = inventoryMenu.getEntity();
+            if (entity != null) {
+                player.closeContainer();
+                ContractUtils.openAttributesScreen(player, entity);
+
+                // Set the tab after opening
+                if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
+                    attributesMenu.switchToTabServerSide(tab);
+                }
             }
         }
     }

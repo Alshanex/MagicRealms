@@ -10,6 +10,7 @@ import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRMenus;
+import net.alshanex.magic_realms.screens.ContractInventoryScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -31,5 +32,6 @@ public class ClientSetup {
     @SubscribeEvent
     public static void registerMenuScreens(RegisterMenuScreensEvent event) {
         event.register(MRMenus.CONTRACT_HUMAN_INFO_MENU.get(), ContractHumanInfoScreen::new);
+        event.register(MRMenus.CONTRACT_INVENTORY_MENU.get(), ContractInventoryScreen::new);
     }
 }

@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
+import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.minecraft.ChatFormatting;
@@ -263,6 +264,32 @@ public class ContractUtils {
         });
     }
 
+    public static void openAttributesScreen(Player player, AbstractMercenaryEntity entity) {
+        if (player.level().isClientSide()) return;
+
+        EntitySnapshot snapshot = EntitySnapshot.fromEntity(entity);
+        entity.setMenuState(true);
+
+        player.openMenu(new ContractMenuProvider(snapshot, entity), buf -> {
+            CompoundTag snapshotNbt = snapshot.serialize();
+            buf.writeNbt(snapshotNbt);
+            buf.writeUUID(entity.getUUID());
+        });
+    }
+
+    public static void openInventoryScreen(Player player, AbstractMercenaryEntity entity) {
+        if (player.level().isClientSide()) return;
+
+        EntitySnapshot snapshot = EntitySnapshot.fromEntity(entity);
+        entity.setMenuState(true);
+
+        player.openMenu(new ContractInventoryMenuProvider(snapshot, entity), buf -> {
+            CompoundTag snapshotNbt = snapshot.serialize();
+            buf.writeNbt(snapshotNbt);
+            buf.writeUUID(entity.getUUID());
+        });
+    }
+
     public static void sendIntroductionMessage(ServerPlayer serverPlayer, AbstractMercenaryEntity humanEntity, ContractData contractData) {
         String entityName = humanEntity.getEntityName();
         EntityClass entityClass = humanEntity.getEntityClass();
@@ -329,6 +356,32 @@ public class ContractUtils {
         public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
             // UPDATED: Use new constructor with entity type support
             return new ContractHumanInfoMenu(containerId, playerInventory, snapshot, entity, entityType);
+        }
+    }
+
+    private static class ContractInventoryMenuProvider implements MenuProvider {
+        private final EntitySnapshot snapshot;
+        private final AbstractMercenaryEntity entity;
+
+        public ContractInventoryMenuProvider(EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
+            this.snapshot = snapshot;
+            this.entity = entity;
+        }
+
+        @Override
+        public Component getDisplayName() {
+            String starDisplay = "★".repeat(entity != null ? entity.getStarLevel() : 1);
+            MutableComponent title = Component.translatable("gui.magic_realms.human_info.title");
+            String entityName = entity != null ? entity.getEntityName() : "Unknown";
+            MutableComponent entityInfo = Component.literal(starDisplay + " " + entityName);
+            entityInfo = entityInfo.withStyle(ChatFormatting.AQUA);
+            return Component.literal(title.getString() + " - " + entityInfo.getString());
+        }
+
+        @Nullable
+        @Override
+        public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+            return new ContractInventoryMenu(containerId, playerInventory, snapshot, entity);
         }
     }
 

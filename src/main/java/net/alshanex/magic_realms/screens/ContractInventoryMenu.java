@@ -1,12 +1,10 @@
 package net.alshanex.magic_realms.screens;
 
-import io.redspace.ironsspellbooks.item.SpellBook;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
-import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
@@ -22,7 +20,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.UUID;
 
-public class ContractHumanInfoMenu extends AbstractContainerMenu {
+public class ContractInventoryMenu extends AbstractContainerMenu {
     private final Container equipmentContainer;
     private final EntitySnapshot snapshot;
     private final AbstractMercenaryEntity entity;
@@ -30,90 +28,85 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private final EntityType<? extends AbstractMercenaryEntity> entityType;
     private java.util.Timer saveTimer;
 
-    // Tab management - REMOVED INVENTORY TAB
+    // Tab management - keep all tabs for UI consistency
     public enum Tab {
-        IRON_SPELLS, APOTHIC
+        IRON_SPELLS, APOTHIC, INVENTORY
     }
 
-    private Tab currentTab = Tab.IRON_SPELLS;
+    private Tab currentTab = Tab.INVENTORY; // Always starts on inventory
 
-    // Slot indices - ONLY equipment + player inventory (42 total)
+    // All slots - equipment + player + entity inventory (84 total)
     private static final int EQUIPMENT_SLOTS = 6;
     private static final int PLAYER_INVENTORY_SLOTS = 36;
+    private static final int ENTITY_INVENTORY_SLOTS = 42;
     private static final int EQUIPMENT_SLOT_START = 0;
     private static final int PLAYER_INVENTORY_START = EQUIPMENT_SLOTS;
+    private static final int ENTITY_INVENTORY_START = EQUIPMENT_SLOTS + PLAYER_INVENTORY_SLOTS;
 
-    // Constructor for when you have the real entity (server-side usually)
-    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
+    // Constructor for when you have the real entity
+    public ContractInventoryMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
         this(containerId, playerInventory, snapshot, entity,
                 entity != null ? (EntityType<? extends AbstractMercenaryEntity>) entity.getType() : snapshot.entityType);
     }
 
     // Full constructor with explicit entity type
-    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot,
+    public ContractInventoryMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot,
                                  AbstractMercenaryEntity entity, EntityType<? extends AbstractMercenaryEntity> entityType) {
-        super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_HUMAN_INFO_MENU.get(), containerId);
+        super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_INVENTORY_MENU.get(), containerId);
         this.snapshot = snapshot;
         this.entity = entity;
         this.player = playerInventory.player;
         this.entityType = entityType;
 
-        // Create the equipment container
         this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS);
 
-        // Load equipment from entity
         loadEquipmentFromEntity();
 
-        // Add equipment slots with restrictions
+        // Add all slots - always 84 total
         addEquipmentSlots();
-
-        // Add player inventory slots
         addPlayerInventory(playerInventory);
         addPlayerHotbar(playerInventory);
+        addEntityInventorySlots();
+
+        MagicRealms.LOGGER.debug("Created inventory menu with {} total slots", this.slots.size());
     }
 
     // Constructor for client-side (from snapshot only)
-    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot) {
+    public ContractInventoryMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot) {
         this(containerId, playerInventory, snapshot, null, snapshot.entityType);
     }
 
     // Network constructor
-    public ContractHumanInfoMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
-        super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_HUMAN_INFO_MENU.get(), containerId);
+    public ContractInventoryMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
+        super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_INVENTORY_MENU.get(), containerId);
 
-        // Deserialize snapshot
         this.snapshot = EntitySnapshot.deserialize(buf.readNbt());
         UUID entityUUID = buf.readUUID();
         this.player = playerInventory.player;
         this.entityType = snapshot != null ? snapshot.entityType : null;
 
-        // Find the entity in the world
         this.entity = findEntityByUUID(playerInventory.player.level(), entityUUID);
-
-        // Create the container
         this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS);
 
-        if (entity != null) {
-            loadEquipmentFromEntity();
-        } else if (snapshot != null && snapshot.equipment != null) {
-            loadEquipmentFromSnapshot();
-        }
+        loadEquipmentFromEntity();
 
-        // Add slots
+        // Add all slots - always 84 total
         addEquipmentSlots();
         addPlayerInventory(playerInventory);
         addPlayerHotbar(playerInventory);
+        addEntityInventorySlots();
+
+        MagicRealms.LOGGER.debug("Network created inventory menu with {} total slots", this.slots.size());
     }
 
-    // Simplified tab management - no inventory tab logic
     public Tab getCurrentTab() {
         return currentTab;
     }
 
     public void switchToTabServerSide(Tab newTab) {
-        if (this.currentTab == newTab) return;
-        this.currentTab = newTab;
-        MagicRealms.LOGGER.debug("Server-side switched to tab: {}", newTab);
+        // This method is called when switching away from inventory to attributes menu
+        // The actual menu switching is handled by the packet handler
+        MagicRealms.LOGGER.debug("Inventory menu received tab switch request to: {}", newTab);
     }
 
     private AbstractMercenaryEntity findEntityByUUID(Level level, UUID entityUUID) {
@@ -138,35 +131,6 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             equipmentContainer.setItem(5, entity.getOffhandItem().copy());
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to load equipment from entity: {}", e.getMessage());
-        }
-    }
-
-    private void loadEquipmentFromSnapshot() {
-        if (snapshot == null || snapshot.equipment == null) return;
-
-        try {
-            var registryAccess = player.level().registryAccess();
-
-            if (snapshot.equipment.contains("head")) {
-                equipmentContainer.setItem(0, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("head")));
-            }
-            if (snapshot.equipment.contains("chest")) {
-                equipmentContainer.setItem(1, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("chest")));
-            }
-            if (snapshot.equipment.contains("legs")) {
-                equipmentContainer.setItem(2, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("legs")));
-            }
-            if (snapshot.equipment.contains("boots")) {
-                equipmentContainer.setItem(3, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("boots")));
-            }
-            if (snapshot.equipment.contains("main_hand")) {
-                equipmentContainer.setItem(4, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("main_hand")));
-            }
-            if (snapshot.equipment.contains("off_hand")) {
-                equipmentContainer.setItem(5, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("off_hand")));
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to load equipment from snapshot: {}", e.getMessage());
         }
     }
 
@@ -216,6 +180,25 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         }
     }
 
+    private void addEntityInventorySlots() {
+        Container entityInventory = (entity != null) ? entity.getInventory() : new SimpleContainer(ENTITY_INVENTORY_SLOTS);
+
+        int startX = 133;
+        int startY = 26;
+        int slotSize = 18;
+
+        for (int row = 0; row < 7; row++) {
+            for (int col = 0; col < 6; col++) {
+                int slotIndex = row * 6 + col;
+                if (slotIndex < ENTITY_INVENTORY_SLOTS) {
+                    int x = startX + (col * slotSize);
+                    int y = startY + (row * slotSize);
+                    this.addSlot(new Slot(entityInventory, slotIndex, x, y));
+                }
+            }
+        }
+    }
+
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack result = ItemStack.EMPTY;
@@ -226,26 +209,38 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             result = stackInSlot.copy();
 
             if (index < EQUIPMENT_SLOTS) {
-                // Equipment slot - move to player inventory
+                // Equipment slot - move to entity inventory first, then player inventory
+                if (!this.moveItemStackTo(stackInSlot, ENTITY_INVENTORY_START,
+                        ENTITY_INVENTORY_START + ENTITY_INVENTORY_SLOTS, false)) {
+                    if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START,
+                            PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS, true)) {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            } else if (index >= PLAYER_INVENTORY_START && index < PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS) {
+                // Player inventory slot - try equipment first, then entity inventory
+                if (!tryMoveToEquipmentSlot(stackInSlot)) {
+                    if (!this.moveItemStackTo(stackInSlot, ENTITY_INVENTORY_START,
+                            ENTITY_INVENTORY_START + ENTITY_INVENTORY_SLOTS, false)) {
+                        // Move within player inventory
+                        if (index < PLAYER_INVENTORY_START + 27) {
+                            if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START + 27,
+                                    PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS, false)) {
+                                return ItemStack.EMPTY;
+                            }
+                        } else {
+                            if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START,
+                                    PLAYER_INVENTORY_START + 27, false)) {
+                                return ItemStack.EMPTY;
+                            }
+                        }
+                    }
+                }
+            } else if (index >= ENTITY_INVENTORY_START && index < ENTITY_INVENTORY_START + ENTITY_INVENTORY_SLOTS) {
+                // Entity inventory slot - move to player inventory
                 if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START,
                         PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS, true)) {
                     return ItemStack.EMPTY;
-                }
-            } else if (index >= PLAYER_INVENTORY_START && index < PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS) {
-                // Player inventory slot - try to move to equipment first
-                if (!tryMoveToEquipmentSlot(stackInSlot)) {
-                    // Move within player inventory
-                    if (index < PLAYER_INVENTORY_START + 27) {
-                        if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START + 27,
-                                PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS, false)) {
-                            return ItemStack.EMPTY;
-                        }
-                    } else {
-                        if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START,
-                                PLAYER_INVENTORY_START + 27, false)) {
-                            return ItemStack.EMPTY;
-                        }
-                    }
                 }
             }
 
@@ -365,7 +360,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         saveEquipmentToEntity();
     }
 
-    // Slot classes
+    // Slot classes (same as in ContractHumanInfoMenu)
     private static class RestrictedSlot extends Slot {
         private final EquipmentSlot equipmentSlot;
 

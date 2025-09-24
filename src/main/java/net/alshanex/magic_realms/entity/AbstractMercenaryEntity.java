@@ -814,7 +814,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     public boolean canPickUpLoot() {
-        return true;
+        return !isInMenuState();
     }
 
     @Override

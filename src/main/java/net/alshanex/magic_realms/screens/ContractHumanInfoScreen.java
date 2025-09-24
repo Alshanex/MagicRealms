@@ -9,6 +9,7 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.network.SwitchTabPacket;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.*;
 import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
@@ -34,6 +35,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -47,7 +49,6 @@ import java.util.UUID;
 public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHumanInfoMenu> {
     private static final ResourceLocation IRON_SPELLS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_iron_spells.png");
     private static final ResourceLocation APOTHIC_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_apothic.png");
-    private static final ResourceLocation INVENTORY_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_inventory.png");
 
     // Color constants for improved readability
     private static final int HEADER_COLOR = 0xFFD700;      // Gold for headers
@@ -63,7 +64,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     private final EntitySnapshot snapshot;
     private final AbstractMercenaryEntity entity;
-    private Tab currentTab = Tab.IRON_SPELLS;
+    private ContractHumanInfoMenu.Tab currentTab = ContractHumanInfoMenu.Tab.IRON_SPELLS;
 
     private int scrollOffset = 0;
     private int maxScroll = 0;
@@ -81,6 +82,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private static final int TAB_1_Y = 3;
     private static final int TAB_2_X = 162;
     private static final int TAB_2_Y = 3;
+    private static final int TAB_3_X = 204;
+    private static final int TAB_3_Y = 3;
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
 
@@ -687,21 +690,23 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         // Tab clicking
         if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
-            if (currentTab != Tab.IRON_SPELLS) {
-                currentTab = Tab.IRON_SPELLS;
-                scrollOffset = 0;
-                calculateMaxScroll();
+            if (currentTab != ContractHumanInfoMenu.Tab.IRON_SPELLS) {
+                switchToTab(ContractHumanInfoMenu.Tab.IRON_SPELLS);
             }
             return true;
         }
 
         if (relativeX >= TAB_2_X - 2 && relativeX < TAB_2_X + TAB_WIDTH + 2 &&
                 relativeY >= TAB_2_Y - 2 && relativeY < TAB_2_Y + TAB_HEIGHT + 2) {
-            if (currentTab != Tab.APOTHIC) {
-                currentTab = Tab.APOTHIC;
-                scrollOffset = 0;
-                calculateMaxScroll();
+            if (currentTab != ContractHumanInfoMenu.Tab.APOTHIC) {
+                switchToTab(ContractHumanInfoMenu.Tab.APOTHIC);
             }
+            return true;
+        }
+
+        if (relativeX >= TAB_3_X - 2 && relativeX < TAB_3_X + TAB_WIDTH + 2 &&
+                relativeY >= TAB_3_Y - 2 && relativeY < TAB_3_Y + TAB_HEIGHT + 2) {
+            switchToInventoryMenu();
             return true;
         }
 
@@ -730,6 +735,32 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void switchToTab(ContractHumanInfoMenu.Tab newTab) {
+        // Only handle IRON_SPELLS and APOTHIC tabs - inventory is handled separately
+        if (newTab != ContractHumanInfoMenu.Tab.IRON_SPELLS && newTab != ContractHumanInfoMenu.Tab.APOTHIC) {
+            return;
+        }
+
+        currentTab = newTab;
+        scrollOffset = 0;
+        calculateMaxScroll();
+
+        // Send packet to server to sync tab change
+        if (minecraft.level.isClientSide()) {
+            PacketDistributor.sendToServer(new SwitchTabPacket(newTab));
+        }
+
+        MagicRealms.LOGGER.debug("Client-side switched to tab: {}", newTab);
+    }
+
+    private void switchToInventoryMenu() {
+        // Send packet to server to switch to inventory menu
+        if (minecraft.level.isClientSide()) {
+            PacketDistributor.sendToServer(new SwitchTabPacket("INVENTORY")); // Special case for inventory
+        }
+        MagicRealms.LOGGER.debug("Client requested switch to inventory menu");
     }
 
     @Override
@@ -765,6 +796,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
+        // Only handle scrolling for non-inventory tabs
         if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
                 relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
 
@@ -1099,10 +1131,5 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    public enum Tab {
-        IRON_SPELLS,
-        APOTHIC
     }
 }

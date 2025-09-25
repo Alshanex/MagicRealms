@@ -643,27 +643,32 @@ public class MRUtils {
     }
 
     public static void handleTabSwitch(Player player, String tabName) {
-        // Store current mouse position before closing menu (client-side)
-        double[] mousePos = storeMousePosition();
-
         // Handle special case for switching TO inventory menu
         if ("INVENTORY".equals(tabName)) {
             if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
                 AbstractMercenaryEntity entity = attributesMenu.getEntity();
                 if (entity != null) {
+                    // Store the entity reference before closing
+                    final AbstractMercenaryEntity entityRef = entity;
+
+                    // Close current menu
                     player.closeContainer();
-                    // Delay menu opening to allow cleanup
-                    ((ServerLevel) player.level()).getServer().execute(() -> {
-                        ContractUtils.openInventoryScreen(player, entity);
-                        restoreMousePosition(mousePos);
-                    });
+
+                    // Open new menu immediately in next tick (minimal delay)
+                    if (player.level() instanceof ServerLevel serverLevel) {
+                        serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                                serverLevel.getServer().getTickCount() + 1, () -> {
+                            ContractUtils.openInventoryScreen(player, entityRef);
+                        }
+                        ));
+                    }
                     MagicRealms.LOGGER.debug("Server: Switched from attributes to inventory menu");
                 }
             }
             return;
         }
 
-        // Handle normal tab switching within attributes menu
+        // Handle normal tab switching within attributes menu (no menu change needed)
         if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
             try {
                 ContractHumanInfoMenu.Tab tab = ContractHumanInfoMenu.Tab.valueOf(tabName);
@@ -676,89 +681,34 @@ public class MRUtils {
     }
 
     public static void switchToAttributesScreen(Player player, ContractHumanInfoMenu.Tab tab) {
-        // Store current mouse position before closing menu
-        double[] mousePos = storeMousePosition();
-
         if (player.containerMenu instanceof ContractInventoryMenu inventoryMenu) {
             AbstractMercenaryEntity entity = inventoryMenu.getEntity();
             if (entity != null) {
+                // Store the entity reference and desired tab
+                final AbstractMercenaryEntity entityRef = entity;
+                final ContractHumanInfoMenu.Tab targetTab = tab;
+
+                // Close current menu
                 player.closeContainer();
-                // Delay menu opening to allow cleanup and preserve mouse position
-                ((ServerLevel) player.level()).getServer().execute(() -> {
-                    ContractUtils.openAttributesScreen(player, entity);
 
-                    // Set the tab after opening - use another delayed execution to ensure menu is ready
-                    ((ServerLevel) player.level()).getServer().execute(() -> {
-                        if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
-                            attributesMenu.switchToTabServerSide(tab);
-                            restoreMousePosition(mousePos);
+                // Open new menu immediately in next tick
+                if (player.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                            serverLevel.getServer().getTickCount() + 1, () -> {
+                        ContractUtils.openAttributesScreen(player, entityRef);
+
+                        // Set the tab in the next tick to ensure menu is ready
+                        serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                                serverLevel.getServer().getTickCount() + 2, () -> {
+                            if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
+                                attributesMenu.switchToTabServerSide(targetTab);
+                            }
                         }
-                    });
-                });
+                        ));
+                    }
+                    ));
+                }
             }
-        }
-    }
-
-    private static double[] storeMousePosition() {
-        // This should be called on client side to get current mouse position
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            return storeMousePositionClient();
-        }
-        return new double[]{0, 0}; // Default fallback
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static double[] storeMousePositionClient() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null) {
-            // Get current mouse position relative to screen
-            double mouseX = mc.mouseHandler.xpos() * (double) mc.getWindow().getGuiScaledWidth() / (double) mc.getWindow().getScreenWidth();
-            double mouseY = mc.mouseHandler.ypos() * (double) mc.getWindow().getGuiScaledHeight() / (double) mc.getWindow().getScreenHeight();
-            return new double[]{mouseX, mouseY};
-        }
-        return new double[]{0, 0};
-    }
-
-    private static void restoreMousePosition(double[] mousePos) {
-        if (FMLEnvironment.dist == Dist.CLIENT && mousePos != null) {
-            restoreMousePositionClient(mousePos);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void restoreMousePositionClient(double[] mousePos) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null && mousePos.length >= 2) {
-            // Restore mouse position after a small delay to let the screen initialize
-            mc.execute(() -> {
-                try {
-                    // Set the mouse position back to where it was
-                    double screenX = mousePos[0] * (double) mc.getWindow().getScreenWidth() / (double) mc.getWindow().getGuiScaledWidth();
-                    double screenY = mousePos[1] * (double) mc.getWindow().getScreenHeight() / (double) mc.getWindow().getGuiScaledHeight();
-
-                    GLFW.glfwSetCursorPos(mc.getWindow().getWindow(), screenX, screenY);
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.debug("Failed to restore mouse position: {}", e.getMessage());
-                }
-            });
-        }
-    }
-
-    // Alternative simpler approach - just prevent mouse from centering
-    @OnlyIn(Dist.CLIENT)
-    public static void preserveMousePositionDuringMenuSwitch() {
-        // This can be called from screen classes before switching
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null) {
-            // Store current position and restore it after next tick
-            double currentX = mc.mouseHandler.xpos();
-            double currentY = mc.mouseHandler.ypos();
-
-            mc.execute(() -> {
-                if (mc.screen != null) {
-                    GLFW.glfwSetCursorPos(mc.getWindow().getWindow(), currentX, currentY);
-                }
-            });
         }
     }
 }

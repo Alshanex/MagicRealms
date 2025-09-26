@@ -6,6 +6,7 @@ import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,5 +23,6 @@ public class CommonSetup {
         event.put(MREntityRegistry.CATAS.get(), CatasEntity.prepareAttributes().build());
         event.put(MREntityRegistry.AMADEUS.get(), AmadeusEntity.prepareAttributes().build());
         event.put(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntity.prepareAttributes().build());
+        event.put(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());
     }
 }

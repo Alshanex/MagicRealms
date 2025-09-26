@@ -5,6 +5,7 @@ import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntityRenderer;
+import net.alshanex.magic_realms.entity.slime.MagicSlimeEntityRenderer;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntityRenderer;
 import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
@@ -27,6 +28,7 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.ALIANA.get(), AlianaEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.CATAS.get(), CatasEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.AMADEUS.get(), AmadeusEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
     }
 
     @SubscribeEvent

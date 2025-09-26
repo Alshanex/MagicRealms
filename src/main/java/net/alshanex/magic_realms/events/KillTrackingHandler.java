@@ -22,6 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -29,6 +30,12 @@ import java.util.List;
 
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class KillTrackingHandler {
+
+    @SubscribeEvent
+    public static void onSlimeHurt(LivingDamageEvent.Pre event){
+
+    }
+
     @SubscribeEvent
     public static void onHumanDeath(LivingDeathEvent event){
         if(!(event.getEntity() instanceof AbstractMercenaryEntity human && human.isImmortal())){

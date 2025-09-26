@@ -2,23 +2,27 @@ package net.alshanex.magic_realms.entity.slime;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
+import io.redspace.ironsspellbooks.entity.spells.AbstractMagicProjectile;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -27,6 +31,8 @@ public class MagicSlimeEntity extends Slime {
     private static final EntityDataAccessor<String> WEAK_SCHOOL = SynchedEntityData.defineId(MagicSlimeEntity.class, EntityDataSerializers.STRING);
 
     private SchoolType weakSchool;
+
+    private boolean hasDivided = false;
 
     public MagicSlimeEntity(EntityType<? extends Slime> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -83,6 +89,27 @@ public class MagicSlimeEntity extends Slime {
         return spawnData;
     }
 
+    @Override
+    public boolean hurt(DamageSource pSource, float pAmount) {
+        if(!this.level().isClientSide) {
+            if(random.nextFloat() < 0.5f && !hasDivided){
+                if(getWeakSchool() != null && !pSource.is(getWeakSchool().getDamageType())) {
+                    MagicSlimeEntity newSlime = new MagicSlimeEntity(MREntityRegistry.MAGIC_SLIME.get(), this.level());
+                    newSlime.setWeakSchool(getWeakSchool());
+                    newSlime.setSize(getSize(), true);
+                    newSlime.setPos(position());
+                    newSlime.finalizeSpawn((ServerLevel) this.level(), this.level().getCurrentDifficultyAt(blockPosition()), MobSpawnType.MOB_SUMMONED, null);
+
+                    this.level().addFreshEntity(newSlime);
+
+                    this.hasDivided = true;
+                }
+            }
+        }
+
+        return super.hurt(pSource, pAmount);
+    }
+
     public static AttributeSupplier.Builder prepareAttributes() {
         return LivingEntity.createLivingAttributes()
                 .add(Attributes.ATTACK_DAMAGE, 3.0)
@@ -96,6 +123,7 @@ public class MagicSlimeEntity extends Slime {
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putString("weakSchool", this.entityData.get(WEAK_SCHOOL));
+        compound.putBoolean("hasDivided", hasDivided);
     }
 
     @Override
@@ -112,6 +140,9 @@ public class MagicSlimeEntity extends Slime {
             this.entityData.set(WEAK_SCHOOL, schoolIdString);
             // Clear the cached value so it gets refreshed from synced data
             this.weakSchool = null;
+        }
+        if (compound.contains("hasDivided")) {
+            this.hasDivided = compound.getBoolean("hasDivided");
         }
     }
 

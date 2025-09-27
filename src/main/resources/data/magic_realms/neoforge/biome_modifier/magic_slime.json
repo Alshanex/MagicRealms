@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#c:is_swamp",
+  "spawners": {
+    "type": "magic_realms:magic_slime",
+    "maxCount": 1,
+    "minCount": 1,
+    "weight": 2
+  }
+}

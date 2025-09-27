@@ -9,6 +9,7 @@ import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -63,6 +64,20 @@ public class MagicSlimeEntity extends Slime {
     public MagicSlimeEntity(EntityType<? extends Slime> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.initializeSchool();
+    }
+
+    public MagicSlimeEntity(EntityType<? extends Slime> pEntityType, Level pLevel, SchoolType parentSchool) {
+        super(pEntityType, pLevel);
+        if (parentSchool != null) {
+            this.setWeakSchool(parentSchool);
+        } else {
+            this.initializeSchool();
+        }
+    }
+
+    public MagicSlimeEntity(EntityType<? extends Slime> pEntityType, Level pLevel, int size) {
+        super(pEntityType, pLevel);
+        this.setSize(size, true);
     }
 
     private void initializeSchool() {
@@ -130,10 +145,10 @@ public class MagicSlimeEntity extends Slime {
             if(random.nextFloat() < 0.5f && !hasDivided){
                 if(getWeakSchool() != null && !pSource.is(getWeakSchool().getDamageType())) {
                     MagicSlimeEntity newSlime = new MagicSlimeEntity(MREntityRegistry.MAGIC_SLIME.get(), this.level());
-                    newSlime.setWeakSchool(getWeakSchool());
-                    newSlime.setSize(getSize(), true);
                     newSlime.setPos(position());
                     newSlime.finalizeSpawn((ServerLevel) this.level(), this.level().getCurrentDifficultyAt(blockPosition()), MobSpawnType.MOB_SUMMONED, null);
+                    newSlime.setWeakSchool(getWeakSchool());
+                    newSlime.setSize(getSize(), true);
 
                     this.level().addFreshEntity(newSlime);
 
@@ -161,6 +176,53 @@ public class MagicSlimeEntity extends Slime {
         }
 
         return super.hurt(pSource, pAmount);
+    }
+
+    @Override
+    public void remove(Entity.RemovalReason reason) {
+        int i = this.getSize();
+        if (!this.level().isClientSide && i > 1 && this.isDeadOrDying()) {
+            Component component = this.getCustomName();
+            boolean flag = this.isNoAi();
+            float f = this.getDimensions(this.getPose()).width();
+            float f1 = f / 2.0F;
+            int j = i / 2;
+            int k = 2 + this.random.nextInt(3);
+
+            var children = new java.util.ArrayList<Mob>();
+
+            for (int l = 0; l < k; l++) {
+                float f2 = ((float)(l % 2) - 0.5F) * f1;
+                float f3 = ((float)(l / 2) - 0.5F) * f1;
+
+                SchoolType parentSchool = this.getWeakSchool();
+                MagicSlimeEntity slime = new MagicSlimeEntity(MREntityRegistry.MAGIC_SLIME.get(), this.level(), parentSchool);
+
+                if (slime != null) {
+                    if (this.isPersistenceRequired()) {
+                        slime.setPersistenceRequired();
+                    }
+
+                    slime.setCustomName(component);
+                    slime.setNoAi(flag);
+                    slime.setInvulnerable(this.isInvulnerable());
+                    slime.setSize(j, true);
+                    slime.hasDivided = false;
+
+                    slime.moveTo(this.getX() + (double)f2, this.getY() + 0.5, this.getZ() + (double)f3, this.random.nextFloat() * 360.0F, 0.0F);
+
+                    children.add(slime);
+                }
+            }
+
+            if (!net.neoforged.neoforge.event.EventHooks.onMobSplit(this, children).isCanceled()) {
+                children.forEach(this.level()::addFreshEntity);
+            }
+
+            // Temporarily set size to 1 to prevent vanilla splitting
+            this.setSize(1, false);
+        }
+        super.remove(reason);
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {

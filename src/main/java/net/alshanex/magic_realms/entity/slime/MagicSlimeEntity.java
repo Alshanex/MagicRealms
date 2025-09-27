@@ -105,6 +105,24 @@ public class MagicSlimeEntity extends Slime {
                     this.hasDivided = true;
                 }
             }
+
+            if(pSource.getEntity() instanceof LivingEntity entity && this.distanceToSqr(entity) < 9.0D) {
+                Vec3 entityPos = entity.position();
+                Vec3 knockbackDirection = entityPos.subtract(this.position()).normalize();
+
+                if (knockbackDirection.lengthSqr() < 0.001) {
+                    knockbackDirection = new Vec3(0, 1, 0);
+                }
+
+                double knockbackStrength = 3.0;
+
+                Vec3 knockbackVelocity = knockbackDirection.scale(knockbackStrength);
+
+                knockbackVelocity = knockbackVelocity.add(0, 0.5, 0);
+
+                entity.setDeltaMovement(entity.getDeltaMovement().add(knockbackVelocity));
+                entity.hasImpulse = true;
+            }
         }
 
         return super.hurt(pSource, pAmount);

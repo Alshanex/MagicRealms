@@ -53,47 +53,6 @@ public class KillTrackingHandler {
             } else {
                 event.setNewDamage(event.getOriginalDamage() * 0.2f);
             }
-
-            knockbackSurroundingEntities(slime, 3.0);
-        }
-    }
-
-    private static void knockbackSurroundingEntities(MagicSlimeEntity slime, double radius) {
-        List<LivingEntity> nearbyEntities = slime.level().getEntitiesOfClass(
-                LivingEntity.class,
-                slime.getBoundingBox().inflate(radius),
-                entity -> entity != slime &&
-                        !slime.isAlliedTo(entity) &&
-                         !(entity instanceof Slime) &&
-                        entity.distanceTo(slime) <= radius
-        );
-
-        Vec3 slimePos = slime.position();
-
-        for (LivingEntity entity : nearbyEntities) {
-            Vec3 entityPos = entity.position();
-            Vec3 knockbackDirection = entityPos.subtract(slimePos).normalize();
-
-            if (knockbackDirection.lengthSqr() < 0.001) {
-                knockbackDirection = new Vec3(0, 1, 0);
-            }
-
-            double knockbackStrength = 3.0;
-
-            Vec3 knockbackVelocity = knockbackDirection.scale(knockbackStrength);
-
-            knockbackVelocity = knockbackVelocity.add(0, 0.5, 0);
-
-            entity.setDeltaMovement(entity.getDeltaMovement().add(knockbackVelocity));
-            entity.hasImpulse = true;
-
-            if(!slime.level().isClientSide){
-                Vector3f color = SchoolRegistry.EVOCATION.get().getTargetingColor();
-                if(slime.getWeakSchool() != null){
-                    color = slime.getWeakSchool().getTargetingColor();
-                }
-                MagicManager.spawnParticles(slime.level(), new BlastwaveParticleOptions(color, slime.getSize() * 1.5f), entity.getX(), entity.getY() + .165f, entity.getZ(), 1, 0, 0, 0, 0, true);
-            }
         }
     }
 

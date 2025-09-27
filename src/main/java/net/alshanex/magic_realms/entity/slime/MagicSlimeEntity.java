@@ -3,8 +3,11 @@ package net.alshanex.magic_realms.entity.slime;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.spells.AbstractMagicProjectile;
+import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -26,9 +29,32 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 public class MagicSlimeEntity extends Slime {
     private static final EntityDataAccessor<String> WEAK_SCHOOL = SynchedEntityData.defineId(MagicSlimeEntity.class, EntityDataSerializers.STRING);
+
+    private final Map<ResourceLocation, ParticleOptions> particleTypes = Map.ofEntries(
+            Map.entry(SchoolRegistry.BLOOD.get().getId(), ParticleRegistry.BLOOD_PARTICLE.get()),
+            Map.entry(SchoolRegistry.HOLY.get().getId(), ParticleRegistry.CLEANSE_PARTICLE.get()),
+            Map.entry(SchoolRegistry.EVOCATION.get().getId(), ParticleTypes.CRIT),
+            Map.entry(SchoolRegistry.ELDRITCH.get().getId(), ParticleTypes.SCULK_CHARGE_POP),
+            Map.entry(SchoolRegistry.ENDER.get().getId(), ParticleRegistry.UNSTABLE_ENDER_PARTICLE.get()),
+            Map.entry(SchoolRegistry.FIRE.get().getId(), ParticleRegistry.FIRE_PARTICLE.get()),
+            Map.entry(SchoolRegistry.ICE.get().getId(), ParticleRegistry.SNOWFLAKE_PARTICLE.get()),
+            Map.entry(SchoolRegistry.LIGHTNING.get().getId(), ParticleRegistry.ELECTRICITY_PARTICLE.get()),
+            Map.entry(SchoolRegistry.NATURE.get().getId(), ParticleTypes.COMPOSTER),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("aero_additions", "wind"), ParticleTypes.EFFECT),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("familiarslib", "sound"), ParticleTypes.NOTE),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("cataclysm_spellbooks", "abyssal"), ParticleTypes.LANDING_OBSIDIAN_TEAR),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("cataclysm_spellbooks", "technomancy"), ParticleTypes.WAX_ON),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("iss_magicfromtheeast", "spirit"), ParticleTypes.SOUL),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("iss_magicfromtheeast", "symmetry"), ParticleTypes.TOTEM_OF_UNDYING),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("iss_magicfromtheeast", "dune"), ParticleTypes.CAMPFIRE_COSY_SMOKE),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("endersequipment", "primeval"), ParticleTypes.CHERRY_LEAVES),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("endersequipment", "blade"), ParticleTypes.SWEEP_ATTACK),
+            Map.entry(ResourceLocation.fromNamespaceAndPath("ess_requiem", "mind"), ParticleTypes.NAUTILUS)
+    );
 
     private SchoolType weakSchool;
 
@@ -36,6 +62,7 @@ public class MagicSlimeEntity extends Slime {
 
     public MagicSlimeEntity(EntityType<? extends Slime> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.initializeSchool();
     }
 
     private void initializeSchool() {
@@ -71,8 +98,18 @@ public class MagicSlimeEntity extends Slime {
     }
 
     @Override
+    protected ParticleOptions getParticleType() {
+        if(getWeakSchool() != null) {
+            ParticleOptions particleType = particleTypes.get(getWeakSchool().getId());
+            if(particleType != null) {
+                return particleType;
+            }
+        }
+        return super.getParticleType();
+    }
+
+    @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData) {
-        // Call parent finalizeSpawn first to set up size and other slime properties
         SpawnGroupData spawnData = super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
 
         RandomSource randomsource = pLevel.getRandom();
@@ -83,8 +120,6 @@ public class MagicSlimeEntity extends Slime {
 
         int j = 1 << i;
         this.setSize(j, true);
-
-        this.initializeSchool();
 
         return spawnData;
     }

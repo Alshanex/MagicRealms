@@ -207,7 +207,16 @@ public class KillTrackerData {
     private int getRequiredExperienceForLevel(int level) {
         if (level <= 1) return 0;
 
-        return (int) (200 * level * (Config.xpNeededMultiplier / 100));
+        // Base XP for level 2
+        double baseXp = 100.0;
+
+        // Growth rate
+        double growthRate = 1.08;
+
+        // Calculate total XP needed to reach this level
+        double totalXp = baseXp * (Math.pow(growthRate, level - 1) - 1) / (growthRate - 1);
+
+        return (int) (totalXp * (Config.xpNeededMultiplier / 100));
     }
 
     public int getMaxLevel() {

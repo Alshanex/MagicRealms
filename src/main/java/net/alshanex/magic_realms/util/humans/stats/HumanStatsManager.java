@@ -2,15 +2,20 @@ package net.alshanex.magic_realms.util.humans.stats;
 
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+
+import java.util.List;
 
 public class HumanStatsManager {
 
@@ -58,6 +63,40 @@ public class HumanStatsManager {
         double castingMovespeed = roundToTwoDecimals(getStarBasedValue(starLevel, 0, 10, 5, 15, 10, 20, random) / 100.0);
         addAttributeModifier(entity, AttributeRegistry.CASTING_MOVESPEED,
                 "mage_casting_movespeed", castingMovespeed, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+
+        applyMageSchoolBonuses(entity, random);
+    }
+
+    private static void applyMageSchoolBonuses(AbstractMercenaryEntity entity, RandomSource random) {
+        if (entity.getEntityClass() != EntityClass.MAGE) {
+            return;
+        }
+
+        List<SchoolType> schools = entity.getMagicSchools();
+
+        for (SchoolType school : schools) {
+            double bonusPercentage = 5.0 + (random.nextDouble() * 5.0);
+            double roundedBonus = roundToTwoDecimals(bonusPercentage);
+
+            ResourceLocation powerAttributeId = ResourceLocation.fromNamespaceAndPath(
+                    school.getId().getNamespace(),
+                    school.getId().getPath() + "_spell_power"
+            );
+
+            var attributeHolder = BuiltInRegistries.ATTRIBUTE.getHolder(powerAttributeId).orElse(null);
+
+            if (attributeHolder != null) {
+                addAttributeModifier(entity, attributeHolder,
+                        "mage_initial_" + school.getId().getPath() + "_power",
+                        roundedBonus / 100.0,
+                        AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+
+                MagicRealms.LOGGER.debug("Applied {}% initial spell power bonus to {} for school {}",
+                        roundedBonus, entity.getEntityName(), school.getId());
+            } else {
+                MagicRealms.LOGGER.warn("Could not find power attribute for school: {}", school.getId());
+            }
+        }
     }
 
     private static void applyWarriorAttributes(AbstractMercenaryEntity entity, int starLevel, RandomSource random) {

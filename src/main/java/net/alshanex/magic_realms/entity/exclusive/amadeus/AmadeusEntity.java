@@ -130,7 +130,7 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
 
     @Override
     public void initiateCastSpell(AbstractSpell spell, int spellLevel) {
-        if (!this.level().isClientSide && this.getSummoner() != null && this.random.nextFloat() < 0.5f) {
+        if (!this.level().isClientSide && this.getSummoner() != null && this.random.nextFloat() < 0.2f) {
             if(hasContractorNearby(this.getSummoner(), this.level())) {
                 getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.combat.entering", getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
             }

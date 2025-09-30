@@ -125,9 +125,9 @@ public class CustomRaid {
         Set<HostileRandomHumanEntity> waveSet = Sets.newHashSet();
         waveEntities.put(currentWave, waveSet);
 
-        // Spawn 3-5 entities per wave, increasing with wave number
-        int entitiesToSpawn = 3 + (currentWave / 2);
-        entitiesToSpawn = Math.min(entitiesToSpawn, 8); // Cap at 8 per wave
+        // Spawn 10-20 entities per wave, scaling with wave number
+        int entitiesToSpawn = 10 + currentWave;
+        entitiesToSpawn = Math.min(entitiesToSpawn, 20);
 
         totalHealth = 0.0F;
 
@@ -144,7 +144,6 @@ public class CustomRaid {
                         null
                 );
 
-                // Set target to the player
                 ServerPlayer targetPlayer = level.getServer().getPlayerList().getPlayer(targetPlayerUUID);
                 if (targetPlayer != null) {
                     entity.setTarget(targetPlayer);

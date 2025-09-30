@@ -126,7 +126,7 @@ public class CustomRaid {
         waveEntities.put(currentWave, waveSet);
 
         // Spawn 10-20 entities per wave, scaling with wave number
-        int entitiesToSpawn = 10 + currentWave;
+        int entitiesToSpawn = 5 + (10 - currentWave);
         entitiesToSpawn = Math.min(entitiesToSpawn, 20);
 
         totalHealth = 0.0F;

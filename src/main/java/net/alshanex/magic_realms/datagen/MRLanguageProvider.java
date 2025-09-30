@@ -26,6 +26,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MRItems.HELL_PASS.get(), "Hell's Pass");
         add(MRItems.BLOOD_PACT.get(), "Blood Pact");
         add(MRItems.PERMANENT_BLOOD_PACT.get(), "Binding Blood Pact");
+        add(MRItems.MIDAS_COIN.get(), "Midas Coin");
 
         add(MREntityRegistry.HUMAN.get(), "Human");
         add(MREntityRegistry.TAVERNKEEP.get(), "Tavernkeep");
@@ -51,6 +52,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("tooltip.magic_realms.permanent_contract.requirement", "Requires 200+ minutes of previous contracts with entity");
         add("tooltip.magic_realms.hell_pass", "Give to any human to allow him survive fatal hits");
         add("tooltip.magic_realms.blood_pact", "Has the ability to bind two souls forever");
+        add("tooltip.magic_realms.raid_item", "Legends say that this coin can grant immense fortune to the user, but be careful since other people might want to snatch it if you try to use it.");
 
         // GUI translations
         add("gui.magic_realms.human_info.title", "Entity Information");
@@ -131,6 +133,8 @@ public class MRLanguageProvider extends LanguageProvider {
         add("message.magic_realms.tavernkeep_tip.action_key_2", "obtain");
         add("message.magic_realms.tavernkeep_tip.subject_key_1", "tavernkeep");
         add("message.magic_realms.tavernkeep_tip.subject_key_2", "tavernkeeper");
+
+        add("message.magic_realms.custom_raid.start", "People saw your coin and will try to snatch it. Survive and get your fortune!");
 
         add("ui.magic_realms.blood_experiment_title", "Blood Infusing Experiment #1");
         add("ui.magic_realms.blood_experiment_text", "I've noticed that some blood spells have secondary effects on the caster, so i started an experiment to transform my offhand item into a different item by imbuing blood magic into it.");

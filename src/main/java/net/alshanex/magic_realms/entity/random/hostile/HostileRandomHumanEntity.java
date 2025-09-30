@@ -1,8 +1,10 @@
 package net.alshanex.magic_realms.entity.random.hostile;
 
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
+import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
@@ -11,6 +13,7 @@ import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
 import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -19,8 +22,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
@@ -89,6 +94,11 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     }
 
     @Override
+    protected void initializeFearedEntity(RandomSource randomSource) {
+
+    }
+
+    @Override
     protected boolean isHostileHuman() {
         return true;
     }
@@ -120,5 +130,14 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
+    }
+
+    @Override
+    public boolean isAlliedTo(Entity pEntity) {
+        return super.isAlliedTo(pEntity) || this.isAlliedHelper(pEntity);
+    }
+
+    private boolean isAlliedHelper(Entity entity) {
+        return entity instanceof HostileRandomHumanEntity;
     }
 }

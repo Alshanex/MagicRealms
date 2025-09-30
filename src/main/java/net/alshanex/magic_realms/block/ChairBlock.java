@@ -149,12 +149,6 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
                 sittingEntity.unsitFromChair();
                 return InteractionResult.SUCCESS;
             }
-
-            // Try to spawn an entity if conditions are met
-            if (canSpawnEntity(serverLevel, pos)) {
-                spawnRandomEntity(serverLevel, pos, state);
-                return InteractionResult.SUCCESS;
-            }
         }
         return InteractionResult.PASS;
     }

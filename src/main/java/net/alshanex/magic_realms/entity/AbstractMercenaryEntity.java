@@ -1173,7 +1173,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             HumanStatsManager.applyClassAttributes(this);
 
             KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
-            killData.initializeRandomSpawnLevel(randomsource);
+            initializeHumanLevel(randomsource, killData);
 
             int spawnLevel = killData.getCurrentLevel();
             LevelingStatsManager.applyLevelBasedAttributes(this, spawnLevel);
@@ -1203,6 +1203,10 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
+    }
+
+    protected void initializeHumanLevel(RandomSource randomSource, KillTrackerData killTrackerData) {
+        killTrackerData.initializeRandomSpawnLevel(randomSource);
     }
 
     protected void requestNameSyncFromClient() {
@@ -2006,6 +2010,10 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             var otherOwner = tamableAnimal.getOwner();
             return otherOwner != null && (owner == otherOwner || otherOwner.isAlliedTo(otherOwner));
         }
+        return false;
+    }
+
+    protected boolean isHostileHuman(){
         return false;
     }
 

@@ -6,6 +6,7 @@ import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.minecraft.core.registries.Registries;
@@ -28,6 +29,12 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "human_entity").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<HostileRandomHumanEntity>> HOSTILE_HUMAN =
+            ENTITIES.register("hostile_human_entity", () -> EntityType.Builder.<HostileRandomHumanEntity>of(HostileRandomHumanEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "hostile_human_entity").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<TavernKeeperEntity>> TAVERNKEEP =
             ENTITIES.register("tavernkeep", () -> EntityType.Builder.<TavernKeeperEntity>of(TavernKeeperEntity::new, MobCategory.MONSTER)

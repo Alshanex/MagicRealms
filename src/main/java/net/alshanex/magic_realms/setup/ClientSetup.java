@@ -5,6 +5,8 @@ import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntityRenderer;
+import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
+import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntityRenderer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntityRenderer;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntityRenderer;
 import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
@@ -23,6 +25,7 @@ public class ClientSetup {
     @SubscribeEvent
     public static void rendererRegister(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(MREntityRegistry.HUMAN.get(), RandomHumanEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.HOSTILE_HUMAN.get(), HostileRandomHumanEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.ALSHANEX.get(), AlshanexEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.ALIANA.get(), AlianaEntityRenderer::new);

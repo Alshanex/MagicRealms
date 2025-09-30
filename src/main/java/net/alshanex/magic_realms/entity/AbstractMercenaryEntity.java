@@ -2000,6 +2000,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (owner == null) {
             return false;
         }
+        if (entity.is(owner)) {
+            return true;
+        }
         if (entity instanceof IMagicSummon magicSummon) {
             var otherOwner = magicSummon.getSummoner();
             return otherOwner != null && (owner == otherOwner || otherOwner.isAlliedTo(otherOwner));

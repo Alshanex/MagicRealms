@@ -59,13 +59,6 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
 
-    private static final int HEALTH_X = 28;
-    private static final int HEALTH_Y = 125;
-    private static final int ARMOR_X = 28;
-    private static final int ARMOR_Y = 145;
-    private static final int DAMAGE_X = 85;
-    private static final int DAMAGE_Y = 136;
-
     private static final int SYMBOL_X = 98;
     private static final int SYMBOL_Y = 20;
 
@@ -75,6 +68,18 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
     private float targetHeadPitch = 0.0f;
     private float currentHeadYaw = 0.0f;
     private float currentHeadPitch = 0.0f;
+
+    private static final int EXP_BAR_X = 12;
+    private static final int EXP_BAR_Y = 114;
+    private static final int EXP_BAR_WIDTH = 96;
+    private static final int EXP_BAR_HEIGHT = 3;
+
+    private static final int ATTRIBUTES_START_X = 13;
+    private static final int ATTRIBUTES_START_Y = 135;
+    private static final int ATTRIBUTES_END_X = ATTRIBUTES_START_X + 85;
+
+    private static final int ICON_SIZE = 9;
+    private static final int ICON_SPACING = 2;
 
     private final EntitySnapshot snapshot;
     private final AbstractMercenaryEntity entity;
@@ -514,20 +519,123 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
     private void renderStats(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
-        var attributes = snapshot.attributes;
+        CompoundTag attributes = snapshot.attributes;
 
+        // Render experience bar and level
+        renderExperienceBar(guiGraphics);
+
+        int startX = leftPos + ATTRIBUTES_START_X;
+        int endX = leftPos + ATTRIBUTES_END_X;
+        int firstLineY = topPos + ATTRIBUTES_START_Y;
+        int totalWidth = endX - startX;
+
+        // Prepare attribute strings
         float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
         float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
-        Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
-        guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false);
+        String healthText = String.format("%.0f/%.0f", health, maxHealth);
 
         double armor = attributes.contains("armor") ? attributes.getDouble("armor") : 0.0;
-        Component armorComponent = Component.literal(String.format("%.1f", armor));
-        guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false);
+        String armorText = String.format("%.1f", armor);
 
         double damage = attributes.contains("attack_damage") ? attributes.getDouble("attack_damage") : 1.0;
-        Component damageComponent = Component.literal(String.format("%.1f", damage));
-        guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
+        String damageText = String.format("%.1f", damage);
+
+        // Calculate widths for first line (health and armor)
+        int healthWidth = ICON_SIZE + ICON_SPACING + font.width(healthText);
+        int armorWidth = ICON_SIZE + ICON_SPACING + font.width(armorText);
+        int firstLineContentWidth = healthWidth + armorWidth;
+        int firstLineSpacing = totalWidth - firstLineContentWidth;
+
+        // Ensure spacing is not negative
+        if (firstLineSpacing < 0) firstLineSpacing = 2;
+
+        // Render first line: Health and Armor
+        int currentX = startX;
+
+        // Render Health
+        currentX = renderAttributeWithIcon(guiGraphics, currentX, firstLineY,
+                ResourceLocation.withDefaultNamespace("hud/heart/container"),
+                ResourceLocation.withDefaultNamespace("hud/heart/full"),
+                healthText, 0xFF5555);
+
+        currentX += firstLineSpacing;
+
+        // Render Damage
+        renderAttributeWithIcon(guiGraphics, currentX, firstLineY,
+                null,
+                ResourceLocation.withDefaultNamespace("hud/armor_full"),
+                armorText, 0xAAAAAA);
+    }
+
+    private void renderExperienceBar(GuiGraphics guiGraphics) {
+        if (snapshot == null) return;
+
+        int barX = leftPos + EXP_BAR_X;
+        int barY = topPos + EXP_BAR_Y;
+
+        // Get level data
+        int currentLevel = snapshot.currentLevel;
+        int currentExp = snapshot.experiencePoints;
+
+        // Calculate experience for next level (same formula as in KillTrackerData)
+        int expForCurrentLevel = (int) (200 * currentLevel * (net.alshanex.magic_realms.Config.xpNeededMultiplier / 100));
+        int expForNextLevel = (int) (200 * (currentLevel + 1) * (net.alshanex.magic_realms.Config.xpNeededMultiplier / 100));
+
+        int expIntoLevel = currentExp - expForCurrentLevel;
+        int expNeeded = expForNextLevel - expForCurrentLevel;
+
+        // Calculate progress (0.0 to 1.0)
+        float progress = expNeeded > 0 ? (float) expIntoLevel / expNeeded : 0.0f;
+        progress = Math.max(0.0f, Math.min(1.0f, progress));
+
+        // Render experience bar background (dark)
+        guiGraphics.fill(barX, barY, barX + EXP_BAR_WIDTH, barY + EXP_BAR_HEIGHT, 0xFF000000);
+
+        // Render experience bar fill (green)
+        int fillWidth = (int) (EXP_BAR_WIDTH * progress);
+        if (fillWidth > 0) {
+            guiGraphics.fill(barX, barY, barX + fillWidth, barY + EXP_BAR_HEIGHT, 0xFF00FF00);
+        }
+
+        // Render border
+        // Top border
+        guiGraphics.fill(barX, barY - 1, barX + EXP_BAR_WIDTH, barY, 0xFF555555);
+        // Bottom border
+        guiGraphics.fill(barX, barY + EXP_BAR_HEIGHT, barX + EXP_BAR_WIDTH, barY + EXP_BAR_HEIGHT + 1, 0xFF555555);
+        // Left border
+        guiGraphics.fill(barX - 1, barY, barX, barY + EXP_BAR_HEIGHT, 0xFF555555);
+        // Right border
+        guiGraphics.fill(barX + EXP_BAR_WIDTH, barY, barX + EXP_BAR_WIDTH + 1, barY + EXP_BAR_HEIGHT, 0xFF555555);
+
+        // Render level number centered below the bar (vanilla style)
+        String levelText = String.valueOf(currentLevel);
+        int textWidth = font.width(levelText);
+        int textX = barX + (EXP_BAR_WIDTH / 2) - (textWidth / 2);
+        int textY = barY + EXP_BAR_HEIGHT + 2;
+
+        // Render level text with shadow (green like vanilla)
+        guiGraphics.drawString(font, levelText, textX, textY, 0x80FF20, true);
+    }
+
+    private int renderAttributeWithIcon(GuiGraphics guiGraphics, int x, int y,
+                                        ResourceLocation backgroundSprite,
+                                        ResourceLocation iconSprite,
+                                        String value, int color) {
+        // Render background sprite if present (for health container)
+        if (backgroundSprite != null) {
+            guiGraphics.blitSprite(backgroundSprite, x, y, ICON_SIZE, ICON_SIZE);
+        }
+
+        // Render main icon sprite
+        guiGraphics.blitSprite(iconSprite, x, y, ICON_SIZE, ICON_SIZE);
+
+        // Render value text next to icon
+        int textX = x + ICON_SIZE + ICON_SPACING;
+        guiGraphics.drawString(font, value, textX, y + 1, color, true);
+
+        // Return next X position
+        int textWidth = font.width(value);
+        return textX + textWidth + ICON_SPACING;
     }
 
     private void renderClassSymbol(GuiGraphics guiGraphics) {

@@ -47,7 +47,7 @@ public class RaidTriggerItem extends Item {
                 return InteractionResultHolder.fail(stack);
             }
 
-            CustomRaid raid = raidManager.createRaid(serverPlayer, player.blockPosition());
+            CustomRaid raid = raidManager.createRaid(serverPlayer, player.blockPosition(), 5);
 
             level.playSound(
                     null,

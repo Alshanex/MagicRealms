@@ -22,7 +22,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.*;
 
 public class CustomRaid {
-    private static final int MAX_WAVES = 10;
     private static final int WAVE_COOLDOWN_TICKS = 200; // 10 seconds between waves
     private static final int SPAWN_RADIUS = 32;
     private static final int MAX_SPAWN_ATTEMPTS = 20;
@@ -38,18 +37,20 @@ public class CustomRaid {
     private final ServerBossEvent bossBar;
     private RaidStatus status = RaidStatus.ONGOING;
     private float totalHealth = 0.0F;
+    private int MAX_WAVES = 1;
 
-    public CustomRaid(int id, ServerLevel level, BlockPos center, Player targetPlayer) {
+    public CustomRaid(int id, ServerLevel level, BlockPos center, Player targetPlayer, int waves) {
         this.id = id;
         this.level = level;
         this.center = center;
         this.targetPlayerUUID = targetPlayer.getUUID();
         this.bossBar = new ServerBossEvent(
-                Component.literal("Hostile Human Raid - Wave 0/" + MAX_WAVES),
+                Component.literal("Ambush - Wave 0/" + MAX_WAVES),
                 BossEvent.BossBarColor.RED,
                 BossEvent.BossBarOverlay.NOTCHED_10
         );
         this.bossBar.setProgress(0.0F);
+        this.MAX_WAVES = waves;
     }
 
     public CustomRaid(ServerLevel level, CompoundTag compound) {
@@ -66,9 +67,10 @@ public class CustomRaid {
         );
         this.targetPlayerUUID = compound.getUUID("TargetPlayer");
         this.status = RaidStatus.valueOf(compound.getString("Status"));
+        this.MAX_WAVES = compound.getInt("MaxWaves");
 
         this.bossBar = new ServerBossEvent(
-                Component.literal("Hostile Human Raid - Wave " + currentWave + "/" + MAX_WAVES),
+                Component.literal("Ambush - Wave " + currentWave + "/" + MAX_WAVES),
                 BossEvent.BossBarColor.RED,
                 BossEvent.BossBarOverlay.NOTCHED_10
         );
@@ -125,8 +127,7 @@ public class CustomRaid {
         Set<HostileRandomHumanEntity> waveSet = Sets.newHashSet();
         waveEntities.put(currentWave, waveSet);
 
-        // Spawn 10-20 entities per wave, scaling with wave number
-        int entitiesToSpawn = 5 + (10 - currentWave);
+        int entitiesToSpawn = 3 + (MAX_WAVES - currentWave);
         entitiesToSpawn = Math.min(entitiesToSpawn, 20);
 
         totalHealth = 0.0F;
@@ -280,6 +281,7 @@ public class CustomRaid {
         compound.putInt("CZ", center.getZ());
         compound.putUUID("TargetPlayer", targetPlayerUUID);
         compound.putString("Status", status.name());
+        compound.putInt("MaxWaves", MAX_WAVES);
         return compound;
     }
 

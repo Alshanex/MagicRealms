@@ -86,13 +86,13 @@ public class CustomRaidManager extends SavedData {
         return null;
     }
 
-    public CustomRaid createRaid(ServerPlayer player, BlockPos pos) {
+    public CustomRaid createRaid(ServerPlayer player, BlockPos pos, int waves ) {
         CustomRaid existingRaid = getActiveRaidForPlayer(player.getUUID());
         if (existingRaid != null) {
             return existingRaid;
         }
 
-        CustomRaid raid = new CustomRaid(nextAvailableID++, level, pos, player);
+        CustomRaid raid = new CustomRaid(nextAvailableID++, level, pos, player, waves);
         raidMap.put(raid.getId(), raid);
         this.setDirty();
         return raid;

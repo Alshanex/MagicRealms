@@ -16,6 +16,8 @@ public class PayloadHandler {
         payloadRegistrar.playToServer(UpdateEntityNamePacket.TYPE, UpdateEntityNamePacket.STREAM_CODEC, UpdateEntityNamePacket::handle);
         payloadRegistrar.playToServer(RequestEntityLevelPacket.TYPE, RequestEntityLevelPacket.STREAM_CODEC, RequestEntityLevelPacket::handle);
         payloadRegistrar.playToServer(SyncPresetNamePacket.TYPE, SyncPresetNamePacket.STREAM_CODEC, SyncPresetNamePacket::handle);
+        payloadRegistrar.playToServer(SwitchTabPacket.TYPE, SwitchTabPacket.STREAM_CODEC, SwitchTabPacket::handle);
+        payloadRegistrar.playToServer(SwitchAttributesMenuPacket.TYPE, SwitchAttributesMenuPacket.STREAM_CODEC, SwitchAttributesMenuPacket::handle);
 
         payloadRegistrar.playToClient(SyncEntityLevelPacket.TYPE, SyncEntityLevelPacket.STREAM_CODEC, SyncEntityLevelPacket::handle);
     }

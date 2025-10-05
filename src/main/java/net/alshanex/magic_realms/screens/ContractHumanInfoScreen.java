@@ -6,9 +6,11 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.network.SwitchTabPacket;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.*;
 import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
@@ -34,6 +36,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -46,7 +49,6 @@ import java.util.UUID;
 @OnlyIn(Dist.CLIENT)
 public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHumanInfoMenu> {
     private static final ResourceLocation IRON_SPELLS_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_iron_spells.png");
-    private static final ResourceLocation APOTHIC_TEXTURE = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/human_info_apothic.png");
 
     // Color constants for improved readability
     private static final int HEADER_COLOR = 0xFFD700;      // Gold for headers
@@ -62,7 +64,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     private final EntitySnapshot snapshot;
     private final AbstractMercenaryEntity entity;
-    private Tab currentTab = Tab.IRON_SPELLS;
+    private ContractHumanInfoMenu.Tab currentTab = ContractHumanInfoMenu.Tab.IRON_SPELLS;
 
     private int scrollOffset = 0;
     private int maxScroll = 0;
@@ -78,17 +80,10 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     private static final int TAB_1_X = 120;
     private static final int TAB_1_Y = 3;
-    private static final int TAB_2_X = 162;
-    private static final int TAB_2_Y = 3;
+    private static final int TAB_3_X = 204;
+    private static final int TAB_3_Y = 3;
     private static final int TAB_WIDTH = 42;
     private static final int TAB_HEIGHT = 10;
-
-    private static final int HEALTH_X = 28;
-    private static final int HEALTH_Y = 125;
-    private static final int ARMOR_X = 28;
-    private static final int ARMOR_Y = 145;
-    private static final int DAMAGE_X = 85;
-    private static final int DAMAGE_Y = 136;
 
     private static final int ATTRIBUTES_X = 132;
     private static final int ATTRIBUTES_Y = 25;
@@ -103,6 +98,25 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     private static final int SYMBOL_X = 98;
     private static final int SYMBOL_Y = 20;
+
+    private float mouseX = 0.0f;
+    private float mouseY = 0.0f;
+    private float targetHeadYaw = 0.0f;
+    private float targetHeadPitch = 0.0f;
+    private float currentHeadYaw = 0.0f;
+    private float currentHeadPitch = 0.0f;
+
+    private static final int EXP_BAR_X = 12;
+    private static final int EXP_BAR_Y = 114;
+    private static final int EXP_BAR_WIDTH = 96;
+    private static final int EXP_BAR_HEIGHT = 3;
+
+    private static final int ATTRIBUTES_START_X = 13;
+    private static final int ATTRIBUTES_START_Y = 135;
+    private static final int ATTRIBUTES_END_X = ATTRIBUTES_START_X + 85;
+
+    private static final int ICON_SIZE = 9;
+    private static final int ICON_SPACING = 2;
 
     // Virtual entity cache - now uses base class
     private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new HashMap<>();
@@ -172,10 +186,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         attributeRowCounter = 0;
 
         // Render scrollable content
-        switch (currentTab) {
-            case IRON_SPELLS -> renderIronSpellsAttributesScrollable(guiGraphics);
-            case APOTHIC -> renderApothicAttributesScrollable(guiGraphics);
-        }
+        renderIronSpellsAttributesScrollable(guiGraphics);
 
         guiGraphics.disableScissor();
 
@@ -466,6 +477,17 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         try {
+            // Update head rotation based on mouse position
+            updateHeadRotation(0); // You can pass partialTick if available
+
+            // Store original head rotation
+            float originalHeadYaw = entityToRender.getYHeadRot();
+            float originalHeadPitch = entityToRender.getXRot();
+
+            // Apply mouse look rotation
+            entityToRender.setYHeadRot(currentHeadYaw);
+            entityToRender.setXRot(currentHeadPitch);
+
             int entityX = leftPos + ENTITY_RENDER_X;
             int entityY = topPos + ENTITY_RENDER_Y;
 
@@ -486,12 +508,54 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                     entityToRender, entityX, entityY, entityX + ENTITY_RENDER_WIDTH, entityY + ENTITY_RENDER_HEIGHT
             );
 
+            // Restore original head rotation to avoid affecting the actual entity
+            entityToRender.setYHeadRot(originalHeadYaw);
+            entityToRender.setXRot(originalHeadPitch);
+
             return true;
 
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Error rendering entity 3D: {}", e.getMessage(), e);
             return false;
         }
+    }
+
+    private void updateMouseLookTarget() {
+        // Get entity render bounds
+        int entityCenterX = leftPos + ENTITY_RENDER_X + ENTITY_RENDER_WIDTH / 2;
+        int entityCenterY = topPos + ENTITY_RENDER_Y + ENTITY_RENDER_HEIGHT / 2;
+
+        // Calculate relative mouse position
+        float relativeX = mouseX - entityCenterX;
+        float relativeY = mouseY - entityCenterY;
+
+        // Convert to angles (adjust sensitivity as needed)
+        float sensitivity = 0.8f;
+        targetHeadYaw = -relativeX * sensitivity; // Negative for correct direction
+        targetHeadPitch = relativeY * sensitivity * 0.5f; // Reduced vertical sensitivity
+
+        // Clamp angles to reasonable limits
+        targetHeadYaw = Math.max(-45.0f, Math.min(45.0f, targetHeadYaw));
+        targetHeadPitch = Math.max(-20.0f, Math.min(20.0f, targetHeadPitch));
+    }
+
+    private void updateHeadRotation(float partialTick) {
+        float lerpSpeed = 0.15f; // Adjust for smoother/snappier movement
+
+        currentHeadYaw = lerp(currentHeadYaw, targetHeadYaw, lerpSpeed);
+        currentHeadPitch = lerp(currentHeadPitch, targetHeadPitch, lerpSpeed);
+    }
+
+    private float lerp(float start, float end, float factor) {
+        return start + factor * (end - start);
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        super.mouseMoved(mouseX, mouseY);
+        this.mouseX = (float) mouseX;
+        this.mouseY = (float) mouseY;
+        updateMouseLookTarget();
     }
 
     // Helper methods for rendering UI elements
@@ -549,12 +613,17 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private void renderClassSymbol(GuiGraphics guiGraphics) {
         if (snapshot == null) return;
 
+        ResourceLocation frame = ResourceLocation.withDefaultNamespace("advancements/challenge_frame_obtained");
+
         ItemStack symbolItem = getSymbolItemForClass();
         if (symbolItem.isEmpty()) return;
 
+        int frameX = leftPos + SYMBOL_X - 4;
+        int frameY = topPos + SYMBOL_Y - 4;
         int symbolX = leftPos + SYMBOL_X;
         int symbolY = topPos + SYMBOL_Y;
 
+        guiGraphics.blitSprite(frame, frameX, frameY, 24, 24);
         guiGraphics.renderItem(symbolItem, symbolX, symbolY);
     }
 
@@ -564,11 +633,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         switch (entityClass) {
             case MAGE -> {
                 try {
-                    return new ItemStack(
-                            BuiltInRegistries.ITEM.get(
-                                    ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "gold_spell_book")
-                            )
-                    );
+                    return new ItemStack(ItemRegistry.GOLD_SPELL_BOOK.get());
                 } catch (Exception e) {
                     MagicRealms.LOGGER.warn("Could not find gold_spell_book item: {}", e.getMessage());
                     return new ItemStack(Items.BOOK);
@@ -578,19 +643,15 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                 if (snapshot.hasShield) {
                     return new ItemStack(Items.SHIELD);
                 } else {
-                    return new ItemStack(Items.IRON_SWORD);
+                    return new ItemStack(Items.IRON_AXE);
                 }
             }
             case ROGUE -> {
                 if (snapshot.isArcher) {
-                    return new ItemStack(Items.BOW);
+                    return new ItemStack(Items.ARROW);
                 } else {
                     try {
-                        return new ItemStack(
-                                BuiltInRegistries.ITEM.get(
-                                        ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "weapon_parts")
-                                )
-                        );
+                        return new ItemStack(ItemRegistry.WEAPON_PARTS.get());
                     } catch (Exception e) {
                         MagicRealms.LOGGER.warn("Could not find weapon_parts item: {}", e.getMessage());
                         return new ItemStack(Items.GOLDEN_SWORD);
@@ -663,18 +724,121 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         CompoundTag attributes = snapshot.attributes;
 
+        // Render experience bar and level
+        renderExperienceBar(guiGraphics);
+
+        int startX = leftPos + ATTRIBUTES_START_X;
+        int endX = leftPos + ATTRIBUTES_END_X;
+        int firstLineY = topPos + ATTRIBUTES_START_Y;
+        int totalWidth = endX - startX;
+
+        // Prepare attribute strings
         float health = attributes.contains("health") ? (float) attributes.getDouble("health") : 20.0f;
         float maxHealth = attributes.contains("max_health") ? (float) attributes.getDouble("max_health") : 20.0f;
-        Component healthComponent = Component.literal(String.format("%.0f/%.0f", health, maxHealth));
-        guiGraphics.drawString(font, healthComponent, leftPos + HEALTH_X, topPos + HEALTH_Y, 0xFF5555, false);
+        String healthText = String.format("%.0f/%.0f", health, maxHealth);
 
         double armor = attributes.contains("armor") ? attributes.getDouble("armor") : 0.0;
-        Component armorComponent = Component.literal(String.format("%.1f", armor));
-        guiGraphics.drawString(font, armorComponent, leftPos + ARMOR_X, topPos + ARMOR_Y, 0xAAAAAA, false);
+        String armorText = String.format("%.1f", armor);
 
         double damage = attributes.contains("attack_damage") ? attributes.getDouble("attack_damage") : 1.0;
-        Component damageComponent = Component.literal(String.format("%.1f", damage));
-        guiGraphics.drawString(font, damageComponent, leftPos + DAMAGE_X, topPos + DAMAGE_Y, 0xCC5555, false);
+        String damageText = String.format("%.1f", damage);
+
+        // Calculate widths for first line (health and armor)
+        int healthWidth = ICON_SIZE + ICON_SPACING + font.width(healthText);
+        int armorWidth = ICON_SIZE + ICON_SPACING + font.width(armorText);
+        int firstLineContentWidth = healthWidth + armorWidth;
+        int firstLineSpacing = totalWidth - firstLineContentWidth;
+
+        // Ensure spacing is not negative
+        if (firstLineSpacing < 0) firstLineSpacing = 2;
+
+        // Render first line: Health and Armor
+        int currentX = startX;
+
+        // Render Health
+        currentX = renderAttributeWithIcon(guiGraphics, currentX, firstLineY,
+                ResourceLocation.withDefaultNamespace("hud/heart/container"),
+                ResourceLocation.withDefaultNamespace("hud/heart/full"),
+                healthText, 0xFF5555);
+
+        currentX += firstLineSpacing;
+
+        // Render Damage
+        renderAttributeWithIcon(guiGraphics, currentX, firstLineY,
+                null,
+                ResourceLocation.withDefaultNamespace("hud/armor_full"),
+                armorText, 0xAAAAAA);
+    }
+
+    private void renderExperienceBar(GuiGraphics guiGraphics) {
+        if (snapshot == null) return;
+
+        int barX = leftPos + EXP_BAR_X;
+        int barY = topPos + EXP_BAR_Y;
+
+        // Get level data
+        int currentLevel = snapshot.currentLevel;
+        int currentExp = snapshot.experiencePoints;
+
+        // Calculate experience for next level (same formula as in KillTrackerData)
+        int expForCurrentLevel = (int) (200 * currentLevel * (net.alshanex.magic_realms.Config.xpNeededMultiplier / 100));
+        int expForNextLevel = (int) (200 * (currentLevel + 1) * (net.alshanex.magic_realms.Config.xpNeededMultiplier / 100));
+
+        int expIntoLevel = currentExp - expForCurrentLevel;
+        int expNeeded = expForNextLevel - expForCurrentLevel;
+
+        // Calculate progress (0.0 to 1.0)
+        float progress = expNeeded > 0 ? (float) expIntoLevel / expNeeded : 0.0f;
+        progress = Math.max(0.0f, Math.min(1.0f, progress));
+
+        // Render experience bar background (dark)
+        guiGraphics.fill(barX, barY, barX + EXP_BAR_WIDTH, barY + EXP_BAR_HEIGHT, 0xFF000000);
+
+        // Render experience bar fill (green)
+        int fillWidth = (int) (EXP_BAR_WIDTH * progress);
+        if (fillWidth > 0) {
+            guiGraphics.fill(barX, barY, barX + fillWidth, barY + EXP_BAR_HEIGHT, 0xFF00FF00);
+        }
+
+        // Render border
+        // Top border
+        guiGraphics.fill(barX, barY - 1, barX + EXP_BAR_WIDTH, barY, 0xFF555555);
+        // Bottom border
+        guiGraphics.fill(barX, barY + EXP_BAR_HEIGHT, barX + EXP_BAR_WIDTH, barY + EXP_BAR_HEIGHT + 1, 0xFF555555);
+        // Left border
+        guiGraphics.fill(barX - 1, barY, barX, barY + EXP_BAR_HEIGHT, 0xFF555555);
+        // Right border
+        guiGraphics.fill(barX + EXP_BAR_WIDTH, barY, barX + EXP_BAR_WIDTH + 1, barY + EXP_BAR_HEIGHT, 0xFF555555);
+
+        // Render level number centered below the bar (vanilla style)
+        String levelText = String.valueOf(currentLevel);
+        int textWidth = font.width(levelText);
+        int textX = barX + (EXP_BAR_WIDTH / 2) - (textWidth / 2);
+        int textY = barY + EXP_BAR_HEIGHT + 2;
+
+        // Render level text with shadow (green like vanilla)
+        guiGraphics.drawString(font, levelText, textX, textY, 0x80FF20, true);
+    }
+
+    private int renderAttributeWithIcon(GuiGraphics guiGraphics, int x, int y,
+                                        ResourceLocation backgroundSprite,
+                                        ResourceLocation iconSprite,
+                                        String value, int color) {
+        // Render background sprite if present (for health container)
+        if (backgroundSprite != null) {
+            guiGraphics.blitSprite(backgroundSprite, x, y, ICON_SIZE, ICON_SIZE);
+        }
+
+        // Render main icon sprite
+        guiGraphics.blitSprite(iconSprite, x, y, ICON_SIZE, ICON_SIZE);
+
+        // Render value text next to icon
+        int textX = x + ICON_SIZE + ICON_SPACING;
+        guiGraphics.drawString(font, value, textX, y + 1, color, true);
+
+        // Return next X position
+        int textWidth = font.width(value);
+        return textX + textWidth + ICON_SPACING;
     }
 
     // Input handling methods
@@ -684,23 +848,14 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         double relativeY = mouseY - topPos;
 
         // Tab clicking
-        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + TAB_WIDTH + 2 &&
+        if (relativeX >= TAB_1_X - 2 && relativeX < TAB_1_X + (TAB_WIDTH + 2) * 2 &&
                 relativeY >= TAB_1_Y - 2 && relativeY < TAB_1_Y + TAB_HEIGHT + 2) {
-            if (currentTab != Tab.IRON_SPELLS) {
-                currentTab = Tab.IRON_SPELLS;
-                scrollOffset = 0;
-                calculateMaxScroll();
-            }
             return true;
         }
 
-        if (relativeX >= TAB_2_X - 2 && relativeX < TAB_2_X + TAB_WIDTH + 2 &&
-                relativeY >= TAB_2_Y - 2 && relativeY < TAB_2_Y + TAB_HEIGHT + 2) {
-            if (currentTab != Tab.APOTHIC) {
-                currentTab = Tab.APOTHIC;
-                scrollOffset = 0;
-                calculateMaxScroll();
-            }
+        if (relativeX >= TAB_3_X - 2 && relativeX < TAB_3_X + TAB_WIDTH + 2 &&
+                relativeY >= TAB_3_Y - 2 && relativeY < TAB_3_Y + TAB_HEIGHT + 2) {
+            switchToInventoryMenu();
             return true;
         }
 
@@ -729,6 +884,14 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void switchToInventoryMenu() {
+        // Send packet to server to switch to inventory menu
+        if (minecraft.level.isClientSide()) {
+            PacketDistributor.sendToServer(new SwitchTabPacket("INVENTORY")); // Special case for inventory
+        }
+        MagicRealms.LOGGER.debug("Client requested switch to inventory menu");
     }
 
     @Override
@@ -764,6 +927,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
+        // Only handle scrolling for non-inventory tabs
         if (relativeX >= ATTRIBUTES_X && relativeX < ATTRIBUTES_X + ATTRIBUTES_WIDTH &&
                 relativeY >= ATTRIBUTES_Y && relativeY < ATTRIBUTES_Y + ATTRIBUTES_HEIGHT) {
 
@@ -779,7 +943,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private ResourceLocation getCurrentTexture() {
         return switch (currentTab) {
             case IRON_SPELLS -> IRON_SPELLS_TEXTURE;
-            case APOTHIC -> APOTHIC_TEXTURE;
         };
     }
 
@@ -792,10 +955,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private int getTotalAttributeLines() {
         switch (currentTab) {
             case IRON_SPELLS -> {
-                return getIronSpellsAttributeLines();
-            }
-            case APOTHIC -> {
-                return getApothicAttributeLines();
+                return getIronSpellsAttributeLines() + getApothicAttributeLines();
             }
             default -> {
                 return 0;
@@ -837,13 +997,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         lines += 2;
         lines += 4;
         lines += 2;
-        lines += 3;
-        lines += 2;
         lines += 4;
-        lines += 2;
-        lines += 4;
-        lines += 2;
-        lines += 3;
         return lines;
     }
 
@@ -870,21 +1024,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
-
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        CompoundTag attributes = snapshot.attributes;
-
-        y = renderAttributeWithTruncation(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
-        y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
-        y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.0f%%", x, y, ChatFormatting.LIGHT_PURPLE, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
         if (snapshot.entityClass == EntityClass.MAGE) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
@@ -942,20 +1081,19 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
+        y = renderSectionHeader(guiGraphics, "Iron's Spells", x, y, ChatFormatting.AQUA);
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
-        try {
-            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
-            for (SchoolType school : schools) {
-                String resistKey = school.getId().getPath() + "_magic_resist";
-                String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
-                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
-            }
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
-        }
+        CompoundTag attributes = snapshot.attributes;
+
+        y = renderAttributeWithTruncation(guiGraphics, "Max Mana", attributes, "max_mana", 100.0, "%.0f", x, y, ChatFormatting.BLUE);
+        y = renderAttributeWithTruncation(guiGraphics, "Mana Regen", attributes, "mana_regen", 1.0, "%.2f", x, y, ChatFormatting.AQUA);
+        y = renderAttributeWithTruncation(guiGraphics, "Spell Power", attributes, "spell_power", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Spell Resist", attributes, "spell_resist", 1.0, "%.0f%%", x, y, ChatFormatting.LIGHT_PURPLE, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cooldown Red.", attributes, "cooldown_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cast Time Red.", attributes, "cast_time_reduction", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Cast Speed", attributes, "casting_movespeed", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
+        y = renderAttributeWithTruncation(guiGraphics, "Summon Dmg", attributes, "summon_damage", 1.0, "%.0f%%", x, y, ChatFormatting.DARK_PURPLE, true, 1.0);
 
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
         y = renderSectionHeader(guiGraphics, "School Power", x, y, ChatFormatting.RED);
@@ -972,20 +1110,28 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school powers: {}", e.getMessage());
         }
-    }
 
-    private void renderApothicAttributesScrollable(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Magic Resist", x, y, ChatFormatting.LIGHT_PURPLE);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
-        int x = leftPos + ATTRIBUTES_X;
-        int y = topPos + ATTRIBUTES_Y - scrollOffset;
+        try {
+            List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().toList();
+            for (SchoolType school : schools) {
+                String resistKey = school.getId().getPath() + "_magic_resist";
+                String schoolName = capitalizeFirst(school.getId().getPath());
+                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
+        }
 
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
         y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.RED);
         y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
 
-        CompoundTag attributes = snapshot.attributes;
-
+        y = renderAttributeWithTruncation(guiGraphics, "Attack Damage", attributes, "attack_damage", 1.0, "%.1f", x, y, ChatFormatting.RED, false);
         y = renderAttributeWithTruncation(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
         y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.RED, true);
         y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.AQUA, true);
@@ -1098,10 +1244,5 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    public enum Tab {
-        IRON_SPELLS,
-        APOTHIC
     }
 }

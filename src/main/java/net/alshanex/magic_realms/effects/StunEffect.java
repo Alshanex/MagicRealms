@@ -46,6 +46,12 @@ public class StunEffect extends MagicMobEffect {
     public void onEffectRemoved(LivingEntity pLivingEntity, int pAmplifier) {
         if(pLivingEntity instanceof RandomHumanEntity human){
             human.setStunned(false);
+            for (WrappedGoal wrappedGoal : human.goalSelector.getAvailableGoals()) {
+                Goal goal = wrappedGoal.getGoal();
+                if (!wrappedGoal.isRunning() && wrappedGoal.canUse()) {
+                    goal.start() ;
+                }
+            }
         }
         super.onEffectRemoved(pLivingEntity, pAmplifier);
     }

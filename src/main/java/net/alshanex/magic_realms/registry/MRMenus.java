@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
+import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -18,4 +19,8 @@ public class MRMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<ContractHumanInfoMenu>> CONTRACT_HUMAN_INFO_MENU =
             MENUS.register("contract_human_info_menu", () -> IMenuTypeExtension.create(ContractHumanInfoMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ContractInventoryMenu>> CONTRACT_INVENTORY_MENU  =
+            MENUS.register("contract_inventory_menu", () -> IMenuTypeExtension.create(ContractInventoryMenu::new));
+
 }

@@ -1,10 +1,7 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.item.HellPass;
-import net.alshanex.magic_realms.item.PermanentBloodPact;
-import net.alshanex.magic_realms.item.PermanentContractItem;
-import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.item.*;
 import net.alshanex.magic_realms.util.contracts.ContractTier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
@@ -74,6 +71,12 @@ public class MRItems {
 
     public static final DeferredHolder<Item, PermanentBloodPact> PERMANENT_BLOOD_PACT =
             ITEMS.register("permanent_blood_pact", PermanentBloodPact::new);
+
+    public static final DeferredHolder<Item, RaidTriggerItem> MIDAS_COIN =
+            ITEMS.register("midas_coin", () -> new RaidTriggerItem(new Item.Properties()
+                    .stacksTo(1)
+                    .rarity(Rarity.EPIC)
+            ));
 
     public static final Supplier<Item> WOODEN_CHAIR = ITEMS.register("wooden_chair", () ->
             new BlockItem(MRBlocks.WOODEN_CHAIR.get(), new Item.Properties()));

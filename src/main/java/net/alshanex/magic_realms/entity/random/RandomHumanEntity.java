@@ -259,7 +259,6 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         }
 
         if (!this.level().isClientSide) {
-            this.setImmortal(true);
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
@@ -269,11 +268,6 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
                 }
             });
         }
-    }
-
-    @Override
-    protected void handleAppearanceSpecificTick() {
-        // No longer needed - textures are generated once on client side
     }
 
     @Override

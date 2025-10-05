@@ -8,6 +8,10 @@ import io.redspace.ironsspellbooks.api.spells.ISpellContainerMutable;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericCopyOwnerTargetGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericOwnerHurtByTargetGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericOwnerHurtTargetGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.GenericProtectOwnerTargetGoal;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
@@ -17,12 +21,15 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.VillagerOffersData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
@@ -51,6 +58,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -359,7 +367,7 @@ public class HumanGoals {
                 }
             }
 
-            MagicRealms.LOGGER.debug("Entity {} found no suitable villagers for selling", entity.getEntityName());
+            //MagicRealms.LOGGER.debug("Entity {} found no suitable villagers for selling", entity.getEntityName());
             return false;
         }
 
@@ -1121,6 +1129,36 @@ public class HumanGoals {
                 humanEntity.setTarget(null);
             }
             return canUse;
+        }
+
+        @Override
+        public void start() {
+            if(this.humanEntity instanceof AmadeusEntity amadeusEntity && !amadeusEntity.level().isClientSide && amadeusEntity.getSummoner() != null){
+                if(hasContractorNearby(amadeusEntity, amadeusEntity.getSummoner(), amadeusEntity.level())){
+                    amadeusEntity.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.enderman.scared", amadeusEntity.getDisplayName()).withStyle(ChatFormatting.GOLD));
+                }
+            }
+            super.start();
+        }
+
+        private boolean hasContractorNearby(AmadeusEntity amadeus, LivingEntity entity, Level level) {
+            double SEARCH_RADIUS = 16.0;
+            AABB searchArea = new AABB(
+                    amadeus.getX() - SEARCH_RADIUS,
+                    amadeus.getY() - SEARCH_RADIUS,
+                    amadeus.getZ() - SEARCH_RADIUS,
+                    amadeus.getX() + SEARCH_RADIUS,
+                    amadeus.getY() + SEARCH_RADIUS,
+                    amadeus.getZ() + SEARCH_RADIUS
+            );
+
+            List<Player> nearbyContractor = level.getEntitiesOfClass(
+                    Player.class,
+                    searchArea,
+                    player1 -> player1.is(entity)
+            );
+
+            return !nearbyContractor.isEmpty();
         }
 
         @Override
@@ -2427,6 +2465,10 @@ public class HumanGoals {
 
         protected LivingEntity findPriorityTarget(List<LivingEntity> potentialTargets) {
             if (mob instanceof AbstractMercenaryEntity human) {
+                if (human.getSummoner() == null) {
+                    return null;
+                }
+
                 for (LivingEntity entity : potentialTargets) {
                     if (entity instanceof Mob hostileMob) {
                         LivingEntity hostileTarget = hostileMob.getTarget();
@@ -3101,7 +3143,13 @@ public class HumanGoals {
             Entity livingentity = this.ownerGetter.get();
             if (livingentity == null) {
                 return false;
-            } else if (this.humanEntity.distanceToSqr(livingentity) < (double) (this.startDistance * this.startDistance)) {
+            }
+
+            if (!livingentity.isAlive()) {
+                return false;
+            }
+
+            if (this.humanEntity.distanceToSqr(livingentity) < (double) (this.startDistance * this.startDistance)) {
                 return false;
             } else {
                 this.owner = livingentity;
@@ -3111,10 +3159,19 @@ public class HumanGoals {
 
         @Override
         public boolean canContinueToUse() {
-            // Stop following if entering patrol mode
+            // Don't follow if in patrol mode
             if (humanEntity.isPatrolMode()) {
                 return false;
             }
+
+            // Check if owner is still valid
+            Entity currentOwner = this.ownerGetter.get();
+            if (currentOwner == null || !currentOwner.isAlive()) {
+                return false;
+            }
+
+            // Update owner reference
+            this.owner = currentOwner;
 
             if (this.navigation.isDone()) {
                 return false;
@@ -3137,8 +3194,16 @@ public class HumanGoals {
             this.humanEntity.setPathfindingMalus(PathType.WATER, this.oldWaterCost);
         }
 
-        @Override
         public void tick() {
+            // Additional safety check
+            Entity currentOwner = this.ownerGetter.get();
+            if (currentOwner == null || !currentOwner.isAlive()) {
+                // Force stop the goal
+                return;
+            }
+
+            this.owner = currentOwner; // Update reference
+
             boolean flag = this.shouldTryTeleportToOwner();
             if (!flag) {
                 this.humanEntity.getLookControl().setLookAt(this.owner, 10.0F, (float) this.humanEntity.getMaxHeadXRot());
@@ -3161,14 +3226,16 @@ public class HumanGoals {
 
         public void tryToTeleportToOwner() {
             Entity livingentity = this.ownerGetter.get();
-            if (livingentity != null) {
+            if (livingentity != null && livingentity.isAlive()) {
                 this.teleportToAroundBlockPos(livingentity.blockPosition());
             }
         }
 
         public boolean shouldTryTeleportToOwner() {
             Entity livingentity = this.ownerGetter.get();
-            return livingentity != null && humanEntity.distanceToSqr(livingentity) >= teleportDistance * teleportDistance;
+            return livingentity != null &&
+                    livingentity.isAlive() &&
+                    humanEntity.distanceToSqr(livingentity) >= teleportDistance * teleportDistance;
         }
 
         private void teleportToAroundBlockPos(BlockPos pPos) {
@@ -3694,9 +3761,11 @@ public class HumanGoals {
         private int searchCooldown = 0;
         private int stuckTicks = 0;
         private Vec3 lastPosition;
+        private boolean wasManuallyUnseated = false; // Track if entity was manually unseated
 
         private static final int SEARCH_RADIUS = 16;
         private static final int SEARCH_COOLDOWN = 100; // 5 seconds between searches
+        private static final int MANUAL_UNSEAT_COOLDOWN = 600; // 30 seconds after manual unseating
         private static final int MAX_STUCK_TICKS = 60; // 3 seconds before giving up
         private static final double MOVEMENT_THRESHOLD = 0.1;
         private static final double CHAIR_REACH_DISTANCE = 2.0;
@@ -3713,7 +3782,7 @@ public class HumanGoals {
                 return false;
             }
 
-            // Don't sit if on cooldown
+            // Don't sit if on cooldown (this now includes manual unseat cooldown)
             if (!entity.canSitInChair()) {
                 return false;
             }
@@ -3840,6 +3909,14 @@ public class HumanGoals {
             }
         }
 
+        // Method to notify this goal that entity was manually unseated
+        public void notifyManualUnseat() {
+            wasManuallyUnseated = true;
+            searchCooldown = MANUAL_UNSEAT_COOLDOWN; // Set longer cooldown
+            targetChair = null;
+            entity.getNavigation().stop();
+        }
+
         private boolean findNearbyEmptyChair() {
             if (!(entity.level() instanceof ServerLevel serverLevel)) {
                 return false;
@@ -3908,6 +3985,142 @@ public class HumanGoals {
 
             entity.moveTo(sittingPos.x, sittingPos.y, sittingPos.z, sittingYaw, 0);
             entity.sitInChair(targetChair);
+        }
+    }
+
+    public static class SafeGenericOwnerHurtByTargetGoal extends GenericOwnerHurtByTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericOwnerHurtByTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
+        }
+    }
+
+    public static class SafeGenericOwnerHurtTargetGoal extends GenericOwnerHurtTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericOwnerHurtTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
+        }
+    }
+
+    public static class SafeGenericCopyOwnerTargetGoal extends GenericCopyOwnerTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericCopyOwnerTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
+        }
+    }
+
+    public static class SafeGenericProtectOwnerTargetGoal extends GenericProtectOwnerTargetGoal {
+        private final AbstractMercenaryEntity mercenary;
+
+        public SafeGenericProtectOwnerTargetGoal(AbstractMercenaryEntity mercenary, Supplier<Entity> ownerSupplier) {
+            super(mercenary, ownerSupplier);
+            this.mercenary = mercenary;
+        }
+
+        @Override
+        public boolean canUse() {
+            // Don't target if no summoner
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            // Don't target if stunned or sitting
+            if (mercenary.isStunned() || mercenary.isSittingInChair()) {
+                return false;
+            }
+
+            return super.canUse();
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            // Stop if summoner becomes null
+            if (mercenary.getSummoner() == null) {
+                return false;
+            }
+
+            return super.canContinueToUse();
         }
     }
 }

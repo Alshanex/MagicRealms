@@ -1,39 +1,44 @@
-package net.alshanex.magic_realms.entity.exclusive;
+package net.alshanex.magic_realms.entity.exclusive.amadeus;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.IEntityTagFearing;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
+import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.Gender;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.tags.EntityTypeTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
-public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IEntityTagFearing {
-    private final String name = "Alshanex";
+public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
+    private final String name = "Amadeus Voidwalker";
 
-    public AlshanexEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
+    public AmadeusEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
     }
 
-    public AlshanexEntity(Level level, LivingEntity owner) {
-        this(MREntityRegistry.ALSHANEX.get(), level);
+    public AmadeusEntity(Level level, LivingEntity owner) {
+        this(MREntityRegistry.AMADEUS.get(), level);
         setSummoner(owner);
     }
 
@@ -50,27 +55,33 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     }
 
     @Override
-    protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
-        return List.of(
-                SpellRegistry.SUNBEAM_SPELL.get(),
-                SpellRegistry.EVASION_SPELL.get(),
-                SpellRegistry.TELEPORT_SPELL.get()
-        );
-    }
-
-    @Override
     protected void initializeClassSpecifics(RandomSource randomSource) {
         List<SchoolType> schools = List.of(
-                SchoolRegistry.HOLY.get(),
+                SchoolRegistry.FIRE.get(),
                 SchoolRegistry.ENDER.get()
         );
         setMagicSchools(schools);
     }
 
     @Override
+    protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
+        return List.of(
+                SpellRegistry.BURNING_DASH_SPELL.get(),
+                SpellRegistry.FLAMING_STRIKE_SPELL.get(),
+                SpellRegistry.FIREBALL_SPELL.get(),
+                SpellRegistry.HEAT_SURGE_SPELL.get(),
+                SpellRegistry.STARFALL_SPELL.get(),
+                SpellRegistry.TELEPORT_SPELL.get(),
+                SpellRegistry.MAGIC_MISSILE_SPELL.get(),
+                SpellRegistry.MAGIC_ARROW_SPELL.get()
+        );
+    }
+
+    @Override
     protected void handlePostSpawnInitialization() {
         if (!this.level().isClientSide) {
             this.setImmortal(true);
+            setFearedEntityTag(ModTags.AMADEUS_FEARS);
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
@@ -80,11 +91,6 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
                 }
             });
         }
-    }
-
-    @Override
-    protected void handleAppearanceSpecificTick() {
-
     }
 
     @Override
@@ -114,21 +120,41 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
 
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
-        return "ui.magic_realms.introduction.alshanex";
+        return "ui.magic_realms.introduction.amadeus";
     }
 
     @Override
-    protected void initializeFearedEntity(RandomSource randomSource) {
-        setFearedEntityTag(EntityTypeTags.ARTHROPOD);
+    protected void initializeDefaultEquipment() {
+        super.initializeDefaultEquipment();
     }
 
     @Override
-    public TagKey<EntityType<?>> getFearedEntityTag() {
-        return super.getFearedEntityTag();
+    public void initiateCastSpell(AbstractSpell spell, int spellLevel) {
+        if (!this.level().isClientSide && this.getSummoner() != null && this.random.nextFloat() < 0.2f) {
+            if(hasContractorNearby(this.getSummoner(), this.level())) {
+                getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.combat.entering", getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
+            }
+        }
+        super.initiateCastSpell(spell, spellLevel);
     }
 
-    @Override
-    public void setFearedEntityTag(@Nullable TagKey<EntityType<?>> entityTag) {
-        super.setFearedEntityTag(entityTag);
+    private boolean hasContractorNearby(LivingEntity entity, Level level) {
+        double SEARCH_RADIUS = 20.0;
+        AABB searchArea = new AABB(
+                this.getX() - SEARCH_RADIUS,
+                this.getY() - SEARCH_RADIUS,
+                this.getZ() - SEARCH_RADIUS,
+                this.getX() + SEARCH_RADIUS,
+                this.getY() + SEARCH_RADIUS,
+                this.getZ() + SEARCH_RADIUS
+        );
+
+        List<Player> nearbyContractor = level.getEntitiesOfClass(
+                Player.class,
+                searchArea,
+                player1 -> player1.is(entity)
+        );
+
+        return !nearbyContractor.isEmpty();
     }
 }

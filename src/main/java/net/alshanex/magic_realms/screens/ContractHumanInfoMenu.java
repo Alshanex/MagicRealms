@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.screens;
 
+import com.mojang.datafixers.util.Pair;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
@@ -8,6 +9,7 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -16,6 +18,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
@@ -30,10 +33,18 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private final EntityType<? extends AbstractMercenaryEntity> entityType;
     private java.util.Timer saveTimer;
 
-    // Slot indices
-    private static final int EQUIPMENT_SLOTS = 6; // head, chest, legs, boots, mainhand, offhand
+    // Tab management - REMOVED INVENTORY TAB
+    public enum Tab {
+        IRON_SPELLS
+    }
+
+    private Tab currentTab = Tab.IRON_SPELLS;
+
+    // Slot indices - ONLY equipment + player inventory (42 total)
+    private static final int EQUIPMENT_SLOTS = 6;
     private static final int PLAYER_INVENTORY_SLOTS = 36;
-    private static final int TOTAL_SLOTS = EQUIPMENT_SLOTS + PLAYER_INVENTORY_SLOTS;
+    private static final int EQUIPMENT_SLOT_START = 0;
+    private static final int PLAYER_INVENTORY_START = EQUIPMENT_SLOTS;
 
     // Constructor for when you have the real entity (server-side usually)
     public ContractHumanInfoMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
@@ -50,16 +61,10 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         this.player = playerInventory.player;
         this.entityType = entityType;
 
-        // Crear el container
-        this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS) {
-            @Override
-            public void setChanged() {
-                super.setChanged();
-                // El guardado se hace manualmente
-            }
-        };
+        // Create the equipment container
+        this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS);
 
-        // Cargar equipamiento actual de la entidad
+        // Load equipment from entity
         loadEquipmentFromEntity();
 
         // Add equipment slots with restrictions
@@ -79,33 +84,22 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     public ContractHumanInfoMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_HUMAN_INFO_MENU.get(), containerId);
 
-        // Deserializar snapshot
+        // Deserialize snapshot
         this.snapshot = EntitySnapshot.deserialize(buf.readNbt());
         UUID entityUUID = buf.readUUID();
         this.player = playerInventory.player;
         this.entityType = snapshot != null ? snapshot.entityType : null;
 
-        MagicRealms.LOGGER.info("ContractHumanInfoMenu client constructor:");
-        MagicRealms.LOGGER.info("  - Entity UUID: {}", entityUUID);
-        MagicRealms.LOGGER.info("  - Entity Type: {}", entityType);
-        MagicRealms.LOGGER.info("  - Player level: {}", playerInventory.player.level());
-        MagicRealms.LOGGER.info("  - Is client side: {}", playerInventory.player.level().isClientSide);
-
-        // Buscar la entidad en el mundo
+        // Find the entity in the world
         this.entity = findEntityByUUID(playerInventory.player.level(), entityUUID);
 
-        MagicRealms.LOGGER.info("  - Found entity: {}", entity != null ? entity.getEntityName() : "null");
-
-        // Crear el container
+        // Create the container
         this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS);
 
         if (entity != null) {
             loadEquipmentFromEntity();
         } else if (snapshot != null && snapshot.equipment != null) {
-            // Load equipment from snapshot if entity not available
             loadEquipmentFromSnapshot();
-        } else {
-            MagicRealms.LOGGER.warn("Entity not found with UUID: {}", entityUUID);
         }
 
         // Add slots
@@ -114,23 +108,15 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         addPlayerHotbar(playerInventory);
     }
 
-    // NEW: Helper method to create equipment container from any entity
-    public static SimpleContainer createEquipmentContainer(AbstractMercenaryEntity entity) {
-        SimpleContainer container = new SimpleContainer(6);
-        if (entity != null) {
-            container.setItem(0, entity.getItemBySlot(EquipmentSlot.HEAD).copy());
-            container.setItem(1, entity.getItemBySlot(EquipmentSlot.CHEST).copy());
-            container.setItem(2, entity.getItemBySlot(EquipmentSlot.LEGS).copy());
-            container.setItem(3, entity.getItemBySlot(EquipmentSlot.FEET).copy());
-            container.setItem(4, entity.getMainHandItem().copy());
-            container.setItem(5, entity.getOffhandItem().copy());
-        }
-        return container;
+    // Simplified tab management - no inventory tab logic
+    public Tab getCurrentTab() {
+        return currentTab;
     }
 
-    // NEW: Get entity type
-    public EntityType<? extends AbstractMercenaryEntity> getEntityType() {
-        return entityType;
+    public void switchToTabServerSide(Tab newTab) {
+        if (this.currentTab == newTab) return;
+        this.currentTab = newTab;
+        MagicRealms.LOGGER.debug("Server-side switched to tab: {}", newTab);
     }
 
     private AbstractMercenaryEntity findEntityByUUID(Level level, UUID entityUUID) {
@@ -147,26 +133,21 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         if (entity == null) return;
 
         try {
-            // Cargar equipamiento directamente de la entidad
             equipmentContainer.setItem(0, entity.getItemBySlot(EquipmentSlot.HEAD).copy());
             equipmentContainer.setItem(1, entity.getItemBySlot(EquipmentSlot.CHEST).copy());
             equipmentContainer.setItem(2, entity.getItemBySlot(EquipmentSlot.LEGS).copy());
             equipmentContainer.setItem(3, entity.getItemBySlot(EquipmentSlot.FEET).copy());
             equipmentContainer.setItem(4, entity.getMainHandItem().copy());
             equipmentContainer.setItem(5, entity.getOffhandItem().copy());
-
-            MagicRealms.LOGGER.debug("Loaded equipment from entity {} for contract menu", entity.getEntityName());
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to load equipment from entity: {}", e.getMessage());
         }
     }
 
-    // NEW: Load equipment from snapshot NBT data
     private void loadEquipmentFromSnapshot() {
         if (snapshot == null || snapshot.equipment == null) return;
 
         try {
-            // Load equipment from snapshot's NBT data
             var registryAccess = player.level().registryAccess();
 
             if (snapshot.equipment.contains("head")) {
@@ -187,8 +168,6 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             if (snapshot.equipment.contains("off_hand")) {
                 equipmentContainer.setItem(5, ItemStack.parseOptional(registryAccess, snapshot.equipment.getCompound("off_hand")));
             }
-
-            MagicRealms.LOGGER.debug("Loaded equipment from snapshot for contract menu");
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to load equipment from snapshot: {}", e.getMessage());
         }
@@ -197,179 +176,28 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
     private void saveEquipmentToEntity() {
         if (entity == null) return;
 
-        // Verificar que el contrato sigue activo
-        ContractData contractData = entity.getData(MRDataAttachments.CONTRACT_DATA);
-        if (!contractData.isContractor(player.getUUID())) {
-            MagicRealms.LOGGER.warn("Contract expired, cannot save equipment for entity {}", entity.getEntityName());
-            return;
-        }
-
         try {
-            MagicRealms.LOGGER.debug("=== SAVING EQUIPMENT TO ENTITY {} ===", entity.getEntityName());
+            entity.setItemSlot(EquipmentSlot.HEAD, equipmentContainer.getItem(0).copy());
+            entity.setItemSlot(EquipmentSlot.CHEST, equipmentContainer.getItem(1).copy());
+            entity.setItemSlot(EquipmentSlot.LEGS, equipmentContainer.getItem(2).copy());
+            entity.setItemSlot(EquipmentSlot.FEET, equipmentContainer.getItem(3).copy());
+            entity.setItemSlot(EquipmentSlot.MAINHAND, equipmentContainer.getItem(4).copy());
+            entity.setItemSlot(EquipmentSlot.OFFHAND, equipmentContainer.getItem(5).copy());
 
-            // Aplicar equipamiento a la entidad
-            ItemStack helmet = equipmentContainer.getItem(0);
-            entity.setItemSlot(EquipmentSlot.HEAD, helmet.copy());
-            MagicRealms.LOGGER.debug("Set helmet: {}", helmet.isEmpty() ? "EMPTY" : helmet.getDisplayName().getString());
-
-            ItemStack chestplate = equipmentContainer.getItem(1);
-            entity.setItemSlot(EquipmentSlot.CHEST, chestplate.copy());
-            MagicRealms.LOGGER.debug("Set chestplate: {}", chestplate.isEmpty() ? "EMPTY" : chestplate.getDisplayName().getString());
-
-            ItemStack leggings = equipmentContainer.getItem(2);
-            entity.setItemSlot(EquipmentSlot.LEGS, leggings.copy());
-            MagicRealms.LOGGER.debug("Set leggings: {}", leggings.isEmpty() ? "EMPTY" : leggings.getDisplayName().getString());
-
-            ItemStack boots = equipmentContainer.getItem(3);
-            entity.setItemSlot(EquipmentSlot.FEET, boots.copy());
-            MagicRealms.LOGGER.debug("Set boots: {}", boots.isEmpty() ? "EMPTY" : boots.getDisplayName().getString());
-
-            ItemStack mainHand = equipmentContainer.getItem(4);
-            entity.setItemSlot(EquipmentSlot.MAINHAND, mainHand.copy());
-            MagicRealms.LOGGER.debug("Set main hand: {}", mainHand.isEmpty() ? "EMPTY" : mainHand.getDisplayName().getString());
-
-            ItemStack offHand = equipmentContainer.getItem(5);
-            entity.setItemSlot(EquipmentSlot.OFFHAND, offHand.copy());
-            MagicRealms.LOGGER.debug("Set off hand: {}", offHand.isEmpty() ? "EMPTY" : offHand.getDisplayName().getString());
-
-            // Marcar como persistente el equipamiento
             entity.setPersistenceRequired();
-
-            // Refresh spells after equipment change
             entity.refreshSpellsAfterEquipmentChange();
-
-            MagicRealms.LOGGER.info("Successfully updated equipment for contracted entity {}", entity.getEntityName());
-
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to save equipment to entity {}: {}", entity.getEntityName(), e.getMessage());
-        }
-    }
-
-    private void saveEquipmentManually() {
-        try {
-            saveEquipmentToEntity();
-            MagicRealms.LOGGER.debug("Manual equipment save completed for entity");
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Error in manual equipment save: {}", e.getMessage());
+            MagicRealms.LOGGER.error("Failed to save equipment to entity: {}", e.getMessage());
         }
     }
 
     private void addEquipmentSlots() {
-        // Head slot - only helmets
         this.addSlot(new RestrictedSlot(equipmentContainer, 0, 73, 42, EquipmentSlot.HEAD));
-
-        // Chest slot - only chestplates
         this.addSlot(new RestrictedSlot(equipmentContainer, 1, 73, 60, EquipmentSlot.CHEST));
-
-        // Legs slot - only leggings
         this.addSlot(new RestrictedSlot(equipmentContainer, 2, 73, 78, EquipmentSlot.LEGS));
-
-        // Boots slot - only boots
         this.addSlot(new RestrictedSlot(equipmentContainer, 3, 73, 96, EquipmentSlot.FEET));
-
-        // Main hand slot - weapons with class restrictions
         this.addSlot(new MainHandSlot(equipmentContainer, 4, 91, 78, snapshot));
-
-        // Off hand slot - shields only for warriors with shield
         this.addSlot(new OffHandSlot(equipmentContainer, 5, 91, 96, snapshot));
-    }
-
-    // Slot classes remain the same but are now more generic
-    private static class RestrictedSlot extends Slot {
-        private final EquipmentSlot equipmentSlot;
-
-        public RestrictedSlot(Container container, int slot, int x, int y, EquipmentSlot equipmentSlot) {
-            super(container, slot, x, y);
-            this.equipmentSlot = equipmentSlot;
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            if (stack.isEmpty()) return true;
-
-            Item item = stack.getItem();
-            if (item instanceof ArmorItem armorItem) {
-                return armorItem.getEquipmentSlot() == equipmentSlot;
-            }
-
-            return false;
-        }
-
-        @Override
-        public int getMaxStackSize() {
-            return 1;
-        }
-    }
-
-    private static class MainHandSlot extends Slot {
-        private final EntitySnapshot snapshot;
-
-        public MainHandSlot(Container container, int slot, int x, int y, EntitySnapshot snapshot) {
-            super(container, slot, x, y);
-            this.snapshot = snapshot;
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            if (stack.isEmpty()) return true;
-
-            Item item = stack.getItem();
-
-            boolean isWeapon = item instanceof SwordItem ||
-                    item instanceof AxeItem ||
-                    item instanceof TridentItem;
-
-            String itemName = item.toString().toLowerCase();
-            boolean isModdedWeapon = itemName.contains("sword") ||
-                    itemName.contains("axe") ||
-                    itemName.contains("bow") ||
-                    itemName.contains("staff") ||
-                    itemName.contains("blade") ||
-                    itemName.contains("dagger");
-
-            if (snapshot != null && snapshot.entityClass == EntityClass.ROGUE && snapshot.isArcher) {
-                return item instanceof BowItem || itemName.contains("bow");
-            }
-
-            return isWeapon || isModdedWeapon;
-        }
-
-        @Override
-        public int getMaxStackSize() {
-            return 1;
-        }
-    }
-
-    private static class OffHandSlot extends Slot {
-        private final EntitySnapshot snapshot;
-
-        public OffHandSlot(Container container, int slot, int x, int y, EntitySnapshot snapshot) {
-            super(container, slot, x, y);
-            this.snapshot = snapshot;
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            if (stack.isEmpty()) return true;
-
-            if (snapshot != null &&
-                    snapshot.entityClass == EntityClass.WARRIOR &&
-                    snapshot.hasShield) {
-                return stack.getItem() instanceof ShieldItem;
-            }
-
-            if (snapshot != null &&
-                    snapshot.entityClass == EntityClass.MAGE) {
-                return stack.getItem() instanceof SpellBook;
-            }
-
-            return false;
-        }
-
-        @Override
-        public int getMaxStackSize() {
-            return 1;
-        }
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
@@ -396,50 +224,23 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             result = stackInSlot.copy();
 
             if (index < EQUIPMENT_SLOTS) {
-                if (!this.moveItemStackTo(stackInSlot, EQUIPMENT_SLOTS, TOTAL_SLOTS, true)) {
+                // Equipment slot - move to player inventory
+                if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START,
+                        PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else {
-                // Logic similar to original HumanInfoMenu
-                boolean movedToEquipment = false;
-                Item item = stackInSlot.getItem();
-
-                if (item instanceof ArmorItem armorItem) {
-                    int targetSlot = switch (armorItem.getEquipmentSlot()) {
-                        case HEAD -> 0;
-                        case CHEST -> 1;
-                        case LEGS -> 2;
-                        case FEET -> 3;
-                        default -> -1;
-                    };
-
-                    if (targetSlot >= 0 && this.slots.get(targetSlot).mayPlace(stackInSlot) &&
-                            !this.slots.get(targetSlot).hasItem()) {
-                        this.slots.get(targetSlot).set(stackInSlot.split(1));
-                        movedToEquipment = true;
-                    }
-                } else if (item instanceof SwordItem || item instanceof AxeItem ||
-                        item instanceof BowItem || item instanceof CrossbowItem ||
-                        item instanceof TridentItem || item instanceof PickaxeItem ||
-                        item instanceof ShovelItem || item instanceof HoeItem) {
-                    if (this.slots.get(4).mayPlace(stackInSlot) && !this.slots.get(4).hasItem()) {
-                        this.slots.get(4).set(stackInSlot.split(1));
-                        movedToEquipment = true;
-                    }
-                } else if (item instanceof ShieldItem) {
-                    if (this.slots.get(5).mayPlace(stackInSlot) && !this.slots.get(5).hasItem()) {
-                        this.slots.get(5).set(stackInSlot.split(1));
-                        movedToEquipment = true;
-                    }
-                }
-
-                if (!movedToEquipment) {
-                    if (index < TOTAL_SLOTS - 9) {
-                        if (!this.moveItemStackTo(stackInSlot, TOTAL_SLOTS - 9, TOTAL_SLOTS, false)) {
+            } else if (index >= PLAYER_INVENTORY_START && index < PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS) {
+                // Player inventory slot - try to move to equipment first
+                if (!tryMoveToEquipmentSlot(stackInSlot)) {
+                    // Move within player inventory
+                    if (index < PLAYER_INVENTORY_START + 27) {
+                        if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START + 27,
+                                PLAYER_INVENTORY_START + PLAYER_INVENTORY_SLOTS, false)) {
                             return ItemStack.EMPTY;
                         }
                     } else {
-                        if (!this.moveItemStackTo(stackInSlot, EQUIPMENT_SLOTS, TOTAL_SLOTS - 9, false)) {
+                        if (!this.moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START,
+                                PLAYER_INVENTORY_START + 27, false)) {
                             return ItemStack.EMPTY;
                         }
                     }
@@ -453,8 +254,41 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             }
         }
 
-        saveEquipmentManually();
+        saveEquipmentToEntity();
         return result;
+    }
+
+    private boolean tryMoveToEquipmentSlot(ItemStack stackInSlot) {
+        Item item = stackInSlot.getItem();
+
+        if (item instanceof ArmorItem armorItem) {
+            int targetSlot = switch (armorItem.getEquipmentSlot()) {
+                case HEAD -> 0;
+                case CHEST -> 1;
+                case LEGS -> 2;
+                case FEET -> 3;
+                default -> -1;
+            };
+
+            if (targetSlot >= 0 && this.slots.get(targetSlot).mayPlace(stackInSlot) &&
+                    !this.slots.get(targetSlot).hasItem()) {
+                this.slots.get(targetSlot).set(stackInSlot.split(1));
+                return true;
+            }
+        } else if (item instanceof SwordItem || item instanceof AxeItem ||
+                item instanceof BowItem || item instanceof CrossbowItem ||
+                item instanceof TridentItem) {
+            if (this.slots.get(4).mayPlace(stackInSlot) && !this.slots.get(4).hasItem()) {
+                this.slots.get(4).set(stackInSlot.split(1));
+                return true;
+            }
+        } else if (item instanceof ShieldItem) {
+            if (this.slots.get(5).mayPlace(stackInSlot) && !this.slots.get(5).hasItem()) {
+                this.slots.get(5).set(stackInSlot.split(1));
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -470,7 +304,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             saveTimer.schedule(new java.util.TimerTask() {
                 @Override
                 public void run() {
-                    saveEquipmentManually();
+                    saveEquipmentToEntity();
                 }
             }, 100);
         }
@@ -478,30 +312,19 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // Verificación básica de distancia
         if (entity != null && !entity.isRemoved() && player.distanceToSqr(entity) > 64.0) {
             return false;
         }
 
-        // Si la entidad es null en el cliente, permitir que continúe
-        // (puede ocurrir debido a sincronización de red)
         if (entity == null && player.level().isClientSide) {
             return true;
         }
 
         if (entity == null) return false;
 
-        // Verificar que el contrato sigue activo
-        ContractData contractData = entity.getData(MRDataAttachments.CONTRACT_DATA);
-        if (!contractData.isContractor(player.getUUID())) {
-            return false;
-        }
+        if(entity.getSummoner() == null) return false;
 
-        if (!entity.isInMenuState()) {
-            return false;
-        }
-
-        return true;
+        return entity.isInMenuState();
     }
 
     public EntitySnapshot getSnapshot() {
@@ -514,6 +337,10 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
 
     public AbstractMercenaryEntity getEntity() {
         return entity;
+    }
+
+    public EntityType<? extends AbstractMercenaryEntity> getEntityType() {
+        return entityType;
     }
 
     @Override
@@ -530,6 +357,129 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             }
         }
 
-        saveEquipmentManually();
+        saveEquipmentToEntity();
+    }
+
+    // Slot classes
+    private static class RestrictedSlot extends Slot {
+        private final EquipmentSlot equipmentSlot;
+
+        public RestrictedSlot(Container container, int slot, int x, int y, EquipmentSlot equipmentSlot) {
+            super(container, slot, x, y);
+            this.equipmentSlot = equipmentSlot;
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            if (stack.isEmpty()) return true;
+            Item item = stack.getItem();
+            if (item instanceof ArmorItem armorItem) {
+                return armorItem.getEquipmentSlot() == equipmentSlot;
+            }
+            return false;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            ResourceLocation atlas = InventoryMenu.BLOCK_ATLAS;
+            ResourceLocation sprite = switch (equipmentSlot) {
+                case HEAD -> InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
+                case CHEST -> InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE;
+                case LEGS -> InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS;
+                case FEET -> InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
+                default -> null;
+            };
+
+            return sprite != null ? Pair.of(atlas, sprite) : null;
+        }
+    }
+
+    private static class MainHandSlot extends Slot {
+        private final EntitySnapshot snapshot;
+
+        private static final ResourceLocation EMPTY_SLOT_SWORD =
+                ResourceLocation.withDefaultNamespace("item/empty_slot_sword");
+
+        public MainHandSlot(Container container, int slot, int x, int y, EntitySnapshot snapshot) {
+            super(container, slot, x, y);
+            this.snapshot = snapshot;
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            if (stack.isEmpty()) return true;
+
+            Item item = stack.getItem();
+            boolean isWeapon = item instanceof SwordItem || item instanceof AxeItem || item instanceof TridentItem;
+            String itemName = item.toString().toLowerCase();
+            boolean isModdedWeapon = itemName.contains("sword") || itemName.contains("axe") ||
+                    itemName.contains("bow") || itemName.contains("staff") ||
+                    itemName.contains("blade") || itemName.contains("dagger");
+
+            if (snapshot != null && snapshot.entityClass.name().equals("ROGUE") && snapshot.isArcher) {
+                return item instanceof BowItem || itemName.contains("bow");
+            }
+
+            return isWeapon || isModdedWeapon;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_SLOT_SWORD);
+        }
+    }
+
+    private static class OffHandSlot extends Slot {
+        private final EntitySnapshot snapshot;
+
+        private static final ResourceLocation EMPTY_SLOT_SPELLBOOK =
+                ResourceLocation.fromNamespaceAndPath("curios", "slot/spellbook_slot");
+
+        public OffHandSlot(Container container, int slot, int x, int y, EntitySnapshot snapshot) {
+            super(container, slot, x, y);
+            this.snapshot = snapshot;
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            if (stack.isEmpty()) return true;
+
+            if (snapshot != null) {
+                if (snapshot.entityClass.name().equals("WARRIOR") && snapshot.hasShield) {
+                    return stack.getItem() instanceof ShieldItem;
+                } else if (snapshot.entityClass.name().equals("MAGE")) {
+                    try {
+                        return stack.getItem() instanceof SpellBook;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            if(snapshot.entityClass.name().equals("MAGE")){
+                return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_SLOT_SPELLBOOK);
+            }
+            return Pair.of(InventoryMenu.BLOCK_ATLAS, InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD);
+        }
     }
 }

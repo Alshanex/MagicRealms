@@ -105,7 +105,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     private static final int SPAWN_CHECK_RADIUS = 20;
 
     // Entity spawn chances
-    private static final double EXCLUSIVE_MERCENARY_CHANCE = 0.10; // 10%
+    private static final double EXCLUSIVE_MERCENARY_CHANCE = 0.01; // 1%
 
     public ChairBlock(BlockBehaviour.Properties properties) {
         super(properties);
@@ -146,14 +146,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
             // Check if there's already an entity sitting in this chair
             AbstractMercenaryEntity sittingEntity = getSittingEntity(serverLevel, pos);
             if (sittingEntity != null) {
-                // Make the entity unsit
                 sittingEntity.unsitFromChair();
-                return InteractionResult.SUCCESS;
-            }
-
-            // Try to spawn an entity if conditions are met
-            if (canSpawnEntity(serverLevel, pos)) {
-                spawnRandomEntity(serverLevel, pos, state);
                 return InteractionResult.SUCCESS;
             }
         }

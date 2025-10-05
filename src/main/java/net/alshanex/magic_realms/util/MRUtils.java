@@ -10,6 +10,9 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
+import net.alshanex.magic_realms.screens.ContractInventoryMenu;
+import net.alshanex.magic_realms.util.contracts.ContractUtils;
 import net.alshanex.magic_realms.util.humans.*;
 import net.alshanex.magic_realms.util.humans.appearance.AdvancedNameManager;
 import net.minecraft.client.Minecraft;
@@ -31,7 +34,9 @@ import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.UUID;
@@ -633,6 +638,76 @@ public class MRUtils {
 
                 MagicRealms.LOGGER.debug("Server updated preset name for entity {} to: {}",
                         entityUUID, presetName);
+            }
+        }
+    }
+
+    public static void handleTabSwitch(Player player, String tabName) {
+        // Handle special case for switching TO inventory menu
+        if ("INVENTORY".equals(tabName)) {
+            if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
+                AbstractMercenaryEntity entity = attributesMenu.getEntity();
+                if (entity != null) {
+                    // Store the entity reference before closing
+                    final AbstractMercenaryEntity entityRef = entity;
+
+                    // Close current menu
+                    player.closeContainer();
+
+                    // Open new menu immediately in next tick (minimal delay)
+                    if (player.level() instanceof ServerLevel serverLevel) {
+                        serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                                serverLevel.getServer().getTickCount() + 1, () -> {
+                            ContractUtils.openInventoryScreen(player, entityRef);
+                        }
+                        ));
+                    }
+                    MagicRealms.LOGGER.debug("Server: Switched from attributes to inventory menu");
+                }
+            }
+            return;
+        }
+
+        // Handle normal tab switching within attributes menu (no menu change needed)
+        if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
+            try {
+                ContractHumanInfoMenu.Tab tab = ContractHumanInfoMenu.Tab.valueOf(tabName);
+                attributesMenu.switchToTabServerSide(tab);
+                MagicRealms.LOGGER.debug("Server: Switched to tab {} within attributes menu", tab);
+            } catch (IllegalArgumentException e) {
+                MagicRealms.LOGGER.warn("Invalid tab name received: {}", tabName);
+            }
+        }
+    }
+
+    public static void switchToAttributesScreen(Player player, ContractHumanInfoMenu.Tab tab) {
+        if (player.containerMenu instanceof ContractInventoryMenu inventoryMenu) {
+            AbstractMercenaryEntity entity = inventoryMenu.getEntity();
+            if (entity != null) {
+                // Store the entity reference and desired tab
+                final AbstractMercenaryEntity entityRef = entity;
+                final ContractHumanInfoMenu.Tab targetTab = tab;
+
+                // Close current menu
+                player.closeContainer();
+
+                // Open new menu immediately in next tick
+                if (player.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                            serverLevel.getServer().getTickCount() + 1, () -> {
+                        ContractUtils.openAttributesScreen(player, entityRef);
+
+                        // Set the tab in the next tick to ensure menu is ready
+                        serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                                serverLevel.getServer().getTickCount() + 2, () -> {
+                            if (player.containerMenu instanceof ContractHumanInfoMenu attributesMenu) {
+                                attributesMenu.switchToTabServerSide(targetTab);
+                            }
+                        }
+                        ));
+                    }
+                    ));
+                }
             }
         }
     }

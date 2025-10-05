@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
+import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.minecraft.ChatFormatting;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 
@@ -31,39 +33,43 @@ public class ContractUtils {
                                                        ContractData contractData,
                                                        ItemStack heldItem) {
 
-        if (!contractData.hasMinimumContractTime(player.getUUID())) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID());
+        Level level = humanEntity.level();  // Get the level from the entity
 
-                MutableComponent message = Component.translatable("ui.magic_realms.permanent_contract_insufficient_time",
-                        humanEntity.getEntityName(), remainingMinutes);
-
-                serverPlayer.sendSystemMessage(message);
-            }
-            return;
-        }
-
-        if (!contractData.canEstablishPermanentContract(player.getUUID())) {
+        if (!contractData.canEstablishPermanentContract(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
-                message = Component.translatable("ui.magic_realms.already_have_contract");
+                message = Component.translatable("ui.magic_realms.already_have_contract").withStyle(ChatFormatting.GOLD);
                 serverPlayer.sendSystemMessage(message);
             }
             return;
         }
 
-        if (contractData.isPermanent() && contractData.isContractor(player.getUUID())) {
+        if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_already_permanent",
-                        humanEntity.getEntityName());
+                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
                 serverPlayer.sendSystemMessage(message);
             }
             return;
         }
 
-        boolean isUpgrade = contractData.hasActiveContract() && contractData.isContractor(player.getUUID());
+        if(!player.getAbilities().instabuild){
+            if (!contractData.hasMinimumContractTime(player.getUUID(), level)) {
+                if (player instanceof ServerPlayer serverPlayer) {
+                    int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID(), level);
 
-        boolean success = contractData.trySetPermanentContract(player.getUUID());
+                    MutableComponent message = Component.translatable("ui.magic_realms.permanent_contract_insufficient_time",
+                            humanEntity.getEntityName(), remainingMinutes).withStyle(ChatFormatting.GOLD);
+
+                    serverPlayer.sendSystemMessage(message);
+                }
+                return;
+            }
+        }
+
+        boolean isUpgrade = contractData.hasActiveContract(level) && contractData.isContractor(player.getUUID(), level);
+
+        boolean success = contractData.trySetPermanentContract(player.getUUID(), level);
 
         if (!success) {
             if (player instanceof ServerPlayer serverPlayer) {
@@ -82,7 +88,7 @@ public class ContractUtils {
 
         if (player instanceof ServerPlayer serverPlayer) {
             MutableComponent message;
-            message = Component.translatable("ui.magic_realms.contract_established_permanent", humanEntity.getEntityName());
+            message = Component.translatable("ui.magic_realms.contract_established_permanent", humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
 
             serverPlayer.sendSystemMessage(message);
         }
@@ -98,11 +104,13 @@ public class ContractUtils {
                                                     ItemStack heldItem,
                                                     TieredContractItem contractItem) {
 
-        if (!contractData.canEstablishTemporaryContract(player.getUUID())) {
+        Level level = humanEntity.level();  // Get the level from the entity
+
+        if (!contractData.canEstablishTemporaryContract(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
                 if (contractData.isPermanent()) {
-                    if (contractData.isContractor(player.getUUID())) {
+                    if (contractData.isContractor(player.getUUID(), level)) {
                         message = Component.translatable("ui.magic_realms.contract_already_permanent",
                                 humanEntity.getEntityName());
                     } else {
@@ -111,7 +119,7 @@ public class ContractUtils {
                     }
                 } else {
                     message = Component.translatable("ui.magic_realms.already_have_contract",
-                            humanEntity.getEntityName());
+                            humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
                 }
                 serverPlayer.sendSystemMessage(message);
             }
@@ -128,7 +136,7 @@ public class ContractUtils {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
                 message = Component.translatable("ui.magic_realms.entity_level_too_low",
-                        humanEntity.getEntityName());
+                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
 
                 serverPlayer.sendSystemMessage(message);
             }
@@ -137,16 +145,16 @@ public class ContractUtils {
 
         int starLevel = humanEntity.getStarLevel();
         int additionalMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
-        boolean isRenewal = contractData.isContractor(player.getUUID());
+        boolean isRenewal = contractData.isContractor(player.getUUID(), level);
 
         boolean success;
         if (isRenewal) {
-            success = contractData.renewContract(player.getUUID(), starLevel);
+            success = contractData.renewContract(player.getUUID(), starLevel, level);
             if(success){
                 humanEntity.addEmeralds(additionalMinutes);
             }
         } else {
-            success = contractData.trySetTemporaryContract(player.getUUID(), starLevel);
+            success = contractData.trySetTemporaryContract(player.getUUID(), starLevel, level);
             if (success) {
                 humanEntity.addEmeralds(additionalMinutes);
                 humanEntity.setSummoner(player);
@@ -171,7 +179,7 @@ public class ContractUtils {
             } else {
                 message = Component.translatable("ui.magic_realms.contract_established",
                         humanEntity.getEntityName(),
-                        additionalMinutes);
+                        additionalMinutes).withStyle(ChatFormatting.GOLD);
             }
             serverPlayer.sendSystemMessage(message);
         }
@@ -185,11 +193,13 @@ public class ContractUtils {
                                                  AbstractMercenaryEntity humanEntity,
                                                  ContractData contractData) {
 
-        if (!contractData.isContractor(player.getUUID())) {
-            if (contractData.hasActiveContract()) {
+        Level level = humanEntity.level();  // Get the level from the entity
+
+        if (!contractData.isContractor(player.getUUID(), level)) {
+            if (contractData.hasActiveContract(level)) {
                 if (player instanceof ServerPlayer serverPlayer) {
                     MutableComponent message = Component.translatable("ui.magic_realms.already_have_contract",
-                            humanEntity.getEntityName());
+                            humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
                     serverPlayer.sendSystemMessage(message);
                 }
             } else {
@@ -226,16 +236,16 @@ public class ContractUtils {
         if (contractData.isPermanent()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_time_permanent",
-                        humanEntity.getEntityName());
+                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
                 serverPlayer.sendSystemMessage(message);
             }
         } else {
-            int minutes = contractData.getRemainingMinutes();
-            int seconds = contractData.getRemainingSeconds();
+            int minutes = contractData.getRemainingMinutes(level);
+            int seconds = contractData.getRemainingSeconds(level);
 
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",
-                        humanEntity.getEntityName(), minutes, seconds);
+                        humanEntity.getEntityName(), minutes, seconds).withStyle(ChatFormatting.GOLD);
                 serverPlayer.sendSystemMessage(message);
             }
         }
@@ -258,6 +268,32 @@ public class ContractUtils {
             CompoundTag snapshotNbt = snapshot.serialize();
             buf.writeNbt(snapshotNbt);
             buf.writeUUID(humanEntity.getUUID());
+        });
+    }
+
+    public static void openAttributesScreen(Player player, AbstractMercenaryEntity entity) {
+        if (player.level().isClientSide()) return;
+
+        EntitySnapshot snapshot = EntitySnapshot.fromEntity(entity);
+        entity.setMenuState(true);
+
+        player.openMenu(new ContractMenuProvider(snapshot, entity), buf -> {
+            CompoundTag snapshotNbt = snapshot.serialize();
+            buf.writeNbt(snapshotNbt);
+            buf.writeUUID(entity.getUUID());
+        });
+    }
+
+    public static void openInventoryScreen(Player player, AbstractMercenaryEntity entity) {
+        if (player.level().isClientSide()) return;
+
+        EntitySnapshot snapshot = EntitySnapshot.fromEntity(entity);
+        entity.setMenuState(true);
+
+        player.openMenu(new ContractInventoryMenuProvider(snapshot, entity), buf -> {
+            CompoundTag snapshotNbt = snapshot.serialize();
+            buf.writeNbt(snapshotNbt);
+            buf.writeUUID(entity.getUUID());
         });
     }
 
@@ -291,7 +327,7 @@ public class ContractUtils {
         MutableComponent message = Component.translatable(messageKey,
                 entityName,
                 requiredTier.getDisplayName().getString(),
-                contractMinutes);
+                contractMinutes).withStyle(ChatFormatting.GOLD);
 
         serverPlayer.sendSystemMessage(message);
     }
@@ -299,7 +335,7 @@ public class ContractUtils {
     private static class ContractMenuProvider implements MenuProvider {
         private final EntitySnapshot snapshot;
         private final AbstractMercenaryEntity entity;
-        private final EntityType<? extends AbstractMercenaryEntity> entityType; // NEW
+        private final EntityType<? extends AbstractMercenaryEntity> entityType;
 
         public ContractMenuProvider(EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
             this.snapshot = snapshot;
@@ -325,8 +361,33 @@ public class ContractUtils {
         @Nullable
         @Override
         public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-            // UPDATED: Use new constructor with entity type support
             return new ContractHumanInfoMenu(containerId, playerInventory, snapshot, entity, entityType);
+        }
+    }
+
+    private static class ContractInventoryMenuProvider implements MenuProvider {
+        private final EntitySnapshot snapshot;
+        private final AbstractMercenaryEntity entity;
+
+        public ContractInventoryMenuProvider(EntitySnapshot snapshot, AbstractMercenaryEntity entity) {
+            this.snapshot = snapshot;
+            this.entity = entity;
+        }
+
+        @Override
+        public Component getDisplayName() {
+            String starDisplay = "★".repeat(entity != null ? entity.getStarLevel() : 1);
+            MutableComponent title = Component.translatable("gui.magic_realms.human_info.title");
+            String entityName = entity != null ? entity.getEntityName() : "Unknown";
+            MutableComponent entityInfo = Component.literal(starDisplay + " " + entityName);
+            entityInfo = entityInfo.withStyle(ChatFormatting.AQUA);
+            return Component.literal(title.getString() + " - " + entityInfo.getString());
+        }
+
+        @Nullable
+        @Override
+        public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+            return new ContractInventoryMenu(containerId, playerInventory, snapshot, entity);
         }
     }
 
@@ -344,7 +405,7 @@ public class ContractUtils {
         });
     }
 
-    // NEW: Method for opening screen from snapshot only (useful for client-side or when entity unavailable)
+    // Method for opening screen from snapshot only (useful for client-side or when entity unavailable)
     public static void openContractScreenFromSnapshot(Player player, EntitySnapshot snapshot) {
         if (player.level().isClientSide()) return;
 

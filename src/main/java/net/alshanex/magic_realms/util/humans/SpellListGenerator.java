@@ -273,7 +273,7 @@ public class SpellListGenerator {
 
     // === MÉTODOS HELPER UTILS ===
 
-    private static List<AbstractSpell> getSpellsFromTag(TagKey<AbstractSpell> tag) {
+    public static List<AbstractSpell> getSpellsFromTag(TagKey<AbstractSpell> tag) {
         var list = new ArrayList<AbstractSpell>();
 
         for (var spell : SpellRegistry.getEnabledSpells()) {

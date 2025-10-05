@@ -19,6 +19,12 @@ public class ModTags {
     public static final TagKey<EntityType<?>> BOSSES_TAG = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "bosses"));
     public static final TagKey<EntityType<?>> EXCLUSIVE_MERCENARIES = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "exclusive_mercenaries"));
 
+    // Fears
+    public static final TagKey<EntityType<?>> ALSHANEX_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "alshanex_fears"));
+    public static final TagKey<EntityType<?>> ALIANA_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "aliana_fears"));
+    public static final TagKey<EntityType<?>> CATAS_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_fears"));
+    public static final TagKey<EntityType<?>> AMADEUS_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "amadeus_fears"));
+
     public static final TagKey<Item> TAVERNKEEP_SELLS_FOOD = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_foods"));
     public static final TagKey<Item> TAVERNKEEP_SELLS_DRINKS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_drinks"));
 
@@ -35,6 +41,8 @@ public class ModTags {
     public static TagKey<AbstractSpell> LEGENDARY_ARCHER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/archer/legendary"));
 
     public static TagKey<AbstractSpell> MAGE_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/mage/spells"));
+
+    public static TagKey<AbstractSpell> CATAS_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_spells"));
 
     // Structures
     public static TagKey<Structure> FURLED_MAP_STRUCTURES = create("furled_map_structures");

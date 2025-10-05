@@ -108,6 +108,24 @@ public class KillTrackerData {
         this.isInitialized = true;
     }
 
+    public void initializeRandomSpawnLevelForWave(RandomSource randomSource, int waveNumber) {
+        if (isInitialized) {
+            return; // Already initialized, don't re-roll
+        }
+
+        int maxLevel = Config.maxLevel;
+
+        int rangeMin = 1 + (maxLevel / 10) * (waveNumber - 1);
+        int rangeMax = (maxLevel / 10) * waveNumber;
+
+        int spawnLevel = randomSource.nextInt(rangeMax - rangeMin + 1) + rangeMin;
+
+        // Set the level
+        this.currentLevel = spawnLevel;
+        this.experiencePoints = getRequiredExperienceForLevel(spawnLevel);
+        this.isInitialized = true;
+    }
+
     public void addKill(LivingEntity killedEntity) {
         int expGained = calculateExperienceGain(killedEntity);
 
@@ -189,7 +207,16 @@ public class KillTrackerData {
     private int getRequiredExperienceForLevel(int level) {
         if (level <= 1) return 0;
 
-        return (int) (200 * level * (Config.xpNeededMultiplier / 100));
+        // Base XP for level 2
+        double baseXp = 100.0;
+
+        // Growth rate
+        double growthRate = 1.08;
+
+        // Calculate total XP needed to reach this level
+        double totalXp = baseXp * (Math.pow(growthRate, level - 1) - 1) / (growthRate - 1);
+
+        return (int) (totalXp * (Config.xpNeededMultiplier / 100));
     }
 
     public int getMaxLevel() {

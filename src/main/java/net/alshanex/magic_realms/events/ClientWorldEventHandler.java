@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.exclusive.AbstractFixedTextureRenderer;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
 import net.alshanex.magic_realms.util.humans.appearance.DynamicTextureManager;
 import net.neoforged.api.distmarker.Dist;
@@ -18,6 +19,8 @@ public class ClientWorldEventHandler {
             // Clear texture caches when world unloads on client
             DynamicTextureManager.clearAllTextures();
             RandomHumanEntityRenderer.clearCompositeCache();
+            AbstractFixedTextureRenderer.clearTextureCache();
+
             MagicRealms.LOGGER.debug("Cleared client texture caches on world unload");
         }
     }

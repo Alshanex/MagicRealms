@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "#magic_realms:attack:melee",
+    "#magic_realms:attack/melee",
     "irons_spellbooks:fang_ward",
     "irons_spellbooks:frostwave",
     "irons_spellbooks:heat_surge",

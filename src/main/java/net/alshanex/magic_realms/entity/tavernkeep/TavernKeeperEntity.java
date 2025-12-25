@@ -19,6 +19,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
+import net.alshanex.magic_realms.util.humans.goals.WalkToGhostBlockGoal;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
@@ -85,7 +86,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 )
                 .setDrinksPotions()
         );
-        this.goalSelector.addGoal(3, new PatrolNearLocationGoal(this, 5, .75f));
+        this.goalSelector.addGoal(4, new WalkToGhostBlockGoal(this, 1.0D, 10));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));

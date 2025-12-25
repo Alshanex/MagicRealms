@@ -83,4 +83,7 @@ public class MRItems {
 
     public static final Supplier<Item> WOODEN_CHAIR_SIMPLE = ITEMS.register("wooden_chair_simple", () ->
             new BlockItem(MRBlocks.WOODEN_CHAIR_SIMPLE.get(), new Item.Properties()));
+
+    public static final Supplier<Item> GHOST_TARGET_BLOCK = ITEMS.register("ghost_target_block", () ->
+            new BlockItem(MRBlocks.GHOST_TARGET_BLOCK.get(), new Item.Properties()));
 }

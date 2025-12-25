@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.registry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.block.ChairBlockSimple;
+import net.alshanex.magic_realms.block.GhostTargetBlock;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -34,6 +35,8 @@ public class MRBlocks {
                     .noOcclusion()
                     .randomTicks() // Enable random ticks for spawning
             ));
+
+    public static final Supplier<Block> GHOST_TARGET_BLOCK = BLOCKS.register("ghost_target", GhostTargetBlock::new);
 
     public static void register(IEventBus eventBus) {
         BLOCKS.register(eventBus);

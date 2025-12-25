@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.block.ChairBlock;
+import net.alshanex.magic_realms.block.ChairBlockSimple;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -18,6 +19,15 @@ public class MRBlocks {
     // Chair block
     public static final Supplier<Block> WOODEN_CHAIR = BLOCKS.register("wooden_chair", () ->
             new ChairBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(2.0F, 3.0F)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion()
+                    .randomTicks() // Enable random ticks for spawning
+            ));
+
+    public static final Supplier<Block> WOODEN_CHAIR_SIMPLE = BLOCKS.register("wooden_chair_simple", () ->
+            new ChairBlockSimple(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WOOD)
                     .strength(2.0F, 3.0F)
                     .sound(SoundType.WOOD)

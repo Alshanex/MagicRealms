@@ -32,6 +32,7 @@ public class MRCreativeTab {
                 entries.accept(MRItems.PERMANENT_BLOOD_PACT.get());
                 entries.accept(MRItems.MIDAS_COIN.get());
                 entries.accept(MRItems.WOODEN_CHAIR.get());
+                entries.accept(MRItems.WOODEN_CHAIR_SIMPLE.get());
             })
             .withTabsBefore(CreativeTabRegistry.EQUIPMENT_TAB.getId())
             .build());

@@ -80,4 +80,7 @@ public class MRItems {
 
     public static final Supplier<Item> WOODEN_CHAIR = ITEMS.register("wooden_chair", () ->
             new BlockItem(MRBlocks.WOODEN_CHAIR.get(), new Item.Properties()));
+
+    public static final Supplier<Item> WOODEN_CHAIR_SIMPLE = ITEMS.register("wooden_chair_simple", () ->
+            new BlockItem(MRBlocks.WOODEN_CHAIR_SIMPLE.get(), new Item.Properties()));
 }

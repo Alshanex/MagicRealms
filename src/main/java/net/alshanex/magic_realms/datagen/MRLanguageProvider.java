@@ -38,6 +38,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MREffects.STUN.get(), "Stunned");
 
         add(MRBlocks.WOODEN_CHAIR.get(), "Wooden Chair");
+        add(MRBlocks.WOODEN_CHAIR_SIMPLE.get(), "Wooden Chair");
 
         add("itemGroup.magic_realms.main_tab", "Magic Realms");
 

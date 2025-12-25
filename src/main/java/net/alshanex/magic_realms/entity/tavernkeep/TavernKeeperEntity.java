@@ -7,7 +7,6 @@ import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
-import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.IMerchantWizard;
 import io.redspace.ironsspellbooks.item.FurledMapItem;
@@ -19,13 +18,15 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
-import net.alshanex.magic_realms.util.humans.goals.WalkToGhostBlockGoal;
+import net.alshanex.magic_realms.util.humans.goals.WalkToSpawnGoal;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -66,6 +67,9 @@ import software.bernie.geckolib.animation.AnimationState;
 import java.util.*;
 
 public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttacker, IMerchantWizard {
+    @Nullable
+    private BlockPos spawnPos;
+
     private long lastHurtTime = 0;
     private static final int HEALING_DELAY_TICKS = 1200;
 
@@ -86,7 +90,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 )
                 .setDrinksPotions()
         );
-        this.goalSelector.addGoal(4, new WalkToGhostBlockGoal(this, 1.0D, 10));
+        this.goalSelector.addGoal(3, new WalkToSpawnGoal(this, 1.0D, 10.0D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
@@ -181,7 +185,12 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData) {
         this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_holy_power"), 95.0, AttributeModifier.Operation.ADD_VALUE));
         this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_spell_res"), 0.3, AttributeModifier.Operation.ADD_VALUE));
+        this.spawnPos = this.blockPosition();
         return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+    }
+
+    public BlockPos getSpawnPos() {
+        return this.spawnPos;
     }
 
     @Override
@@ -524,6 +533,9 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
         pCompound.putLong("LastHurtTime", this.lastHurtTime);
+        if (this.spawnPos != null) {
+            pCompound.put("SpawnPos", NbtUtils.writeBlockPos(this.spawnPos));
+        }
         serializeMerchant(pCompound, this.offers, this.lastRestockGameTime, this.numberOfRestocksToday);
     }
 
@@ -531,6 +543,9 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
         this.lastHurtTime = pCompound.getLong("LastHurtTime");
+        if (pCompound.contains("SpawnPos")) {
+            this.spawnPos = NbtUtils.readBlockPos(pCompound, "SpawnPos").orElse(null);
+        }
         deserializeMerchant(pCompound, c -> this.offers = c);
     }
 

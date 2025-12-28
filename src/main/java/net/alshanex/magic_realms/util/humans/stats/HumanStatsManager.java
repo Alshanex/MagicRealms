@@ -139,9 +139,6 @@ public class HumanStatsManager {
             addAttributeModifier(entity, ALObjects.Attributes.DRAW_SPEED,
                     "archer_draw_speed", drawSpeed - 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
 
-            double projectileDamage = roundToTwoDecimals(getRandomValue(100, 200, random) / 100.0);
-            addAttributeModifier(entity, ALObjects.Attributes.PROJECTILE_DAMAGE,
-                    "archer_projectile_damage", projectileDamage - 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         } else {
             // Lifesteal para assassins
             double lifesteal = roundToTwoDecimals(getRandomValue(0, 10, random) / 100.0);
@@ -203,17 +200,17 @@ public class HumanStatsManager {
     // Métodos helper para obtener valores específicos por clase
     private static double getClassSpecificCritChance(EntityClass entityClass, RandomSource random) {
         return switch (entityClass) {
-            case MAGE -> getRandomValue(5, 95, random);
-            case WARRIOR -> getRandomValue(5, 95, random);
-            case ROGUE -> getRandomValue(50, 95, random);
+            case MAGE -> getRandomValue(5, 30, random);
+            case WARRIOR -> getRandomValue(5, 40, random);
+            case ROGUE -> getRandomValue(20, 50, random);
         };
     }
 
     private static double getClassSpecificCritDamage(EntityClass entityClass, RandomSource random) {
         return switch (entityClass) {
-            case MAGE -> getRandomValue(150, 250, random);
+            case MAGE -> getRandomValue(150, 200, random);
             case WARRIOR -> getRandomValue(150, 200, random);
-            case ROGUE -> getRandomValue(200, 250, random);
+            case ROGUE -> getRandomValue(170, 220, random);
         };
     }
 

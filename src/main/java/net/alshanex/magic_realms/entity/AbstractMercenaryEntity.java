@@ -126,7 +126,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private int starLevel = 1;
     private BlockPos patrolPosition = BlockPos.ZERO;
     private int stunTimer = 0;
-    private int emeraldBalance = 0;
     private BlockPos chairPosition = BlockPos.ZERO;
     private int sittingTime = 0;
     private int sitCooldown = 0;
@@ -484,69 +483,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         return this.stunTimer;
     }
 
-    // Emerald management
-    public int getEmeraldBalance() {
-        return this.emeraldBalance;
-    }
-
-    public void setEmeraldBalance(int balance) {
-        this.emeraldBalance = Math.max(0, balance);
-    }
-
-    public void addEmeralds(int amount) {
-        if (amount > 0) {
-            setEmeraldBalance(getEmeraldBalance() + amount);
-            MagicRealms.LOGGER.debug("Entity {} added {} emeralds to balance, new total: {}",
-                    getEntityName(), amount, getEmeraldBalance());
-        }
-    }
-
-    public boolean removeEmeralds(int amount) {
-        int current = getEmeraldBalance();
-        if (current >= amount) {
-            setEmeraldBalance(current - amount);
-            MagicRealms.LOGGER.debug("Entity {} removed {} emeralds from balance, remaining: {}",
-                    getEntityName(), amount, getEmeraldBalance());
-            return true;
-        }
-        return false;
-    }
-
-    public int getTotalEmeralds() {
-        return getEmeraldBalance();
-    }
-
-    public int getOverflowEmeralds() {
-        return Math.max(0, getTotalEmeralds() - Config.emeraldOverflowThreshold);
-    }
-
-    public boolean spendEmeralds(int amount) {
-        return removeEmeralds(amount);
-    }
-
-    public boolean hasEmeralds(int amount) {
-        return getEmeraldBalance() >= amount;
-    }
-
-    public void consolidateEmeralds() {
-        SimpleContainer inventory = getInventory();
-        int inventoryEmeralds = inventory.countItem(Items.EMERALD);
-        if (inventoryEmeralds > 0) {
-            MRUtils.removeItemsFromInventory(inventory, Items.EMERALD, inventoryEmeralds);
-            addEmeralds(inventoryEmeralds);
-        }
-    }
-
-    public void giveStartingEmeralds() {
-        int emeraldCount = switch (getStarLevel()) {
-            case 1 -> 5 + getRandom().nextInt(6); // 5-10 emeralds
-            case 2 -> 10 + getRandom().nextInt(11); // 10-20 emeralds
-            case 3 -> 20 + getRandom().nextInt(16); // 20-35 emeralds
-            default -> 5;
-        };
-        addEmeralds(emeraldCount);
-    }
-
     // Fear system
     protected void initializeFearedEntity(RandomSource randomSource) {
         // Only do random fear initialization for non-exclusive mercenaries
@@ -811,19 +747,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     protected void pickUpItem(ItemEntity itemEntity) {
-        ItemStack pickedUpItem = itemEntity.getItem();
-
-        if (pickedUpItem.is(Items.EMERALD)) {
-            addEmeralds(pickedUpItem.getCount());
-            itemEntity.discard();
-            this.playSound(SoundEvents.ITEM_PICKUP, 0.2F,
-                    ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-            return;
-        }
-
         InventoryCarrier.pickUpItem(this, this, itemEntity);
         MRUtils.autoEquipBetterEquipment(this);
-        consolidateEmeralds();
     }
 
     @Override
@@ -1034,11 +959,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             return InteractionResult.FAIL;
         }
 
-        if (heldItem.is(Items.EMERALD) && !isInMenuState()) {
-            boolean tradeSuccessful = handleEmeraldTrade(player, heldItem);
-            return tradeSuccessful ? InteractionResult.SUCCESS : InteractionResult.FAIL;
-        }
-
         if (heldItem.is(MRItems.HELL_PASS.get())) {
             if (this.isImmortal()) {
                 player.sendSystemMessage(Component.translatable("message.magic_realms.already_immortal",
@@ -1083,56 +1003,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
-    private boolean handleEmeraldTrade(Player player, ItemStack emeraldStack) {
-        if (emeraldStack.getCount() < 1) {
-            return false;
-        }
-
-        List<Integer> availableSlots = new ArrayList<>();
-        for (int i = 0; i < inventory.getContainerSize(); i++) {
-            ItemStack stack = inventory.getItem(i);
-            if (!stack.isEmpty() && !stack.is(Items.EMERALD)) {
-                availableSlots.add(i);
-            }
-        }
-
-        if (availableSlots.isEmpty()) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.no_items_to_trade", this.getEntityName()).withStyle(ChatFormatting.GOLD));
-            }
-            return false;
-        }
-
-        int randomSlot = availableSlots.get(this.getRandom().nextInt(availableSlots.size()));
-        ItemStack tradeItem = inventory.getItem(randomSlot);
-        if (tradeItem.isEmpty()) {
-            return false;
-        }
-
-        ItemStack itemToGive = tradeItem.copyWithCount(1);
-        tradeItem.shrink(1);
-        if (tradeItem.isEmpty()) {
-            inventory.setItem(randomSlot, ItemStack.EMPTY);
-        }
-
-        emeraldStack.shrink(1);
-        this.addEmeralds(1);
-
-        if (!player.getInventory().add(itemToGive)) {
-            ItemEntity itemEntity = new ItemEntity(level(),
-                    player.getX(), player.getY() + 0.1, player.getZ(), itemToGive);
-            itemEntity.setDefaultPickUpDelay();
-            level().addFreshEntity(itemEntity);
-        }
-
-        this.playSound(SoundEvents.VILLAGER_TRADE, 1.0F, 1.0F);
-        if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.sendSystemMessage(Component.translatable("ui.magic_realms.trade_success",
-                    this.getEntityName()).withStyle(ChatFormatting.GOLD));
-        }
-        return true;
-    }
-
     // Core spawn and initialization
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData) {
@@ -1157,7 +1027,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             LevelingStatsManager.applyLevelBasedAttributes(this, spawnLevel);
 
             MagicRealms.LOGGER.info("Entity spawned at level {} (from KillTrackerData)", spawnLevel);
-            giveStartingEmeralds();
             this.setInitialized(true);
 
             initializeClassSpells();
@@ -1285,8 +1154,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.goalSelector.addGoal(3, new HumanGoals.PatrolAroundPositionGoal(this, 0.8D, 10));
         this.goalSelector.addGoal(3, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
         this.goalSelector.addGoal(4, new HumanGoals.PickupMobDropsGoal(this));
-        this.goalSelector.addGoal(7, new HumanGoals.SellItemsToVillagersGoal(this));
-        this.goalSelector.addGoal(8, new HumanGoals.EmeraldOverflowGoal(this));
         this.goalSelector.addGoal(9, new HumanGoals.ChairSittingGoal(this));
         this.goalSelector.addGoal(10, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(11, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -1338,10 +1205,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             if (this.isStunned()) {
                 handleStunTick();
             }
-        }
-
-        if (!level().isClientSide && this.tickCount % 200 == 0) {
-            consolidateEmeralds();
         }
 
         if (!level().isClientSide && this.tickCount % 20 == 0) {
@@ -2091,7 +1954,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
         compound.putInt("StarLevel", this.starLevel);
         compound.putInt("StunTimer", this.stunTimer);
-        compound.putInt("EmeraldBalance", this.emeraldBalance);
         compound.putInt("SittingTime", this.sittingTime);
         compound.putInt("SitCooldown", this.sitCooldown);
         compound.putLong("ChairPosition", this.chairPosition.asLong());
@@ -2148,7 +2010,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         compound.putBoolean("RequiresCustomPersistence", true);
-        compound.putInt("EmeraldBalance", getEmeraldBalance());
         compound.putBoolean("IsSitting", isSittingInChair());
         compound.putLong("ChairPosition", getChairPosition().asLong());
         compound.putInt("SittingTime", getSittingTime());
@@ -2177,7 +2038,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
         this.starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
         this.stunTimer = compound.getInt("StunTimer");
-        this.emeraldBalance = compound.getInt("EmeraldBalance");
         this.sittingTime = compound.getInt("SittingTime");
         this.sitCooldown = compound.getInt("SitCooldown");
         this.chairPosition = BlockPos.of(compound.getLong("ChairPosition"));
@@ -2291,8 +2151,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         } else {
             this.lastEquippedSpellbook = ItemStack.EMPTY;
         }
-
-        setEmeraldBalance(compound.getInt("EmeraldBalance"));
 
         if (isSittingInChair() && !isValidChair(getChairPosition())) {
             unsitFromChair();

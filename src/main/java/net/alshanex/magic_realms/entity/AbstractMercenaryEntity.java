@@ -522,14 +522,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         return Math.max(0, getTotalEmeralds() - Config.emeraldOverflowThreshold);
     }
 
-    public boolean canUseOverflowEmeralds() {
-        if (getOverflowEmeralds() <= 0) {
-            return false;
-        }
-        VillagerOffersData offersData = this.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
-        return !offersData.hasAnyUnaffordableOffers();
-    }
-
     public boolean spendEmeralds(int amount) {
         return removeEmeralds(amount);
     }
@@ -828,7 +820,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             itemEntity.discard();
             this.playSound(SoundEvents.ITEM_PICKUP, 0.2F,
                     ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-            recheckUnaffordableOffers();
             return;
         }
 
@@ -855,19 +846,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     public void clearInventory() {
         this.getInventory().clearContent();
-    }
-
-    private void recheckUnaffordableOffers() {
-        VillagerOffersData memory = this.getData(MRDataAttachments.VILLAGER_OFFERS_DATA);
-        if (!memory.hasAnyUnaffordableOffers()) {
-            return;
-        }
-
-        Set<UUID> villagerUUIDs = new HashSet<>(memory.getVillagersWithUnaffordableOffers());
-        for (UUID villagerUUID : villagerUUIDs) {
-            List<MerchantOffer> nowAffordable = memory.checkAffordableOffersWithBalance(
-                    villagerUUID, this.getInventory(), this.getEmeraldBalance());
-        }
     }
 
     // Ranged attack implementation
@@ -1309,8 +1287,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.goalSelector.addGoal(3, new HumanGoals.PatrolAroundPositionGoal(this, 0.8D, 10));
         this.goalSelector.addGoal(3, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
         this.goalSelector.addGoal(4, new HumanGoals.PickupMobDropsGoal(this));
-        this.goalSelector.addGoal(5, new HumanGoals.GatherResourcesGoal(this));
-        this.goalSelector.addGoal(6, new HumanGoals.BuyEquipmentFromVillagersGoal(this));
         this.goalSelector.addGoal(7, new HumanGoals.SellItemsToVillagersGoal(this));
         this.goalSelector.addGoal(8, new HumanGoals.EmeraldOverflowGoal(this));
         this.goalSelector.addGoal(9, new HumanGoals.ChairSittingGoal(this));

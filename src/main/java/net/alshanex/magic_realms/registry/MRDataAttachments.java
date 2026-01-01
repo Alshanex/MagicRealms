@@ -25,10 +25,6 @@ public class MRDataAttachments {
             "contract_data", () -> AttachmentType.builder(() -> new ContractData()).serialize(new ContractData.Serializer()).build()
     );
 
-    public static final Supplier<AttachmentType<VillagerOffersData>> VILLAGER_OFFERS_DATA =
-            ATTACHMENT_TYPES.register("villager_offers_data",
-                    () -> AttachmentType.serializable(VillagerOffersData::new).build());
-
     public static void register(net.neoforged.bus.api.IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);
     }

@@ -101,13 +101,6 @@ public class LevelingStatsManager {
     }
 
     private static void applyWarriorAttributes(AbstractMercenaryEntity entity, int level, int starLevel) {
-        int damageBonus = Math.min(level * Config.damageAmountWarriors, Config.damageAmountWarriorsTimes * Config.damageAmountWarriors);
-
-        applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
-                "warrior_level_attack_damage",
-                damageBonus,
-                AttributeModifier.Operation.ADD_VALUE);
-
         // Bonus adicional de armadura para guerreros
         int armorBonus = Math.min(level * Config.armorAmountWarriors, Config.armorAmountWarriorsTimes * Config.armorAmountWarriors);
 
@@ -119,16 +112,6 @@ public class LevelingStatsManager {
 
     private static void applyArcherAttributes(AbstractMercenaryEntity entity, int level) {
         double progressPercentage = Math.min(1.0, (double) level / Config.maxLevel);
-
-        double currentArrowDamageBonusPercentage = Config.maxArrowDamagePercentage * progressPercentage;
-        try {
-            applyOrUpdateAttribute(entity, ALObjects.Attributes.ARROW_DAMAGE,
-                    "archer_level_arrow_damage",
-                    currentArrowDamageBonusPercentage / 100.0,
-                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Apothic Attributes not available for arrow damage bonus: {}", e.getMessage());
-        }
 
         double currentArrowVelocityBonusPercentage = Config.maxArrowVelocityPercentage * progressPercentage;
         try {
@@ -152,13 +135,6 @@ public class LevelingStatsManager {
     }
 
     private static void applyAssassinAttributes(AbstractMercenaryEntity entity, int level) {
-        int damageBonus = Math.min(level * Config.damageAmountRogues, Config.damageAmountRoguesTimes * Config.damageAmountRogues);
-
-        applyOrUpdateAttribute(entity, Attributes.ATTACK_DAMAGE,
-                "assassin_level_attack_damage",
-                damageBonus,
-                AttributeModifier.Operation.ADD_VALUE);
-
         double currentCritChance = entity.getAttribute(ALObjects.Attributes.CRIT_CHANCE).getBaseValue();
         double maxCritChanceGain = 100.0 - currentCritChance;
         double progressPercentage = Math.min(1.0, (double) level / (Config.maxLevel / 2.0));

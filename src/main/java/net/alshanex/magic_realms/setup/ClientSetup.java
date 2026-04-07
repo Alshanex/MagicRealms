@@ -9,11 +9,14 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntityRenderer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntityRenderer;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntityRenderer;
+import net.alshanex.magic_realms.registry.MRBlocks;
 import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRMenus;
 import net.alshanex.magic_realms.screens.ContractInventoryScreen;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -32,6 +35,9 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.CATAS.get(), CatasEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.AMADEUS.get(), AmadeusEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
+
+        ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR_SIMPLE.get() , RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR.get() , RenderType.cutout());
     }
 
     @SubscribeEvent

@@ -43,59 +43,76 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
-    // Chair dimensions - oriented for NORTH facing (backrest at north side)
-    private static final VoxelShape SEAT = Block.box(2, 8, 2, 14, 10, 14);
-    private static final VoxelShape BACKREST_NORTH = Block.box(2, 10, 2, 14, 18, 4);
-    private static final VoxelShape FRONT_LEFT_LEG_NORTH = Block.box(2, 0, 12, 4, 8, 14);
-    private static final VoxelShape FRONT_RIGHT_LEG_NORTH = Block.box(12, 0, 12, 14, 8, 14);
-    private static final VoxelShape BACK_LEFT_LEG_NORTH = Block.box(2, 0, 2, 4, 8, 4);
-    private static final VoxelShape BACK_RIGHT_LEG_NORTH = Block.box(12, 0, 2, 14, 8, 4);
-    private static final VoxelShape BACKREST_SUPPORT_LEFT_NORTH = Block.box(2, 8, 2, 4, 10, 4);
-    private static final VoxelShape BACKREST_SUPPORT_RIGHT_NORTH = Block.box(12, 8, 2, 14, 10, 4);
-
-    private static final VoxelShape SHAPE_NORTH = Shapes.or(
-            SEAT, BACKREST_NORTH, FRONT_LEFT_LEG_NORTH, FRONT_RIGHT_LEG_NORTH,
-            BACK_LEFT_LEG_NORTH, BACK_RIGHT_LEG_NORTH, BACKREST_SUPPORT_LEFT_NORTH, BACKREST_SUPPORT_RIGHT_NORTH
-    );
-
-    // Rotated shapes for other directions
-    private static final VoxelShape BACKREST_SOUTH = Block.box(2, 10, 12, 14, 18, 14);
-    private static final VoxelShape FRONT_LEFT_LEG_SOUTH = Block.box(12, 0, 2, 14, 8, 4);
-    private static final VoxelShape FRONT_RIGHT_LEG_SOUTH = Block.box(2, 0, 2, 4, 8, 4);
-    private static final VoxelShape BACK_LEFT_LEG_SOUTH = Block.box(12, 0, 12, 14, 8, 14);
-    private static final VoxelShape BACK_RIGHT_LEG_SOUTH = Block.box(2, 0, 12, 4, 8, 14);
-    private static final VoxelShape BACKREST_SUPPORT_LEFT_SOUTH = Block.box(12, 8, 12, 14, 10, 14);
-    private static final VoxelShape BACKREST_SUPPORT_RIGHT_SOUTH = Block.box(2, 8, 12, 4, 10, 14);
+    // -- NORTH facing (backrest at south, +Z side) --
+    private static final VoxelShape LEG_SE_NORTH = Block.box(11, 0, 11, 13, 8, 13);       // back-right leg
+    private static final VoxelShape LEG_NE_NORTH = Block.box(11, 0, 3, 13, 8, 5);          // front-right leg
+    private static final VoxelShape LEG_SW_NORTH = Block.box(3, 0, 11, 5, 8, 13);          // back-left leg
+    private static final VoxelShape LEG_NW_NORTH = Block.box(3, 0, 3, 5, 8, 5);            // front-left leg
+    private static final VoxelShape SEAT_NORTH = Block.box(3, 8, 3, 13, 10, 13);           // seat
+    private static final VoxelShape CUSHION_NORTH = Block.box(4, 9.5, 4, 12, 10.5, 12);    // cushion
+    private static final VoxelShape BACK_POST_L_NORTH = Block.box(3, 10, 11, 5, 22, 13);   // left backrest post
+    private static final VoxelShape BACK_POST_R_NORTH = Block.box(11, 10, 11, 13, 22, 13); // right backrest post
+    private static final VoxelShape BACK_PANEL_NORTH = Block.box(5, 12, 11, 11, 20, 13);   // backrest panel
+    private static final VoxelShape BACK_FRAME_NORTH = Block.box(4.75, 11.75, 10.75, 11.25, 20.25, 13.25); // backrest frame
 
     private static final VoxelShape SHAPE_SOUTH = Shapes.or(
-            SEAT, BACKREST_SOUTH, FRONT_LEFT_LEG_SOUTH, FRONT_RIGHT_LEG_SOUTH,
-            BACK_LEFT_LEG_SOUTH, BACK_RIGHT_LEG_SOUTH, BACKREST_SUPPORT_LEFT_SOUTH, BACKREST_SUPPORT_RIGHT_SOUTH
+            LEG_SE_NORTH, LEG_NE_NORTH, LEG_SW_NORTH, LEG_NW_NORTH,
+            SEAT_NORTH, CUSHION_NORTH, BACK_POST_L_NORTH, BACK_POST_R_NORTH,
+            BACK_PANEL_NORTH, BACK_FRAME_NORTH
     );
 
-    private static final VoxelShape BACKREST_EAST = Block.box(12, 10, 2, 14, 18, 14);
-    private static final VoxelShape FRONT_LEFT_LEG_EAST = Block.box(2, 0, 2, 4, 8, 4);
-    private static final VoxelShape FRONT_RIGHT_LEG_EAST = Block.box(2, 0, 12, 4, 8, 14);
-    private static final VoxelShape BACK_LEFT_LEG_EAST = Block.box(12, 0, 2, 14, 8, 4);
-    private static final VoxelShape BACK_RIGHT_LEG_EAST = Block.box(12, 0, 12, 14, 8, 14);
-    private static final VoxelShape BACKREST_SUPPORT_LEFT_EAST = Block.box(12, 8, 2, 14, 10, 4);
-    private static final VoxelShape BACKREST_SUPPORT_RIGHT_EAST = Block.box(12, 8, 12, 14, 10, 14);
+    // -- SOUTH facing (backrest at north, -Z side) -- rotate 180 around center (8,8): swap x→16-x, z→16-z
+    private static final VoxelShape LEG_SE_SOUTH = Block.box(3, 0, 3, 5, 8, 5);
+    private static final VoxelShape LEG_NE_SOUTH = Block.box(3, 0, 11, 5, 8, 13);
+    private static final VoxelShape LEG_SW_SOUTH = Block.box(11, 0, 3, 13, 8, 5);
+    private static final VoxelShape LEG_NW_SOUTH = Block.box(11, 0, 11, 13, 8, 13);
+    private static final VoxelShape SEAT_SOUTH = Block.box(3, 8, 3, 13, 10, 13);
+    private static final VoxelShape CUSHION_SOUTH = Block.box(4, 9.5, 4, 12, 10.5, 12);
+    private static final VoxelShape BACK_POST_L_SOUTH = Block.box(11, 10, 3, 13, 22, 5);
+    private static final VoxelShape BACK_POST_R_SOUTH = Block.box(3, 10, 3, 5, 22, 5);
+    private static final VoxelShape BACK_PANEL_SOUTH = Block.box(5, 12, 3, 11, 20, 5);
+    private static final VoxelShape BACK_FRAME_SOUTH = Block.box(4.75, 11.75, 2.75, 11.25, 20.25, 5.25);
 
-    private static final VoxelShape SHAPE_EAST = Shapes.or(
-            SEAT, BACKREST_EAST, FRONT_LEFT_LEG_EAST, FRONT_RIGHT_LEG_EAST,
-            BACK_LEFT_LEG_EAST, BACK_RIGHT_LEG_EAST, BACKREST_SUPPORT_LEFT_EAST, BACKREST_SUPPORT_RIGHT_EAST
+    private static final VoxelShape SHAPE_NORTH = Shapes.or(
+            LEG_SE_SOUTH, LEG_NE_SOUTH, LEG_SW_SOUTH, LEG_NW_SOUTH,
+            SEAT_SOUTH, CUSHION_SOUTH, BACK_POST_L_SOUTH, BACK_POST_R_SOUTH,
+            BACK_PANEL_SOUTH, BACK_FRAME_SOUTH
     );
 
-    private static final VoxelShape BACKREST_WEST = Block.box(2, 10, 2, 4, 18, 14);
-    private static final VoxelShape FRONT_LEFT_LEG_WEST = Block.box(12, 0, 12, 14, 8, 14);
-    private static final VoxelShape FRONT_RIGHT_LEG_WEST = Block.box(12, 0, 2, 14, 8, 4);
-    private static final VoxelShape BACK_LEFT_LEG_WEST = Block.box(2, 0, 12, 4, 8, 14);
-    private static final VoxelShape BACK_RIGHT_LEG_WEST = Block.box(2, 0, 2, 4, 8, 4);
-    private static final VoxelShape BACKREST_SUPPORT_LEFT_WEST = Block.box(2, 8, 12, 4, 10, 14);
-    private static final VoxelShape BACKREST_SUPPORT_RIGHT_WEST = Block.box(2, 8, 2, 4, 10, 4);
+    // -- EAST facing (backrest at west, -X side) -- rotate 90 CW: (x,z) → (16-z, x)
+    private static final VoxelShape LEG_SE_EAST = Block.box(3, 0, 11, 5, 8, 13);
+    private static final VoxelShape LEG_NE_EAST = Block.box(11, 0, 11, 13, 8, 13);
+    private static final VoxelShape LEG_SW_EAST = Block.box(3, 0, 3, 5, 8, 5);
+    private static final VoxelShape LEG_NW_EAST = Block.box(11, 0, 3, 13, 8, 5);
+    private static final VoxelShape SEAT_EAST = Block.box(3, 8, 3, 13, 10, 13);
+    private static final VoxelShape CUSHION_EAST = Block.box(4, 9.5, 4, 12, 10.5, 12);
+    private static final VoxelShape BACK_POST_L_EAST = Block.box(3, 10, 3, 5, 22, 5);
+    private static final VoxelShape BACK_POST_R_EAST = Block.box(3, 10, 11, 5, 22, 13);
+    private static final VoxelShape BACK_PANEL_EAST = Block.box(3, 12, 5, 5, 20, 11);
+    private static final VoxelShape BACK_FRAME_EAST = Block.box(2.75, 11.75, 4.75, 5.25, 20.25, 11.25);
 
     private static final VoxelShape SHAPE_WEST = Shapes.or(
-            SEAT, BACKREST_WEST, FRONT_LEFT_LEG_WEST, FRONT_RIGHT_LEG_WEST,
-            BACK_LEFT_LEG_WEST, BACK_RIGHT_LEG_WEST, BACKREST_SUPPORT_LEFT_WEST, BACKREST_SUPPORT_RIGHT_WEST
+            LEG_SE_EAST, LEG_NE_EAST, LEG_SW_EAST, LEG_NW_EAST,
+            SEAT_EAST, CUSHION_EAST, BACK_POST_L_EAST, BACK_POST_R_EAST,
+            BACK_PANEL_EAST, BACK_FRAME_EAST
+    );
+
+    // -- WEST facing (backrest at east, +X side) -- rotate 90 CCW: (x,z) → (z, 16-x)
+    private static final VoxelShape LEG_SE_WEST = Block.box(11, 0, 3, 13, 8, 5);
+    private static final VoxelShape LEG_NE_WEST = Block.box(3, 0, 3, 5, 8, 5);
+    private static final VoxelShape LEG_SW_WEST = Block.box(11, 0, 11, 13, 8, 13);
+    private static final VoxelShape LEG_NW_WEST = Block.box(3, 0, 11, 5, 8, 13);
+    private static final VoxelShape SEAT_WEST = Block.box(3, 8, 3, 13, 10, 13);
+    private static final VoxelShape CUSHION_WEST = Block.box(4, 9.5, 4, 12, 10.5, 12);
+    private static final VoxelShape BACK_POST_L_WEST = Block.box(11, 10, 11, 13, 22, 13);
+    private static final VoxelShape BACK_POST_R_WEST = Block.box(11, 10, 3, 13, 22, 5);
+    private static final VoxelShape BACK_PANEL_WEST = Block.box(11, 12, 5, 13, 20, 11);
+    private static final VoxelShape BACK_FRAME_WEST = Block.box(10.75, 11.75, 4.75, 13.25, 20.25, 11.25);
+
+    private static final VoxelShape SHAPE_EAST = Shapes.or(
+            LEG_SE_WEST, LEG_NE_WEST, LEG_SW_WEST, LEG_NW_WEST,
+            SEAT_WEST, CUSHION_WEST, BACK_POST_L_WEST, BACK_POST_R_WEST,
+            BACK_PANEL_WEST, BACK_FRAME_WEST
     );
 
     // Cooldown tracking per chair position
@@ -137,6 +154,10 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockPos above = context.getClickedPos().above();
+        if (!context.getLevel().getBlockState(above).canBeReplaced(context)) {
+            return null;
+        }
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection());
     }
 

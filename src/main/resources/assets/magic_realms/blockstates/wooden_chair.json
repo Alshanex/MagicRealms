@@ -1,17 +1,17 @@
 {
   "variants": {
-    "facing=north": {
+    "facing=south": {
       "model": "magic_realms:block/wooden_chair"
     },
-    "facing=south": {
+    "facing=north": {
       "model": "magic_realms:block/wooden_chair",
       "y": 180
     },
-    "facing=west": {
+    "facing=east": {
       "model": "magic_realms:block/wooden_chair",
       "y": 270
     },
-    "facing=east": {
+    "facing=west": {
       "model": "magic_realms:block/wooden_chair",
       "y": 90
     }

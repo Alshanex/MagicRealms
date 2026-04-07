@@ -158,6 +158,8 @@ dependencies {
 
     //ISS
     implementation "io.redspace:irons_spellbooks:${irons_spells_version}"
+    compileOnly("curse.maven:irons-patreon-library-1492763:7830106")
+    runtimeOnly("curse.maven:irons-patreon-library-1492763:7830106")
 
     // GECKOLIB ***************************************************************************************************
     implementation "software.bernie.geckolib:geckolib-neoforge-${geckolib_version}"
@@ -171,6 +173,10 @@ dependencies {
     // JEI
     compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
     runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
+
+    // Dummy
+    runtimeOnly("curse.maven:mmmmmmmmmmmm-225738:7206981")
+    runtimeOnly("curse.maven:selene-499980:7522321")
 
     //Apothic Attributes
     dependencies {

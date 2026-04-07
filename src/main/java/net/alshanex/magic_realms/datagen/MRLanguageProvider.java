@@ -140,7 +140,7 @@ public class MRLanguageProvider extends LanguageProvider {
         add("ui.magic_realms.blood_experiment_title", "Blood Infusing Experiment #1");
         add("ui.magic_realms.blood_experiment_text", "I've noticed that some blood spells have secondary effects on the caster, so i started an experiment to transform my offhand item into a different item by imbuing blood magic into it.");
         add("ui.magic_realms.blood_experiment_title_2", "Blood Infusing Experiment #2");
-        add("ui.magic_realms.blood_experiment_result", "The result of the experiment was quite surprising, since it seemed like killing a test subject with the devour spell had a reaction with contract items, but i couldn't transform the test contracts.");
+        add("ui.magic_realms.blood_experiment_result", "The result of the experiment was quite surprising, since it seemed like hurting a test subject with the devour spell had a reaction with contract items, but i couldn't transform the test contracts.");
         add("ui.magic_realms.blood_experiment_title_3", "Blood Infusing Experiment #3");
         add("ui.magic_realms.blood_experiment_result_2", "Maybe the experiment subject was too weak to get enough blood from it? Or maybe the test contracts were too low to get infused with blood magic?");
     }

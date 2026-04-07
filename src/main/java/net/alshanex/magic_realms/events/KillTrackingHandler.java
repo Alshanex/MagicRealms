@@ -37,6 +37,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Vector3f;
 
@@ -67,7 +68,7 @@ public class KillTrackingHandler {
     }
 
     @SubscribeEvent
-    public static void onBossDeath(LivingDeathEvent event){
+    public static void onBossHurt (LivingIncomingDamageEvent event){
         if(event.getEntity().getType().is(ModTags.BOSSES_TAG)){
             if(event.getSource().getEntity() instanceof Player player && event.getSource().getDirectEntity() instanceof DevourJaw jaw
                     && jaw.getOwner() != null && jaw.getOwner().is(player)){

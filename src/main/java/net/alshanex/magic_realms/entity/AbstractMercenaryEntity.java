@@ -15,6 +15,7 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.*;
 import io.redspace.ironsspellbooks.entity.mobs.goals.melee.AttackAnimationData;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAttackGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.NotIdioticNavigation;
+import io.redspace.ironsspellbooks.entity.spells.devour_jaw.DevourJaw;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.Config;
@@ -1425,7 +1426,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
         if (isStunned()) {
-            return true;
+            if(!(source.getDirectEntity() instanceof DevourJaw)){
+                return true;
+            }
         }
         if (source.getEntity() != null && source.getEntity().is(this.getSummoner())) {
             return true;
@@ -1447,7 +1450,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     public boolean isPickable() {
-        return !isStunned() && super.isPickable();
+        return super.isPickable();
     }
 
     @Override
@@ -1461,6 +1464,10 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
         if (isStunned()) {
+            if(pSource.getDirectEntity() instanceof DevourJaw){
+                this.setImmortal(false);
+                return super.hurt(pSource, 0);
+            }
             return false;
         }
 

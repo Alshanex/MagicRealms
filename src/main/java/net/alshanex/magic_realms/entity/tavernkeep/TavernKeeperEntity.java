@@ -181,10 +181,29 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 .add(Attributes.MOVEMENT_SPEED, .25);
     }
 
+    private final ResourceLocation holySpellPowerModifierId = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_holy_power");
+    private final ResourceLocation spellResistanceModifierId = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_spell_res");
+
+    @Override
+    public void onAddedToLevel() {
+        this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(holySpellPowerModifierId, 95.0, AttributeModifier.Operation.ADD_VALUE));
+        this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(spellResistanceModifierId, 0.3, AttributeModifier.Operation.ADD_VALUE));
+        super.onAddedToLevel();
+    }
+
+    @Override
+    public void onRemovedFromLevel() {
+        if(this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).hasModifier(holySpellPowerModifierId)){
+            this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).removeModifier(holySpellPowerModifierId);
+        }
+        if(this.getAttribute(AttributeRegistry.SPELL_RESIST).hasModifier(spellResistanceModifierId)){
+            this.getAttribute(AttributeRegistry.SPELL_RESIST).removeModifier(spellResistanceModifierId);
+        }
+        super.onRemovedFromLevel();
+    }
+
     @Override
     public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData) {
-        this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_holy_power"), 95.0, AttributeModifier.Operation.ADD_VALUE));
-        this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_spell_res"), 0.3, AttributeModifier.Operation.ADD_VALUE));
         this.spawnPos = this.blockPosition();
         return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
     }

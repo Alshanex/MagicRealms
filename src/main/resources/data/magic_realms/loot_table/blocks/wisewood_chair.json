@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "magic_realms:wooden_chair_simple"
+          "name": "magic_realms:wisewood_chair_inert"
         }
       ],
       "conditions": [

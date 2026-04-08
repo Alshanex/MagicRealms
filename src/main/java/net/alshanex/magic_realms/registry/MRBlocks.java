@@ -17,7 +17,7 @@ public class MRBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BuiltInRegistries.BLOCK, MagicRealms.MODID);
 
     // Chair block
-    public static final Supplier<Block> WOODEN_CHAIR = BLOCKS.register("wooden_chair", () ->
+    public static final Supplier<Block> WOODEN_CHAIR = BLOCKS.register("wisewood_chair", () ->
             new ChairBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WOOD)
                     .strength(2.0F, 3.0F)
@@ -26,13 +26,12 @@ public class MRBlocks {
                     .randomTicks() // Enable random ticks for spawning
             ));
 
-    public static final Supplier<Block> WOODEN_CHAIR_SIMPLE = BLOCKS.register("wooden_chair_simple", () ->
+    public static final Supplier<Block> WOODEN_CHAIR_SIMPLE = BLOCKS.register("wisewood_chair_inert", () ->
             new ChairBlockSimple(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WOOD)
                     .strength(2.0F, 3.0F)
                     .sound(SoundType.WOOD)
                     .noOcclusion()
-                    .randomTicks() // Enable random ticks for spawning
             ));
 
     public static void register(IEventBus eventBus) {

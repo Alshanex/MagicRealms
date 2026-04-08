@@ -78,9 +78,9 @@ public class MRItems {
                     .rarity(Rarity.EPIC)
             ));
 
-    public static final Supplier<Item> WOODEN_CHAIR = ITEMS.register("wooden_chair", () ->
+    public static final Supplier<Item> WOODEN_CHAIR = ITEMS.register("wisewood_chair", () ->
             new BlockItem(MRBlocks.WOODEN_CHAIR.get(), new Item.Properties()));
 
-    public static final Supplier<Item> WOODEN_CHAIR_SIMPLE = ITEMS.register("wooden_chair_simple", () ->
+    public static final Supplier<Item> WOODEN_CHAIR_SIMPLE = ITEMS.register("wisewood_chair_inert", () ->
             new BlockItem(MRBlocks.WOODEN_CHAIR_SIMPLE.get(), new Item.Properties()));
 }

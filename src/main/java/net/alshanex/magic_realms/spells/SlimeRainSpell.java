@@ -19,6 +19,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
@@ -111,6 +113,7 @@ public class SlimeRainSpell extends AbstractSpell {
                 SummonedMagicSlimeEntity slime = new SummonedMagicSlimeEntity(world, entity);
                 slime.moveTo(entity.getEyePosition().add(new Vec3(Utils.getRandomScaled(2), 5, Utils.getRandomScaled(2))));
                 slime.finalizeSpawn((ServerLevel) world, world.getCurrentDifficultyAt(slime.getOnPos()), MobSpawnType.MOB_SUMMONED, null);
+                slime.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 40, 0, false, false, false));
                 var creature = NeoForge.EVENT_BUS.post(new SpellSummonEvent<>(entity, slime, this.spellId, spellLevel)).getCreature();
                 world.addFreshEntity(creature);
                 SummonManager.initSummon(entity, creature, summonTime, summonedEntitiesCastData);
@@ -119,5 +122,10 @@ public class SlimeRainSpell extends AbstractSpell {
             recasts.addRecast(recastInstance, playerMagicData);
         }
         super.onCast(world, spellLevel, entity, castSource, playerMagicData);
+    }
+
+    @Override
+    public boolean allowCrafting() {
+        return false;
     }
 }

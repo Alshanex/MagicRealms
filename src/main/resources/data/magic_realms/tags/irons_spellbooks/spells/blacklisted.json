@@ -25,6 +25,7 @@
     "irons_spellbooks:touch_dig",
     "irons_spellbooks:wall_of_fire",
     "irons_spellbooks:wololo",
+    "magic_realms:slime_rain",
     {"id": "aero_additions:airblast","required": false},
     {"id": "aero_additions:airstep","required": false},
     {"id": "aero_additions:feather_fall","required": false},

@@ -35,6 +35,7 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.CATAS.get(), CatasEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.AMADEUS.get(), AmadeusEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR_SIMPLE.get() , RenderType.cutout());
         ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR.get() , RenderType.cutout());

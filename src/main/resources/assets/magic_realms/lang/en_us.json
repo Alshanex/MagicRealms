@@ -9,7 +9,10 @@
   "entity.magic_realms.amadeus_entity": "Amadeus Voidwalker",
   "entity.magic_realms.catas_entity": "Catas",
   "entity.magic_realms.human_entity": "Human",
+  "entity.magic_realms.hostile_human_entity": "Human",
   "entity.magic_realms.tavernkeep": "Tavernkeep",
+  "entity.magic_realms.magic_slime": "Magic Slime",
+  "entity.magic_realms.summoned_magic_slime": "Summoned Magic Slime",
 
   "gui.magic_realms.human_info.armor": "Armor",
   "gui.magic_realms.human_info.class": "Class",
@@ -106,5 +109,8 @@
   "ui.magic_realms.patrol_active": "PATROL MODE",
   "ui.magic_realms.patrol_following": "FOLLOWING",
   "ui.magic_realms.permanent_contract_insufficient_time": "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?",
-  "ui.magic_realms.trade_success": "%s: Thanks for the emerald! Take this in return"
+  "ui.magic_realms.trade_success": "%s: Thanks for the emerald! Take this in return",
+
+  "spell.magic_realms.slime_rain": "Slime Rain",
+  "spell.magic_realms.slime_rain.guide": "Summons magic slimes that fall from the sky."
 }

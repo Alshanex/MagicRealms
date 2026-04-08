@@ -2,10 +2,12 @@ package net.alshanex.magic_realms.entity.slime;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
+import io.redspace.ironsspellbooks.damage.DamageSources;
 import io.redspace.ironsspellbooks.entity.spells.AbstractMagicProjectile;
 import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.registry.MRSpellRegistry;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -20,6 +22,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -59,7 +62,7 @@ public class MagicSlimeEntity extends Slime {
 
     private SchoolType weakSchool;
 
-    private boolean hasDivided = false;
+    protected boolean hasDivided = false;
 
     public MagicSlimeEntity(EntityType<? extends Slime> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -80,7 +83,7 @@ public class MagicSlimeEntity extends Slime {
         this.setSize(size, true);
     }
 
-    private void initializeSchool() {
+    protected void initializeSchool() {
         if (this.getWeakSchool() == null) {
             List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().toList();
             if (!availableSchools.isEmpty()) {
@@ -105,10 +108,15 @@ public class MagicSlimeEntity extends Slime {
         this.weakSchool = weakSchool;
         if (weakSchool != null) {
             this.entityData.set(WEAK_SCHOOL, weakSchool.getId().toString());
-            MagicRealms.LOGGER.debug("Set weak school to: " + weakSchool.getId());
+            if(weakSchool.getId().equals(SchoolRegistry.FIRE.get().getId())){
+                extinguishFire();
+            }
+            if(weakSchool.getId().equals(SchoolRegistry.ICE.get().getId())){
+                setTicksFrozen(0);
+            }
+
         } else {
             this.entityData.set(WEAK_SCHOOL, "");
-            MagicRealms.LOGGER.debug("Set weak school to null/empty");
         }
     }
 
@@ -140,19 +148,102 @@ public class MagicSlimeEntity extends Slime {
     }
 
     @Override
+    public boolean fireImmune() {
+        if(getWeakSchool().getId().equals(SchoolRegistry.FIRE.get().getId())){
+            return true;
+        }
+        return super.fireImmune();
+    }
+
+    @Override
+    public int getTicksFrozen() {
+        if(getWeakSchool().getId().equals(SchoolRegistry.ICE.get().getId())){
+            return 0;
+        }
+        return super.getTicksFrozen();
+    }
+
+    private SchoolType getMagicSchoolFromDamage(DamageSource source){
+        List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().toList();
+        if (!availableSchools.isEmpty()) {
+            for(SchoolType schoolType : availableSchools){
+                if (source.is(schoolType.getDamageType())){
+                    return schoolType;
+                }
+            }
+        }
+        return null;
+    }
+
+    private DamageSource getDamageSource(){
+        DamageSource source = DamageSources.get(this.level(), SchoolRegistry.EVOCATION.get().getDamageType());
+        if(getWeakSchool() != null){
+            source = DamageSources.get(this.level(), getWeakSchool().getDamageType());
+        }
+        return source;
+    }
+
+    @Override
+    protected void dealDamage(LivingEntity livingEntity) {
+        if (this.isAlive() && this.isWithinMeleeAttackRange(livingEntity) && this.hasLineOfSight(livingEntity)) {
+            DamageSource damageSource = getDamageSource();
+            if (livingEntity.hurt(damageSource, this.getAttackDamage())) {
+                this.playSound(SoundEvents.SLIME_ATTACK, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+                if(getWeakSchool().getId().equals(SchoolRegistry.FIRE.get().getId())){
+                    livingEntity.setRemainingFireTicks(100);
+                }
+                if(getWeakSchool().getId().equals(SchoolRegistry.ICE.get().getId())){
+                    livingEntity.setTicksFrozen(100);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected boolean isDealsDamage() {
+        return this.isEffectiveAi();
+    }
+
+    @Override
+    public void push(Entity entity) {
+        super.push(entity);
+        if (entity instanceof LivingEntity livingEntity && this.isDealsDamage()) {
+            if (entity == this.getTarget() || (entity instanceof Mob mob && mob.getTarget() == this)) {
+                this.dealDamage(livingEntity);
+            }
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        if(!this.level().isClientSide && this.getSize() >= 5){
+            if(this.tickCount % 100 == 0){
+                this.setSize(this.getSize() - 1, true);
+                this.markHurt();
+            }
+        }
+    }
+
+    @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
+        float hurtAmount = pAmount;
+
         if(!this.level().isClientSide) {
-            if(random.nextFloat() < 0.5f && !hasDivided){
-                if(getWeakSchool() != null && !pSource.is(getWeakSchool().getDamageType())) {
-                    MagicSlimeEntity newSlime = new MagicSlimeEntity(MREntityRegistry.MAGIC_SLIME.get(), this.level());
-                    newSlime.setPos(position());
-                    newSlime.finalizeSpawn((ServerLevel) this.level(), this.level().getCurrentDifficultyAt(blockPosition()), MobSpawnType.MOB_SUMMONED, null);
-                    newSlime.setWeakSchool(getWeakSchool());
-                    newSlime.setSize(getSize(), true);
+            if(getWeakSchool() != null && pSource.is(getWeakSchool().getDamageType())) {
+                this.setSize(Math.min(this.getSize() + 1, 10), true);
+                this.markHurt();
+            }
 
-                    this.level().addFreshEntity(newSlime);
-
-                    this.hasDivided = true;
+            SchoolType possibleNewSchool = getMagicSchoolFromDamage(pSource);
+            if (possibleNewSchool == null){
+                hurtAmount = pAmount * 2;
+            }
+            if(possibleNewSchool != null && getWeakSchool() != null){
+                hurtAmount = Math.max(getMaxHealth() / (this.getSize() * 3), 1);
+                if(!possibleNewSchool.getId().equals(getWeakSchool().getId())){
+                    this.setWeakSchool(possibleNewSchool);
                 }
             }
 
@@ -175,11 +266,10 @@ public class MagicSlimeEntity extends Slime {
             }
         }
 
-        return super.hurt(pSource, pAmount);
+        return super.hurt(pSource, hurtAmount);
     }
 
-    @Override
-    public void remove(Entity.RemovalReason reason) {
+    protected void spawnChildren(){
         int i = this.getSize();
         if (!this.level().isClientSide && i > 1 && this.isDeadOrDying()) {
             Component component = this.getCustomName();
@@ -208,6 +298,7 @@ public class MagicSlimeEntity extends Slime {
                     slime.setInvulnerable(this.isInvulnerable());
                     slime.setSize(j, true);
                     slime.hasDivided = false;
+                    slime.markHurt();
 
                     slime.moveTo(this.getX() + (double)f2, this.getY() + 0.5, this.getZ() + (double)f3, this.random.nextFloat() * 360.0F, 0.0F);
 
@@ -222,6 +313,11 @@ public class MagicSlimeEntity extends Slime {
             // Temporarily set size to 1 to prevent vanilla splitting
             this.setSize(1, false);
         }
+    }
+
+    @Override
+    public void remove(Entity.RemovalReason reason) {
+        spawnChildren();
         super.remove(reason);
     }
 

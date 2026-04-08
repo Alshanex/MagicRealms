@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
+import net.alshanex.magic_realms.entity.slime.SummonedMagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -71,4 +72,10 @@ public class MREntityRegistry {
                     .sized(0.52F, 0.52F)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "magic_slime").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<SummonedMagicSlimeEntity>> SUMMONED_MAGIC_SLIME =
+            ENTITIES.register("summoned_magic_slime", () -> EntityType.Builder.<SummonedMagicSlimeEntity>of(SummonedMagicSlimeEntity::new, MobCategory.MONSTER)
+                    .sized(0.52F, 0.52F)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "summoned_magic_slime").toString()));
 }

@@ -69,6 +69,7 @@ import java.util.*;
 public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttacker, IMerchantWizard {
     @Nullable
     private BlockPos spawnPos;
+    private boolean hasSetSpawnPos = false;
 
     private long lastHurtTime = 0;
     private static final int HEALING_DELAY_TICKS = 1200;
@@ -204,7 +205,6 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
 
     @Override
     public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData) {
-        this.spawnPos = this.blockPosition();
         return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
     }
 
@@ -229,6 +229,11 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     @Override
     public void tick() {
         super.tick();
+
+        if (!this.level().isClientSide() && !this.hasSetSpawnPos) {
+            this.spawnPos = this.blockPosition();
+            this.hasSetSpawnPos = true;
+        }
 
         // Only run on server side
         if (!this.level().isClientSide) {
@@ -552,6 +557,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
         pCompound.putLong("LastHurtTime", this.lastHurtTime);
+        pCompound.putBoolean("HasSavedBlockPos", this.hasSetSpawnPos);
         if (this.spawnPos != null) {
             pCompound.put("SpawnPos", NbtUtils.writeBlockPos(this.spawnPos));
         }
@@ -562,6 +568,9 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
         this.lastHurtTime = pCompound.getLong("LastHurtTime");
+        if(pCompound.contains("HasSavedBlockPos")){
+            this.hasSetSpawnPos = pCompound.getBoolean("HasSavedBlockPos");
+        }
         if (pCompound.contains("SpawnPos")) {
             this.spawnPos = NbtUtils.readBlockPos(pCompound, "SpawnPos").orElse(null);
         }

@@ -7,6 +7,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
 // Demonstrates how to use Neo's config APIs
@@ -59,14 +60,6 @@ public class Config
             .comment("Max percentage of bonus spell resistance mages can get upon leveling up (50.0 = 50%)")
             .defineInRange("maxSpellResistancePercentage", 50.0, 0, Double.MAX_VALUE);
 
-    private static final ModConfigSpec.IntValue DAMAGE_AMOUNT_WARRIORS = BUILDER
-            .comment("Amount of damage bonus warriors get upon leveling up")
-            .defineInRange("damageAmountWarriors", 1, 0, Integer.MAX_VALUE);
-
-    private static final ModConfigSpec.IntValue DAMAGE_AMOUNT_WARRIORS_TIMES = BUILDER
-            .comment("Max times warriors will get the damage bonus upon leveling up (can't be higher than max level)")
-            .defineInRange("damageAmountWarriorsTimes", 20, 0, Integer.MAX_VALUE);
-
     private static final ModConfigSpec.IntValue ARMOR_AMOUNT_WARRIORS = BUILDER
             .comment("Amount of armor bonus warriors get upon leveling up")
             .defineInRange("armorAmountWarriors", 1, 0, Integer.MAX_VALUE);
@@ -75,21 +68,9 @@ public class Config
             .comment("Max times warriors will get the armor bonus upon leveling up (can't be higher than max level)")
             .defineInRange("armorAmountWarriorsTimes", 30, 0, Integer.MAX_VALUE);
 
-    private static final ModConfigSpec.IntValue DAMAGE_AMOUNT_ROGUES = BUILDER
-            .comment("Amount of damage bonus rogues get upon leveling up")
-            .defineInRange("damageAmountRogues", 1, 0, Integer.MAX_VALUE);
-
-    private static final ModConfigSpec.IntValue DAMAGE_AMOUNT_ROGUES_TIMES = BUILDER
-            .comment("Max times rogues will get the damage bonus upon leveling up (can't be higher than max level)")
-            .defineInRange("damageAmountRoguesTimes", 20, 0, Integer.MAX_VALUE);
-
     private static final ModConfigSpec.DoubleValue MAX_SPEED_PERCENTAGE = BUILDER
             .comment("Max percentage of bonus speed rogues can get upon leveling up (50.0 = 50%)")
             .defineInRange("maxSpeedPercentage", 50.0, 0, Double.MAX_VALUE);
-
-    private static final ModConfigSpec.DoubleValue MAX_ARROW_DAMAGE_PERCENTAGE = BUILDER
-            .comment("Max percentage of bonus arrow damage archers can get upon leveling up (50.0 = 50%)")
-            .defineInRange("maxArrowDamagePercentage", 50.0, 0, Double.MAX_VALUE);
 
     private static final ModConfigSpec.DoubleValue MAX_ARROW_VELOCITY_PERCENTAGE = BUILDER
             .comment("Max percentage of bonus arrow velocity archers can get upon leveling up (50.0 = 50%)")
@@ -135,6 +116,10 @@ public class Config
             .comment("Duration in minutes contracts will last for")
             .defineInRange("minutesPerContract", 10, 1, Integer.MAX_VALUE);
 
+    private static final ModConfigSpec.IntValue MAX_MERCENARIES_IN_RADIUS = BUILDER
+            .comment("Max amount of mercenaries that can spawn in chairs inside a 20 blocks radius.")
+            .defineInRange("maxMercenariesInRadius", 8, 1, Integer.MAX_VALUE);
+
     // Name configuration section
     private static final ModConfigSpec.ConfigValue<List<? extends String>> MALE_NAMES = BUILDER
             .comment("List of male names for human entities")
@@ -171,6 +156,7 @@ public class Config
     public static double customTextureChance;
     public static int minutesUntilPermanent;
     public static int minutesPerContract;
+    public static int maxMercenariesInRadius;
 
     // Name lists
     public static List<String> maleNames;
@@ -204,9 +190,10 @@ public class Config
         customTextureChance = CUSTOM_TEXTURE_CHANCE.get();
         minutesUntilPermanent = MINUTES_UNTIL_PERMANENT.get();
         minutesPerContract = MINUTES_PER_CONTRACT.get();
+        maxMercenariesInRadius = MAX_MERCENARIES_IN_RADIUS.get();
 
-        maleNames = MALE_NAMES.get().stream().map(String::valueOf).collect(java.util.stream.Collectors.toList());
-        femaleNames = FEMALE_NAMES.get().stream().map(String::valueOf).collect(java.util.stream.Collectors.toList());
+        maleNames = MALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
+        femaleNames = FEMALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
     }
 
     private static List<String> getDefaultMaleNames() {

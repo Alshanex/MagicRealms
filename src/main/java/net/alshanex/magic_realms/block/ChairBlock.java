@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.block;
 
 import com.mojang.serialization.MapCodec;
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
@@ -118,7 +119,6 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     // Cooldown tracking per chair position
     private static final Map<BlockPos, Long> SPAWN_COOLDOWNS = new HashMap<>();
     private static final long SPAWN_COOLDOWN_TICKS = 600; // 30 seconds
-    private static final int MAX_ENTITIES_IN_RADIUS = 5;
     private static final int SPAWN_CHECK_RADIUS = 20;
 
     // Entity spawn chances
@@ -202,7 +202,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
         AABB searchArea = new AABB(pos).inflate(SPAWN_CHECK_RADIUS);
         List<AbstractMercenaryEntity> nearbyEntities = level.getEntitiesOfClass(AbstractMercenaryEntity.class, searchArea);
 
-        if (nearbyEntities.size() >= MAX_ENTITIES_IN_RADIUS) {
+        if (nearbyEntities.size() >= Config.maxMercenariesInRadius) {
             return false;
         }
         return true;

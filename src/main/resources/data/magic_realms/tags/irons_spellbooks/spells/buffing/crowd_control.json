@@ -7,10 +7,8 @@
     {"id": "cataclysm_spellbooks:desert_winds","required": false},
     {"id": "cataclysm_spellbooks:gravity_storm","required": false},
     {"id": "cataclysm_spellbooks:sandstorm","required": false},
-    {"id": "endersequipment:below_zero","required": false},
     {"id": "gametechbcs_spellbooks:aerial_collapse","required": false},
     {"id": "hazennstuff:crystal_volley","required": false},
-    {"id": "hazennstuff:ice_arrow","required": false},
-    {"id": "traveloptics:aerial_collapse","required": false}
+    {"id": "hazennstuff:ice_arrow","required": false}
   ]
 }

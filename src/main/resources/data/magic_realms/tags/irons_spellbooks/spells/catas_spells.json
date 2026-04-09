@@ -8,7 +8,7 @@
     "irons_spellbooks:guiding_bolt",
     "irons_spellbooks:burning_dash",
     "irons_spellbooks:volt_strike",
-    {"id": "endersequipment:sacred_slash","required": false},
+    "irons_spellbooks:shadow_slash",
     {"id": "discerning_the_eldritch:esoteric_edge","required": false}
   ]
 }

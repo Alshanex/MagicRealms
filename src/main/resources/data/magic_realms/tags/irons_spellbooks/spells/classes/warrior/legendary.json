@@ -1,7 +1,9 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:earthquake",
     "irons_spellbooks:echoing_strikes",
+    "irons_spellbooks:greater_heal",
     "irons_spellbooks:heartstop",
     "irons_spellbooks:raise_hell"
   ]

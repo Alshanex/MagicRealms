@@ -2,8 +2,7 @@
   "replace": false,
   "values": [
     "#magic_realms:movement/both",
-    "irons_spellbooks:volt_strike",
-    {"id": "endersequipment:quick_slice","required": false},
-    {"id": "traveloptics:vortex_punch","required": false}
+    "irons_spellbooks:shadow_slash",
+    "irons_spellbooks:volt_strike"
   ]
 }

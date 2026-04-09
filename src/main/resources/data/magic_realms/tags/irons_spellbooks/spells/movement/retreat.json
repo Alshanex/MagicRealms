@@ -3,7 +3,6 @@
   "values": [
     "#magic_realms:movement/both",
     "irons_spellbooks:ascension",
-    "irons_spellbooks:frost_step",
-    {"id": "endersequipment:thunderous_leap","required": false}
+    "irons_spellbooks:frost_step"
   ]
 }

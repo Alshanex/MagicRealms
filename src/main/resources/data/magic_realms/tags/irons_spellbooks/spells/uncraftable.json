@@ -16,19 +16,6 @@
     {"id": "cataclysm_spellbooks:tidal_grab","required": false},
     {"id": "firesenderexpansion:infinite_void","required": false},
     {"id": "gametechbcs_spellbooks:blackout","required": false},
-    {"id": "gametechbcs_spellbooks:call_forth_the_dead_king","required": false},
-    {"id": "traveloptics:abyssal_blast","required": false},
-    {"id": "traveloptics:axe_of_the_doomed","required": false},
-    {"id": "traveloptics:blackout","required": false},
-    {"id": "traveloptics:burning_judgement","required": false},
-    {"id": "traveloptics:call_forth_the_dead_king","required": false},
-    {"id": "traveloptics:cursed_blast","required": false},
-    {"id": "traveloptics:eternal_sentinel","required": false},
-    {"id": "traveloptics:gyro_slash","required": false},
-    {"id": "traveloptics:halberd_horizon","required": false},
-    {"id": "traveloptics:ignited_onslaught","required": false},
-    {"id": "traveloptics:mechanized_predator","required": false},
-    {"id": "traveloptics:summon_desert_dwellers","required": false},
-    {"id": "traveloptics:sword_of_the_ancients","required": false}
+    {"id": "gametechbcs_spellbooks:call_forth_the_dead_king","required": false}
   ]
 }

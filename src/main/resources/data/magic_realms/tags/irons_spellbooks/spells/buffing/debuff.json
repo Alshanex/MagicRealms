@@ -5,8 +5,6 @@
     "irons_spellbooks:acid_orb",
     "irons_spellbooks:blight",
     "irons_spellbooks:guiding_bolt",
-    {"id": "endersequipment:petal_ward","required": false},
-    {"id": "endersequipment:sacred_slash","required": false},
     {"id": "iss_magicfromtheeast:spirit_challenging","required": false}
   ]
 }

@@ -2,10 +2,22 @@
   "replace": false,
   "values": [
     "irons_spellbooks:arrow_volley",
+    "irons_spellbooks:ascension",
+    "irons_spellbooks:fang_strike",
+    "irons_spellbooks:fang_ward",
     "irons_spellbooks:fire_arrow",
     "irons_spellbooks:firecracker",
+    "irons_spellbooks:gust",
+    "irons_spellbooks:icicle",
     "irons_spellbooks:invisibility",
+    "irons_spellbooks:lob_creeper",
     "irons_spellbooks:magic_arrow",
-    "irons_spellbooks:poison_arrow"
+    "irons_spellbooks:poison_arrow",
+    "irons_spellbooks:spider_aspect",
+    "irons_spellbooks:teleport",
+    "irons_spellbooks:wisp",
+    {"id": "aero_additions:dash","required": false},
+    {"id": "aero_additions:wind_charge","required": false},
+    {"id": "aero_additions:wind_shield","required": false}
   ]
 }

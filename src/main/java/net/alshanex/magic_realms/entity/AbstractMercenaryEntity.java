@@ -1570,7 +1570,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                         || movementSpells.contains(spell) || supportSpells.contains(spell)
         );
 
-        if(!finalSpells.isEmpty()){
+        if(!finalSpells.isEmpty() && Config.attemptCastUnclassifiedSpells){
             attackSpells.addAll(finalSpells);
         }
 

@@ -175,7 +175,7 @@ public class MagicSlimeEntity extends Slime {
         return null;
     }
 
-    private DamageSource getDamageSource(){
+    protected DamageSource getDamageSource(){
         DamageSource source = DamageSources.get(this.level(), SchoolRegistry.EVOCATION.get().getDamageType());
         if(getWeakSchool() != null){
             source = DamageSources.get(this.level(), getWeakSchool().getDamageType());

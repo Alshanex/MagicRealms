@@ -1,9 +1,11 @@
 package net.alshanex.magic_realms.entity.slime;
 
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.capabilities.magic.SummonManager;
+import io.redspace.ironsspellbooks.damage.DamageSources;
 import io.redspace.ironsspellbooks.entity.mobs.IMagicSummon;
 import io.redspace.ironsspellbooks.entity.mobs.goals.*;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -112,6 +114,11 @@ public class SummonedMagicSlimeEntity extends MagicSlimeEntity implements IMagic
             // Temporarily set size to 1 to prevent vanilla splitting
             this.setSize(1, false);
         }
+    }
+
+    @Override
+    protected DamageSource getDamageSource() {
+        return MRSpellRegistry.SLIME_RAIN.get().getDamageSource(this, getSummoner());
     }
 
     @Override

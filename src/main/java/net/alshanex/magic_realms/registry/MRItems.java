@@ -3,14 +3,15 @@ package net.alshanex.magic_realms.registry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.item.*;
 import net.alshanex.magic_realms.util.contracts.ContractTier;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Rarity;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public class MRItems {
@@ -79,8 +80,22 @@ public class MRItems {
             ));
 
     public static final Supplier<Item> WOODEN_CHAIR = ITEMS.register("wisewood_chair", () ->
-            new BlockItem(MRBlocks.WOODEN_CHAIR.get(), new Item.Properties()));
+            new BlockItem(MRBlocks.WOODEN_CHAIR.get(), new Item.Properties()) {
+                @Override
+                public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+                    tooltipComponents.add(Component.translatable("tooltip.magic_realms.wisewood_chair")
+                            .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+                    super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+                }
+            });
 
     public static final Supplier<Item> WOODEN_CHAIR_SIMPLE = ITEMS.register("wisewood_chair_inert", () ->
-            new BlockItem(MRBlocks.WOODEN_CHAIR_SIMPLE.get(), new Item.Properties()));
+            new BlockItem(MRBlocks.WOODEN_CHAIR_SIMPLE.get(), new Item.Properties()){
+                @Override
+                public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+                    tooltipComponents.add(Component.translatable("tooltip.magic_realms.wisewood_chair_inert")
+                            .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+                    super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+                }
+            });
 }

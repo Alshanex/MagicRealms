@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.block;
 import com.mojang.serialization.MapCodec;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.SeatEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.events.ExclusiveMercenaryTracker;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -151,5 +152,45 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
             return null;
         }
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection());
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hit) {
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+
+        if (player.isPassenger() || player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+
+        if (SeatEntity.isOccupied(level, pos)) {
+            return InteractionResult.PASS;
+        }
+
+        Direction facing = state.getValue(FACING).getOpposite();
+        double seatX = pos.getX() + 0.5;
+        double seatY = pos.getY() + 0.65;
+        double seatZ = pos.getZ() + 0.5;
+
+        SeatEntity seat = MREntityRegistry.SEAT.get().create(level);
+        if (seat != null) {
+            seat.setChairPos(pos);
+            seat.setPos(seatX, seatY, seatZ);
+            seat.setYRot(facing.toYRot());
+            level.addFreshEntity(seat);
+            player.startRiding(seat);
+        }
+
+        return InteractionResult.CONSUME;
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide && !state.is(newState.getBlock())) {
+            SeatEntity.removeSeatsAt(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 }

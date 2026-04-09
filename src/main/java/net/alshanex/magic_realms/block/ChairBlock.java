@@ -118,7 +118,7 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
     // Cooldown tracking per chair position
     private static final Map<BlockPos, Long> SPAWN_COOLDOWNS = new HashMap<>();
     private static final long SPAWN_COOLDOWN_TICKS = 600; // 30 seconds
-    private static final int MAX_ENTITIES_IN_RADIUS = 10;
+    private static final int MAX_ENTITIES_IN_RADIUS = 5;
     private static final int SPAWN_CHECK_RADIUS = 20;
 
     // Entity spawn chances

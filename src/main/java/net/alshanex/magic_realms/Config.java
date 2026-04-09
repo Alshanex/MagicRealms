@@ -120,6 +120,10 @@ public class Config
             .comment("Max amount of mercenaries that can spawn in chairs inside a 20 blocks radius.")
             .defineInRange("maxMercenariesInRadius", 8, 1, Integer.MAX_VALUE);
 
+    private static final ModConfigSpec.BooleanValue ATTEMPT_USE_UNCLASSIFIED_SPELLS = BUILDER
+            .comment("If mercenaries should attempt to use unclassified spells (set at your own risk).")
+            .define("attemptCastUnclassifiedSpells", false);
+
     // Name configuration section
     private static final ModConfigSpec.ConfigValue<List<? extends String>> MALE_NAMES = BUILDER
             .comment("List of male names for human entities")
@@ -157,6 +161,7 @@ public class Config
     public static int minutesUntilPermanent;
     public static int minutesPerContract;
     public static int maxMercenariesInRadius;
+    public static boolean attemptCastUnclassifiedSpells;
 
     // Name lists
     public static List<String> maleNames;
@@ -191,6 +196,7 @@ public class Config
         minutesUntilPermanent = MINUTES_UNTIL_PERMANENT.get();
         minutesPerContract = MINUTES_PER_CONTRACT.get();
         maxMercenariesInRadius = MAX_MERCENARIES_IN_RADIUS.get();
+        attemptCastUnclassifiedSpells = ATTEMPT_USE_UNCLASSIFIED_SPELLS.get();
 
         maleNames = MALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
         femaleNames = FEMALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());

@@ -19,7 +19,7 @@ public class MRCreativeTab {
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MAIN_TAB = TABS.register("magic_realms_main", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup." + MagicRealms.MODID + ".main_tab"))
-            .icon(() -> new ItemStack(MRItems.CONTRACT_MASTER))
+            .icon(() -> new ItemStack(MRItems.CONTRACT_NOVICE))
             .displayItems((enabledFeatures, entries) -> {
                 entries.accept(MRItems.CONTRACT_PERMANENT.get());
                 entries.accept(MRItems.CONTRACT_NOVICE.get());

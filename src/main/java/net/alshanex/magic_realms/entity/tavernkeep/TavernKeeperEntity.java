@@ -187,8 +187,12 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
 
     @Override
     public void onAddedToLevel() {
-        this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(holySpellPowerModifierId, 95.0, AttributeModifier.Operation.ADD_VALUE));
-        this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(spellResistanceModifierId, 0.3, AttributeModifier.Operation.ADD_VALUE));
+        if(!this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).hasModifier(holySpellPowerModifierId)){
+            this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(holySpellPowerModifierId, 95.0, AttributeModifier.Operation.ADD_VALUE));
+        }
+        if(!this.getAttribute(AttributeRegistry.SPELL_RESIST).hasModifier(spellResistanceModifierId)){
+            this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(spellResistanceModifierId, 0.3, AttributeModifier.Operation.ADD_VALUE));
+        }
         super.onAddedToLevel();
     }
 

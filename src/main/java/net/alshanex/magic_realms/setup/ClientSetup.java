@@ -17,6 +17,7 @@ import net.alshanex.magic_realms.registry.MRMenus;
 import net.alshanex.magic_realms.screens.ContractInventoryScreen;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -36,6 +37,8 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.AMADEUS.get(), AmadeusEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
+
+        event.registerEntityRenderer(MREntityRegistry.SEAT.get(), NoopRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR_SIMPLE.get() , RenderType.cutout());
         ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR.get() , RenderType.cutout());

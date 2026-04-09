@@ -43,6 +43,7 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
@@ -132,7 +133,8 @@ public class HumanGoals {
         private final AbstractMercenaryEntity humanEntity;
 
         public NoFearTargetGoal(AbstractMercenaryEntity humanEntity) {
-            super(humanEntity, Monster.class, true);
+            super(humanEntity, Monster.class, 10, true, false,
+                    (entity) -> !(entity instanceof Creeper));
             this.humanEntity = humanEntity;
         }
 
@@ -155,6 +157,9 @@ public class HumanGoals {
         protected boolean canAttack(LivingEntity potentialTarget, TargetingConditions targetPredicate) {
             if (humanEntity.isAfraidOf(potentialTarget)) {
                 return false; // Never attack feared entities
+            }
+            if(potentialTarget instanceof Creeper){
+                return false;
             }
             return super.canAttack(potentialTarget, targetPredicate);
         }

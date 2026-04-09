@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.SeatEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
@@ -78,4 +79,11 @@ public class MREntityRegistry {
                     .sized(0.52F, 0.52F)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "summoned_magic_slime").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<SeatEntity>> SEAT =
+            ENTITIES.register("seat", () -> EntityType.Builder.<SeatEntity>of(SeatEntity::new, MobCategory.MISC)
+                    .sized(0.001F, 0.001F)
+                    .clientTrackingRange(10)
+                    .updateInterval(20)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "seat").toString()));
 }

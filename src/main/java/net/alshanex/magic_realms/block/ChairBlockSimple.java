@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.block;
 import com.mojang.serialization.MapCodec;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.SeatEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.events.ExclusiveMercenaryTracker;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -54,7 +55,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_NORTH = Block.box(3, 10, 11, 5, 22, 13);   // left backrest post
     private static final VoxelShape BACK_POST_R_NORTH = Block.box(11, 10, 11, 13, 22, 13); // right backrest post
     private static final VoxelShape BACK_PANEL_NORTH = Block.box(5, 12, 11, 11, 20, 13);   // backrest panel
-    private static final VoxelShape BACK_FRAME_NORTH = Block.box(4.75, 11.75, 10.75, 11.25, 20.25, 13.25); // backrest frame
+    private static final VoxelShape BACK_FRAME_NORTH = Block.box(4.75, 11.75, 10.75, 11.25, 20.25, 12.25); // backrest frame
 
     private static final VoxelShape SHAPE_SOUTH = Shapes.or(
             LEG_SE_NORTH, LEG_NE_NORTH, LEG_SW_NORTH, LEG_NW_NORTH,
@@ -72,7 +73,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_SOUTH = Block.box(11, 10, 3, 13, 22, 5);
     private static final VoxelShape BACK_POST_R_SOUTH = Block.box(3, 10, 3, 5, 22, 5);
     private static final VoxelShape BACK_PANEL_SOUTH = Block.box(5, 12, 3, 11, 20, 5);
-    private static final VoxelShape BACK_FRAME_SOUTH = Block.box(4.75, 11.75, 2.75, 11.25, 20.25, 5.25);
+    private static final VoxelShape BACK_FRAME_SOUTH = Block.box(4.75, 11.75, 3.75, 11.25, 20.25, 5.25);
 
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
             LEG_SE_SOUTH, LEG_NE_SOUTH, LEG_SW_SOUTH, LEG_NW_SOUTH,
@@ -90,7 +91,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_EAST = Block.box(3, 10, 3, 5, 22, 5);
     private static final VoxelShape BACK_POST_R_EAST = Block.box(3, 10, 11, 5, 22, 13);
     private static final VoxelShape BACK_PANEL_EAST = Block.box(3, 12, 5, 5, 20, 11);
-    private static final VoxelShape BACK_FRAME_EAST = Block.box(2.75, 11.75, 4.75, 5.25, 20.25, 11.25);
+    private static final VoxelShape BACK_FRAME_EAST = Block.box(3.75, 11.75, 4.75, 5.25, 20.25, 11.25);
 
     private static final VoxelShape SHAPE_WEST = Shapes.or(
             LEG_SE_EAST, LEG_NE_EAST, LEG_SW_EAST, LEG_NW_EAST,
@@ -108,7 +109,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_WEST = Block.box(11, 10, 11, 13, 22, 13);
     private static final VoxelShape BACK_POST_R_WEST = Block.box(11, 10, 3, 13, 22, 5);
     private static final VoxelShape BACK_PANEL_WEST = Block.box(11, 12, 5, 13, 20, 11);
-    private static final VoxelShape BACK_FRAME_WEST = Block.box(10.75, 11.75, 4.75, 13.25, 20.25, 11.25);
+    private static final VoxelShape BACK_FRAME_WEST = Block.box(10.75, 11.75, 4.75, 12.25, 20.25, 11.25);
 
     private static final VoxelShape SHAPE_EAST = Shapes.or(
             LEG_SE_WEST, LEG_NE_WEST, LEG_SW_WEST, LEG_NW_WEST,
@@ -151,5 +152,45 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
             return null;
         }
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection());
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hit) {
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+
+        if (player.isPassenger() || player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+
+        if (SeatEntity.isOccupied(level, pos)) {
+            return InteractionResult.PASS;
+        }
+
+        Direction facing = state.getValue(FACING).getOpposite();
+        double seatX = pos.getX() + 0.5;
+        double seatY = pos.getY() + 0.65;
+        double seatZ = pos.getZ() + 0.5;
+
+        SeatEntity seat = MREntityRegistry.SEAT.get().create(level);
+        if (seat != null) {
+            seat.setChairPos(pos);
+            seat.setPos(seatX, seatY, seatZ);
+            seat.setYRot(facing.toYRot());
+            level.addFreshEntity(seat);
+            player.startRiding(seat);
+        }
+
+        return InteractionResult.CONSUME;
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide && !state.is(newState.getBlock())) {
+            SeatEntity.removeSeatsAt(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 }

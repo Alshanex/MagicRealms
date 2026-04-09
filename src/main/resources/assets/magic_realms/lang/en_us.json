@@ -67,6 +67,8 @@
   "message.magic_realms.tavernkeep_tip.subject_key_1": "tavernkeep",
   "message.magic_realms.tavernkeep_tip.subject_key_2": "tavernkeeper",
 
+  "tooltip.magic_realms.wisewood_chair": "Seats visiting Mercenaries",
+  "tooltip.magic_realms.wisewood_chair_inert": "Safe for building",
   "tooltip.magic_realms.blood_pact": "Has the ability to bind two souls forever",
   "tooltip.magic_realms.contract.level_range": "Entity Level Range:",
   "tooltip.magic_realms.contract.usage": "Usage:",

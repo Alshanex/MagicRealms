@@ -49,10 +49,6 @@
     {"id": "cataclysm_spellbooks:void_rune","required": false},
     {"id": "codex_of_champions:fire_cluster","required": false},
     {"id": "codex_of_champions:missile_salvo","required": false},
-    {"id": "endersequipment:flurry","required": false},
-    {"id": "endersequipment:heartwrench","required": false},
-    {"id": "endersequipment:petal_ward","required": false},
-    {"id": "endersequipment:sacred_slash","required": false},
     {"id": "gametechbcs_spellbooks:crimson_downpour","required": false},
     {"id": "gametechbcs_spellbooks:shatterpoint","required": false},
     {"id": "hazennstuff:brimstone_hellblast","required": false},
@@ -69,11 +65,6 @@
     {"id": "iss_magicfromtheeast:phantom_charge","required": false},
     {"id": "iss_magicfromtheeast:soul_catalyst","required": false},
     {"id": "iss_magicfromtheeast:sword_dance","required": false},
-    {"id": "iss_magicfromtheeast:underworld_aid","required": false},
-    {"id": "traveloptics:burning_judgement","required": false},
-    {"id": "traveloptics:cursed_blast","required": false},
-    {"id": "traveloptics:cursed_minefield","required": false},
-    {"id": "traveloptics:death_laser","required": false},
-    {"id": "traveloptics:void_eruption","required": false}
+    {"id": "iss_magicfromtheeast:underworld_aid","required": false}
   ]
 }

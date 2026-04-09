@@ -3,6 +3,12 @@
   "values": [
     "irons_spellbooks:blood_slash",
     "irons_spellbooks:evasion",
+    "irons_spellbooks:heat_surge",
+    "irons_spellbooks:magic_arrow",
+    "irons_spellbooks:poison_breath",
+    "irons_spellbooks:ray_of_siphoning",
+    "irons_spellbooks:shadow_slash",
+    "irons_spellbooks:shockwave",
     "irons_spellbooks:spider_aspect"
   ]
 }

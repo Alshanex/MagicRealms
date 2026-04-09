@@ -1,12 +1,15 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:ball_lightning",
     "irons_spellbooks:burning_dash",
     "irons_spellbooks:cleanse",
     "irons_spellbooks:divine_smite",
     "irons_spellbooks:flaming_strike",
+    "irons_spellbooks:heal",
     "irons_spellbooks:shield",
     "irons_spellbooks:stomp",
+    "irons_spellbooks:throw",
     "irons_spellbooks:volt_strike"
   ]
 }

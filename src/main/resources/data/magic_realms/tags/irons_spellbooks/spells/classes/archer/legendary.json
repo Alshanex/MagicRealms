@@ -1,7 +1,12 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:blight",
+    "irons_spellbooks:charge",
+    "irons_spellbooks:earthquake",
+    "irons_spellbooks:haste",
+    "irons_spellbooks:lightning_lance",
     "irons_spellbooks:oakskin",
-    "irons_spellbooks:root"
+    {"id": "alshanex_familiars:birds_spell","required": false}
   ]
 }

@@ -3,13 +3,8 @@
   "values": [
     "irons_spellbooks:divine_smite",
     "irons_spellbooks:flaming_strike",
+    "irons_spellbooks:shadow_slash",
     {"id": "cataclysm_spellbooks:abyssal_slash","required": false},
-    {"id": "endersequipment:frosted_slam","required": false},
-    {"id": "endersequipment:overwhelming_force","required": false},
-    {"id": "endersequipment:searing_slam","required": false},
-    {"id": "endersequipment:slam","required": false},
-    {"id": "endersequipment:slash","required": false},
-    {"id": "hazennstuff:nights_edge_strike","required": false},
-    {"id": "traveloptics:gyro_slash","required": false}
+    {"id": "hazennstuff:nights_edge_strike","required": false}
   ]
 }

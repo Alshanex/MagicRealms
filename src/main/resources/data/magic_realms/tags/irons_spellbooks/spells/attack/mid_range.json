@@ -13,9 +13,11 @@
     "irons_spellbooks:fireball",
     "irons_spellbooks:lob_creeper",
     "irons_spellbooks:poison_breath",
+    "irons_spellbooks:shadow_slash",
     "irons_spellbooks:shockwave",
     "irons_spellbooks:snowball",
     "irons_spellbooks:stomp",
+    "irons_spellbooks:throw",
     "irons_spellbooks:wisp",
     {"id": "aero_additions:wind_charge","required": false},
     {"id": "alshanex_familiars:explosion_melody","required": false},
@@ -28,20 +30,8 @@
     {"id": "cataclysm_spellbooks:infernal_strike","required": false},
     {"id": "cataclysm_spellbooks:sandstorm","required": false},
     {"id": "ess_requiem:wretch","required": false},
-    {"id": "endersequipment:arrow_spray","required": false},
-    {"id": "endersequipment:bloodwave","required": false},
-    {"id": "endersequipment:eruption","required": false},
-    {"id": "endersequipment:sacred_slash","required": false},
     {"id": "gametechbcs_spellbooks:aerial_collapse","required": false},
     {"id": "gametechbcs_spellbooks:ashen_breath","required": false},
-    {"id": "iss_magicfromtheeast:soul_burst","required": false},
-    {"id": "traveloptics:aerial_collapse","required": false},
-    {"id": "traveloptics:ashen_breath","required": false},
-    {"id": "traveloptics:blood_howl","required": false},
-    {"id": "traveloptics:despair","required": false},
-    {"id": "traveloptics:em_pulse","required": false},
-    {"id": "traveloptics:orbital_void","required": false},
-    {"id": "traveloptics:rapid_laser","required": false},
-    {"id": "traveloptics:stele_cascade","required": false}
+    {"id": "iss_magicfromtheeast:soul_burst","required": false}
   ]
 }

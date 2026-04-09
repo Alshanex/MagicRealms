@@ -1,7 +1,10 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:acupuncture",
+    "irons_spellbooks:blight",
     "irons_spellbooks:charge",
-    "irons_spellbooks:haste"
+    "irons_spellbooks:haste",
+    "irons_spellbooks:heartstop"
   ]
 }

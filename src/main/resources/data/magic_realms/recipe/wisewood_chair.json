@@ -1,0 +1,15 @@
+{
+  "type": "crafting_shapeless",
+  "ingredients": [
+    {
+      "tag": "minecraft:wooden_stairs"
+    },
+    {
+      "item": "irons_spellbooks:magic_cloth"
+    }
+  ],
+  "result": {
+    "id": "magic_realms:wisewood_chair_inert",
+    "count": 1
+  }
+}

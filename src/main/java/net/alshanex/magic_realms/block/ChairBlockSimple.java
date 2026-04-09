@@ -55,7 +55,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_NORTH = Block.box(3, 10, 11, 5, 22, 13);   // left backrest post
     private static final VoxelShape BACK_POST_R_NORTH = Block.box(11, 10, 11, 13, 22, 13); // right backrest post
     private static final VoxelShape BACK_PANEL_NORTH = Block.box(5, 12, 11, 11, 20, 13);   // backrest panel
-    private static final VoxelShape BACK_FRAME_NORTH = Block.box(4.75, 11.75, 10.75, 11.25, 20.25, 13.25); // backrest frame
+    private static final VoxelShape BACK_FRAME_NORTH = Block.box(4.75, 11.75, 10.75, 11.25, 20.25, 12.25); // backrest frame
 
     private static final VoxelShape SHAPE_SOUTH = Shapes.or(
             LEG_SE_NORTH, LEG_NE_NORTH, LEG_SW_NORTH, LEG_NW_NORTH,
@@ -73,7 +73,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_SOUTH = Block.box(11, 10, 3, 13, 22, 5);
     private static final VoxelShape BACK_POST_R_SOUTH = Block.box(3, 10, 3, 5, 22, 5);
     private static final VoxelShape BACK_PANEL_SOUTH = Block.box(5, 12, 3, 11, 20, 5);
-    private static final VoxelShape BACK_FRAME_SOUTH = Block.box(4.75, 11.75, 2.75, 11.25, 20.25, 5.25);
+    private static final VoxelShape BACK_FRAME_SOUTH = Block.box(4.75, 11.75, 3.75, 11.25, 20.25, 5.25);
 
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
             LEG_SE_SOUTH, LEG_NE_SOUTH, LEG_SW_SOUTH, LEG_NW_SOUTH,
@@ -91,7 +91,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_EAST = Block.box(3, 10, 3, 5, 22, 5);
     private static final VoxelShape BACK_POST_R_EAST = Block.box(3, 10, 11, 5, 22, 13);
     private static final VoxelShape BACK_PANEL_EAST = Block.box(3, 12, 5, 5, 20, 11);
-    private static final VoxelShape BACK_FRAME_EAST = Block.box(2.75, 11.75, 4.75, 5.25, 20.25, 11.25);
+    private static final VoxelShape BACK_FRAME_EAST = Block.box(3.75, 11.75, 4.75, 5.25, 20.25, 11.25);
 
     private static final VoxelShape SHAPE_WEST = Shapes.or(
             LEG_SE_EAST, LEG_NE_EAST, LEG_SW_EAST, LEG_NW_EAST,
@@ -109,7 +109,7 @@ public class ChairBlockSimple extends HorizontalDirectionalBlock {
     private static final VoxelShape BACK_POST_L_WEST = Block.box(11, 10, 11, 13, 22, 13);
     private static final VoxelShape BACK_POST_R_WEST = Block.box(11, 10, 3, 13, 22, 5);
     private static final VoxelShape BACK_PANEL_WEST = Block.box(11, 12, 5, 13, 20, 11);
-    private static final VoxelShape BACK_FRAME_WEST = Block.box(10.75, 11.75, 4.75, 13.25, 20.25, 11.25);
+    private static final VoxelShape BACK_FRAME_WEST = Block.box(10.75, 11.75, 4.75, 12.25, 20.25, 11.25);
 
     private static final VoxelShape SHAPE_EAST = Shapes.or(
             LEG_SE_WEST, LEG_NE_WEST, LEG_SW_WEST, LEG_NW_WEST,

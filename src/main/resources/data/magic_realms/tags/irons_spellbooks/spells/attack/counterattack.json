@@ -11,6 +11,7 @@
     "irons_spellbooks:shadow_slash",
     {"id": "aero_additions:wind_blade","required": false},
     {"id": "aero_additions:wind_charge","required": false},
+    {"id": "ess_requiem:sword_stance","required": false},
     {"id": "ess_requiem:wretch","required": false},
     {"id": "firesenderexpansion:dragons_fury","required": false},
     {"id": "iss_magicfromtheeast:throw_up","required": false}

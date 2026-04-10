@@ -9,6 +9,10 @@
     {"id": "alshanex_familiars:guardian_angel","required": false},
     {"id": "cataclysm_spellbooks:abyssal_predator","required": false},
     {"id": "dreamless_spells:jadeskin","required": false},
+    {"id": "ess_requiem:adrenaline_rush","required": false},
+    {"id": "ess_requiem:hone_edge","required": false},
+    {"id": "ess_requiem:place_standard","required": false},
+    {"id": "ess_requiem:sword_stance","required": false},
     {"id": "gametechbcs_spellbooks:flames_reborn","required": false},
     {"id": "gametechbcs_spellbooks:lingering_strain","required": false}
   ]

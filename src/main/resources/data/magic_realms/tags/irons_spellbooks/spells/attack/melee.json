@@ -3,8 +3,15 @@
   "values": [
     "irons_spellbooks:divine_smite",
     "irons_spellbooks:flaming_strike",
-    "irons_spellbooks:shadow_slash",
     {"id": "cataclysm_spellbooks:abyssal_slash","required": false},
+    {"id": "ess_requiem:cleave","required": false},
+    {"id": "ess_requiem:dismantle","required": false},
+    {"id": "ess_requiem:quick_slice","required": false},
+    {"id": "ess_requiem:necrotic_burst","required": false},
+    {"id": "ess_requiem:overwhelming_force","required": false},
+    {"id": "ess_requiem:slam","required": false},
+    {"id": "ess_requiem:slash","required": false},
+    {"id": "ess_requiem:uppercut","required": false},
     {"id": "hazennstuff:nights_edge_strike","required": false}
   ]
 }

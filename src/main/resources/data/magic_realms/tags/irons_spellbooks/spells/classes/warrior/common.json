@@ -10,6 +10,11 @@
     "irons_spellbooks:shield",
     "irons_spellbooks:stomp",
     "irons_spellbooks:throw",
-    "irons_spellbooks:volt_strike"
+    "irons_spellbooks:volt_strike",
+    {"id": "ess_requiem:hone_edge","required": false},
+    {"id": "ess_requiem:quick_slice","required": false},
+    {"id": "ess_requiem:slam","required": false},
+    {"id": "ess_requiem:slash","required": false},
+    {"id": "ess_requiem:uppercut","required": false}
   ]
 }

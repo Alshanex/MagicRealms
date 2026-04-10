@@ -5,6 +5,9 @@
     "irons_spellbooks:echoing_strikes",
     "irons_spellbooks:greater_heal",
     "irons_spellbooks:heartstop",
-    "irons_spellbooks:raise_hell"
+    "irons_spellbooks:raise_hell",
+    {"id": "ess_requiem:overwhelming_force","required": false},
+    {"id": "ess_requiem:sword_stance","required": false},
+    {"id": "ess_requiem:undying_dread","required": false}
   ]
 }

@@ -16,7 +16,13 @@
     {"id": "cataclysm_spellbooks:monolith_crash","required": false},
     {"id": "cataclysm_spellbooks:tectonic_tremble","required": false},
     {"id": "cataclysm_spellbooks:void_bulwark","required": false},
+    {"id": "ess_requiem:cleave","required": false},
+    {"id": "ess_requiem:dismantle","required": false},
     {"id": "ess_requiem:necrotic_burst","required": false},
+    {"id": "ess_requiem:overwhelming_force","required": false},
+    {"id": "ess_requiem:slam","required": false},
+    {"id": "ess_requiem:slash","required": false},
+    {"id": "ess_requiem:uppercut","required": false},
     {"id": "gametechbcs_spellbooks:nullflare","required": false},
     {"id": "iss_magicfromtheeast:soul_burst","required": false}
   ]

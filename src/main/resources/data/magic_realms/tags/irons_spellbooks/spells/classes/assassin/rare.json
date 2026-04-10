@@ -9,6 +9,8 @@
     "irons_spellbooks:ray_of_siphoning",
     "irons_spellbooks:shadow_slash",
     "irons_spellbooks:shockwave",
-    "irons_spellbooks:spider_aspect"
+    "irons_spellbooks:spider_aspect",
+    {"id": "ess_requiem:hone_edge","required": false},
+    {"id": "ess_requiem:quick_slice","required": false}
   ]
 }

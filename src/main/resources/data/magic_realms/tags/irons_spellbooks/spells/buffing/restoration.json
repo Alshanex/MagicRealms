@@ -10,6 +10,7 @@
     "irons_spellbooks:ray_of_siphoning",
     {"id": "alshanex_familiars:guardian_angel","required": false},
     {"id": "alshanex_familiars:lullaby","required": false},
+    {"id": "ess_requiem:undying_dread","required": false},
     {"id": "iss_magicfromtheeast:drapes_of_reflection","required": false}
   ]
 }

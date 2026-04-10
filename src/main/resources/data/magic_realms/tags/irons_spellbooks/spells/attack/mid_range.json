@@ -29,6 +29,8 @@
     {"id": "cataclysm_spellbooks:desert_winds","required": false},
     {"id": "cataclysm_spellbooks:infernal_strike","required": false},
     {"id": "cataclysm_spellbooks:sandstorm","required": false},
+    {"id": "ess_requiem:cleave","required": false},
+    {"id": "ess_requiem:dismantle","required": false},
     {"id": "ess_requiem:wretch","required": false},
     {"id": "gametechbcs_spellbooks:aerial_collapse","required": false},
     {"id": "gametechbcs_spellbooks:ashen_breath","required": false},

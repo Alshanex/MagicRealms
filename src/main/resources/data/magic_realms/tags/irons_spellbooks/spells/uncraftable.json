@@ -14,6 +14,10 @@
     {"id": "cataclysm_spellbooks:malevolent_battlefield","required": false},
     {"id": "cataclysm_spellbooks:piercing_bone","required": false},
     {"id": "cataclysm_spellbooks:tidal_grab","required": false},
+    {"id": "ess_requiem:cleave","required": false},
+    {"id": "ess_requiem:dismantle","required": false},
+    {"id": "ess_requiem:finality_of_decay","required": false},
+    {"id": "ess_requiem:place_standard","required": false},
     {"id": "firesenderexpansion:infinite_void","required": false},
     {"id": "gametechbcs_spellbooks:blackout","required": false},
     {"id": "gametechbcs_spellbooks:call_forth_the_dead_king","required": false}

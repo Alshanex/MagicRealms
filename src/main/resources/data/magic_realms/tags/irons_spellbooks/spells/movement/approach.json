@@ -3,6 +3,7 @@
   "values": [
     "#magic_realms:movement/both",
     "irons_spellbooks:shadow_slash",
-    "irons_spellbooks:volt_strike"
+    "irons_spellbooks:volt_strike",
+    {"id": "ess_requiem:quick_slice","required": false}
   ]
 }

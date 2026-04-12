@@ -187,7 +187,8 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
             if (hasInitiatedCast && castingSpell != null) {
                 if (castingSpell.getSpell().getCastType() == CastType.LONG
                         || castingSpell.getSpell().getCastType() == CastType.INSTANT) {
-                    castingSpell.getSpell().onCast(level(), castingSpell.getLevel(), this, CastSource.MOB, playerMagicData);
+                    int spellLevel = this.isPowered() ? castingSpell.getSpell().getMaxLevel() : (castingSpell.getSpell().getMaxLevel() / 2);
+                    castingSpell.getSpell().onCast(level(), spellLevel, this, CastSource.MOB, playerMagicData);
                 }
                 castComplete();
             }

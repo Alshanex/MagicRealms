@@ -1,14 +1,20 @@
 package net.alshanex.magic_realms.entity.creeper;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.vertex.PoseStack;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.CreeperModel;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.RenderLayerParent;
+import net.minecraft.client.renderer.entity.layers.CreeperPowerLayer;
+import net.minecraft.client.renderer.entity.layers.EnergySwirlLayer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -28,6 +34,7 @@ public class MagicCreeperEntityRenderer extends MobRenderer<MagicCreeperEntity, 
 
     public MagicCreeperEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new CreeperModel<>(context.bakeLayer(ModelLayers.CREEPER)), 0.25f);
+        this.addLayer(new MagicCreeperPowerLayer(this, context.getModelSet()));
 
         if (SCHOOL_TEXTURES.isEmpty()) {
             List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().toList();
@@ -44,6 +51,24 @@ public class MagicCreeperEntityRenderer extends MobRenderer<MagicCreeperEntity, 
                 }
             }
         }
+    }
+
+    @Override
+    protected void scale(MagicCreeperEntity entity, PoseStack poseStack, float partialTickTime) {
+        float f = entity.getSwelling(partialTickTime);
+        float f1 = 1.0F + Mth.sin(f * 100.0F) * f * 0.01F;
+        f = Mth.clamp(f, 0.0F, 1.0F);
+        f *= f;
+        f *= f;
+        float f2 = (1.0F + f * 0.4F) * f1;
+        float f3 = (1.0F + f * 0.1F) / f1;
+        poseStack.scale(f2, f3, f2);
+    }
+
+    @Override
+    protected float getWhiteOverlayProgress(MagicCreeperEntity entity, float partialTicks) {
+        float f = entity.getSwelling(partialTicks);
+        return (int)(f * 10.0F) % 2 == 0 ? 0.0F : Mth.clamp(f, 0.5F, 1.0F);
     }
 
     @Override
@@ -109,6 +134,31 @@ public class MagicCreeperEntityRenderer extends MobRenderer<MagicCreeperEntity, 
         } catch (IOException e) {
             e.printStackTrace();
             return original; // fallback if something fails
+        }
+    }
+
+    public static class MagicCreeperPowerLayer extends EnergySwirlLayer<MagicCreeperEntity, CreeperModel<MagicCreeperEntity>> {
+        private static final ResourceLocation POWER_LOCATION = ResourceLocation.withDefaultNamespace("textures/entity/creeper/creeper_armor.png");
+        private final CreeperModel<MagicCreeperEntity> model;
+
+        public MagicCreeperPowerLayer(RenderLayerParent<MagicCreeperEntity, CreeperModel<MagicCreeperEntity>> renderer, EntityModelSet modelSet) {
+            super(renderer);
+            this.model = new CreeperModel<>(modelSet.bakeLayer(ModelLayers.CREEPER_ARMOR));
+        }
+
+        @Override
+        protected float xOffset(float tickCount) {
+            return tickCount * 0.01F;
+        }
+
+        @Override
+        protected ResourceLocation getTextureLocation() {
+            return POWER_LOCATION;
+        }
+
+        @Override
+        protected EntityModel<MagicCreeperEntity> model() {
+            return this.model;
         }
     }
 }

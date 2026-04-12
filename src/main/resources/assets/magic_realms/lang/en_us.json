@@ -12,7 +12,8 @@
   "entity.magic_realms.hostile_human_entity": "Human",
   "entity.magic_realms.tavernkeep": "Tavernkeeper",
   "entity.magic_realms.magic_slime": "Magic Slime",
-  "entity.magic_realms.magic_creeper": "Magic Creeper",
+  "entity.magic_realms.magic_creeper": "Wizard Creeper",
+  "entity.magic_realms.tim": "Tim",
   "entity.magic_realms.summoned_magic_slime": "Summoned Magic Slime",
   "entity.magic_realms.tavernkeep.name": "Tavernkeeper Lv.??",
 

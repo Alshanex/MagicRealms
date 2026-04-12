@@ -12,6 +12,7 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.slime.SummonedMagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.tim.TimEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -93,4 +94,10 @@ public class MREntityRegistry {
                     .sized(0.6F, 1.7F)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "magic_creeper").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<TimEntity>> TIM =
+            ENTITIES.register("tim", () -> EntityType.Builder.<TimEntity>of(TimEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tim").toString()));
 }

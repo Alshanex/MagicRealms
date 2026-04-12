@@ -10,6 +10,7 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntityRenderer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntityRenderer;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntityRenderer;
+import net.alshanex.magic_realms.entity.tim.TimEntityRenderer;
 import net.alshanex.magic_realms.registry.MRBlocks;
 import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
@@ -39,6 +40,7 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.MAGIC_CREEPER.get(), MagicCreeperEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.TIM.get(), TimEntityRenderer::new);
 
         event.registerEntityRenderer(MREntityRegistry.SEAT.get(), NoopRenderer::new);
 

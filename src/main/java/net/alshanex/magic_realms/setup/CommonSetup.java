@@ -10,6 +10,7 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.slime.SummonedMagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.tim.TimEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.minecraft.world.entity.monster.Creeper;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -30,5 +31,6 @@ public class CommonSetup {
         event.put(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());
         event.put(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());
         event.put(MREntityRegistry.MAGIC_CREEPER.get(), Creeper.createAttributes().build());
+        event.put(MREntityRegistry.TIM.get(), TimEntity.createAttributes().build());
     }
 }

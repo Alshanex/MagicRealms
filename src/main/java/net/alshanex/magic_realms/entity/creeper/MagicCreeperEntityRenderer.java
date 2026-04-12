@@ -203,12 +203,18 @@ public class MagicCreeperEntityRenderer extends MobRenderer<MagicCreeperEntity, 
             armorModel.head.visible = true;
             armorModel.hat.visible = true;
 
+            // Reset the humanoid model's head position so GeckoLib doesn't add its own offset
+            armorModel.head.x = 0;
+            armorModel.head.y = 0;
+            armorModel.head.z = 0;
+            armorModel.hat.x = 0;
+            armorModel.hat.y = 0;
+            armorModel.hat.z = 0;
+
             poseStack.pushPose();
 
             ModelPart head = this.getParentModel().root().getChild("head");
             head.translateAndRotate(poseStack);
-
-            poseStack.translate(0.0F, -0.05F, 0.0F);
 
             geoRenderer.renderToBuffer(poseStack, null, packedLight,
                     OverlayTexture.NO_OVERLAY);

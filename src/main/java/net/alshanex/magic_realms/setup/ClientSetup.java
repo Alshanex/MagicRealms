@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntityRenderer;
@@ -37,6 +38,7 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.AMADEUS.get(), AmadeusEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.MAGIC_CREEPER.get(), MagicCreeperEntityRenderer::new);
 
         event.registerEntityRenderer(MREntityRegistry.SEAT.get(), NoopRenderer::new);
 

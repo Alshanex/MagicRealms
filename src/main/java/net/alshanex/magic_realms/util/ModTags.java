@@ -44,6 +44,8 @@ public class ModTags {
 
     public static TagKey<AbstractSpell> CATAS_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_spells"));
 
+    public static TagKey<AbstractSpell> CREEPER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "creeper_allowed"));
+
     // Structures
     public static TagKey<Structure> FURLED_MAP_STRUCTURES = create("furled_map_structures");
 

@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.SeatEntity;
+import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
@@ -86,4 +87,10 @@ public class MREntityRegistry {
                     .clientTrackingRange(10)
                     .updateInterval(20)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "seat").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<MagicCreeperEntity>> MAGIC_CREEPER =
+            ENTITIES.register("magic_creeper", () -> EntityType.Builder.<MagicCreeperEntity>of(MagicCreeperEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.7F)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "magic_creeper").toString()));
 }

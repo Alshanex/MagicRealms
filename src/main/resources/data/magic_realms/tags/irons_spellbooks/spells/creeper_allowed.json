@@ -1,0 +1,32 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:raise_dead",
+    "irons_spellbooks:devour",
+    "irons_spellbooks:sculk_tentacles",
+    "irons_spellbooks:sonic_boom",
+    "irons_spellbooks:black_hole",
+    "irons_spellbooks:summon_swords",
+    "irons_spellbooks:arrow_volley",
+    "irons_spellbooks:fang_strike",
+    "irons_spellbooks:fang_ward",
+    "irons_spellbooks:gust",
+    "irons_spellbooks:summon_vex",
+    "irons_spellbooks:slow",
+    "irons_spellbooks:heat_surge",
+    "irons_spellbooks:scorch",
+    "irons_spellbooks:divine_smite",
+    "irons_spellbooks:sunbeam",
+    "irons_spellbooks:frostwave",
+    "irons_spellbooks:ice_block",
+    "irons_spellbooks:summon_polar_bear",
+    "irons_spellbooks:chain_lightning",
+    "irons_spellbooks:lightning_bolt",
+    "irons_spellbooks:shockwave",
+    "irons_spellbooks:earthquake",
+    "irons_spellbooks:firefly_swarm",
+    "irons_spellbooks:poison_splash",
+    "irons_spellbooks:root",
+    "irons_spellbooks:stomp"
+  ]
+}

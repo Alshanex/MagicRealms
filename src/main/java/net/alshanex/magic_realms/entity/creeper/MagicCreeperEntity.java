@@ -7,25 +7,40 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.*;
 import io.redspace.ironsspellbooks.capabilities.magic.SyncedSpellData;
+import io.redspace.ironsspellbooks.registries.ComponentRegistry;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.registry.MRSoundRegistry;
 import net.alshanex.magic_realms.util.ModTags;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.TickTask;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.loot.LootTable;
+import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class MagicCreeperEntity extends Creeper implements IMagicEntity {
@@ -88,8 +103,27 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
             }
             this.explosionSpell = getSpellForExplosion();
             updateFuseTime();
+            equipWizardHat();
         } else {
             this.entityData.set(WEAK_SCHOOL, "");
+        }
+    }
+
+    private void equipWizardHat() {
+        if (!this.level().isClientSide && this.getWeakSchool() != null) {
+            ItemStack hat = new ItemStack(ItemRegistry.WIZARD_HAT.get());
+
+            // Set the clothing variant to "hat"
+            hat.set(ComponentRegistry.CLOTHING_VARIANT, "hat");
+
+            // Dye it with the school color
+            Vector3f color = this.getWeakSchool().getTargetingColor();
+            if (color != null) {
+                int dyeColor = ((int)(color.x() * 255) << 16) | ((int)(color.y() * 255) << 8) | (int)(color.z() * 255);
+                hat.set(DataComponents.DYED_COLOR, new DyedItemColor(dyeColor, false));
+            }
+
+            this.setItemSlot(EquipmentSlot.HEAD, hat);
         }
     }
 
@@ -162,6 +196,8 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
             }
 
             if (hasInitiatedCast && castingSpell != null) {
+                forceLookAtTarget(getTarget());
+
                 playerMagicData.handleCastDuration();
 
                 if (playerMagicData.isCasting()) {
@@ -185,6 +221,8 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
     public void explodeCreeper() {
         if (!this.level().isClientSide && deathCountdown < 0) {
             if (hasInitiatedCast && castingSpell != null) {
+                forceLookAtTarget(getTarget());
+
                 if (castingSpell.getSpell().getCastType() == CastType.LONG
                         || castingSpell.getSpell().getCastType() == CastType.INSTANT) {
                     int spellLevel = this.isPowered() ? castingSpell.getSpell().getMaxLevel() : (castingSpell.getSpell().getMaxLevel() / 2);
@@ -196,7 +234,8 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
             hasInitiatedCast = false;
 
             if(!this.isInvisible()){
-                playSound(SoundEvents.GENERIC_EXPLODE.value(), 4.0F, (1.0F + (this.level().random.nextFloat() - this.level().random.nextFloat()) * 0.2F) * 0.7F);
+                playSound(MRSoundRegistry.MAGIC_CREEPER_EXPLOSION.get(), 4.0F, (1.0F + (this.level().random.nextFloat() - this.level().random.nextFloat()) * 0.2F) * 0.7F);
+                spawnLingeringCloud();
             }
 
             // Hide but keep entity ticking
@@ -208,6 +247,44 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
 
             deathCountdown = 10;
         }
+    }
+
+    private void forceLookAtTarget(net.minecraft.world.entity.LivingEntity target) {
+        if (target != null) {
+            double dx = target.getX() - this.getX();
+            double dz = target.getZ() - this.getZ();
+            double dy = target.getEyeY() - this.getEyeY();
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            float yRot = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180F / (float) Math.PI)) - 90.0F;
+            float xRot = (float) (-(net.minecraft.util.Mth.atan2(dy, dist) * (180F / (float) Math.PI)));
+            this.setXRot(xRot % 360);
+            this.setYRot(yRot % 360);
+            this.yHeadRot = this.getYRot();
+            this.yBodyRot = this.getYRot();
+        }
+    }
+
+    private void spawnLingeringCloud() {
+        Collection<MobEffectInstance> collection = this.getActiveEffects();
+        if (!collection.isEmpty()) {
+            AreaEffectCloud areaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+            areaeffectcloud.setRadius(2.5F);
+            areaeffectcloud.setRadiusOnUse(-0.5F);
+            areaeffectcloud.setWaitTime(10);
+            areaeffectcloud.setDuration(areaeffectcloud.getDuration() / 2);
+            areaeffectcloud.setRadiusPerTick(-areaeffectcloud.getRadius() / (float)areaeffectcloud.getDuration());
+
+            for (MobEffectInstance mobeffectinstance : collection) {
+                areaeffectcloud.addEffect(new MobEffectInstance(mobeffectinstance));
+            }
+
+            this.level().addFreshEntity(areaeffectcloud);
+        }
+    }
+
+    @Override
+    protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
+        return EntityType.CREEPER.getDefaultLootTable();
     }
 
     @Override
@@ -277,6 +354,10 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
         }
 
         castingSpell = new SpellData(spell, spellLevel);
+
+        if (getTarget() != null) {
+            forceLookAtTarget(getTarget());
+        }
 
         if (!level().isClientSide && !castingSpell.getSpell().checkPreCastConditions(level(), spellLevel, this, playerMagicData)) {
             castingSpell = null;
@@ -378,6 +459,7 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
             this.explosionSpell = SpellRegistry.getSpell(compound.getString("savedSpellId"));
             updateFuseTime();
         }
+        equipWizardHat();
     }
 
     @Override

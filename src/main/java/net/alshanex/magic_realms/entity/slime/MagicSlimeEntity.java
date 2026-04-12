@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -29,7 +30,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -319,6 +322,11 @@ public class MagicSlimeEntity extends Slime {
     public void remove(Entity.RemovalReason reason) {
         spawnChildren();
         super.remove(reason);
+    }
+
+    @Override
+    protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
+        return EntityType.SLIME.getDefaultLootTable();
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {

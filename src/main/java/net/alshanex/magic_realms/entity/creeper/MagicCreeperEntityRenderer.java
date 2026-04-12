@@ -2,25 +2,36 @@ package net.alshanex.magic_realms.entity.creeper;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.CreeperModel;
 import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.CreeperPowerLayer;
 import net.minecraft.client.renderer.entity.layers.EnergySwirlLayer;
+import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import software.bernie.geckolib.renderer.GeoArmorRenderer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -35,6 +46,7 @@ public class MagicCreeperEntityRenderer extends MobRenderer<MagicCreeperEntity, 
     public MagicCreeperEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new CreeperModel<>(context.bakeLayer(ModelLayers.CREEPER)), 0.25f);
         this.addLayer(new MagicCreeperPowerLayer(this, context.getModelSet()));
+        this.addLayer(new MagicCreeperHatLayer(this));
 
         if (SCHOOL_TEXTURES.isEmpty()) {
             List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().toList();
@@ -159,6 +171,49 @@ public class MagicCreeperEntityRenderer extends MobRenderer<MagicCreeperEntity, 
         @Override
         protected EntityModel<MagicCreeperEntity> model() {
             return this.model;
+        }
+    }
+
+    public static class MagicCreeperHatLayer extends RenderLayer<MagicCreeperEntity, CreeperModel<MagicCreeperEntity>> {
+
+        public MagicCreeperHatLayer(RenderLayerParent<MagicCreeperEntity, CreeperModel<MagicCreeperEntity>> renderer) {
+            super(renderer);
+        }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        @Override
+        public void render(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+                           MagicCreeperEntity entity, float limbSwing, float limbSwingAmount,
+                           float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+
+            if (entity.isInvisible()) return;
+
+            ItemStack hat = entity.getItemBySlot(EquipmentSlot.HEAD);
+            if (hat.isEmpty()) return;
+
+            GeoRenderProvider renderProvider = GeoRenderProvider.of(hat);
+            if (renderProvider == null) return;
+
+            HumanoidModel<?> armorModel = renderProvider.getGeoArmorRenderer(entity, hat, EquipmentSlot.HEAD, null);
+            if (!(armorModel instanceof GeoArmorRenderer geoRenderer)) return;
+
+            geoRenderer.prepForRender(entity, hat, EquipmentSlot.HEAD, armorModel);
+
+            armorModel.setAllVisible(false);
+            armorModel.head.visible = true;
+            armorModel.hat.visible = true;
+
+            poseStack.pushPose();
+
+            ModelPart head = this.getParentModel().root().getChild("head");
+            head.translateAndRotate(poseStack);
+
+            poseStack.translate(0.0F, -0.05F, 0.0F);
+
+            geoRenderer.renderToBuffer(poseStack, null, packedLight,
+                    OverlayTexture.NO_OVERLAY);
+
+            poseStack.popPose();
         }
     }
 }

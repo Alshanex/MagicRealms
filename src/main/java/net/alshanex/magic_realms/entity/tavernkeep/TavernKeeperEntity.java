@@ -100,6 +100,16 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     }
 
     @Override
+    public @Nullable Component getCustomName() {
+        return Component.translatable("entity.magic_realms.tavernkeep.name");
+    }
+
+    @Override
+    public boolean isCustomNameVisible() {
+        return true;
+    }
+
+    @Override
     public boolean fireImmune() {
         return true;
     }

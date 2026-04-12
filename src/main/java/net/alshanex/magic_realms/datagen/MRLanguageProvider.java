@@ -35,8 +35,6 @@ public class MRLanguageProvider extends LanguageProvider {
         add(MREntityRegistry.CATAS.get(), "Catas");
         add(MREntityRegistry.AMADEUS.get(), "Amadeus Voidwalker");
 
-        add(MREffects.STUN.get(), "Stunned");
-
         add(MRBlocks.WOODEN_CHAIR.get(), "Wooden Chair");
         add(MRBlocks.WOODEN_CHAIR_SIMPLE.get(), "Wooden Chair");
 

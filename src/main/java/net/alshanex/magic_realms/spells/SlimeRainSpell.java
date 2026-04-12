@@ -128,4 +128,9 @@ public class SlimeRainSpell extends AbstractSpell {
     public boolean allowCrafting() {
         return false;
     }
+
+    @Override
+    public boolean allowLooting() {
+        return false;
+    }
 }

@@ -9,11 +9,11 @@
     "irons_spellbooks:invisibility",
     "irons_spellbooks:spider_aspect",
     {"id": "aero_additions:wind_shield","required": false},
-    {"id": "alshanex_familiars:birds_spell","required": false},
     {"id": "dreamless_spells:jadeskin","required": false},
     {"id": "ess_requiem:adrenaline_rush","required": false},
     {"id": "ess_requiem:hone_edge","required": false},
     {"id": "ess_requiem:place_standard","required": false},
-    {"id": "ess_requiem:strain","required": false}
+    {"id": "ess_requiem:strain","required": false},
+    {"id": "tunes_n_tomes:rhapsody","required": false}
   ]
 }

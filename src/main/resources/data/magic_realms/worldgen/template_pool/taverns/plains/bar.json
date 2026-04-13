@@ -1,0 +1,15 @@
+{
+  "name": "magic_realms:taverns/plains/bar",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "magic_realms:taverns/plains/bar/default_1",
+        "processors": "minecraft:empty",
+        "projection": "rigid"
+      }
+    }
+  ]
+}

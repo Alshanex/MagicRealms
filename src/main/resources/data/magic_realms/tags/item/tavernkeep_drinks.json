@@ -5,6 +5,17 @@
     {"id": "brewinandchewin:beer","required": false},
     {"id": "brewinandchewin:mead","required": false},
     {"id": "brewinandchewin:rice_wine","required": false},
-    {"id": "brewinandchewin:vodka","required": false}
+    {"id": "brewinandchewin:vodka","required": false},
+    {"id": "create:builders_tea","required": false},
+    {"id": "hearthandharvest:blueberry_wine","required": false},
+    {"id": "hearthandharvest:cherry_wine","required": false},
+    {"id": "hearthandharvest:green_grape_wine","required": false},
+    {"id": "hearthandharvest:hard_cider","required": false},
+    {"id": "hearthandharvest:mead","required": false},
+    {"id": "hearthandharvest:moonshine","required": false},
+    {"id": "hearthandharvest:raspberry_wine","required": false},
+    {"id": "hearthandharvest:red_grape_wine","required": false},
+    {"id": "hearthandharvest:root_beer","required": false},
+    {"id": "hearthandharvest:sweet_berry_wine","required": false}
   ]
 }

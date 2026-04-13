@@ -4,6 +4,16 @@
     "minecraft:suspicious_stew",
     {"id": "brewinandchewin:jerky","required": false},
     {"id": "brewinandchewin:kimchi","required": false},
-    {"id": "brewinandchewin:pickled_pickles","required": false}
+    {"id": "create:sweet_roll","required": false},
+    {"id": "brewinandchewin:pickled_pickles","required": false},
+    {"id": "hearthandharvest:chicken_pot_pie_slice","required": false},
+    {"id": "hearthandharvest:cooked_sausage","required": false},
+    {"id": "hearthandharvest:jerky","required": false},
+    {"id": "hearthandharvest:popcorn","required": false},
+    {"id": "hearthandharvest:raisins","required": false},
+    {"id": "hearthandharvest:roasted_peanuts","required": false},
+    {"id": "mynethersdelight:boiled_egg","required": false},
+    {"id": "mynethersdelight:hotdog","required": false},
+    {"id": "mynethersdelight:roasted_sausage","required": false}
   ]
 }

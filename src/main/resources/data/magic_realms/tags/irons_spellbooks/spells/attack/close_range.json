@@ -24,6 +24,8 @@
     {"id": "ess_requiem:slash","required": false},
     {"id": "ess_requiem:uppercut","required": false},
     {"id": "gametechbcs_spellbooks:nullflare","required": false},
-    {"id": "iss_magicfromtheeast:soul_burst","required": false}
+    {"id": "iss_magicfromtheeast:soul_burst","required": false},
+    {"id": "tunes_n_tomes:chord_blast","required": false},
+    {"id": "tunes_n_tomes:fortissimo","required": false}
   ]
 }

@@ -7,10 +7,12 @@ import io.redspace.ironsspellbooks.entity.mobs.goals.WizardAttackGoal;
 import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
@@ -28,15 +30,14 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -56,10 +57,16 @@ public class TimEntity extends AbstractSpellCastingMob implements Enemy {
                         List.of(SpellRegistry.BLIGHT_SPELL.get())
                 )
         );
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
-        this.addBehaviourGoals();
+
+        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(ZombifiedPiglin.class));
+        this.targetSelector.addGoal(2, new PrioritizeArmoredTargetGoal<>(this, LivingEntity.class, true, ModTags.GEM_ARMOR));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
     }
 
     @Override
@@ -92,15 +99,6 @@ public class TimEntity extends AbstractSpellCastingMob implements Enemy {
         this.setDropChance(EquipmentSlot.CHEST, 0.0F);
         this.setDropChance(EquipmentSlot.LEGS, 0.0F);
         this.setDropChance(EquipmentSlot.FEET, 0.0F);
-    }
-
-    protected void addBehaviourGoals() {
-        this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(ZombifiedPiglin.class));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
-        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -191,6 +189,38 @@ public class TimEntity extends AbstractSpellCastingMob implements Enemy {
             return net.neoforged.neoforge.common.CommonHooks.getProjectile(this, shootable, itemstack.isEmpty() ? new ItemStack(Items.ARROW) : itemstack);
         } else {
             return net.neoforged.neoforge.common.CommonHooks.getProjectile(this, shootable, ItemStack.EMPTY);
+        }
+    }
+
+    public static class PrioritizeArmoredTargetGoal<T extends LivingEntity> extends NearestAttackableTargetGoal<T> {
+
+        private final TagKey<Item> armorTag;
+
+        public PrioritizeArmoredTargetGoal(Mob mob, Class<T> targetType, boolean mustSee, TagKey<Item> armorTag) {
+            super(mob, targetType, mustSee);
+            this.armorTag = armorTag;
+        }
+
+        @Override
+        protected void findTarget() {
+            double dist = this.getFollowDistance();
+            List<T> candidates = this.mob.level()
+                    .getEntitiesOfClass(this.targetType, this.getTargetSearchArea(dist),
+                            this::isWearingTaggedArmor);
+
+            this.target = this.mob.level().getNearestEntity(
+                    candidates, this.targetConditions, this.mob,
+                    this.mob.getX(), this.mob.getEyeY(), this.mob.getZ()
+            );
+        }
+
+        private boolean isWearingTaggedArmor(LivingEntity entity) {
+            for (ItemStack stack : entity.getArmorSlots()) {
+                if (!stack.isEmpty() && stack.is(this.armorTag)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

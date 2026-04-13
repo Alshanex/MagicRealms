@@ -1,9 +1,12 @@
 package net.alshanex.magic_realms.entity.slime;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
+import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.damage.DamageSources;
 import io.redspace.ironsspellbooks.entity.spells.AbstractMagicProjectile;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -15,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -27,9 +31,12 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Slime;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -319,6 +326,29 @@ public class MagicSlimeEntity extends Slime {
     public void remove(Entity.RemovalReason reason) {
         spawnChildren();
         super.remove(reason);
+    }
+
+    @Override
+    protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
+        return EntityType.SLIME.getDefaultLootTable();
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, damageSource, recentlyHit);
+
+        if (this.random.nextFloat() < 0.05f && this.isTiny()) {
+            AbstractSpell slimeRainSpell = MRSpellRegistry.SLIME_RAIN.get();
+
+            int minLevel = slimeRainSpell.getMinLevel();
+            int maxLevel = slimeRainSpell.getMaxLevel();
+            int scrollLevel = minLevel + this.random.nextInt(maxLevel - minLevel + 1);
+
+            ItemStack scrollStack = new ItemStack(ItemRegistry.SCROLL.get());
+            ISpellContainer.createScrollContainer(slimeRainSpell, scrollLevel, scrollStack);
+
+            this.spawnAtLocation(scrollStack);
+        }
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {

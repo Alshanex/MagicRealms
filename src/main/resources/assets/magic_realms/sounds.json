@@ -1,0 +1,20 @@
+{
+  "magic_creeper_explosion": {
+    "subtitle": "subtitles.magic_creeper_explosion",
+    "sounds": [
+      {
+        "name": "magic_realms:magic_creeper_explosion",
+        "stream": true
+      }
+    ]
+  },
+  "magic_creeper_fuse": {
+    "subtitle": "subtitles.magic_creeper_fuse",
+    "sounds": [
+      {
+        "name": "magic_realms:magic_creeper_fuse",
+        "stream": true
+      }
+    ]
+  }
+}

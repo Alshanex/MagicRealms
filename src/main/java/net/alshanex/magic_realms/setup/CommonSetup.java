@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.enderman.WizardEndermanEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
@@ -10,7 +11,9 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.slime.SummonedMagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.tim.TimEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.minecraft.world.entity.monster.Creeper;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
@@ -28,5 +31,8 @@ public class CommonSetup {
         event.put(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntity.prepareAttributes().build());
         event.put(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());
         event.put(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());
+        event.put(MREntityRegistry.MAGIC_CREEPER.get(), Creeper.createAttributes().build());
+        event.put(MREntityRegistry.TIM.get(), TimEntity.createAttributes().build());
+        event.put(MREntityRegistry.WIZARD_ENDERMAN.get(), WizardEndermanEntity.createAttributes().build());
     }
 }

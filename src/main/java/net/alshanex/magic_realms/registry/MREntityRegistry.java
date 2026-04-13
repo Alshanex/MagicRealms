@@ -2,6 +2,8 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.SeatEntity;
+import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntity;
+import net.alshanex.magic_realms.entity.enderman.WizardEndermanEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
@@ -11,6 +13,7 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.slime.SummonedMagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.tim.TimEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -86,4 +89,22 @@ public class MREntityRegistry {
                     .clientTrackingRange(10)
                     .updateInterval(20)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "seat").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<MagicCreeperEntity>> MAGIC_CREEPER =
+            ENTITIES.register("magic_creeper", () -> EntityType.Builder.<MagicCreeperEntity>of(MagicCreeperEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.7F)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "magic_creeper").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<TimEntity>> TIM =
+            ENTITIES.register("tim", () -> EntityType.Builder.<TimEntity>of(TimEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tim").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<WizardEndermanEntity>> WIZARD_ENDERMAN =
+            ENTITIES.register("wizard_enderman", () -> EntityType.Builder.of(WizardEndermanEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "wizard_enderman").toString()));
 }

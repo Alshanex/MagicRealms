@@ -21,6 +21,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -62,6 +63,11 @@ public class KillTrackingHandler {
         if(!(event.getEntity() instanceof AbstractMercenaryEntity human && human.isImmortal())){
             return;
         }
+
+        if(event.getSource().is(DamageTypes.FELL_OUT_OF_WORLD) || event.getSource().is(DamageTypes.OUTSIDE_BORDER) || event.getSource().is(DamageTypes.GENERIC_KILL)){
+            return;
+        }
+
         event.setCanceled(true);
         human.setHealth(human.getMaxHealth() / 2);
         knockbackAndStun(event.getSource(), human);

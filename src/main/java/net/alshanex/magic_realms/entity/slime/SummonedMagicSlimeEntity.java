@@ -147,6 +147,26 @@ public class SummonedMagicSlimeEntity extends MagicSlimeEntity implements IMagic
     }
 
     @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
+
+    }
+
+    @Override
+    protected void dropAllDeathLoot(ServerLevel p_level, DamageSource damageSource) {
+
+    }
+
+    @Override
+    protected void dropFromLootTable(DamageSource damageSource, boolean attackedRecently) {
+
+    }
+
+    @Override
+    protected boolean shouldDropLoot() {
+        return false;
+    }
+
+    @Override
     public boolean isAlliedTo(Entity pEntity) {
         return super.isAlliedTo(pEntity) || this.isAlliedHelper(pEntity);
     }

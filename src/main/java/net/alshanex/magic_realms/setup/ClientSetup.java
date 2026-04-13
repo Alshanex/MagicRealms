@@ -1,6 +1,8 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntityRenderer;
+import net.alshanex.magic_realms.entity.enderman.WizardEndermanRenderer;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntityRenderer;
@@ -9,6 +11,7 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntityRenderer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntityRenderer;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntityRenderer;
+import net.alshanex.magic_realms.entity.tim.TimEntityRenderer;
 import net.alshanex.magic_realms.registry.MRBlocks;
 import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
@@ -37,6 +40,9 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.AMADEUS.get(), AmadeusEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.MAGIC_CREEPER.get(), MagicCreeperEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.TIM.get(), TimEntityRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.WIZARD_ENDERMAN.get(), WizardEndermanRenderer::new);
 
         event.registerEntityRenderer(MREntityRegistry.SEAT.get(), NoopRenderer::new);
 

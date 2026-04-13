@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#magic_realms:wizard_enderman_spawns_in",
+  "spawners": {
+    "type": "magic_realms:wizard_enderman",
+    "maxCount": 1,
+    "minCount": 1,
+    "weight": 1
+  }
+}

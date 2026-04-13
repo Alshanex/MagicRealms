@@ -70,10 +70,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.RangedBowAttackGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.RangedAttackMob;
@@ -470,7 +467,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             int duration = Config.immortalStunDuration * 20;
             this.stunTimer = duration;
             this.setPose(Pose.SITTING);
-            this.addEffect(new MobEffectInstance(MREffects.STUN, duration, 0, false, false, true));
             this.setTarget(null);
             this.stopUsingItem();
             this.getNavigation().stop();
@@ -1304,9 +1300,29 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (!isStunned()) return;
 
         if (stunTimer > 0) {
+            // Clear target every tick
+            this.setTarget(null);
+
+            // Stop all movement and navigation
+            this.getNavigation().stop();
+            this.setDeltaMovement(0, this.getDeltaMovement().y * 0.1, 0);
+
+            MagicData data = this.getMagicData();
+            boolean isCasting = data.isCasting();
+
+            if(isCasting){
+                this.cancelCast();
+            }
+
             stunTimer--;
             if (stunTimer <= 0) {
                 setStunned(false);
+                for (WrappedGoal wrappedGoal : this.goalSelector.getAvailableGoals()) {
+                    Goal goal = wrappedGoal.getGoal();
+                    if (!wrappedGoal.isRunning() && wrappedGoal.canUse()) {
+                        goal.start() ;
+                    }
+                }
                 this.heal(this.getMaxHealth() * 0.5f);
             }
         }
@@ -1384,7 +1400,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     public boolean canAttack(LivingEntity target) {
-        if (isSittingInChair() || this.hasEffect(MREffects.STUN)) {
+        if (isSittingInChair() || this.isStunned()) {
             return false;
         }
         return super.canAttack(target);
@@ -1395,7 +1411,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (isSittingInChair() && target != null) {
             unsitFromChair();
         }
-        if (this.hasEffect(MREffects.STUN) && target != null) {
+        if (this.isStunned() && target != null) {
             return;
         }
         super.setTarget(target);
@@ -1411,7 +1427,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     public void travel(Vec3 travelVector) {
-        if (isInMenuState() || isSittingInChair() || this.hasEffect(MREffects.STUN)) {
+        if (isInMenuState() || isSittingInChair() || this.isStunned()) {
             super.travel(Vec3.ZERO);
             return;
         }

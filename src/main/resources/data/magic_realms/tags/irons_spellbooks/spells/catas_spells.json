@@ -9,6 +9,7 @@
     "irons_spellbooks:burning_dash",
     "irons_spellbooks:volt_strike",
     "irons_spellbooks:shadow_slash",
+    "irons_spellbooks:throw",
     {"id": "discerning_the_eldritch:esoteric_edge","required": false}
   ]
 }

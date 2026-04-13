@@ -95,6 +95,10 @@
     {"id": "iss_magicfromtheeast:kitsune_pack","required": false},
     {"id": "iss_magicfromtheeast:punishing_heaven","required": false},
     {"id": "iss_magicfromtheeast:qigong_controlling","required": false},
-    {"id": "iss_magicfromtheeast:revenant_of_honour","required": false}
+    {"id": "iss_magicfromtheeast:revenant_of_honour","required": false},
+    {"id": "tunes_n_tomes:dal_segno","required": false},
+    {"id": "tunes_n_tomes:encore","required": false},
+    {"id": "tunes_n_tomes:hymn_of_hope","required": false},
+    {"id": "tunes_n_tomes:swift_melody","required": false}
   ]
 }

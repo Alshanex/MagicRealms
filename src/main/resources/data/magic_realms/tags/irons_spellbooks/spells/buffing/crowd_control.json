@@ -3,12 +3,13 @@
   "values": [
     "irons_spellbooks:root",
     "irons_spellbooks:slow",
-    {"id": "alshanex_familiars:lullaby","required": false},
     {"id": "cataclysm_spellbooks:desert_winds","required": false},
     {"id": "cataclysm_spellbooks:gravity_storm","required": false},
     {"id": "cataclysm_spellbooks:sandstorm","required": false},
     {"id": "gametechbcs_spellbooks:aerial_collapse","required": false},
     {"id": "hazennstuff:crystal_volley","required": false},
-    {"id": "hazennstuff:ice_arrow","required": false}
+    {"id": "hazennstuff:ice_arrow","required": false},
+    {"id": "tunes_n_tomes:fortissimo","required": false},
+    {"id": "tunes_n_tomes:serenade","required": false}
   ]
 }

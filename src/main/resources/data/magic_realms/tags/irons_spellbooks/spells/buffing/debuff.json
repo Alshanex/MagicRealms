@@ -6,6 +6,7 @@
     "irons_spellbooks:blight",
     "irons_spellbooks:guiding_bolt",
     {"id": "ess_requiem:boiling_blood","required": false},
-    {"id": "iss_magicfromtheeast:spirit_challenging","required": false}
+    {"id": "iss_magicfromtheeast:spirit_challenging","required": false},
+    {"id": "tunes_n_tomes:slumber_note","required": false}
   ]
 }

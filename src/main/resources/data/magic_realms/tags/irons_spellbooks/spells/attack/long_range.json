@@ -35,11 +35,6 @@
     "irons_spellbooks:wither_skull",
     {"id": "aero_additions:asphyxiate","required": false},
     {"id": "aero_additions:wind_blade","required": false},
-    {"id": "alshanex_familiars:default_note","required": false},
-    {"id": "alshanex_familiars:explosion_melody","required": false},
-    {"id": "alshanex_familiars:harp_symphony","required": false},
-    {"id": "alshanex_familiars:music_bolt","required": false},
-    {"id": "alshanex_familiars:sonata","required": false},
     {"id": "cataclysm_spellbooks:abyssal_blast","required": false},
     {"id": "cataclysm_spellbooks:gravity_storm","required": false},
     {"id": "cataclysm_spellbooks:hellish_blade","required": false},
@@ -67,6 +62,10 @@
     {"id": "iss_magicfromtheeast:phantom_charge","required": false},
     {"id": "iss_magicfromtheeast:soul_catalyst","required": false},
     {"id": "iss_magicfromtheeast:sword_dance","required": false},
-    {"id": "iss_magicfromtheeast:underworld_aid","required": false}
+    {"id": "iss_magicfromtheeast:underworld_aid","required": false},
+    {"id": "tunes_n_tomes:clamor_note","required": false},
+    {"id": "tunes_n_tomes:grand_finale","required": false},
+    {"id": "tunes_n_tomes:harmonic_aria","required": false},
+    {"id": "tunes_n_tomes:piercing_solo","required": false}
   ]
 }

@@ -14,6 +14,7 @@
     {"id": "ess_requiem:sword_stance","required": false},
     {"id": "ess_requiem:wretch","required": false},
     {"id": "firesenderexpansion:dragons_fury","required": false},
-    {"id": "iss_magicfromtheeast:throw_up","required": false}
+    {"id": "iss_magicfromtheeast:throw_up","required": false},
+    {"id": "tunes_n_tomes:fortissimo","required": false}
   ]
 }

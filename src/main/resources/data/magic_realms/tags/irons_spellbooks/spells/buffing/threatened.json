@@ -6,7 +6,6 @@
     "irons_spellbooks:invisibility",
     "irons_spellbooks:oakskin",
     {"id": "aero_additions:wind_shield","required": false},
-    {"id": "alshanex_familiars:guardian_angel","required": false},
     {"id": "cataclysm_spellbooks:abyssal_predator","required": false},
     {"id": "dreamless_spells:jadeskin","required": false},
     {"id": "ess_requiem:adrenaline_rush","required": false},
@@ -14,6 +13,8 @@
     {"id": "ess_requiem:place_standard","required": false},
     {"id": "ess_requiem:sword_stance","required": false},
     {"id": "gametechbcs_spellbooks:flames_reborn","required": false},
-    {"id": "gametechbcs_spellbooks:lingering_strain","required": false}
+    {"id": "gametechbcs_spellbooks:lingering_strain","required": false},
+    {"id": "tunes_n_tomes:fortissimo","required": false},
+    {"id": "tunes_n_tomes:serenade","required": false}
   ]
 }

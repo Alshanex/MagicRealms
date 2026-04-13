@@ -182,13 +182,22 @@ dependencies {
 
     // Dummy
     runtimeOnly("curse.maven:mmmmmmmmmmmm-225738:7206981")
-    runtimeOnly("curse.maven:selene-499980:7522321")
+    runtimeOnly("curse.maven:selene-499980:7918153")
 
     //Apothic Attributes
     dependencies {
         implementation "dev.shadowsoffire:Placebo:${minecraft_version}-${placeboVersion}"
         implementation "dev.shadowsoffire:ApothicAttributes:${minecraft_version}-${attributesLibVersion}"
     }
+
+    // Tavern compats
+    runtimeOnly("curse.maven:farmers-delight-398521:7801529")
+    runtimeOnly("curse.maven:my-nethers-delight-1003673:6938550")
+    runtimeOnly("curse.maven:create-328085:7408951")
+    runtimeOnly("curse.maven:handcrafted-538214:6330030")
+    runtimeOnly("curse.maven:supplementaries-412082:7892406")
+    runtimeOnly("curse.maven:brewin-and-chewin-637808:7523542")
+    runtimeOnly("curse.maven:resourceful-lib-570073:5973188")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

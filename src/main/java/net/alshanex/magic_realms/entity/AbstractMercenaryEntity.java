@@ -1307,22 +1307,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             this.getNavigation().stop();
             this.setDeltaMovement(0, this.getDeltaMovement().y * 0.1, 0);
 
-            // Disable all goals by stopping them
-            for (WrappedGoal wrappedGoal : this.goalSelector.getAvailableGoals()) {
-                Goal goal = wrappedGoal.getGoal();
-                if (goal.isInterruptable() && wrappedGoal.isRunning()) {
-                    goal.stop();
-                }
-            }
-
-            // Also disable targeting goals
-            for (WrappedGoal wrappedGoal : this.targetSelector.getAvailableGoals()) {
-                Goal goal = wrappedGoal.getGoal();
-                if (goal.isInterruptable() && wrappedGoal.isRunning()) {
-                    goal.stop();
-                }
-            }
-
             MagicData data = this.getMagicData();
             boolean isCasting = data.isCasting();
 

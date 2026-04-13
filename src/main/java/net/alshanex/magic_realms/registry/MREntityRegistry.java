@@ -3,6 +3,7 @@ package net.alshanex.magic_realms.registry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.SeatEntity;
 import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntity;
+import net.alshanex.magic_realms.entity.enderman.WizardEndermanEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
@@ -100,4 +101,10 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tim").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<WizardEndermanEntity>> WIZARD_ENDERMAN =
+            ENTITIES.register("wizard_enderman", () -> EntityType.Builder.of(WizardEndermanEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "wizard_enderman").toString()));
 }

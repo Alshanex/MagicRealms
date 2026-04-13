@@ -2,10 +2,7 @@
   "type": "minecraft:chest",
   "pools": [
     {
-      "rolls": {
-        "min": 2,
-        "max": 4
-      },
+      "rolls": 2,
       "entries": [
         {
           "type": "minecraft:item",
@@ -51,7 +48,7 @@
     {
       "rolls": {
         "min": 1,
-        "max": 3
+        "max": 2
       },
       "entries": [
         {
@@ -132,29 +129,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:white_carpet",
-          "functions": [
-            {
-              "function": "set_count",
-              "count": {
-                "min": 1,
-                "max": 2
-              }
-            }
-          ]
+          "name": "minecraft:white_carpet"
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:light_gray_carpet",
-          "functions": [
-            {
-              "function": "set_count",
-              "count": {
-                "min": 1,
-                "max": 2
-              }
-            }
-          ]
+          "name": "minecraft:light_gray_carpet"
         }
       ],
       "conditions": [

@@ -11,6 +11,7 @@ import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRSpellRegistry;
+import net.alshanex.magic_realms.registry.ModLootTables;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -330,25 +331,7 @@ public class MagicSlimeEntity extends Slime {
 
     @Override
     protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
-        return EntityType.SLIME.getDefaultLootTable();
-    }
-
-    @Override
-    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
-        super.dropCustomDeathLoot(level, damageSource, recentlyHit);
-
-        if (this.random.nextFloat() < 0.05f && this.isTiny()) {
-            AbstractSpell slimeRainSpell = MRSpellRegistry.SLIME_RAIN.get();
-
-            int minLevel = slimeRainSpell.getMinLevel();
-            int maxLevel = slimeRainSpell.getMaxLevel();
-            int scrollLevel = minLevel + this.random.nextInt(maxLevel - minLevel + 1);
-
-            ItemStack scrollStack = new ItemStack(ItemRegistry.SCROLL.get());
-            ISpellContainer.createScrollContainer(slimeRainSpell, scrollLevel, scrollStack);
-
-            this.spawnAtLocation(scrollStack);
-        }
+        return ModLootTables.MAGIC_SLIME_LOOT;
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {

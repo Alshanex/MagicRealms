@@ -11,6 +11,7 @@ import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRSoundRegistry;
+import net.alshanex.magic_realms.registry.ModLootTables;
 import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -284,7 +285,7 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
 
     @Override
     protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
-        return EntityType.CREEPER.getDefaultLootTable();
+        return ModLootTables.MAGIC_CREEPER_LOOT;
     }
 
     @Override

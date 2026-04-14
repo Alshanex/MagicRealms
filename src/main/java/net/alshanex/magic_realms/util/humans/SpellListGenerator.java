@@ -17,21 +17,18 @@ public class SpellListGenerator {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
 
-        MagicRealms.LOGGER.debug("Generating spells for entity {} (Class: {}, Stars: {})",
-                entity.getUUID(), entityClass.getName(), starLevel);
-
         List<AbstractSpell> spells = switch (entityClass) {
             case MAGE -> generateMageSpells(entity, starLevel, random);
             case WARRIOR -> generateWarriorSpells(starLevel, random);
             case ROGUE -> generateRogueSpells(entity, starLevel, random);
         };
-
+/*
         MagicRealms.LOGGER.debug("Generated {} spells for {} {}: [{}]",
                 spells.size(),
                 entityClass.getName(),
                 entity.getEntityName(),
                 spells.stream().map(spell -> spell.getSpellName()).collect(Collectors.joining(", ")));
-
+*/
         return spells;
     }
 
@@ -45,11 +42,6 @@ public class SpellListGenerator {
         // Determinar cantidad de spells según el nivel de estrellas
         SpellRange range = getMageSpellRange(starLevel);
         int spellCount = range.getRandomCount(random);
-
-        MagicRealms.LOGGER.debug("Mage {} has schools: [{}], generating {} spells",
-                entity.getEntityName(),
-                magicSchools.stream().map(s -> s.getId().toString()).collect(Collectors.joining(", ")),
-                spellCount);
 
         List<AbstractSpell> availableSpells = new ArrayList<>();
         List<AbstractSpell> availableAttackSpells = new ArrayList<>();
@@ -66,12 +58,6 @@ public class SpellListGenerator {
             // Filter attack spells from this school
             List<AbstractSpell> schoolAttackSpells = ModTags.filterAttackSpells(enabledSchoolSpells);
             availableAttackSpells.addAll(schoolAttackSpells);
-
-            MagicRealms.LOGGER.debug("School {} has {} enabled spells: [{}], {} attack spells",
-                    school.getId(),
-                    enabledSchoolSpells.size(),
-                    enabledSchoolSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")),
-                    schoolAttackSpells.size());
         }
 
         if (availableSpells.isEmpty()) {
@@ -86,7 +72,6 @@ public class SpellListGenerator {
         if (!availableAttackSpells.isEmpty()) {
             AbstractSpell attackSpell = availableAttackSpells.get(random.nextInt(availableAttackSpells.size()));
             selectedSpells.add(attackSpell);
-            MagicRealms.LOGGER.debug("Guaranteed attack spell selected: {}", attackSpell.getSpellName());
 
             // Remove the selected attack spell from the general pool to avoid duplicates
             availableSpells.remove(attackSpell);
@@ -101,18 +86,16 @@ public class SpellListGenerator {
             List<AbstractSpell> remainingSpells = selectRandomSpells(availableSpells, spellCount, random);
             selectedSpells.addAll(remainingSpells);
         }
-
+/*
         MagicRealms.LOGGER.debug("Final spell selection: [{}]",
                 selectedSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
-
+*/
         return selectedSpells;
     }
 
     private static List<AbstractSpell> generateWarriorSpells(int starLevel, RandomSource random) {
         SpellRange range = getWarriorSpellRange(starLevel);
         int spellCount = range.getRandomCount(random);
-
-        MagicRealms.LOGGER.debug("Generating {} spells for Warrior (Stars: {})", spellCount, starLevel);
 
         // Determinar probabilidades de rareza según estrellas
         SpellRarityChances chances = getWarriorRarityChances(starLevel);
@@ -123,16 +106,10 @@ public class SpellListGenerator {
             TagKey<AbstractSpell> selectedTag = selectWarriorSpellTag(chances, random);
             List<AbstractSpell> tagSpells = getSpellsFromTag(selectedTag);
 
-            MagicRealms.LOGGER.debug("Tag {} has {} spells available: [{}]",
-                    selectedTag.location(),
-                    tagSpells.size(),
-                    tagSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
-
             if (!tagSpells.isEmpty()) {
                 AbstractSpell spell = tagSpells.get(random.nextInt(tagSpells.size()));
                 if (!selectedSpells.contains(spell)) {
                     selectedSpells.add(spell);
-                    MagicRealms.LOGGER.debug("Selected spell: {}", spell.getSpellName());
                 } else {
                     // Si el spell ya está seleccionado, intentar con otro
                     i--;
@@ -150,11 +127,6 @@ public class SpellListGenerator {
         SpellRange range = getRogueSpellRange(starLevel);
         int spellCount = range.getRandomCount(random);
 
-        MagicRealms.LOGGER.debug("Generating {} spells for {} (Stars: {})",
-                spellCount,
-                isArcher ? "Archer" : "Assassin",
-                starLevel);
-
         // Determinar probabilidades de rareza según estrellas
         SpellRarityChances chances = getRogueRarityChances(starLevel);
 
@@ -164,16 +136,10 @@ public class SpellListGenerator {
             TagKey<AbstractSpell> selectedTag = selectRogueSpellTag(chances, isArcher, random);
             List<AbstractSpell> tagSpells = getSpellsFromTag(selectedTag);
 
-            MagicRealms.LOGGER.debug("Tag {} has {} spells available: [{}]",
-                    selectedTag.location(),
-                    tagSpells.size(),
-                    tagSpells.stream().map(AbstractSpell::getSpellName).collect(Collectors.joining(", ")));
-
             if (!tagSpells.isEmpty()) {
                 AbstractSpell spell = tagSpells.get(random.nextInt(tagSpells.size()));
                 if (!selectedSpells.contains(spell)) {
                     selectedSpells.add(spell);
-                    MagicRealms.LOGGER.debug("Selected spell: {}", spell.getSpellName());
                 } else {
                     // Si el spell ya está seleccionado, intentar con otro
                     i--;
@@ -186,7 +152,7 @@ public class SpellListGenerator {
         return selectedSpells;
     }
 
-    // === MÉTODOS HELPER PARA RANGOS DE SPELLS ===
+    // MÉTODOS HELPER PARA RANGOS DE SPELLS
 
     private static SpellRange getMageSpellRange(int starLevel) {
         return switch (starLevel) {
@@ -215,7 +181,7 @@ public class SpellListGenerator {
         };
     }
 
-    // === MÉTODOS HELPER PARA PROBABILIDADES DE RAREZA ===
+    // MÉTODOS HELPER PARA PROBABILIDADES DE RAREZA
 
     private static SpellRarityChances getWarriorRarityChances(int starLevel) {
         return switch (starLevel) {
@@ -235,7 +201,7 @@ public class SpellListGenerator {
         };
     }
 
-    // === MÉTODOS HELPER PARA SELECCIÓN DE TAGS ===
+    // MÉTODOS HELPER PARA SELECCIÓN DE TAGS
 
     private static TagKey<AbstractSpell> selectWarriorSpellTag(SpellRarityChances chances, RandomSource random) {
         int roll = random.nextInt(100);
@@ -271,7 +237,7 @@ public class SpellListGenerator {
         }
     }
 
-    // === MÉTODOS HELPER UTILS ===
+    // MÉTODOS HELPER UTILS
 
     public static List<AbstractSpell> getSpellsFromTag(TagKey<AbstractSpell> tag) {
         var list = new ArrayList<AbstractSpell>();
@@ -303,8 +269,6 @@ public class SpellListGenerator {
                 .limit(Math.min(count, shuffled.size()))
                 .collect(Collectors.toList());
     }
-
-    // === CLASES HELPER ===
 
     private static class SpellRange {
         final int min, max;

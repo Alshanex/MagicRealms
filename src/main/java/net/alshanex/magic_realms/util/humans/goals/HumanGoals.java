@@ -504,9 +504,6 @@ public class HumanGoals {
             super.stop();
         }
 
-        /**
-         * Check if this human can help against the given target
-         */
         private boolean canHelpAgainst(LivingEntity target) {
             // Don't attack allied entities
             if (human.isAlliedTo(target)) {
@@ -548,9 +545,6 @@ public class HumanGoals {
             }
         }
 
-        /**
-         * Alert all allied humans in the area about the attacker
-         */
         private void alertAlliedHumans(LivingEntity attacker) {
             if (attacker == null || !attacker.isAlive()) {
                 return;

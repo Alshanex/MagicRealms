@@ -24,7 +24,7 @@ public class HumanStatsManager {
         int starLevel = entity.getStarLevel();
         RandomSource random = entity.level().getRandom();
 
-        MagicRealms.LOGGER.debug("Applying attributes for {} with {} stars", entityClass.getName(), starLevel);
+        //MagicRealms.LOGGER.debug("Applying attributes for {} with {} stars", entityClass.getName(), starLevel);
 
         // Aplicar atributos base según la clase
         switch (entityClass) {
@@ -90,9 +90,6 @@ public class HumanStatsManager {
                         "mage_initial_" + school.getId().getPath() + "_power",
                         roundedBonus / 100.0,
                         AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-
-                MagicRealms.LOGGER.debug("Applied {}% initial spell power bonus to {} for school {}",
-                        roundedBonus, entity.getEntityName(), school.getId());
             } else {
                 MagicRealms.LOGGER.warn("Could not find power attribute for school: {}", school.getId());
             }
@@ -299,7 +296,7 @@ public class HumanStatsManager {
             AttributeModifier modifier = new AttributeModifier(modifierLocation, roundedAmount, operation);
             instance.addPermanentModifier(modifier);
 
-            MagicRealms.LOGGER.debug("Applied attribute modifier: {} = {} ({})", modifierName, roundedAmount, operation);
+            //MagicRealms.LOGGER.debug("Applied attribute modifier: {} = {} ({})", modifierName, roundedAmount, operation);
         } else {
             MagicRealms.LOGGER.warn("Failed to apply attribute modifier: {} - attribute instance is null", modifierName);
         }

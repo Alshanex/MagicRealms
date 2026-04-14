@@ -128,16 +128,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         this.imageWidth = 256;
         this.imageHeight = 250;
-
-        // Debug logging
-        MagicRealms.LOGGER.info("ContractHumanInfoScreen created:");
-        MagicRealms.LOGGER.info("  - Snapshot: {}", snapshot != null ? "present" : "null");
-        MagicRealms.LOGGER.info("  - Entity: {}", entity != null ? entity.getEntityName() : "null");
-        MagicRealms.LOGGER.info("  - Entity Type: {}", menu.getEntityType());
-        if (entity != null) {
-            MagicRealms.LOGGER.info("  - Entity UUID: {}", entity.getUUID());
-            MagicRealms.LOGGER.info("  - Entity Class: {}", entity.getEntityClass());
-        }
     }
 
     @Override
@@ -595,19 +585,10 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         return VALUE_COLOR;
     }
 
-    private ChatFormatting getImprovedSchoolColor(String schoolName) {
-        return switch (schoolName.toLowerCase()) {
-            case "fire" -> ChatFormatting.GOLD;
-            case "ice" -> ChatFormatting.AQUA;
-            case "lightning" -> ChatFormatting.BLUE;
-            case "holy" -> ChatFormatting.YELLOW;
-            case "ender" -> ChatFormatting.LIGHT_PURPLE;
-            case "blood" -> ChatFormatting.RED;
-            case "evocation" -> ChatFormatting.WHITE;
-            case "nature" -> ChatFormatting.GREEN;
-            case "eldritch" -> ChatFormatting.DARK_AQUA;
-            default -> ChatFormatting.WHITE;
-        };
+    private int getImprovedSchoolColor(ResourceLocation schoolRL) {
+        SchoolType schoolType = SchoolRegistry.getSchool(schoolRL);
+        Vector3f color = schoolType.getTargetingColor();
+        return ((int)(color.x * 255) << 16) | ((int)(color.y * 255) << 8) | (int)(color.z * 255);
     }
 
     private void renderClassSymbol(GuiGraphics guiGraphics) {
@@ -1039,10 +1020,10 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                 for (String schoolId : snapshot.magicSchools) {
                     String schoolName = extractSchoolName(schoolId);
                     schoolName = capitalizeFirst(schoolName);
-                    ChatFormatting color = getImprovedSchoolColor(extractSchoolName(schoolId));
+                    int color = getImprovedSchoolColor(ResourceLocation.parse(schoolId));
 
                     renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
-                    guiGraphics.drawString(font, Component.literal("• " + schoolName).withStyle(color), x, y, 0xFFFFFF, true);
+                    guiGraphics.drawString(font, Component.literal("• " + schoolName).withColor(color), x, y, 0xFFFFFF, true);
                     y += LINE_HEIGHT;
                     attributeRowCounter++;
                 }
@@ -1071,9 +1052,10 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                     String componentId = foundSpell.getComponentId();
                     Component displayNameComponent = Component.translatable(componentId);
                     String displayName = truncateText(displayNameComponent.getString(), ATTRIBUTES_WIDTH - 10);
+                    int color = getImprovedSchoolColor(foundSpell.getSchoolType().getId());
 
                     renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
-                    guiGraphics.drawString(font, Component.literal("• " + displayName).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, true);
+                    guiGraphics.drawString(font, Component.literal("• " + displayName).withColor(color), x, y, 0xFFFFFF, true);
                     y += LINE_HEIGHT;
                     attributeRowCounter++;
                 }
@@ -1104,7 +1086,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             for (SchoolType school : schools) {
                 String powerKey = school.getId().getPath() + "_spell_power";
                 String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                int color = getImprovedSchoolColor(school.getId());
                 y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, powerKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
             }
         } catch (Exception e) {
@@ -1120,7 +1102,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             for (SchoolType school : schools) {
                 String resistKey = school.getId().getPath() + "_magic_resist";
                 String schoolName = capitalizeFirst(school.getId().getPath());
-                ChatFormatting color = getImprovedSchoolColor(school.getId().getPath());
+                int color = getImprovedSchoolColor(school.getId());
                 y = renderAttributeWithTruncation(guiGraphics, schoolName, attributes, resistKey, 1.0, "%.0f%%", x, y, color, true, 1.0);
             }
         } catch (Exception e) {
@@ -1167,7 +1149,19 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
     private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
                                               String attributeKey, double defaultValue, String format,
+                                              int x, int y, int color) {
+        return renderAttributeWithTruncation(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, false, 0.0);
+    }
+
+    private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                              String attributeKey, double defaultValue, String format,
                                               int x, int y, ChatFormatting color, boolean isPercentage) {
+        return renderAttributeWithTruncation(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, isPercentage, 0.0);
+    }
+
+    private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                              String attributeKey, double defaultValue, String format,
+                                              int x, int y, int color, boolean isPercentage) {
         return renderAttributeWithTruncation(guiGraphics, name, attributes, attributeKey, defaultValue, format, x, y, color, isPercentage, 0.0);
     }
 
@@ -1200,6 +1194,41 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         int valueColor = getValueColor(value, isPercentage, attributeKey);
         Component valueComponent = Component.literal(displayValue).withStyle(color);
+        guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, valueColor, true);
+
+        attributeRowCounter++;
+        return y + LINE_HEIGHT;
+    }
+
+    private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,
+                                              String attributeKey, double defaultValue, String format,
+                                              int x, int y, int color, boolean isPercentage, double baseOffset) {
+        double value = attributes.contains(attributeKey) ? attributes.getDouble(attributeKey) : defaultValue;
+
+        if (isPercentage) {
+            if (baseOffset > 0) {
+                value = (value - baseOffset) * 100.0;
+            } else {
+                value = value * 100.0;
+            }
+        }
+
+        String formattedValue = String.format(format, value);
+
+        int totalAvailableWidth = ATTRIBUTES_WIDTH - 4;
+        int maxLabelWidth = LABEL_WIDTH;
+        int maxValueWidth = totalAvailableWidth - VALUE_X_OFFSET;
+
+        String displayName = truncateText(name, maxLabelWidth);
+        String displayValue = truncateText(formattedValue, maxValueWidth);
+
+        renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+
+        Component labelComponent = Component.literal(displayName + ":").withStyle(ChatFormatting.WHITE);
+        guiGraphics.drawString(font, labelComponent, x, y, LABEL_COLOR, true);
+
+        int valueColor = getValueColor(value, isPercentage, attributeKey);
+        Component valueComponent = Component.literal(displayValue).withColor(color);
         guiGraphics.drawString(font, valueComponent, x + VALUE_X_OFFSET, y, valueColor, true);
 
         attributeRowCounter++;

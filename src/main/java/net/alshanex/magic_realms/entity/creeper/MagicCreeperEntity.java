@@ -440,7 +440,9 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
         super.addAdditionalSaveData(compound);
         playerMagicData.getSyncedData().saveNBTData(compound, level().registryAccess());
         compound.putString("weakSchool", this.entityData.get(WEAK_SCHOOL));
-        compound.putString("savedSpellId", this.explosionSpell.getSpellId());
+        if(this.explosionSpell != null){
+            compound.putString("savedSpellId", this.explosionSpell.getSpellId());
+        }
     }
 
     @Override

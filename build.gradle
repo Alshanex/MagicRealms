@@ -163,7 +163,7 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
     //ISS
-    implementation "io.redspace:irons_spellbooks:${irons_spells_version}"
+    implementation "io.redspace:irons_spellbooks:${minecraft_version}-${irons_spells_version}"
     compileOnly("curse.maven:irons-patreon-library-1492763:7830106")
     runtimeOnly("curse.maven:irons-patreon-library-1492763:7830106")
 

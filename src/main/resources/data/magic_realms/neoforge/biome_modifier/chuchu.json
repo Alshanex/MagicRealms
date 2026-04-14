@@ -1,8 +1,8 @@
 {
   "type": "neoforge:add_spawns",
-  "biomes": "#magic_realms:magic_slime_spawns_in",
+  "biomes": "#magic_realms:chuchu_spawns_in",
   "spawners": {
-    "type": "magic_realms:magic_slime",
+    "type": "magic_realms:chuchu",
     "maxCount": 1,
     "minCount": 1,
     "weight": 2

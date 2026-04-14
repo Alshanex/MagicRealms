@@ -1,8 +1,8 @@
 {
   "type": "neoforge:add_spawns",
-  "biomes": "#magic_realms:magic_creeper_spawns_in",
+  "biomes": "#magic_realms:fizzle_spawns_in",
   "spawners": {
-    "type": "magic_realms:magic_creeper",
+    "type": "magic_realms:fizzle",
     "maxCount": 2,
     "minCount": 2,
     "weight": 10

@@ -9,12 +9,12 @@ import net.minecraft.world.level.storage.loot.LootTable;
 public class ModLootTables {
     public static final ResourceKey<LootTable> MAGIC_SLIME_LOOT = ResourceKey.create(
             Registries.LOOT_TABLE,
-            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "entities/magic_slime")
+            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "entities/chuchu")
     );
 
     public static final ResourceKey<LootTable> MAGIC_CREEPER_LOOT = ResourceKey.create(
             Registries.LOOT_TABLE,
-            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "entities/magic_creeper")
+            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "entities/fizzle")
     );
 
     public static final ResourceKey<LootTable> ENDERMAGE_LOOT = ResourceKey.create(

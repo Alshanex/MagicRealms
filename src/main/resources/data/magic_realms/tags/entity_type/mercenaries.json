@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "magic_realms:human_entity",
+    "magic_realms:mercenary",
     "#magic_realms:exclusive_mercenaries"
   ]
 }

@@ -30,16 +30,16 @@ public class MREntityRegistry {
     }
 
     public static final DeferredHolder<EntityType<?>, EntityType<RandomHumanEntity>> HUMAN =
-            ENTITIES.register("human_entity", () -> EntityType.Builder.<RandomHumanEntity>of(RandomHumanEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("mercenary", () -> EntityType.Builder.<RandomHumanEntity>of(RandomHumanEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "human_entity").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HostileRandomHumanEntity>> HOSTILE_HUMAN =
-            ENTITIES.register("hostile_human_entity", () -> EntityType.Builder.<HostileRandomHumanEntity>of(HostileRandomHumanEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("bandit", () -> EntityType.Builder.<HostileRandomHumanEntity>of(HostileRandomHumanEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "hostile_human_entity").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "bandit").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<TavernKeeperEntity>> TAVERNKEEP =
             ENTITIES.register("tavernkeep", () -> EntityType.Builder.<TavernKeeperEntity>of(TavernKeeperEntity::new, MobCategory.MONSTER)
@@ -48,40 +48,40 @@ public class MREntityRegistry {
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<AlshanexEntity>> ALSHANEX =
-            ENTITIES.register("alshanex_entity", () -> EntityType.Builder.<AlshanexEntity>of(AlshanexEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("alshanex_mercenary", () -> EntityType.Builder.<AlshanexEntity>of(AlshanexEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "alshanex_entity").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "alshanex_mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<AlianaEntity>> ALIANA =
-            ENTITIES.register("aliana_entity", () -> EntityType.Builder.<AlianaEntity>of(AlianaEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("aliana_mercenary", () -> EntityType.Builder.<AlianaEntity>of(AlianaEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "aliana_entity").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "aliana_mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<CatasEntity>> CATAS =
-            ENTITIES.register("catas_entity", () -> EntityType.Builder.<CatasEntity>of(CatasEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("catas_mercenary", () -> EntityType.Builder.<CatasEntity>of(CatasEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_entity").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<AmadeusEntity>> AMADEUS =
-            ENTITIES.register("amadeus_entity", () -> EntityType.Builder.<AmadeusEntity>of(AmadeusEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("amadeus_mercenary", () -> EntityType.Builder.<AmadeusEntity>of(AmadeusEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "amadeus_entity").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "amadeus_mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MagicSlimeEntity>> MAGIC_SLIME =
-            ENTITIES.register("magic_slime", () -> EntityType.Builder.<MagicSlimeEntity>of(MagicSlimeEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("chuchu", () -> EntityType.Builder.<MagicSlimeEntity>of(MagicSlimeEntity::new, MobCategory.MONSTER)
                     .sized(0.52F, 0.52F)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "magic_slime").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "chuchu").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<SummonedMagicSlimeEntity>> SUMMONED_MAGIC_SLIME =
-            ENTITIES.register("summoned_magic_slime", () -> EntityType.Builder.<SummonedMagicSlimeEntity>of(SummonedMagicSlimeEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("summoned_chuchu", () -> EntityType.Builder.<SummonedMagicSlimeEntity>of(SummonedMagicSlimeEntity::new, MobCategory.MONSTER)
                     .sized(0.52F, 0.52F)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "summoned_magic_slime").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "summoned_chuchu").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<SeatEntity>> SEAT =
             ENTITIES.register("seat", () -> EntityType.Builder.<SeatEntity>of(SeatEntity::new, MobCategory.MISC)
@@ -91,10 +91,10 @@ public class MREntityRegistry {
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "seat").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MagicCreeperEntity>> MAGIC_CREEPER =
-            ENTITIES.register("magic_creeper", () -> EntityType.Builder.<MagicCreeperEntity>of(MagicCreeperEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("fizzle", () -> EntityType.Builder.<MagicCreeperEntity>of(MagicCreeperEntity::new, MobCategory.MONSTER)
                     .sized(0.6F, 1.7F)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "magic_creeper").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "fizzle").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<TimEntity>> TIM =
             ENTITIES.register("tim", () -> EntityType.Builder.<TimEntity>of(TimEntity::new, MobCategory.MONSTER)
@@ -103,8 +103,8 @@ public class MREntityRegistry {
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tim").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<WizardEndermanEntity>> WIZARD_ENDERMAN =
-            ENTITIES.register("wizard_enderman", () -> EntityType.Builder.of(WizardEndermanEntity::new, MobCategory.MONSTER)
+            ENTITIES.register("endermage", () -> EntityType.Builder.of(WizardEndermanEntity::new, MobCategory.MONSTER)
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
-                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "wizard_enderman").toString()));
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "endermage").toString()));
 }

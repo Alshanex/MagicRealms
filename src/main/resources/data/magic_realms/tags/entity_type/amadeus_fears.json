@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "minecraft:enderman"
+    "minecraft:enderman",
+    "magic_realms:endermage"
   ]
 }

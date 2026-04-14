@@ -1,9 +1,9 @@
 {
   "replace": false,
   "values": [
-    "magic_realms:alshanex_entity",
-    "magic_realms:aliana_entity",
-    "magic_realms:catas_entity",
-    "magic_realms:amadeus_entity"
+    "magic_realms:alshanex_mercenary",
+    "magic_realms:aliana_mercenary",
+    "magic_realms:catas_mercenary",
+    "magic_realms:amadeus_mercenary"
   ]
 }

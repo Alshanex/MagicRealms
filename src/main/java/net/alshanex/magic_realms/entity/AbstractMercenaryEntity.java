@@ -411,7 +411,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.setPose(Pose.SITTING);
         this.getNavigation().stop();
         this.setTarget(null);
-        MagicRealms.LOGGER.debug("Entity {} sat in chair at {}", getEntityName(), chairPos);
     }
 
     public void unsitFromChair() {
@@ -484,14 +483,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     protected void initializeFearedEntity(RandomSource randomSource) {
         // Only do random fear initialization for non-exclusive mercenaries
         if (this.isExclusiveMercenary()) {
-            // Exclusive mercenaries should have their fear set manually in their constructor
-            // or through the setFearedEntityTag method
+            // Exclusive mercenaries should have their fear set manually in their constructor or through the setFearedEntityTag method
             return;
         }
 
         // Original random fear logic for regular mercenaries
         if (randomSource.nextFloat() >= 0.3f) {
-            MagicRealms.LOGGER.debug("Entity {} spawned without fear", getEntityName());
+            //MagicRealms.LOGGER.debug("Entity {} spawned without fear", getEntityName());
             return;
         }
 
@@ -515,8 +513,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (!fearableEntityTypes.isEmpty()) {
             EntityType<?> randomEntity = fearableEntityTypes.get(randomSource.nextInt(fearableEntityTypes.size()));
             setFearedEntity(randomEntity);
+            /*
             MagicRealms.LOGGER.debug("Entity {} now fears: {} (Category: {})",
                     getEntityName(), randomEntity.getDescriptionId(), randomEntity.getCategory().getName());
+
+             */
         }
     }
 
@@ -671,8 +672,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             updateMageGoalWithSpellbookAndEquipment(newSpellbookSpells);
             this.spellbookSpells = new ArrayList<>(newSpellbookSpells);
             this.lastEquippedSpellbook = currentOffhand.copy();
+            /*
             MagicRealms.LOGGER.debug("Mage {} updated spellbook spells. New count: {}",
                     getEntityName(), newSpellbookSpells.size());
+
+             */
         }
     }
 
@@ -702,9 +706,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                     .setDrinksPotions()
             );
-
+/*
             MagicRealms.LOGGER.debug("Mage {} updated spell roster: {} persisted + {} spellbook + {} equipment = {} total unique",
                     getEntityName(), persistedSpells.size(), spellbookSpells.size(), equipmentSpells.size(), uniqueSpells.size());
+
+ */
         } else {
             setMageGoal(persistedSpells);
         }
@@ -716,7 +722,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         EntityClass entityClass = getEntityClass();
-        MagicRealms.LOGGER.debug("Equipment changed for {} {}, refreshing spells", getEntityName(), entityClass.getName());
+        //MagicRealms.LOGGER.debug("Equipment changed for {} {}, refreshing spells", getEntityName(), entityClass.getName());
 
         switch (entityClass) {
             case MAGE -> updateMageGoalWithSpellbookAndEquipment(spellbookSpells);
@@ -881,14 +887,14 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     public void startUsingItem(InteractionHand pHand) {
         super.startUsingItem(pHand);
         if (pHand == InteractionHand.MAIN_HAND && this.getMainHandItem().getItem() instanceof BowItem) {
-            MagicRealms.LOGGER.debug("Archer {} started charging arrow", this.getEntityName());
+            //MagicRealms.LOGGER.debug("Archer {} started charging arrow", this.getEntityName());
         }
     }
 
     @Override
     public void stopUsingItem() {
         if (this.isChargingArrow()) {
-            MagicRealms.LOGGER.debug("Archer {} stopped charging arrow", this.getEntityName());
+            //MagicRealms.LOGGER.debug("Archer {} stopped charging arrow", this.getEntityName());
         }
         super.stopUsingItem();
     }
@@ -1023,7 +1029,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             int spawnLevel = killData.getCurrentLevel();
             LevelingStatsManager.applyLevelBasedAttributes(this, spawnLevel);
 
-            MagicRealms.LOGGER.info("Entity spawned at level {} (from KillTrackerData)", spawnLevel);
+            //MagicRealms.LOGGER.info("Entity spawned at level {} (from KillTrackerData)", spawnLevel);
             this.setInitialized(true);
 
             initializeClassSpells();
@@ -1060,7 +1066,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                 PacketDistributor.sendToPlayersTrackingEntity(this,
                         new SyncEntityLevelPacket(this.getId(), this.getUUID(),
                                 this.getData(MRDataAttachments.KILL_TRACKER).getCurrentLevel()));
-                MagicRealms.LOGGER.debug("Requested name sync from clients for entity {}", this.getUUID());
+                //MagicRealms.LOGGER.debug("Requested name sync from clients for entity {}", this.getUUID());
             }
         }
     }
@@ -1092,27 +1098,31 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     protected void initializeClassSpecifics(RandomSource randomSource) {
         EntityClass entityClass = getEntityClass();
-        MagicRealms.LOGGER.debug("Initializing class specifics for {} (Class: {})",
-                getEntityName(), entityClass.getName());
 
         switch (entityClass) {
             case MAGE -> {
                 List<SchoolType> schools = generateMagicSchools(randomSource);
                 setMagicSchools(schools);
+                /*
                 MagicRealms.LOGGER.debug("Mage {} assigned schools: [{}]",
                         getEntityName(),
                         schools.stream().map(s -> s.getId().toString()).collect(java.util.stream.Collectors.joining(", ")));
+
+                 */
             }
             case WARRIOR -> {
                 boolean hasShield = randomSource.nextFloat() < 0.25f;
                 setHasShield(hasShield);
-                MagicRealms.LOGGER.debug("Warrior {} has shield: {}", getEntityName(), hasShield);
+                //MagicRealms.LOGGER.debug("Warrior {} has shield: {}", getEntityName(), hasShield);
             }
             case ROGUE -> {
                 boolean isArcher = randomSource.nextFloat() < 0.25f;
                 setIsArcher(isArcher);
+                /*
                 MagicRealms.LOGGER.debug("Rogue {} is archer: {} (subclass: {})",
                         getEntityName(), isArcher, isArcher ? "Archer" : "Assassin");
+
+                 */
             }
         }
     }
@@ -1240,9 +1250,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             boolean isCasting = data.isCasting();
 
             if (wasCasting && !isCasting && lastCastingSpell != null) {
-                MagicRealms.LOGGER.debug("Entity {} completed casting spell: {} (School: {})",
-                        getEntityName(), lastCastingSpell.getSpellName(), lastCastingSpell.getSchoolType().getId());
-
                 MagicAttributeGainsHandler.handleSpellCast(this, lastCastingSpell.getSchoolType());
                 lastCastingSpell = null;
             }
@@ -1554,7 +1561,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                 updateSpellbookSpells();
             }
             refreshSpellsAfterEquipmentChange();
-            MagicRealms.LOGGER.debug("Entity {} refreshed spells on world load", getEntityName());
+            //MagicRealms.LOGGER.debug("Entity {} refreshed spells on world load", getEntityName());
         }
         super.onAddedToLevel();
     }
@@ -1730,9 +1737,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     private void reapplyGoalsWithPersistedSpells() {
-        MagicRealms.LOGGER.debug("Re-applying goals with {} persisted spells for entity {}",
-                persistedSpells.size(), getEntityName());
-
         clearAttackGoals();
 
         EntityClass entityClass = getEntityClass();
@@ -1751,9 +1755,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     private void reinitializeGoalsAfterLoad() {
         if (spellsGenerated && !persistedSpells.isEmpty()) {
-            MagicRealms.LOGGER.info("Reinitializing goals after world load for entity: {} with {} spells",
-                    getEntityName(), persistedSpells.size());
-
             clearAttackGoals();
 
             EntityClass entityClass = getEntityClass();
@@ -1834,7 +1835,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             if (needsNewAnimation) {
                 controller.forceAnimationReset();
                 controller.setAnimation(RawAnimation.begin().thenPlay("charge_arrow"));
-                MagicRealms.LOGGER.debug("Started charge_arrow animation for {}", getEntityName());
             }
             return PlayState.CONTINUE;
         }
@@ -2131,15 +2131,10 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     MagicRealms.LOGGER.warn("Failed to parse spell from NBT: {}", spellsTag.getString(i), e);
                 }
             }
-
-            MagicRealms.LOGGER.debug("Loaded {} spells for entity {}: [{}]",
-                    persistedSpells.size(),
-                    getEntityName(),
-                    persistedSpells.stream().map(AbstractSpell::getSpellName).collect(java.util.stream.Collectors.joining(", ")));
         }
 
         if (!goalsInitialized) {
-            MagicRealms.LOGGER.debug("Entity {} loaded from NBT, goals will be reinitialized", getEntityName());
+            //MagicRealms.LOGGER.debug("Entity {} loaded from NBT, goals will be reinitialized", getEntityName());
         }
 
         this.summonerUUID = OwnerHelper.deserializeOwner(compound);

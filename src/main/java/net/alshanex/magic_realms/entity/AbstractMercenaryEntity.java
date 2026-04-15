@@ -40,7 +40,6 @@ import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
 import net.alshanex.magic_realms.util.humans.stats.HumanStatsManager;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -1195,7 +1194,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         if(level().isClientSide() && this.isStunned()){
-            StunParticleEffect.spawnStunParticles(this, (ClientLevel) level());
+            StunParticleEffect.spawnStunParticles(this, level());
         }
 
         if (!level().isClientSide && !goalsInitialized && this.isInitialized()) {

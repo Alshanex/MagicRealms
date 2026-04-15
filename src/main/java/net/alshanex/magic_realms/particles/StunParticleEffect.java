@@ -4,10 +4,11 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 
 public class StunParticleEffect {
 
-    public static void spawnStunParticles(AbstractMercenaryEntity entity, ClientLevel level) {
+    public static void spawnStunParticles(AbstractMercenaryEntity entity, Level level) {
         if (entity == null || !entity.isStunned()) {
             return;
         }

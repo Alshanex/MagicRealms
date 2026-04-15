@@ -9,6 +9,7 @@ import io.redspace.ironsspellbooks.api.spells.*;
 import io.redspace.ironsspellbooks.capabilities.magic.SyncedSpellData;
 import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
+import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRSoundRegistry;
 import net.alshanex.magic_realms.registry.ModLootTables;
@@ -20,10 +21,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.TickTask;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.AreaEffectCloud;
@@ -61,22 +59,22 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
         this.initializeSchool();
     }
 
-    public MagicCreeperEntity(Level level, SchoolType parentSchool) {
-        super(MREntityRegistry.MAGIC_CREEPER.get(), level);
-        playerMagicData.setSyncedData(new SyncedSpellData(this));
-        if (parentSchool != null) {
-            this.setWeakSchool(parentSchool);
-        } else {
-            this.initializeSchool();
-        }
-    }
-
     protected void initializeSchool() {
         if (this.getWeakSchool() == null) {
-            List<SchoolType> availableSchools = SchoolRegistry.REGISTRY.stream().toList();
-            if (!availableSchools.isEmpty()) {
-                int index = random.nextInt(availableSchools.size());
-                this.setWeakSchool(availableSchools.get(index));
+            List<AbstractSpell> allTaggedSpells = new ArrayList<>();
+
+            for (var spell : SpellRegistry.getEnabledSpells()) {
+                SpellRegistry.REGISTRY.getHolder(spell.getSpellResource()).ifPresent(a -> {
+                    if (a.is(ModTags.CREEPER_SPELLS)) {
+                        allTaggedSpells.add(spell);
+                    }
+                });
+            }
+
+            if (!allTaggedSpells.isEmpty()) {
+                AbstractSpell chosenSpell = allTaggedSpells.get(random.nextInt(allTaggedSpells.size()));
+                this.explosionSpell = chosenSpell;
+                this.setWeakSchool(chosenSpell.getSchoolType());
             }
         }
     }
@@ -102,7 +100,6 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
             if (weakSchool.getId().equals(SchoolRegistry.ICE.get().getId())) {
                 setTicksFrozen(0);
             }
-            this.explosionSpell = getSpellForExplosion();
             updateFuseTime();
             equipWizardHat();
         } else {
@@ -134,33 +131,6 @@ public class MagicCreeperEntity extends Creeper implements IMagicEntity {
             int castTime = this.explosionSpell.getEffectiveCastTime(spellLevel, this);
             this.maxSwell = castTime + 10;
         }
-    }
-
-    private AbstractSpell getSpellForExplosion() {
-        var list = new ArrayList<AbstractSpell>();
-
-        for (var spell : SpellRegistry.getEnabledSpells()) {
-            SpellRegistry.REGISTRY.getHolder(spell.getSpellResource()).ifPresent(a -> {
-                if (a.is(ModTags.CREEPER_SPELLS)) {
-                    list.add(spell);
-                }
-            });
-        }
-
-        if (!list.isEmpty()) {
-            List<AbstractSpell> finalList = list.stream()
-                    .filter(spell -> spell.getSchoolType().getId()
-                            .equals(getWeakSchool().getId()))
-                    .toList();
-
-            if (finalList.isEmpty()) {
-                return null;
-            }
-
-            return finalList.get(this.random.nextInt(finalList.size()));
-        }
-
-        return null;
     }
 
     @Override

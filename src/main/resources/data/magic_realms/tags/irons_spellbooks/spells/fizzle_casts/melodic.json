@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {"id": "tunes_n_tomes:clamor_note", "required": false},
+    {"id": "tunes_n_tomes:crescendo", "required": false},
+    {"id": "tunes_n_tomes:grand_finale", "required": false},
+    {"id": "tunes_n_tomes:slumber_note", "required": false}
+  ]
+}

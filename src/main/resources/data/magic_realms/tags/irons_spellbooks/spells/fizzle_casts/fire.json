@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:fireball",
+    "irons_spellbooks:heat_surge",
+    "irons_spellbooks:magma_bomb",
+    "irons_spellbooks:raise_hell",
+    "irons_spellbooks:scorch",
+    {"id": "cataclysm_spellbooks:conjure_ignited_reinforcement", "required": false},
+    {"id": "cataclysm_spellbooks:hellish_blade", "required": false},
+    {"id": "cataclysm_spellbooks:incineration", "required": false},
+    {"id": "cataclysm_spellbooks:tectonic_tremble", "required": false}
+  ]
+}

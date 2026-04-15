@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:chain_lightning",
+    "irons_spellbooks:lightning_bolt",
+    "irons_spellbooks:lightning_lance",
+    "irons_spellbooks:shockwave"
+  ]
+}

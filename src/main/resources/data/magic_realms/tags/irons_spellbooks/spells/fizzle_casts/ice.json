@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:frostwave",
+    "irons_spellbooks:ice_block",
+    "irons_spellbooks:ice_spikes",
+    "irons_spellbooks:snowball",
+    "irons_spellbooks:summon_polar_bear",
+    {"id": "cataclysm_spellbooks:conjure_thralls", "required": false},
+    {"id": "cataclysm_spellbooks:malevolent_battlefield", "required": false},
+    {"id": "discerning_the_eldritch:glacial_edge", "required": false}
+  ]
+}

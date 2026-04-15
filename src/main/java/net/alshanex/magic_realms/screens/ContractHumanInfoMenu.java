@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.screens;
 
 import com.mojang.datafixers.util.Pair;
 import io.redspace.ironsspellbooks.item.SpellBook;
+import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
@@ -108,15 +109,9 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
         addPlayerHotbar(playerInventory);
     }
 
-    // Simplified tab management - no inventory tab logic
-    public Tab getCurrentTab() {
-        return currentTab;
-    }
-
     public void switchToTabServerSide(Tab newTab) {
         if (this.currentTab == newTab) return;
         this.currentTab = newTab;
-        MagicRealms.LOGGER.debug("Server-side switched to tab: {}", newTab);
     }
 
     private AbstractMercenaryEntity findEntityByUUID(Level level, UUID entityUUID) {
@@ -277,7 +272,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             }
         } else if (item instanceof SwordItem || item instanceof AxeItem ||
                 item instanceof BowItem || item instanceof CrossbowItem ||
-                item instanceof TridentItem) {
+                item instanceof TridentItem || item instanceof StaffItem) {
             if (this.slots.get(4).mayPlace(stackInSlot) && !this.slots.get(4).hasItem()) {
                 this.slots.get(4).set(stackInSlot.split(1));
                 return true;
@@ -415,10 +410,14 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
             if (stack.isEmpty()) return true;
 
             Item item = stack.getItem();
+            boolean isMage = (snapshot != null && snapshot.entityClass.name().equals("MAGE"));
+            if(isMage){
+                return item instanceof StaffItem;
+            }
+
             boolean isWeapon = item instanceof SwordItem || item instanceof AxeItem || item instanceof TridentItem;
             String itemName = item.toString().toLowerCase();
             boolean isModdedWeapon = itemName.contains("sword") || itemName.contains("axe") ||
-                    itemName.contains("bow") || itemName.contains("staff") ||
                     itemName.contains("blade") || itemName.contains("dagger");
 
             if (snapshot != null && snapshot.entityClass.name().equals("ROGUE") && snapshot.isArcher) {

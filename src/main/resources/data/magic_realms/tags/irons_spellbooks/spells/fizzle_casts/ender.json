@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:black_hole",
+    "irons_spellbooks:summon_swords",
+    {"id": "cataclysm_spellbooks:gravity_storm", "required": false},
+    {"id": "cataclysm_spellbooks:void_bulwark", "required": false}
+  ]
+}

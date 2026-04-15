@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:blight",
+    "irons_spellbooks:earthquake",
+    "irons_spellbooks:firefly_swarm",
+    "irons_spellbooks:poison_splash",
+    "irons_spellbooks:root"
+  ]
+}

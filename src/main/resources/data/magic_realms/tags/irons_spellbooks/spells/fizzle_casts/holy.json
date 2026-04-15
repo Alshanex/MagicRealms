@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:divine_smite",
+    "irons_spellbooks:sunbeam",
+    "irons_spellbooks:wisp"
+  ]
+}

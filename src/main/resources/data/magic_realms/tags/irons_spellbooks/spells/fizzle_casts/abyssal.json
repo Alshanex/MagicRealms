@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    {"id": "cataclysm_spellbooks:depth_charge", "required": false},
+    {"id": "cataclysm_spellbooks:dimensional_rift", "required": false},
+    {"id": "cataclysm_spellbooks:void_beam", "required": false}
+  ]
+}

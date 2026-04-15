@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:acupuncture",
+    "irons_spellbooks:raise_dead",
+    "irons_spellbooks:wither_skull",
+    {"id": "ess_requiem:boiling_blood", "required": false},
+    {"id": "ess_requiem:necrotic_burst", "required": false},
+    {"id": "ess_requiem:summon_skulls", "required": false}
+  ]
+}

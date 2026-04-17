@@ -37,6 +37,7 @@ import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.goals.ChargeArrowAttackGoal;
 import net.alshanex.magic_realms.util.humans.*;
 import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
+import net.alshanex.magic_realms.util.humans.goals.battle_goals.*;
 import net.alshanex.magic_realms.util.humans.stats.HumanStatsManager;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
 import net.minecraft.ChatFormatting;
@@ -150,6 +151,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     protected LivingEntity cachedSummoner;
     protected UUID summonerUUID;
 
+    private BattlefieldAnalysis battlefield;
+
     // Animation
     RawAnimation animationToPlay = null;
     private final AnimationController<AbstractMercenaryEntity> meleeController = new AnimationController<>(this, "keeper_animations", 0, this::predicate);
@@ -223,6 +226,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     // Getters and setters
+    public BattlefieldAnalysis getBattlefield() {
+        if (battlefield == null) battlefield = new BattlefieldAnalysis(this);
+        return battlefield;
+    }
+
     public void setGender(Gender gender) {
         this.entityData.set(GENDER, gender.ordinal());
     }
@@ -1172,6 +1180,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.targetSelector.addGoal(5, new HumanGoals.HumanHurtByTargetGoal(this));
         this.targetSelector.addGoal(6, new HumanGoals.AlliedHumanDefenseGoal(this));
         this.targetSelector.addGoal(1, new HumanGoals.NoFearTargetGoal(this));
+        this.targetSelector.addGoal(7, new TacticalTargetSelectorGoal(this, getBattlefield()));
     }
 
     // Core tick method
@@ -1596,7 +1605,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             attackSpells.addAll(finalSpells);
         }
 
-        this.goalSelector.addGoal(2, new HumanGoals.HumanWizardAttackGoal(this, 1.25f, 25, 50)
+        this.goalSelector.addGoal(2, new MageCombatGoal(this, getBattlefield())
                 .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                 .setDrinksPotions()
         );
@@ -1606,7 +1615,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.goalSelector.removeAllGoals((goal) -> goal instanceof HumanGoals.HumanWizardAttackGoal);
         this.goalSelector.removeAllGoals((goal) -> goal instanceof ChargeArrowAttackGoal);
 
-        this.goalSelector.addGoal(2, new ChargeArrowAttackGoal<AbstractMercenaryEntity>(this, 1.0D, 20, 15.0F));
+        this.goalSelector.addGoal(2,
+                new SniperArcherCombatGoal<AbstractMercenaryEntity>(this, getBattlefield(), 1.0D, 20));
 
         List<AbstractSpell> finalSpells = new ArrayList<>(spells);
         List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
@@ -1663,16 +1673,16 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             attackSpells.addAll(finalSpells);
         }
 
-        this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.5f, 40, 60)
+        this.goalSelector.addGoal(3, new SkirmisherCombatGoal(this, getBattlefield(), true)
                 .setMoveset(List.of(
                         new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
                         new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
                         new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
                         new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
                 ))
-                .setComboChance(.4f)
-                .setMeleeAttackInverval(10, 20)
-                .setMeleeMovespeedModifier(1.8f)
+                .setComboChance(.7f)                    // highest combo chance of any class
+                .setMeleeAttackInverval(8, 18)          // fastest cadence
+                .setMeleeMovespeedModifier(2.0f)        // assassins are the fastest
                 .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                 .setDrinksPotions()
         );
@@ -1705,7 +1715,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         if (hasShield()) {
-            this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1f, 70, 85)
+            List<AbstractSpell> tankMovement = ShieldTankCombatGoal.filterMovementForTank(movementSpells);
+
+            this.goalSelector.addGoal(3, new ShieldTankCombatGoal(this, getBattlefield())
                     .setMoveset(List.of(
                             new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
                             new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
@@ -1715,20 +1727,21 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     .setComboChance(.4f)
                     .setMeleeAttackInverval(20, 40)
                     .setMeleeMovespeedModifier(1.3f)
-                    .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
+                    .setSpells(attackSpells, defenseSpells, tankMovement, supportSpells)
                     .setDrinksPotions()
             );
         } else {
-            this.goalSelector.addGoal(3, new GenericAnimatedWarlockAttackGoal<>(this, 1.25f, 50, 75)
+            // No-shield warrior — skirmisher.
+            this.goalSelector.addGoal(3, new SkirmisherCombatGoal(this, getBattlefield(), false)
                     .setMoveset(List.of(
                             new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
                             new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
                             new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
                             new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
                     ))
-                    .setComboChance(.4f)
-                    .setMeleeAttackInverval(10, 30)
-                    .setMeleeMovespeedModifier(1.5f)
+                    .setComboChance(.6f)                 // was .4 — skirmishers combo harder
+                    .setMeleeAttackInverval(10, 25)      // tighter cadence than current
+                    .setMeleeMovespeedModifier(1.6f)     // faster than current 1.5f
                     .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                     .setDrinksPotions()
             );
@@ -1778,7 +1791,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.goalSelector.removeAllGoals(goal ->
                 goal instanceof HumanGoals.HumanWizardAttackGoal ||
                         goal instanceof RangedBowAttackGoal ||
-                        goal instanceof GenericAnimatedWarlockAttackGoal
+                        goal instanceof ChargeArrowAttackGoal ||
+                        goal instanceof GenericAnimatedWarlockAttackGoal ||
+                        goal instanceof SniperArcherCombatGoal
         );
     }
 

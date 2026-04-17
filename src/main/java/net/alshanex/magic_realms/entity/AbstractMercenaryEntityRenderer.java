@@ -6,9 +6,6 @@ import com.mojang.math.Axis;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobModel;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobRenderer;
-import mod.azure.azurelib.common.render.armor.AzArmorRenderer;
-import mod.azure.azurelib.common.render.armor.AzArmorRendererRegistry;
-import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -16,16 +13,12 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
-import net.minecraft.world.item.component.DyedItemColor;
 import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -117,15 +110,13 @@ public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCasti
         ItemStack legs   = animatable.getItemBySlot(EquipmentSlot.LEGS);
         ItemStack boots  = animatable.getItemBySlot(EquipmentSlot.FEET);
 
-        if (!hasAzRenderer(helmet) && !hasAzRenderer(chest)
-                && !hasAzRenderer(legs) && !hasAzRenderer(boots)) {
+        if (!AzureLibArmorCompat.hasRenderer(helmet) && !AzureLibArmorCompat.hasRenderer(chest)
+                && !AzureLibArmorCompat.hasRenderer(legs)  && !AzureLibArmorCompat.hasRenderer(boots)) {
             return;
         }
 
         poseStack.pushPose();
         try {
-            // Replicate the relevant transforms from GeoEntityRenderer.actuallyRender so our
-            // coordinate frame matches the one the geo bones were rendered in.
             float lerpBodyRot = Mth.rotLerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
             float ageInTicks = animatable.tickCount + partialTick;
             float nativeScale = animatable.getScale();
@@ -134,48 +125,19 @@ public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCasti
             applyRotations(animatable, poseStack, ageInTicks, lerpBodyRot, partialTick, nativeScale);
             poseStack.translate(0, 0.01f, 0);
 
-            // Pose base models from geo bones (rotations only).
             poseBaseFromGeo(OUTER_ARMOR_MODEL, model);
             poseBaseFromGeo(INNER_ARMOR_MODEL, model);
 
-            // Armor rendering assumes Y-down convention — matches vanilla LivingEntityRenderer.
             poseStack.scale(-1, -1, 1);
             poseStack.translate(0.0f, -1.501f, 0.0f);
 
-            tryRenderAzArmor(poseStack, animatable, EquipmentSlot.HEAD,  helmet, packedLight);
-            tryRenderAzArmor(poseStack, animatable, EquipmentSlot.CHEST, chest,  packedLight);
-            tryRenderAzArmor(poseStack, animatable, EquipmentSlot.LEGS,  legs,   packedLight);
-            tryRenderAzArmor(poseStack, animatable, EquipmentSlot.FEET,  boots,  packedLight);
+            AzureLibArmorCompat.tryRender(poseStack, animatable, EquipmentSlot.HEAD,  helmet, INNER_ARMOR_MODEL, OUTER_ARMOR_MODEL, packedLight);
+            AzureLibArmorCompat.tryRender(poseStack, animatable, EquipmentSlot.CHEST, chest,  INNER_ARMOR_MODEL, OUTER_ARMOR_MODEL, packedLight);
+            AzureLibArmorCompat.tryRender(poseStack, animatable, EquipmentSlot.LEGS,  legs,   INNER_ARMOR_MODEL, OUTER_ARMOR_MODEL, packedLight);
+            AzureLibArmorCompat.tryRender(poseStack, animatable, EquipmentSlot.FEET,  boots,  INNER_ARMOR_MODEL, OUTER_ARMOR_MODEL, packedLight);
         } finally {
             poseStack.popPose();
         }
-    }
-
-    private static void tryRenderAzArmor(PoseStack poseStack, AbstractSpellCastingMob animatable,
-                                         EquipmentSlot slot, ItemStack stack, int packedLight) {
-        if (!hasAzRenderer(stack)) return;
-        AzArmorRenderer renderer = AzArmorRendererRegistry.getOrNull(stack);
-        if (renderer == null) return;
-
-        HumanoidModel<?> baseModel = (slot == EquipmentSlot.LEGS) ? INNER_ARMOR_MODEL : OUTER_ARMOR_MODEL;
-        int color = stack.is(ItemTags.DYEABLE) ? DyedItemColor.getOrDefault(stack, -6265536) : -1;
-
-        poseStack.pushPose();
-        try {
-            renderer.prepForRender(animatable, stack, slot, baseModel);
-            renderer.rendererPipeline().armorModel().renderToBuffer(
-                    poseStack, null, packedLight, OverlayTexture.NO_OVERLAY, color);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("AzArmor render failed for " + slot + ": " + e);
-        } finally {
-            poseStack.popPose();
-        }
-    }
-
-    private static boolean hasAzRenderer(ItemStack stack) {
-        return !stack.isEmpty()
-                && stack.getItem() instanceof ArmorItem
-                && AzArmorRendererRegistry.getOrNull(stack) != null;
     }
 
     private static void poseBaseFromGeo(HumanoidModel<?> base, BakedGeoModel model) {

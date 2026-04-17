@@ -1,10 +1,8 @@
 package net.alshanex.magic_realms.entity;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.util.DefaultBipedBoneIdents;
-import mod.azure.azurelib.common.render.armor.AzArmorRendererRegistry;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -103,8 +101,7 @@ public class CustomArmorGeoLayer extends ItemArmorGeoLayer<AbstractSpellCastingM
                               float partialTick, int packedLight, int packedOverlay) {
         if (AZURELIB_ARMOR_LOADED) {
             ItemStack armorStack = getArmorItemForBone(bone, animatable);
-            if (armorStack != null && !armorStack.isEmpty()
-                    && AzArmorRendererRegistry.getOrNull(armorStack) != null) {
+            if (armorStack != null && AzureLibArmorCompat.hasRenderer(armorStack)) {
                 return; // handled by the renderer, not here
             }
         }

@@ -190,6 +190,14 @@ dependencies {
         implementation "dev.shadowsoffire:ApothicAttributes:${minecraft_version}-${attributesLibVersion}"
     }
 
+    // Armor testing
+    runtimeOnly("curse.maven:hazen-n-stuff-1231627:7938453")
+    runtimeOnly("curse.maven:aces-spell-utils-1299492:7787705")
+    //runtimeOnly("curse.maven:lendercataclysm-551586:7908490")
+    //runtimeOnly("curse.maven:lionfish-api-1001614:7923465")
+    compileOnly "curse.maven:azurelib-817423:7935743"
+    runtimeOnly "curse.maven:azurelib-817423:7935743"
+
     // Tavern compats
     //runtimeOnly("curse.maven:farmers-delight-398521:7801529")
     //runtimeOnly("curse.maven:my-nethers-delight-1003673:6938550")

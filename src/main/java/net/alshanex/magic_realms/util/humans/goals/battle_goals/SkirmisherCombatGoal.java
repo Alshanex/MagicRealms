@@ -1,10 +1,15 @@
 package net.alshanex.magic_realms.util.humans.goals.battle_goals;
 
+import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAttackGoal;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Combat goal for warriors without shields and for rogue assassins.
@@ -55,6 +60,8 @@ public class SkirmisherCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstr
     private int disengagePathTimer = 0;
     private int lastMobHurtTick = -1;
 
+    private final List<AbstractSpell> canonicalAttackSpells = new ArrayList<>();
+
     public SkirmisherCombatGoal(AbstractMercenaryEntity merc, BattlefieldAnalysis battlefield, boolean isAssassin) {
         super(merc, isAssassin ? 1.6f : 1.35f, 50, 75);
         this.merc = merc;
@@ -64,6 +71,77 @@ public class SkirmisherCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstr
         // Skirmishers are melee-first classes. Like the tank, set a high meleeBias so the parent's "melee vs spell" coinflip favors swinging.
         // Slightly lower than the tank because skirmishers use movement spells (approach / retreat) more often as part of the hit-and-run pattern.
         this.setMeleeBias(0.75f, 0.90f);
+    }
+
+    @Override
+    public GenericAnimatedWarlockAttackGoal<AbstractMercenaryEntity> setSpells(
+            List<AbstractSpell> attackSpells,
+            List<AbstractSpell> defenseSpells,
+            List<AbstractSpell> movementSpells,
+            List<AbstractSpell> supportSpells) {
+        // Delegate to parent so its internal lists are populated, then capture the canonical attack list for later range-based filtering.
+        super.setSpells(attackSpells, defenseSpells, movementSpells, supportSpells);
+        canonicalAttackSpells.clear();
+        canonicalAttackSpells.addAll(attackSpells);
+        return this;
+    }
+
+    /**
+     * Replace the parent's {@code attackSpells} field with a subset whose range tags match the current distance to the target.
+     * Called at the top of every tick before {@code super.tick()}.
+     *
+     * <p>Classification by distance-to-target:
+     * <ul>
+     *   <li>≤ 3 blocks: CLOSE_RANGE only (we're in melee range).</li>
+     *   <li>3–6 blocks: MID_RANGE or CLOSE_RANGE.</li>
+     *   <li>&gt; 6 blocks: MID_RANGE or LONG_RANGE (no close).</li>
+     * </ul>
+     */
+    private void restrictAttackSpellsByRange(double distSq) {
+        if (canonicalAttackSpells.isEmpty()) return;
+        double dist = Math.sqrt(distSq);
+
+        List<AbstractSpell> filtered = new ArrayList<>();
+        if (dist <= 3.0) {
+            // Inside melee range — close-range spells are fine.
+            for (AbstractSpell s : canonicalAttackSpells) {
+                if (ModTags.isSpellInTag(s, ModTags.CLOSE_RANGE_ATTACKS)) filtered.add(s);
+            }
+            // Also allow mid-range here (they work close too) to ensure a non-empty pool.
+            for (AbstractSpell s : canonicalAttackSpells) {
+                if (ModTags.isSpellInTag(s, ModTags.MID_RANGE_ATTACKS)) filtered.add(s);
+            }
+        } else if (dist <= 6.0) {
+            // Medium distance — mid-range primary, close-range fallback.
+            for (AbstractSpell s : canonicalAttackSpells) {
+                if (ModTags.isSpellInTag(s, ModTags.MID_RANGE_ATTACKS)) filtered.add(s);
+            }
+            for (AbstractSpell s : canonicalAttackSpells) {
+                if (ModTags.isSpellInTag(s, ModTags.CLOSE_RANGE_ATTACKS)) filtered.add(s);
+            }
+        } else {
+            // Far — long and mid range only. Explicitly exclude close-range.
+            for (AbstractSpell s : canonicalAttackSpells) {
+                if (ModTags.isSpellInTag(s, ModTags.LONG_RANGE_ATTACKS)
+                        || ModTags.isSpellInTag(s, ModTags.MID_RANGE_ATTACKS)) {
+                    filtered.add(s);
+                }
+            }
+        }
+
+        // Fallback: if filtering produced nothing, use the full list so the weight system doesn't starve.
+        // Better to cast a suboptimal spell than to skip the cast window entirely.
+        if (filtered.isEmpty()) {
+            filtered.addAll(canonicalAttackSpells);
+        }
+
+        attackSpells.clear();
+        attackSpells.addAll(filtered);
+    }
+
+    private void restoreCanonicalAttackSpells() {
+        attackSpells.clear();
+        attackSpells.addAll(canonicalAttackSpells);
     }
 
     @Override
@@ -112,13 +190,19 @@ public class SkirmisherCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstr
         // Execute state-specific behavior.
         switch (state) {
             case APPROACH, COMBO -> {
-                // Let the parent handle melee + spell combat normally.
-                super.tick();
+                // Swap attackSpells for a distance-filtered subset so the parent doesn't pick close-range spells at long distance (where they do nothing).
+                // Restored after the parent runs.
+                restrictAttackSpellsByRange(distSq);
+                try {
+                    // Let the parent handle melee + spell combat normally.
+                    super.tick();
+                } finally {
+                    restoreCanonicalAttackSpells();
+                }
             }
             case DISENGAGE -> {
                 // Full takeover: path away, no super.tick() (which would re-engage).
                 driveDisengage(currentTarget);
-                // Still let the "target death" safety bit through — if the target died mid-disengage the state machine will detect and reset on next canUse() cycle.
             }
         }
     }
@@ -137,8 +221,7 @@ public class SkirmisherCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstr
                 }
             }
             case DISENGAGE -> {
-                // Require BOTH a minimum time window AND reaching safe distance (or a timeout). This prevents the previous bug where the mob
-                // would immediately re-approach because it happened to be momentarily far from the target.
+                // Require BOTH a minimum time window AND reaching safe distance (or a timeout).
                 boolean minTimeMet = stateTicks >= DISENGAGE_MIN_TICKS;
                 boolean safeDistReached = distSq >= DISENGAGE_SAFE_DIST * DISENGAGE_SAFE_DIST;
                 boolean timeout = stateTicks >= DISENGAGE_MAX_TICKS;
@@ -170,7 +253,7 @@ public class SkirmisherCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstr
         }
         Vec3 directAway = merc.position().add(dir.normalize().scale(FLEE_PATH_DISTANCE));
 
-        // Prefer the direct-away vector. Only fall back to DefaultRandomPos if the direct path is
+        // Prefer the direct-away vector. Only fall back to DefaultRandomPos (which may pick tangential positions) if the direct path is
         // completely unreachable — checked by whether navigation can plan a path to it. This is a minor extra pathfind call but happens only on
         // disengage transitions, not every tick.
         this.disengagePos = directAway;

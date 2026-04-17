@@ -179,19 +179,26 @@ public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCasti
     }
 
     private static void poseBaseFromGeo(HumanoidModel<?> base, BakedGeoModel model) {
-        copyRot(model, "head",      base.head);
-        copyRot(model, "torso",     base.body);
-        copyRot(model, "left_arm",  base.leftArm);
-        copyRot(model, "right_arm", base.rightArm);
-        copyRot(model, "left_leg",  base.leftLeg);
-        copyRot(model, "right_leg", base.rightLeg);
+        // Vanilla HumanoidModel default ModelPart positions (from PlayerModel / HumanoidArmorModel bake).
+        copyBone(model, "head", base.head,0f, 0f,0f);
+        copyBone(model, "torso", base.body,0f, 0f,0f);
+        copyBone(model, "left_arm", base.leftArm,5f, 2f,0f);
+        copyBone(model, "right_arm", base.rightArm,-5f, 2f,0f);
+        copyBone(model, "left_leg", base.leftLeg,1.9f, 12f,0f);
+        copyBone(model, "right_leg", base.rightLeg,-1.9f, 12f,0f);
     }
 
-    private static void copyRot(BakedGeoModel model, String boneName, ModelPart part) {
+    private static void copyBone(BakedGeoModel model, String boneName, ModelPart part,
+                                 float defaultX, float defaultY, float defaultZ) {
         model.getBone(boneName).ifPresent(b -> {
             part.xRot = -b.getRotX();
             part.yRot = -b.getRotY();
             part.zRot =  b.getRotZ();
+            // Apply the animation's position delta on top of the vanilla default pivot.
+            // Y sign is flipped because the entity's coordinate convention and the base HumanoidModel's convention are mirrored on Y.
+            part.x = defaultX + b.getPosX();
+            part.y = defaultY - b.getPosY();
+            part.z = defaultZ + b.getPosZ();
         });
     }
 

@@ -989,6 +989,21 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             return InteractionResult.SUCCESS;
         }
 
+        boolean isContractor = contractData != null && contractData.getContractorUUID() != null && contractData.getContractorUUID().equals(player.getUUID());
+        boolean isContractItem = heldItem.getItem() instanceof PermanentContractItem || heldItem.getItem() instanceof TieredContractItem;
+
+        if (isContractor && !isContractItem && this.isInCombat()) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                Component message = Component.translatable(
+                        "message.magic_realms.mercenary.speech",
+                        this.getEntityName(),
+                        pickCombatRefusalLine()
+                ).withStyle(ChatFormatting.RED);
+                serverPlayer.sendSystemMessage(message);
+            }
+            return InteractionResult.SUCCESS;
+        }
+
         handleContractInteraction(player, contractData, heldItem);
 
         return super.mobInteract(player, hand);
@@ -1011,6 +1026,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         } else {
             ContractUtils.handleContractInteraction(player, this, contractData);
         }
+    }
+
+    private Component pickCombatRefusalLine() {
+        int variant = this.random.nextInt(4);
+        String key = "message.magic_realms.mercenary.busy_fighting." + variant;
+        return Component.translatable(key);
     }
 
     // Core spawn and initialization
@@ -1394,6 +1415,30 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (this.getTarget() != null) {
             this.setTarget(null);
         }
+        this.setLastHurtByMob(null);
+        if(this.isPatrolMode()){
+            this.setPatrolMode(false);
+            this.setPatrolPosition(BlockPos.ZERO);
+        }
+    }
+
+    public boolean isInCombat() {
+        // Currently has a live target
+        LivingEntity target = this.getTarget();
+        if (target != null && target.isAlive()) {
+            return true;
+        }
+        // Was hurt by a still-alive mob recently (within 5 seconds)
+        LivingEntity lastHurt = this.getLastHurtByMob();
+        if (lastHurt != null && lastHurt.isAlive()
+                && this.tickCount - this.getLastHurtByMobTimestamp() < 100) {
+            return true;
+        }
+        // Currently casting a spell
+        if (this.getMagicData() != null && this.getMagicData().isCasting()) {
+            return true;
+        }
+        return false;
     }
 
     // Overridden behavior methods
@@ -1894,6 +1939,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (owner != null) {
             this.summonerUUID = owner.getUUID();
             this.cachedSummoner = owner;
+        } else {
+            this.summonerUUID = null;
+            this.cachedSummoner = null;
         }
     }
 

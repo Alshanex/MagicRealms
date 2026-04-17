@@ -68,6 +68,11 @@
   "message.magic_realms.tavernkeep_tip.question_key": "how",
   "message.magic_realms.tavernkeep_tip.subject_key_1": "Tavernkeep",
   "message.magic_realms.tavernkeep_tip.subject_key_2": "Tavernkeeper",
+  "message.magic_realms.mercenary.speech": "%s: %s",
+  "message.magic_realms.mercenary.busy_fighting.0": "Don't distract me while I'm fighting!",
+  "message.magic_realms.mercenary.busy_fighting.1": "Not now — I'm busy!",
+  "message.magic_realms.mercenary.busy_fighting.2": "Talk to me after this fight!",
+  "message.magic_realms.mercenary.busy_fighting.3": "Get back, I'm in the middle of something!",
 
   "tooltip.magic_realms.wisewood_chair": "Seats visiting Mercenaries",
   "tooltip.magic_realms.wisewood_chair_inert": "Safe for building",

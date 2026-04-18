@@ -42,9 +42,6 @@ public class ShieldBashGoal extends Goal {
     /** Horizontal knockback strength (vanilla knockback units; 0.4 is a standard hit, 1.0 is huge). */
     private static final double BASH_KNOCKBACK = 1.2;
 
-    /** Ticks from goal start until the bash impact lands (windup). */
-    private static final int WINDUP_TICKS = 6;
-
     /** Ticks from impact until the goal ends (recovery — tank is committed, can't attack). */
     private static final int RECOVERY_TICKS = 9;
 
@@ -114,7 +111,7 @@ public class ShieldBashGoal extends Goal {
     @Override
     public boolean canContinueToUse() {
         // Run for exactly windup + recovery ticks then release.
-        return stateTicks < WINDUP_TICKS + RECOVERY_TICKS;
+        return stateTicks < RECOVERY_TICKS;
     }
 
     @Override
@@ -124,7 +121,7 @@ public class ShieldBashGoal extends Goal {
         lastImpactHits = 0;
 
         // Kick off the animation immediately — the windup visual should precede the actual impact by WINDUP_TICKS so the effect feels telegraphed.
-        tank.serverTriggerAnimation("offhand_parry");
+        tank.serverTriggerAnimation("touch_ground");
 
         // Face the target hard so the frontal cone lines up with where we're aiming.
         LivingEntity target = tank.getTarget();
@@ -147,7 +144,7 @@ public class ShieldBashGoal extends Goal {
         }
 
         // Impact lands on the WINDUP_TICKS-th tick. Using == (rather than >=) plus the impactDone guard ensures the effect only fires once even if ticking lags.
-        if (!impactDone && stateTicks >= WINDUP_TICKS) {
+        if (!impactDone) {
             impactDone = true;
             performBashImpact();
         }
@@ -176,14 +173,12 @@ public class ShieldBashGoal extends Goal {
 
         float bashDamage = computeBashDamage();
         int hits = 0;
-        double radiusSq = BASH_HIT_RADIUS * BASH_HIT_RADIUS;
 
         for (LivingEntity victim : candidates) {
 
             double dx = victim.getX() - tank.getX();
             double dz = victim.getZ() - tank.getZ();
             double horizDistSq = dx * dx + dz * dz;
-            if (horizDistSq > radiusSq) continue;
 
             DamageSource src = tank.damageSources().mobAttack(tank);
             boolean hurt = victim.hurt(src, bashDamage);

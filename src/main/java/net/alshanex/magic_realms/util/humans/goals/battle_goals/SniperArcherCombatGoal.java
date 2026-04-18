@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.util.humans.goals.battle_goals;
 
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.goals.ChargeArrowAttackGoal;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -232,7 +233,7 @@ public class SniperArcherCombatGoal<T extends AbstractMercenaryEntity & RangedAt
     }
 
     private boolean isHoldingBow() {
-        return archer.isHolding(is -> is.getItem() instanceof BowItem);
+        return archer.isHolding(is -> is.getItem() instanceof BowItem || is.is(ModTags.BOWS));
     }
 
     private double getNearestThreatDistSq() {

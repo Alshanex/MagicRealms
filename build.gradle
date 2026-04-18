@@ -195,6 +195,8 @@ dependencies {
     //runtimeOnly("curse.maven:aces-spell-utils-1299492:7787705")
     //runtimeOnly("curse.maven:lendercataclysm-551586:7908490")
     //runtimeOnly("curse.maven:lionfish-api-1001614:7923465")
+    //runtimeOnly("curse.maven:too-many-bows-1141533:7923956")
+    //runtimeOnly("curse.maven:architectury-api-419699:5786327")
     compileOnly "curse.maven:azurelib-817423:7935743"
     //runtimeOnly "curse.maven:azurelib-817423:7935743"
 

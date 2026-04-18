@@ -7,6 +7,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.EntityClass;
 import net.minecraft.network.FriendlyByteBuf;
@@ -421,7 +422,7 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
                     itemName.contains("blade") || itemName.contains("dagger");
 
             if (snapshot != null && snapshot.entityClass.name().equals("ROGUE") && snapshot.isArcher) {
-                return item instanceof BowItem || itemName.contains("bow");
+                return item instanceof BowItem || stack.is(ModTags.BOWS);
             }
 
             return isWeapon || isModdedWeapon;

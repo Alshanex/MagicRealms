@@ -58,6 +58,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
@@ -78,6 +79,7 @@ import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -152,6 +154,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     protected UUID summonerUUID;
 
     private BattlefieldAnalysis battlefield;
+
+    private MercenaryBowFakePlayer bowFakePlayer;
 
     // Animation
     RawAnimation animationToPlay = null;
@@ -293,6 +297,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             this.getNavigation().stop();
             this.setTarget(null);
         }
+    }
+
+    public MercenaryBowFakePlayer getOrCreateBowFakePlayer(ServerLevel level) {
+        if (bowFakePlayer == null || bowFakePlayer.level() != level) {
+            bowFakePlayer = new MercenaryBowFakePlayer(level);
+        }
+        return bowFakePlayer;
     }
 
     // Star level management
@@ -783,29 +794,109 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Ranged attack implementation
     @Override
-    public void performRangedAttack(LivingEntity pTarget, float pDistanceFactor) {
-        if (!hasArrows()) {
+    public void performRangedAttack(LivingEntity target, float distanceFactor) {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        if (!hasArrows()) return;
+
+        ItemStack bow = this.getMainHandItem();
+        if (!(bow.getItem() instanceof BowItem bowItem || bow.is(ModTags.BOWS))) return;
+
+        ItemStack arrowStack = getBestArrowFromInventory();
+        if (arrowStack.isEmpty()) arrowStack = new ItemStack(Items.ARROW);
+
+        MercenaryBowFakePlayer fp = getOrCreateBowFakePlayer(serverLevel);
+
+        // Aim at target, compensating for arrow drop
+        Vec3 shooterPos = new Vec3(this.getX(), this.getEyeY(), this.getZ());
+        Vec3 targetPos = new Vec3(target.getX(), target.getY(0.5), target.getZ()); // aim at center mass
+        double dx = targetPos.x - shooterPos.x;
+        double dy = targetPos.y - shooterPos.y;
+        double dz = targetPos.z - shooterPos.z;
+        double horiz = Math.sqrt(dx * dx + dz * dz);
+
+        // Arrow physics
+        float arrowVelocity = 2.5F;
+        double timeTicks = horiz / arrowVelocity;
+        double drop = 0.05 * timeTicks * timeTicks * 0.5;
+
+        // Aim point is the target + drop compensation upward
+        double aimY = dy + drop;
+
+        float yaw = (float)(Mth.atan2(dz, dx) * (180.0 / Math.PI)) - 90.0F;
+        float pitch = (float)(-Mth.atan2(aimY, horiz) * (180.0 / Math.PI));
+
+        // Use a COPY of the bow so durability damage doesn't affect our real item mid-flight.
+        ItemStack bowCopy = bow.copy();
+        fp.syncFrom(this, bowCopy, arrowStack.copyWithCount(1));
+        fp.setXRot(pitch);
+        fp.setYRot(yaw);
+        fp.xRotO = pitch;
+        fp.yRotO = yaw;
+        fp.yHeadRot = yaw;
+        fp.yHeadRotO = yaw;
+        fp.yBodyRot = yaw;
+        fp.yBodyRotO = yaw;
+
+        // Snapshot all arrows in a wide area — modded bows can spawn fast-moving projectiles
+        AABB snapshotArea = this.getBoundingBox().inflate(32);
+        Set<Projectile> before = new HashSet<>(serverLevel.getEntitiesOfClass(
+                Projectile.class, snapshotArea));
+
+        boolean fired = false;
+        try {
+            int useDuration = bow.getUseDuration(fp);
+            int chargeTime = useDuration - 20;  // 20 ticks = full draw
+            fp.startUsingItem(InteractionHand.MAIN_HAND);
+            bow.releaseUsing(serverLevel, fp, chargeTime);
+            fired = true;
+        } catch (Throwable t) {
+            MagicRealms.LOGGER.error("Modded bow {} threw during releaseUsing — falling back to vanilla shot",
+                    BuiltInRegistries.ITEM.getKey(bow.getItem()), t);
+        } finally {
+            try { fp.stopUsingItem(); } catch (Throwable ignored) {}
+        }
+
+        // Copy durability damage from bowCopy back to the real bow
+        int damageTaken = bowCopy.getDamageValue() - bow.getDamageValue();
+        if (damageTaken > 0) {
+            bow.setDamageValue(bow.getDamageValue() + damageTaken);
+            if (bow.getDamageValue() >= bow.getMaxDamage()) {
+                this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                this.playSound(SoundEvents.ITEM_BREAK, 0.8F, 0.8F + this.random.nextFloat() * 0.4F);
+            }
+        }
+
+        // If modded bow failed, use the vanilla fallback
+        if (!fired) {
+            fallbackVanillaShoot(target);
             return;
         }
 
-        AbstractArrow abstractarrow = this.getArrow();
-        if (abstractarrow == null) {
-            return;
+        // Re-parent all newly-spawned arrows to the mercenary
+        for (Projectile proj : serverLevel.getEntitiesOfClass(Projectile.class, snapshotArea)) {
+            if (!before.contains(proj) && proj.getOwner() == fp) {
+                proj.setOwner(this);
+            }
         }
 
         consumeArrow();
+        this.playSound(SoundEvents.SKELETON_SHOOT, 0.8F, 1.2F);
+    }
 
-        double d0 = pTarget.getX() - this.getX();
-        double d1 = pTarget.getY(0.3333333333333333D) - abstractarrow.getY();
-        double d2 = pTarget.getZ() - this.getZ();
+    private void fallbackVanillaShoot(LivingEntity target) {
+        // Your ORIGINAL manual shooting code, kept as a safety net
+        AbstractArrow abstractarrow = this.getArrow();
+        if (abstractarrow == null) return;
+
+        double d0 = target.getX() - this.getX();
+        double d1 = target.getY(0.3333) - abstractarrow.getY();
+        double d2 = target.getZ() - this.getZ();
         double d3 = Math.sqrt(d0 * d0 + d2 * d2);
 
-        float velocity = getArrowVelocity();
-        float inaccuracy = getArrowInaccuracy();
-
-        abstractarrow.shoot(d0, d1 + d3 * (double)0.2F, d2, velocity, inaccuracy);
+        abstractarrow.shoot(d0, d1 + d3 * 0.2, d2, 1.6f, 8f);
         this.playSound(SoundEvents.SKELETON_SHOOT, 0.8F, 1.2F);
         this.level().addFreshEntity(abstractarrow);
+        consumeArrow();
     }
 
     protected AbstractArrow getArrow() {
@@ -887,7 +978,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public boolean isChargingArrow() {
-        return this.isUsingItem() && this.getMainHandItem().getItem() instanceof BowItem;
+        if (!this.isUsingItem()) return false;
+        ItemStack mainHand = this.getMainHandItem();
+        return mainHand.getItem() instanceof BowItem || mainHand.is(ModTags.BOWS);
     }
 
     @Override
@@ -904,24 +997,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             //MagicRealms.LOGGER.debug("Archer {} stopped charging arrow", this.getEntityName());
         }
         super.stopUsingItem();
-    }
-
-    private float getArrowVelocity() {
-        return switch (getStarLevel()) {
-            case 1 -> 1.4f;
-            case 2 -> 1.6f;
-            case 3 -> 1.8f;
-            default -> 1.6f;
-        };
-    }
-
-    private float getArrowInaccuracy() {
-        return switch (getStarLevel()) {
-            case 1 -> (float)(16 - this.level().getDifficulty().getId() * 4);
-            case 2 -> (float)(12 - this.level().getDifficulty().getId() * 3);
-            case 3 -> (float)(8 - this.level().getDifficulty().getId() * 2);
-            default -> (float)(14 - this.level().getDifficulty().getId() * 4);
-        };
     }
 
     public void updateCustomNameWithStars() {

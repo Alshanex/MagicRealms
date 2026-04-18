@@ -28,6 +28,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
@@ -56,6 +57,64 @@ public class KillTrackingHandler {
                 event.setNewDamage(event.getOriginalDamage() * 0.2f);
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onProjectileDamage(LivingIncomingDamageEvent event) {
+        Entity directEntity = event.getSource().getDirectEntity();
+        if (!(directEntity instanceof Projectile arrow)) return;
+
+        Entity shooter = arrow.getOwner();
+        if (!(shooter instanceof AbstractMercenaryEntity merc)) return;
+
+        LivingEntity victim = event.getEntity();
+
+        // Never hurt our summoner
+        if (merc.getSummoner() != null && victim.is(merc.getSummoner())) {
+            event.setCanceled(true);
+            return;
+        }
+
+        // Never hurt allied mercenaries (same summoner)
+        if (victim instanceof AbstractMercenaryEntity other
+                && merc.getSummoner() != null
+                && other.getSummoner() != null
+                && merc.getSummoner().is(other.getSummoner())) {
+            event.setCanceled(true);
+            return;
+        }
+
+        // Use the generic ally check for anything else (pets, etc.)
+        if (merc.isAlliedTo(victim)) {
+            event.setCanceled(true);
+            return;
+        }
+    }
+
+    @SubscribeEvent
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        Projectile projectile = event.getProjectile();
+        if (!(projectile.getOwner() instanceof AbstractMercenaryEntity merc)) return;
+
+        // Only care about entity hits (not block hits)
+        if (!(event.getRayTraceResult() instanceof EntityHitResult entityHit)) return;
+
+        Entity hit = entityHit.getEntity();
+
+        if (isAllyOfMerc(merc, hit)) {
+            // Cancel the hit — the arrow keeps flying
+            event.setCanceled(true);
+        }
+    }
+
+    private static boolean isAllyOfMerc(AbstractMercenaryEntity merc, Entity hit) {
+        if (merc.getSummoner() != null && hit.is(merc.getSummoner())) return true;
+        if (hit instanceof AbstractMercenaryEntity other
+                && merc.getSummoner() != null
+                && other.getSummoner() != null
+                && merc.getSummoner().is(other.getSummoner())) return true;
+        if (hit instanceof LivingEntity le && merc.isAlliedTo(le)) return true;
+        return false;
     }
 
     @SubscribeEvent

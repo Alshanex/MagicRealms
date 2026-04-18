@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    {"id": "cataclysm:wrath_of_the_desert","required": false},
+    {"id": "cataclysm:cursed_bow","required": false}
+  ]
+}

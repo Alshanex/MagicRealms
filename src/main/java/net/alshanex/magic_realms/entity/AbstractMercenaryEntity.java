@@ -1734,7 +1734,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     private void setWarriorGoal(List<AbstractSpell> spells) {
-        this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal);
+        this.goalSelector.removeAllGoals((goal) -> goal instanceof GenericAnimatedWarlockAttackGoal || goal instanceof ShieldBashGoal);
 
         List<AbstractSpell> finalSpells = new ArrayList<>(spells);
         List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();

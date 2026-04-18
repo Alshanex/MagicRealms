@@ -343,7 +343,7 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
 
             if (components != null) {
                 setTextureComponentsDirectly(randomHuman, components);
-                MagicRealms.LOGGER.debug("Generated texture components for virtual entity from metadata");
+                //MagicRealms.LOGGER.debug("Generated texture components for virtual entity from metadata");
             }
 
         } catch (Exception e) {
@@ -401,7 +401,7 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
             java.lang.reflect.Field textureComponentsField = RandomHumanEntity.class.getDeclaredField("textureComponents");
             textureComponentsField.setAccessible(true);
             textureComponentsField.set(randomHuman, components);
-            MagicRealms.LOGGER.debug("Set texture components directly for virtual entity");
+            //MagicRealms.LOGGER.debug("Set texture components directly for virtual entity");
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to set texture components directly", e);
         }
@@ -441,7 +441,7 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
                 java.lang.reflect.Field uuidField = Entity.class.getDeclaredField("uuid");
                 uuidField.setAccessible(true);
                 uuidField.set(entity, originalUUID);
-                MagicRealms.LOGGER.debug("Set exact UUID for virtual entity: {}", originalUUID);
+                //MagicRealms.LOGGER.debug("Set exact UUID for virtual entity: {}", originalUUID);
             }
         } catch (Exception e) {
             MagicRealms.LOGGER.warn("Failed to set exact UUID: {}", e.getMessage());

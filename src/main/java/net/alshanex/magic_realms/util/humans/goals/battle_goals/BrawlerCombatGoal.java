@@ -13,10 +13,12 @@ import java.util.List;
 /**
  * Combat goal for warriors WITHOUT a shield.
  *
- * <p>Role: <b>brawler / frontline contender</b>. The brawler is aggressive by default — it presses the target in melee like the shield tank does — but unlike the tank it
- * will periodically create a small tactical pocket (~4 blocks) to drink a healing potion or to finish a non-attack spell cast without getting interrupted, and then
- * slams back into melee range.
- *
+ * <p>Role: <b>brawler / rhythm fighter</b>. The brawler does NOT brawl indefinitely —
+ * it fights in a cyclical rhythm: engage in melee for a few hits, create a small
+ * tactical pocket (~4 blocks) to cast a spell, drink a potion, or just catch its
+ * breath, then reengage. Over and over. This is what distinguishes it from the
+ * shield tank (which never disengages voluntarily) and the assassin/skirmisher
+ * (which opens a huge gap and kites at 14 blocks).
  */
 public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<AbstractMercenaryEntity> {
 
@@ -37,34 +39,41 @@ public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstract
     /** Distance considered "in melee range" — ENGAGE is satisfied, REENGAGE ends here. */
     private static final double MELEE_DIST = 3.0;
 
-    /** HP fraction at or below which the brawler will pocket to drink a potion. */
-    private static final float POCKET_HP_THRESHOLD = 0.55f;
+    // ===== RHYTHM CONSTANTS =====
+    // The brawler's combat loop is ENGAGE (hit some) → POCKET (do something safe) → REENGAGE → ENGAGE.
+    // These constants drive the "hit some" half.
 
-    /** HP fraction override: even during boss melee burn, below THIS we still pocket. */
-    private static final float POCKET_HP_CRITICAL = 0.30f;
+    /** Melee hits landed during ENGAGE that trigger a proactive POCKET. */
+    private static final int ENGAGE_HITS_BEFORE_POCKET = 3;
 
-    /** Minimum ticks to stay in POCKET before we'll even consider reengaging. */
-    private static final int POCKET_MIN_TICKS = 30;
+    /** Hard time cap for an ENGAGE phase — if we haven't landed HITS_BEFORE_POCKET in this many ticks, pocket anyway. Prevents the brawler from getting stuck
+     * swinging-and-missing forever against a dodgy target. */
+    private static final int ENGAGE_MAX_TICKS = 100; // ~5 s of swinging max before forcing a rhythm beat
 
-    /** Hard cap on POCKET duration so we can't get stuck if a cast never resolves. */
-    private static final int POCKET_MAX_TICKS = 80;
+    /** Minimum ticks we must spend in ENGAGE before a proactive pocket can fire. Ensures the brawler actually lands hits and doesn't pocket on tick 1. */
+    private static final int ENGAGE_MIN_TICKS = 25;
 
-    /** Cooldown (ticks) after a POCKET ends before we can pocket again. */
-    private static final int POCKET_COOLDOWN_TICKS = 80;
+    // ===== POCKET CONSTANTS =====
 
-    /** How often (ticks) to re-check whether we should enter POCKET while ENGAGEd. */
-    private static final int POCKET_CHECK_INTERVAL = 10;
+    /** HP fraction at or below which the brawler will FORCE-pocket immediately regardless of rhythm. Emergency override: heal NOW, don't wait for 3 hits. */
+    private static final float POCKET_HP_EMERGENCY = 0.45f;
+
+    /** HP fraction override during boss fights: even boss aggression can't stop us pocketing below this. */
+    private static final float POCKET_HP_CRITICAL = 0.25f;
+
+    /** Minimum pocket duration — long enough for a potion chug (32 ticks) plus some slack. */
+    private static final int POCKET_MIN_TICKS = 40;
+
+    /** Hard pocket cap — releases us even if a cast never resolves. */
+    private static final int POCKET_MAX_TICKS = 90;
 
     /** Hard cap on REENGAGE so it can't hang forever if pathing fails. */
     private static final int REENGAGE_MAX_TICKS = 40;
 
-    private int pocketCheckCooldown = 0;
-    private int pocketCooldown = 0;
     private Vec3 pocketAnchor = null;
     private int pocketPathTimer = 0;
-
-    /** Tracks whether we saw the parent start a non-attack cast during this ENGAGE tick. */
-    private boolean lastTickWasCasting = false;
+    private int hitsLandedInEngage = 0;
+    private int lastMobHurtTick = -1;
 
     private final List<AbstractSpell> canonicalAttackSpells = new ArrayList<>();
 
@@ -97,11 +106,10 @@ public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstract
         super.start();
         state = State.ENGAGE;
         stateTicks = 0;
-        pocketCheckCooldown = 0;
-        pocketCooldown = 0;
         pocketAnchor = null;
         pocketPathTimer = 0;
-        lastTickWasCasting = false;
+        hitsLandedInEngage = 0;
+        lastMobHurtTick = -1;
     }
 
     @Override
@@ -121,10 +129,21 @@ public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstract
         }
 
         stateTicks++;
-        if (pocketCheckCooldown > 0) pocketCheckCooldown--;
-        if (pocketCooldown > 0) pocketCooldown--;
 
         double distSq = merc.distanceToSqr(currentTarget);
+
+        // Track melee hits landed on the current target during ENGAGE — the primary
+        // rhythm-trigger. getLastHurtByMobTimestamp is updated by the vanilla hurt
+        // pipeline whenever this mob damages a target, and lastHurtByMob identifies
+        // who dealt the hit, so together they let us count OUR hits specifically.
+        if (state == State.ENGAGE) {
+            int lastHurt = currentTarget.getLastHurtByMobTimestamp();
+            if (lastHurt != lastMobHurtTick
+                    && currentTarget.getLastHurtByMob() == merc) {
+                hitsLandedInEngage++;
+                lastMobHurtTick = lastHurt;
+            }
+        }
 
         // Decide transitions BEFORE running the parent (which may itself start a cast).
         handleStateTransitions(currentTarget, distSq);
@@ -139,9 +158,6 @@ public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstract
                 } finally {
                     restoreCanonicalAttackSpells();
                 }
-                // After the parent has ticked, check whether it started a non-attack cast that warrants pocketing to let it resolve safely.
-                maybePocketForNewCast(distSq);
-                lastTickWasCasting = merc.isCasting();
             }
             case POCKET -> {
                 // Still let the parent tick so cast progression, potion drinking, and look-at logic continue — but override movement ourselves to sit at
@@ -164,30 +180,55 @@ public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstract
     // =========== STATE TRANSITIONS ===========
 
     private void handleStateTransitions(LivingEntity target, double distSq) {
+        // `target` is kept in the signature for symmetry with callers that pass the
+        // live target reference; the current implementation only reads distSq and
+        // the merc's own state, but a future extension could use target (e.g. check
+        // target's casting state, its debuffs, etc.) without a signature change.
         switch (state) {
             case ENGAGE -> {
-                // Transitions into POCKET happen inside maybePocketForNewCast() and in the periodic HP check below — both issue transition(State.POCKET)
-                // directly. Nothing to do here that isn't handled elsewhere.
-                if (pocketCheckCooldown <= 0) {
-                    pocketCheckCooldown = POCKET_CHECK_INTERVAL;
-                    if (shouldPocketForHeal(distSq)) {
-                        transition(State.POCKET);
-                    }
+                // Rhythm transitions — these are what drive the brawler loop:
+                //
+                //   1. EMERGENCY: HP dropped below the emergency threshold. Pocket
+                //      RIGHT NOW to drink a potion, no matter how few hits we landed.
+                //   2. RHYTHM: we've been in ENGAGE at least ENGAGE_MIN_TICKS and
+                //      either landed ENGAGE_HITS_BEFORE_POCKET hits OR hit the
+                //      ENGAGE_MAX_TICKS cap. Time for a breather beat.
+                //
+                // The HP threshold is higher than in the original design because the
+                // new default is "pocket on rhythm," so the emergency trigger is only
+                // for *when the rhythm beat isn't fast enough* — e.g. taking a big
+                // spike hit early in an ENGAGE window.
+
+                if (isEmergencyPocketWarranted()) {
+                    transition(State.POCKET);
+                    return;
+                }
+
+                boolean minTimeMet = stateTicks >= ENGAGE_MIN_TICKS;
+                boolean hitsHit = hitsLandedInEngage >= ENGAGE_HITS_BEFORE_POCKET;
+                boolean timeCap = stateTicks >= ENGAGE_MAX_TICKS;
+
+                if ((minTimeMet && hitsHit) || timeCap) {
+                    transition(State.POCKET);
                 }
             }
             case POCKET -> {
-                // Exit conditions:
-                //   1. Min time elapsed AND the reason we pocketed is resolved (HP back up, not casting, not drinking).
-                //   2. Hard timeout.
+                // Hold the pocket at least POCKET_MIN_TICKS (enough for a potion or
+                // medium-cast spell to actually finish), release once either:
+                //   - Min time elapsed AND we're not mid-cast / mid-drink (the reason
+                //     for pocketing is resolved; go back to fighting).
+                //   - Hard timeout hit.
+                //
+                // Critically, we NO LONGER require HP to be above a threshold to
+                // release — the pocket is a rhythm beat, not a full recovery window.
+                // If the heal only brought us from 40% to 60%, that's fine; reengage.
+
                 boolean minTimeMet = stateTicks >= POCKET_MIN_TICKS;
                 boolean timeout = stateTicks >= POCKET_MAX_TICKS;
-                boolean reasonResolved = !merc.isCasting()
-                        && !merc.isUsingItem()  // potion drinking uses the "using item" hand state
-                        && merc.getHealth() / merc.getMaxHealth() > POCKET_HP_THRESHOLD;
+                boolean notMidAction = !merc.isCasting() && !merc.isUsingItem();
 
-                if ((minTimeMet && reasonResolved) || timeout) {
+                if ((minTimeMet && notMidAction) || timeout) {
                     pocketAnchor = null;
-                    pocketCooldown = POCKET_COOLDOWN_TICKS;
                     transition(State.REENGAGE);
                 }
             }
@@ -197,6 +238,18 @@ public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstract
                 }
             }
         }
+    }
+
+    /**
+     * Checks whether we should abort the current ENGAGE rhythm and pocket right now.
+     * Currently: low HP override. Can be extended later (e.g. hit with a status effect).
+     */
+    private boolean isEmergencyPocketWarranted() {
+        float hpFrac = merc.getHealth() / merc.getMaxHealth();
+        if (battlefield.isBossEngagement()) {
+            return hpFrac <= POCKET_HP_CRITICAL;
+        }
+        return hpFrac <= POCKET_HP_EMERGENCY;
     }
 
     private void transition(State next) {
@@ -209,63 +262,10 @@ public class BrawlerCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstract
             pocketPathTimer = 0;
         } else if (next == State.REENGAGE) {
             merc.getNavigation().stop();
-        }
-    }
-
-    /**
-     * HP-based pocket trigger. Pocket to heal when:
-     *   - HP fraction is at/below POCKET_HP_THRESHOLD (normal), OR HP fraction is at/below POCKET_HP_CRITICAL (override boss aggression).
-     *   - We aren't already on pocket cooldown.
-     *   - We're actually close enough to the target for the retreat to mean anything (no point pocketing if we're already far away — just engage).
-     */
-    private boolean shouldPocketForHeal(double distSq) {
-        if (pocketCooldown > 0) return false;
-        float hpFrac = merc.getHealth() / merc.getMaxHealth();
-
-        // Boss fights: only pocket if we're critically low. Otherwise stay on the boss.
-        if (battlefield.isBossEngagement()) {
-            if (hpFrac > POCKET_HP_CRITICAL) return false;
-        } else {
-            if (hpFrac > POCKET_HP_THRESHOLD) return false;
-        }
-
-        // Must be roughly in melee/engagement range — if we're already at pocket distance or further, there's nothing to pocket FROM.
-        double nearEnoughSq = (POCKET_DIST + POCKET_TOLERANCE) * (POCKET_DIST + POCKET_TOLERANCE);
-        return distSq <= nearEnoughSq;
-    }
-
-    /**
-     * Detects when the parent started a fresh NON-ATTACK cast during this ENGAGE tick (defense / support / movement) and pocket so the cast finishes safely.
-     */
-    private void maybePocketForNewCast(double distSq) {
-        if (pocketCooldown > 0) return;
-        boolean isCasting = merc.isCasting();
-        if (!isCasting) return;
-        // Only react to the *edge* (was not casting last tick, is casting now) so we don't re-pocket every tick of a long cast.
-        if (lastTickWasCasting) return;
-
-        AbstractSpell casting = currentlyCastingSpell();
-        if (casting == null) return;
-
-        // Attack spells stay in melee — no pocket. Everything else (defense / support / movement) gets a breathing pocket.
-        if (canonicalAttackSpells.contains(casting)) return;
-
-        // Must actually be close enough for pocketing to change anything.
-        double nearEnoughSq = (POCKET_DIST + POCKET_TOLERANCE) * (POCKET_DIST + POCKET_TOLERANCE);
-        if (distSq > nearEnoughSq) return;
-
-        transition(State.POCKET);
-    }
-
-    private AbstractSpell currentlyCastingSpell() {
-        try {
-            var data = merc.getMagicData();
-            if (data == null) return null;
-            var casting = data.getCastingSpell();
-            return casting == null ? null : casting.getSpell();
-        } catch (Throwable t) {
-            // Defensive: if the magic-data API shape ever shifts we don't want to crash the goal — just skip the cast-based pocket trigger this tick.
-            return null;
+        } else if (next == State.ENGAGE) {
+            // Fresh ENGAGE phase — reset the rhythm counters.
+            hitsLandedInEngage = 0;
+            lastMobHurtTick = -1;
         }
     }
 

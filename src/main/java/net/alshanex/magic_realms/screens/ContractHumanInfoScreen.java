@@ -403,7 +403,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
             java.lang.reflect.Field textureComponentsField = RandomHumanEntity.class.getDeclaredField("textureComponents");
             textureComponentsField.setAccessible(true);
             textureComponentsField.set(randomHuman, components);
-            MagicRealms.LOGGER.debug("Set texture components directly for virtual entity");
+            //MagicRealms.LOGGER.debug("Set texture components directly for virtual entity");
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to set texture components directly", e);
         }
@@ -448,7 +448,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                 java.lang.reflect.Field uuidField = Entity.class.getDeclaredField("uuid");
                 uuidField.setAccessible(true);
                 uuidField.set(entity, originalUUID);
-                MagicRealms.LOGGER.debug("Set exact UUID for virtual entity: {}", originalUUID);
+                //MagicRealms.LOGGER.debug("Set exact UUID for virtual entity: {}", originalUUID);
             }
         } catch (IllegalArgumentException e) {
             MagicRealms.LOGGER.warn("Invalid UUID format: {}, error: {}", originalUUID, e.getMessage());
@@ -903,7 +903,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         if (minecraft.level.isClientSide()) {
             PacketDistributor.sendToServer(new SwitchTabPacket("INVENTORY")); // Special case for inventory
         }
-        MagicRealms.LOGGER.debug("Client requested switch to inventory menu");
+        //MagicRealms.LOGGER.debug("Client requested switch to inventory menu");
     }
 
     @Override

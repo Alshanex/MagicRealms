@@ -11,7 +11,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -33,17 +32,22 @@ public class ShieldBashGoal extends Goal {
 
     // ========== TUNING CONSTANTS ==========
 
-    /** Radius used both for (a) crowd counting and (b) who the bash actually hits. */
-    private static final double BASH_RADIUS = 3.5;
+    private static final double BASH_HIT_RADIUS = 3.0;
 
-    /** Cone half-width */
-    private static final double CONE_DOT_THRESHOLD = 0.5;
+    /**
+     * Radius used for crowd counting (how many enemies are threatening the
+     * tank right now → which cooldown tier to use). Wider than the hit radius
+     * because an enemy 3 blocks away is still crowding us even if it's outside
+     * the shove range; the tank should still bash more frequently in that
+     * situation, not wait until mobs are pressed right up against it.
+     */
+    private static final double BASH_CROWD_RADIUS = 3.5;
 
     /** Base damage multiplier applied to the tank's attack damage attribute. */
     private static final float BASH_DAMAGE_MULT = 0.35f;
 
     /** Horizontal knockback strength (vanilla knockback units; 0.4 is a standard hit, 1.0 is huge). */
-    private static final double BASH_KNOCKBACK = 1.1;
+    private static final double BASH_KNOCKBACK = 1.2;
 
     /** Ticks from goal start until the bash impact lands (windup). */
     private static final int WINDUP_TICKS = 6;
@@ -52,9 +56,17 @@ public class ShieldBashGoal extends Goal {
     private static final int RECOVERY_TICKS = 9;
 
     /** Cooldowns (ticks) by crowd level. Smaller number = more frequent bashes. */
-    private static final int COOLDOWN_SOLO = 300;          // 15 s — occasional
-    private static final int COOLDOWN_PAIR = 160;          // 8  s — regular
-    private static final int COOLDOWN_HORDE = 80;          // 4  s — very frequent
+    private static final int COOLDOWN_SOLO = 150;
+    private static final int COOLDOWN_PAIR = 100;
+    private static final int COOLDOWN_HORDE = 50;
+
+    /**
+     * Cooldown applied when the bash connected with ZERO victims — defensive
+     * safety net for the case where canUse passed but the target darted away
+     * during windup. Much shorter than the real cooldown so the bash retries
+     * quickly instead of sitting on a wasted 15-second lockout.
+     */
+    private static final int COOLDOWN_WHIFF = 20; // 1 s
 
     /** Self-buff duration (ticks) applied on successful bash. */
     private static final int BUFF_DURATION_TICKS = 60; // 3 s
@@ -67,6 +79,21 @@ public class ShieldBashGoal extends Goal {
     private int cooldownRemaining = 60; // small initial delay so bash doesn't fire at combat t=0
     private int stateTicks = 0;
     private boolean impactDone = false;
+
+    /** Hits landed by the most recent impact. Read by stop() to pick between the crowd cooldown and the whiff cooldown. */
+    private int lastImpactHits = 0;
+
+    /**
+     * Crowd count captured at canUse() time, BEFORE the bash knockback pushes
+     * enemies out of BASH_CROWD_RADIUS. Used by stop() to compute the next cooldown.
+     *
+     * <p>Sampling at stop() instead would misread every horde-bash as a solo
+     * situation (because 3 enemies in a pile → bash → all 3 fly out to 5+ blocks
+     * → count = 0 → returns COOLDOWN_SOLO → next bash is 15 s away even though
+     * the tank just demonstrated it's in a horde). Capturing the pre-impact
+     * count avoids that inversion.
+     */
+    private int crowdAtEngagement = 0;
 
     public ShieldBashGoal(AbstractMercenaryEntity tank, BattlefieldAnalysis battlefield) {
         this.tank = tank;
@@ -83,13 +110,10 @@ public class ShieldBashGoal extends Goal {
             return false;
         }
 
-        // Fail-fast checks mirroring the existing parry logic in AbstractMercenaryEntity.hurt().
-        // If any of these fail we silently keep the cooldown at 0 so the next tick will try again — we don't want to burn a real cooldown window on being stunned.
         if (!tank.hasShield()) return false;
         if (tank.isStunned()) return false;
         if (tank.isSittingInChair()) return false;
         if (tank.isInMenuState()) return false;
-        if (tank.isAnimating()) return false; // covers: mid-swing, mid-parry, mid-cast
         if (tank.isCasting()) return false;
 
         LivingEntity target = tank.getTarget();
@@ -99,6 +123,10 @@ public class ShieldBashGoal extends Goal {
         battlefield.refreshIfStale(10);
         int nearbyCount = countHostilesInBashRange();
         if (nearbyCount < MIN_HOSTILES_IN_RANGE_TO_BASH) return false;
+
+        if (!anyHostileWithinHitRange()) return false;
+
+        this.crowdAtEngagement = nearbyCount;
 
         return true;
     }
@@ -113,6 +141,7 @@ public class ShieldBashGoal extends Goal {
     public void start() {
         stateTicks = 0;
         impactDone = false;
+        lastImpactHits = 0;
 
         // Kick off the animation immediately — the windup visual should precede the actual impact by WINDUP_TICKS so the effect feels telegraphed.
         tank.serverTriggerAnimation("offhand_parry");
@@ -123,8 +152,9 @@ public class ShieldBashGoal extends Goal {
             tank.getLookControl().setLookAt(target, 60f, 60f);
         }
 
-        // Stop any in-flight pathing for the duration of the bash — stationary is the correct pose for a bash and it also keeps the cone direction stable.
         tank.getNavigation().stop();
+        var v = tank.getDeltaMovement();
+        tank.setDeltaMovement(0.0, v.y, 0.0);
     }
 
     @Override
@@ -153,59 +183,49 @@ public class ShieldBashGoal extends Goal {
 
     // ========== IMPACT ==========
 
-    /**
-     * Actually apply the bash: damage + knockback to everything in the frontal cone, plus a short survivability buff on the tank itself.
-     */
     private void performBashImpact() {
         if (tank.level().isClientSide()) return;
 
         // Shield whoosh sound
         tank.playSound(SoundEvents.SHIELD_BLOCK, 1.2f, 0.85f);
 
-        Vec3 tankEye = tank.getEyePosition();
-        Vec3 forward = tank.getForward().normalize();
-
-        // Gather candidates in a fat box; the cone + distance checks refine from there.
-        AABB box = tank.getBoundingBox().inflate(BASH_RADIUS);
+        AABB box = tank.getBoundingBox().inflate(BASH_HIT_RADIUS, BASH_HIT_RADIUS + 1.0, BASH_HIT_RADIUS);
         List<LivingEntity> candidates = tank.level().getEntitiesOfClass(
                 LivingEntity.class, box,
                 e -> e != tank && e.isAlive() && !tank.isAlliedTo(e));
 
-        double radiusSq = BASH_RADIUS * BASH_RADIUS;
         float bashDamage = computeBashDamage();
         int hits = 0;
+        double radiusSq = BASH_HIT_RADIUS * BASH_HIT_RADIUS;
 
         for (LivingEntity victim : candidates) {
-            // Distance gate (cone check below is direction-only).
-            if (victim.distanceToSqr(tank) > radiusSq) continue;
 
-            // Cone check: vector from tank to victim must mostly align with tank's facing. This keeps the bash in front — enemies behind us don't get hit.
-            Vec3 toVictim = victim.position().subtract(tankEye).normalize();
-            if (toVictim.dot(forward) < CONE_DOT_THRESHOLD) continue;
+            double dx = victim.getX() - tank.getX();
+            double dz = victim.getZ() - tank.getZ();
+            double horizDistSq = dx * dx + dz * dz;
+            if (horizDistSq > radiusSq) continue;
 
-            // Damage. Using GENERIC_ATTACK source via the tank so this counts as a mob-on-mob attack for targeting/revenge purposes.
             DamageSource src = tank.damageSources().mobAttack(tank);
             boolean hurt = victim.hurt(src, bashDamage);
 
-            // Knockback: vanilla's knockback() uses directional components and automatically deals with air/ground. Apply even if hurt() returned
-            // false (e.g. iframes) — the push still makes the move feel correct.
-            double kbX = victim.getX() - tank.getX();
-            double kbZ = victim.getZ() - tank.getZ();
-            // Normalize to avoid knockback feeling uneven at different distances.
-            double kbLen = Math.sqrt(kbX * kbX + kbZ * kbZ);
+            double kbLen = Math.sqrt(horizDistSq);
             if (kbLen > 0.0001) {
-                kbX /= kbLen;
-                kbZ /= kbLen;
+                double kbX = dx / kbLen;
+                double kbZ = dz / kbLen;
                 victim.knockback(BASH_KNOCKBACK, -kbX, -kbZ);
-                // Tiny vertical pop so targets peel off cleanly instead of skidding right back into us along the ground.
+                victim.setDeltaMovement(victim.getDeltaMovement().add(0, 0.25, 0));
+            } else {
+                victim.knockback(BASH_KNOCKBACK, -1.0, 0.0);
                 victim.setDeltaMovement(victim.getDeltaMovement().add(0, 0.25, 0));
             }
 
             if (hurt) hits++;
         }
 
-        // Survivability reward scales with how many enemies we cleared: bashing one guy gives a mild buff, bashing a pack gives a stacked (longer) buff so the
-        // horde scenario genuinely feels like the tank is riding out the crowd.
+        // Remember for stop() so it can pick COOLDOWN_WHIFF when nothing landed.
+        this.lastImpactHits = hits;
+
+        // Survivability buff scales with how many enemies we cleared.
         applySelfBuffs(hits);
     }
 
@@ -249,7 +269,7 @@ public class ShieldBashGoal extends Goal {
     // ========== CROWD HEURISTIC ==========
 
     private int countHostilesInBashRange() {
-        double rSq = BASH_RADIUS * BASH_RADIUS;
+        double rSq = BASH_CROWD_RADIUS * BASH_CROWD_RADIUS;
         int count = 0;
         for (LivingEntity e : battlefield.hostiles()) {
             if (e.distanceToSqr(tank) <= rSq) count++;
@@ -258,15 +278,34 @@ public class ShieldBashGoal extends Goal {
     }
 
     /**
-     * Cooldown scales inversely with crowd size:
-     *   0–1 nearby  -> long cooldown (solo rhythm)
-     *   2 nearby    -> medium cooldown
-     *   3+ nearby   -> short cooldown (horde rhythm)
+     * Returns true iff at least one hostile is close enough that a bash fired
+     * right now would actually connect. Uses horizontal distance only to match
+     * the hit-time filter in {@link #performBashImpact()}.
      *
-     * <p>Sampled at the end of a bash (in {@link #stop()}) so the next cooldown reflects the current situation, not the situation when we started the windup.
+     * <p>This is what gates bash activation — without it, the bash would fire
+     * whenever the tank is approaching a horde but still 3 blocks out, whiff,
+     * and burn the full cooldown on nothing.
+     */
+    private boolean anyHostileWithinHitRange() {
+        double rSq = BASH_HIT_RADIUS * BASH_HIT_RADIUS;
+        for (LivingEntity e : battlefield.hostiles()) {
+            double dx = e.getX() - tank.getX();
+            double dz = e.getZ() - tank.getZ();
+            if (dx * dx + dz * dz <= rSq) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Cooldown scales inversely with crowd size — but if the bash whiffed
+     * (landed 0 hits) we use a short retry cooldown instead. A whiff after
+     * canUse passed the hit-range check should be rare (target moved between
+     * canUse and impact), and when it happens we want to try again soon rather
+     * than eat the full tier cooldown.
      */
     private int computeCooldownForCrowd() {
-        int n = countHostilesInBashRange();
+        if (lastImpactHits == 0) return COOLDOWN_WHIFF;
+        int n = crowdAtEngagement;
         if (n >= 3) return COOLDOWN_HORDE;
         if (n == 2) return COOLDOWN_PAIR;
         return COOLDOWN_SOLO;

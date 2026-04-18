@@ -34,13 +34,6 @@ public class ShieldBashGoal extends Goal {
 
     private static final double BASH_HIT_RADIUS = 3.0;
 
-    /**
-     * Radius used for crowd counting (how many enemies are threatening the
-     * tank right now → which cooldown tier to use). Wider than the hit radius
-     * because an enemy 3 blocks away is still crowding us even if it's outside
-     * the shove range; the tank should still bash more frequently in that
-     * situation, not wait until mobs are pressed right up against it.
-     */
     private static final double BASH_CROWD_RADIUS = 3.5;
 
     /** Base damage multiplier applied to the tank's attack damage attribute. */
@@ -61,10 +54,7 @@ public class ShieldBashGoal extends Goal {
     private static final int COOLDOWN_HORDE = 50;
 
     /**
-     * Cooldown applied when the bash connected with ZERO victims — defensive
-     * safety net for the case where canUse passed but the target darted away
-     * during windup. Much shorter than the real cooldown so the bash retries
-     * quickly instead of sitting on a wasted 15-second lockout.
+     * Cooldown applied when the bash connected with ZERO victims
      */
     private static final int COOLDOWN_WHIFF = 20; // 1 s
 
@@ -83,16 +73,6 @@ public class ShieldBashGoal extends Goal {
     /** Hits landed by the most recent impact. Read by stop() to pick between the crowd cooldown and the whiff cooldown. */
     private int lastImpactHits = 0;
 
-    /**
-     * Crowd count captured at canUse() time, BEFORE the bash knockback pushes
-     * enemies out of BASH_CROWD_RADIUS. Used by stop() to compute the next cooldown.
-     *
-     * <p>Sampling at stop() instead would misread every horde-bash as a solo
-     * situation (because 3 enemies in a pile → bash → all 3 fly out to 5+ blocks
-     * → count = 0 → returns COOLDOWN_SOLO → next bash is 15 s away even though
-     * the tank just demonstrated it's in a horde). Capturing the pre-impact
-     * count avoids that inversion.
-     */
     private int crowdAtEngagement = 0;
 
     public ShieldBashGoal(AbstractMercenaryEntity tank, BattlefieldAnalysis battlefield) {
@@ -277,15 +257,6 @@ public class ShieldBashGoal extends Goal {
         return count;
     }
 
-    /**
-     * Returns true iff at least one hostile is close enough that a bash fired
-     * right now would actually connect. Uses horizontal distance only to match
-     * the hit-time filter in {@link #performBashImpact()}.
-     *
-     * <p>This is what gates bash activation — without it, the bash would fire
-     * whenever the tank is approaching a horde but still 3 blocks out, whiff,
-     * and burn the full cooldown on nothing.
-     */
     private boolean anyHostileWithinHitRange() {
         double rSq = BASH_HIT_RADIUS * BASH_HIT_RADIUS;
         for (LivingEntity e : battlefield.hostiles()) {
@@ -296,13 +267,6 @@ public class ShieldBashGoal extends Goal {
         return false;
     }
 
-    /**
-     * Cooldown scales inversely with crowd size — but if the bash whiffed
-     * (landed 0 hits) we use a short retry cooldown instead. A whiff after
-     * canUse passed the hit-range check should be rare (target moved between
-     * canUse and impact), and when it happens we want to try again soon rather
-     * than eat the full tier cooldown.
-     */
     private int computeCooldownForCrowd() {
         if (lastImpactHits == 0) return COOLDOWN_WHIFF;
         int n = crowdAtEngagement;

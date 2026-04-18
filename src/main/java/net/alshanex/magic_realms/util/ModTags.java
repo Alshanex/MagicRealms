@@ -71,6 +71,10 @@ public class ModTags {
     public static TagKey<AbstractSpell> DEBUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/debuff"));
     public static TagKey<AbstractSpell> UNTHREATENED_BUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/unthreatened"));
     public static TagKey<AbstractSpell> THREATENED_BUFF_BUFFING = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/threatened"));
+    public static TagKey<AbstractSpell> RESTORATION = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "buffing/restoration"));
+
+    public static TagKey<AbstractSpell> BUFF_ALLIES = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "support_mage/buff_allies"));
+    public static TagKey<AbstractSpell> HEAL_ALLIES = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "support_mage/heal_allies"));
 
     public static TagKey<AbstractSpell> SPELL_BLACKLIST = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "blacklisted"));
     public static TagKey<SchoolType> SCHOOL_WHITELIST = createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "school_whitelist"));

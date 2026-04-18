@@ -35,7 +35,7 @@ public class ContractUtils {
 
         Level level = humanEntity.level();  // Get the level from the entity
 
-        if (!contractData.canEstablishPermanentContract(player.getUUID(), level)) {
+        if (contractData.hasActiveContract(level) && !contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
                 message = Component.translatable("ui.magic_realms.already_have_contract").withStyle(ChatFormatting.GOLD);
@@ -69,7 +69,7 @@ public class ContractUtils {
 
         boolean isUpgrade = contractData.hasActiveContract(level) && contractData.isContractor(player.getUUID(), level);
 
-        boolean success = contractData.trySetPermanentContract(player.getUUID(), level);
+        boolean success = contractData.trySetPermanentContract(player.getUUID(), level, player.getAbilities().instabuild);
 
         if (!success) {
             if (player instanceof ServerPlayer serverPlayer) {

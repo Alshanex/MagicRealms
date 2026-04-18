@@ -20,10 +20,10 @@ public class LevelingStatsManager {
         EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
         KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
-
+/*
         MagicRealms.LOGGER.debug("Applying level-based attributes for {} (Level: {}, Class: {}, Stars: {})",
                 entity.getEntityName(), level, entityClass.getName(), starLevel);
-
+*/
         applyHealthBonus(entity, level);
 
         applyBossKillBonuses(entity, killData.getBossKills());

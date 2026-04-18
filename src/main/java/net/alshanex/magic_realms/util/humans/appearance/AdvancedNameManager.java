@@ -87,11 +87,6 @@ public class AdvancedNameManager {
 
     @OnlyIn(Dist.CLIENT)
     public static void reloadNames() {
-        // This method can be called when config is reloaded
-        // The actual names are now loaded from config, so we just log the reload
-        MagicRealms.LOGGER.info("Name configuration reloaded from config file");
-
-        // Log current counts for debugging
         int maleCount = Config.maleNames != null ? Config.maleNames.size() : 0;
         int femaleCount = Config.femaleNames != null ? Config.femaleNames.size() : 0;
         MagicRealms.LOGGER.debug("Reloaded names - Male: {}, Female: {}", maleCount, femaleCount);

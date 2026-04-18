@@ -88,18 +88,6 @@ public class Config
             .comment("XP needed to level up multiplier (50.0 = 50% = xp_needed * 0.5)")
             .defineInRange("xpNeededMultiplier", 100.0, 0, Double.MAX_VALUE);
 
-    private static final ModConfigSpec.IntValue EMERALD_OVERFLOW_THRESHOLD = BUILDER
-            .comment("Number of emeralds above which humans will consider spending overflow (default: 64 = 1 stack)")
-            .defineInRange("emeraldOverflowThreshold", 64, 1, 999);
-
-    private static final ModConfigSpec.IntValue CLERIC_EMERALD_COST = BUILDER
-            .comment("Number of emeralds required to get a beneficial effect from a cleric")
-            .defineInRange("clericEmeraldCost", 10, 1, 64);
-
-    private static final ModConfigSpec.IntValue CLERIC_BUFF_DURATION_MINUTES = BUILDER
-            .comment("Duration of cleric buffs in minutes")
-            .defineInRange("clericBuffDurationMinutes", 10, 1, 60);
-
     private static final ModConfigSpec.IntValue IMMORTAL_STUN_DURATION = BUILDER
             .comment("Duration in seconds that immortal entities are stunned after being knocked out")
             .defineInRange("immortalStunDuration", 10, 1, 60);
@@ -153,9 +141,6 @@ public class Config
     public static double xpNeededMultiplier;
     public static double maxArrowVelocityPercentage;
     public static double maxDrawSpeedPercentage;
-    public static int emeraldOverflowThreshold;
-    public static int clericEmeraldCost;
-    public static int clericBuffDurationMinutes;
     public static int immortalStunDuration;
     public static double customTextureChance;
     public static int minutesUntilPermanent;
@@ -188,9 +173,6 @@ public class Config
         xpNeededMultiplier = XP_LEVEL_UP_MULTIPLIER.get();
         maxArrowVelocityPercentage = MAX_ARROW_VELOCITY_PERCENTAGE.get();
         maxDrawSpeedPercentage = MAX_DRAW_SPEED_PERCENTAGE.get();
-        emeraldOverflowThreshold = EMERALD_OVERFLOW_THRESHOLD.get();
-        clericEmeraldCost = CLERIC_EMERALD_COST.get();
-        clericBuffDurationMinutes = CLERIC_BUFF_DURATION_MINUTES.get();
         immortalStunDuration = IMMORTAL_STUN_DURATION.get();
         customTextureChance = CUSTOM_TEXTURE_CHANCE.get();
         minutesUntilPermanent = MINUTES_UNTIL_PERMANENT.get();

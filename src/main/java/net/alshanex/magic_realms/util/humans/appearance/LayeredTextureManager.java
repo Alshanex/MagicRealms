@@ -88,26 +88,7 @@ public class LayeredTextureManager {
         TEXTURE_CACHE.put(category, textures);
     }
 
-    // Existing random methods for backward compatibility
-    public static TextureWithName getRandomAdditionalTextureWithName(Gender gender, RandomSource random) {
-        String category = "additional_" + gender.getName();
-        List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
-
-        if (textures == null || textures.isEmpty()) {
-            MagicRealms.LOGGER.debug("No additional textures found for gender: " + gender.getName());
-            return null;
-        }
-
-        ResourceLocation selectedTexture = textures.get(random.nextInt(textures.size()));
-        String textureName = extractTextureNameFromPath(selectedTexture.getPath());
-
-        MagicRealms.LOGGER.debug("Selected random additional texture: {} with name: {} for gender: {}",
-                selectedTexture, textureName, gender.getName());
-
-        return new TextureWithName(selectedTexture, textureName);
-    }
-
-    // NEW: Index-based methods for deterministic texture selection
+    // Index-based methods for deterministic texture selection
     public static String getTextureByIndex(String category, int index) {
         List<ResourceLocation> textures = TEXTURE_CACHE.get(category);
         if (textures == null || textures.isEmpty()) {
@@ -136,10 +117,10 @@ public class LayeredTextureManager {
         int actualIndex = Math.abs(index % textures.size());
         ResourceLocation selectedTexture = textures.get(actualIndex);
         String textureName = extractTextureNameFromPath(selectedTexture.getPath());
-
+/*
         MagicRealms.LOGGER.debug("Selected additional texture by index for {}: {} with name: {} (index {} -> {})",
                 gender.getName(), selectedTexture, textureName, index, actualIndex);
-
+*/
         return new TextureWithName(selectedTexture, textureName);
     }
 
@@ -169,10 +150,10 @@ public class LayeredTextureManager {
 
         int actualIndex = Math.abs(index % availableTextures.size());
         ResourceLocation selectedTexture = availableTextures.get(actualIndex);
-
+/*
         MagicRealms.LOGGER.debug("Selected clothes texture by index for {} {}: {} (index {} -> {})",
                 entityClass.getName(), gender.getName(), selectedTexture, index, actualIndex);
-
+*/
         return selectedTexture.toString();
     }
 
@@ -187,10 +168,10 @@ public class LayeredTextureManager {
 
         int actualIndex = Math.abs(index % textures.size());
         ResourceLocation selectedTexture = textures.get(actualIndex);
-
+/*
         MagicRealms.LOGGER.debug("Selected hair texture by index for {}: {} (index {} -> {})",
                 gender.getName(), selectedTexture, index, actualIndex);
-
+*/
         return selectedTexture.toString();
     }
 

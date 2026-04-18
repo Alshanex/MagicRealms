@@ -132,8 +132,6 @@ public class EntitySnapshot {
             attributes.putDouble("movement_speed", entity.getAttributeValue(Attributes.MOVEMENT_SPEED));
             attributes.putDouble("knockback_resistance", entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
 
-            MagicRealms.LOGGER.debug("Captured basic attributes for entity: {}", entity.getEntityName());
-
             try {
                 captureAttributeValue(entity, attributes, AttributeRegistry.MAX_MANA, "max_mana", 100.0);
                 captureAttributeValue(entity, attributes, AttributeRegistry.MANA_REGEN, "mana_regen", 1.0);
@@ -158,8 +156,6 @@ public class EntitySnapshot {
                         captureAttributeValue(entity, attributes, powerAttribute, powerKey, 1.0);
                     }
                 }
-
-                MagicRealms.LOGGER.debug("Captured Iron's Spells attributes for entity: {}", entity.getEntityName());
 
             } catch (Exception e) {
                 MagicRealms.LOGGER.debug("Could not capture Iron's Spells attributes: {}", e.getMessage());
@@ -187,8 +183,6 @@ public class EntitySnapshot {
                 captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_PIERCE, "prot_pierce", 0.0);
                 captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_SHRED, "prot_shred", 0.0);
 
-                MagicRealms.LOGGER.debug("Captured Apothic attributes for entity: {}", entity.getEntityName());
-
             } catch (Exception e) {
                 MagicRealms.LOGGER.debug("Could not capture Apothic attributes: {}", e.getMessage());
             }
@@ -206,10 +200,8 @@ public class EntitySnapshot {
             if (instance != null) {
                 double value = instance.getValue();
                 attributes.putDouble(key, value);
-                MagicRealms.LOGGER.debug("Captured attribute {}: {}", key, value);
             } else {
                 attributes.putDouble(key, defaultValue);
-                MagicRealms.LOGGER.debug("Used default value for attribute {}: {}", key, defaultValue);
             }
         } catch (Exception e) {
             attributes.putDouble(key, defaultValue);
@@ -243,7 +235,6 @@ public class EntitySnapshot {
             }
 
             attributes.put("all_attribute_modifiers", modifiersTag);
-            MagicRealms.LOGGER.debug("Captured all attribute modifiers for entity: {}", entity.getEntityName());
 
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Could not capture attribute modifiers: {}", e.getMessage());
@@ -258,14 +249,6 @@ public class EntitySnapshot {
 
         var attributeHolder = BuiltInRegistries.ATTRIBUTE.getHolder(powerAttributeId).orElse(null);
 
-        if (attributeHolder == null) {
-            MagicRealms.LOGGER.debug("Power attribute not found for school {}: {}",
-                    school.getId(), powerAttributeId);
-        } else {
-            MagicRealms.LOGGER.debug("Found power attribute for school {}: {}",
-                    school.getId(), powerAttributeId);
-        }
-
         return attributeHolder;
     }
 
@@ -276,14 +259,6 @@ public class EntitySnapshot {
         );
 
         var attributeHolder = BuiltInRegistries.ATTRIBUTE.getHolder(resistAttributeId).orElse(null);
-
-        if (attributeHolder == null) {
-            MagicRealms.LOGGER.debug("Resistance attribute not found for school {}: {}",
-                    school.getId(), resistAttributeId);
-        } else {
-            MagicRealms.LOGGER.debug("Found resistance attribute for school {}: {}",
-                    school.getId(), resistAttributeId);
-        }
 
         return attributeHolder;
     }

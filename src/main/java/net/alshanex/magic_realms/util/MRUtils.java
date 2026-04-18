@@ -169,9 +169,6 @@ public class MRUtils {
         return score;
     }
 
-    /**
-     * Calculate total weapon damage including enchantments
-     */
     public static double getWeaponDamage(ItemStack weapon) {
         if (!isWeapon(weapon)) {
             return 1.0;
@@ -186,9 +183,6 @@ public class MRUtils {
         return baseDamage + enchantmentDamage;
     }
 
-    /**
-     * Get base weapon damage from item attributes
-     */
     public static double getBaseWeaponDamage(ItemStack weapon) {
         ItemAttributeModifiers modifiers = weapon.get(DataComponents.ATTRIBUTE_MODIFIERS);
         if (modifiers == null) {
@@ -213,9 +207,6 @@ public class MRUtils {
         return damage;
     }
 
-    /**
-     * Calculate damage bonus from enchantments by checking their damage effects
-     */
     public static double getEnchantmentDamageBonus(ItemStack weapon) {
         ItemEnchantments enchantments = weapon.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
         if (enchantments.isEmpty()) {
@@ -543,9 +534,6 @@ public class MRUtils {
             if (entity instanceof AbstractMercenaryEntity humanEntity) {
                 // Update the entity name on server side
                 humanEntity.setEntityName(entityName);
-
-                MagicRealms.LOGGER.debug("Updated entity {} name to: {}",
-                        entityUUID, entityName);
             }
         }
     }
@@ -562,9 +550,6 @@ public class MRUtils {
                 // Send the level back to the client with both ID and UUID
                 PacketDistributor.sendToPlayer(serverPlayer,
                         new SyncEntityLevelPacket(humanEntity.getId(), humanEntity.getUUID(), currentLevel));
-
-                MagicRealms.LOGGER.debug("Sent level {} for entity {} (ID: {}) to client",
-                        currentLevel, entityUUID, humanEntity.getId());
             }
         }
     }
@@ -604,9 +589,11 @@ public class MRUtils {
                     if (entityName == null || entityName.isEmpty()) {
                         entityName = AdvancedNameManager.getRandomName(humanEntity.getGender());
                         humanEntity.setEntityName(entityName);
-
+/*
                         MagicRealms.LOGGER.debug("Generated random name '{}' for entity {}",
                                 entityName, entityUUID);
+
+ */
                     } else {
                         MagicRealms.LOGGER.debug("Used existing name '{}' for entity {}",
                                 entityName, entityUUID);
@@ -618,9 +605,6 @@ public class MRUtils {
                     // Update display name again with the new name
                     humanEntity.updateCustomNameWithLevel(level);
                 }
-
-                MagicRealms.LOGGER.debug("Synced entity {} (ID: {}) with level {} and name '{}'",
-                        entityUUID, entityId, level, entityName);
             }
         }
     }
@@ -635,9 +619,6 @@ public class MRUtils {
 
                 // Update custom name with level
                 randomHuman.updateCustomNameWithStars();
-
-                MagicRealms.LOGGER.debug("Server updated preset name for entity {} to: {}",
-                        entityUUID, presetName);
             }
         }
     }
@@ -662,7 +643,6 @@ public class MRUtils {
                         }
                         ));
                     }
-                    MagicRealms.LOGGER.debug("Server: Switched from attributes to inventory menu");
                 }
             }
             return;
@@ -673,7 +653,6 @@ public class MRUtils {
             try {
                 ContractHumanInfoMenu.Tab tab = ContractHumanInfoMenu.Tab.valueOf(tabName);
                 attributesMenu.switchToTabServerSide(tab);
-                MagicRealms.LOGGER.debug("Server: Switched to tab {} within attributes menu", tab);
             } catch (IllegalArgumentException e) {
                 MagicRealms.LOGGER.warn("Invalid tab name received: {}", tabName);
             }

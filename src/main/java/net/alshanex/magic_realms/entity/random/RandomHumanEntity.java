@@ -59,9 +59,11 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         setTextureMetadata(textureMetadata);
 
         this.appearanceGenerated = true;
-
+/*
         MagicRealms.LOGGER.debug("Initialized appearance for {} - Gender: {}, Class: {}, Server: {}",
                 getEntityName(), gender.getName(), entityClass.getName(), !this.level().isClientSide());
+
+ */
     }
 
     private CompoundTag generateTextureMetadata(Gender gender, EntityClass entityClass, RandomSource random) {
@@ -79,17 +81,23 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         if (usePreset) {
             // Store preset index - will be modulo'd by actual count on client
             metadata.putInt("presetIndex", random.nextInt(10000));
+            /*
             MagicRealms.LOGGER.debug("Generated preset metadata for {} - index: {}",
                     getEntityName(), metadata.getInt("presetIndex"));
+
+             */
         } else {
             // Store indices for layered textures
             metadata.putInt("skinIndex", random.nextInt(10000));
             metadata.putInt("clothesIndex", random.nextInt(10000));
             metadata.putInt("eyesIndex", random.nextInt(10000));
             metadata.putInt("hairIndex", random.nextInt(10000));
+            /*
             MagicRealms.LOGGER.debug("Generated layered metadata for {} - skin:{}, clothes:{}, eyes:{}, hair:{}",
                     getEntityName(), metadata.getInt("skinIndex"), metadata.getInt("clothesIndex"),
                     metadata.getInt("eyesIndex"), metadata.getInt("hairIndex"));
+
+             */
         }
 
         return metadata;
@@ -141,9 +149,11 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
 
                             // Send name sync packet to server
                             syncPresetNameToServer(presetName);
-
+/*
                             MagicRealms.LOGGER.debug("Generated preset texture for {} with name: {} (syncing to server)",
                                     getEntityName(), presetName);
+
+ */
                         }
                     } else {
                         MagicRealms.LOGGER.debug("Generated preset texture for {} without name", getEntityName());
@@ -163,7 +173,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
                         metadata.getInt("hairIndex")
                 );
                 this.textureComponents = layered;
-                MagicRealms.LOGGER.debug("Generated layered texture for {}", getEntityName());
+                //MagicRealms.LOGGER.debug("Generated layered texture for {}", getEntityName());
             }
 
             clientTexturesGenerated = true;

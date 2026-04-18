@@ -57,14 +57,20 @@ public class MagicAttributeGainsHandler {
         int starLevel = entity.getStarLevel();
 
         if (!canGainSpellPower(entityClass)) {
+            /*
             MagicRealms.LOGGER.debug("Entity {} (class: {}) cannot gain spell power bonuses",
                     entity.getEntityName(), entityClass.getName());
+
+             */
             return;
         }
 
         if (hasReachedAttributeLimit(entity, school, "spell_power")) {
+            /*
             MagicRealms.LOGGER.debug("Entity {} has reached maximum spell power bonus for {} school",
                     entity.getEntityName(), school.getId());
+
+             */
             return;
         }
 
@@ -89,14 +95,20 @@ public class MagicAttributeGainsHandler {
         int starLevel = entity.getStarLevel();
 
         if (!canGainSpellResistance(entityClass)) {
+            /*
             MagicRealms.LOGGER.debug("Entity {} (class: {}) cannot gain spell resistance bonuses",
                     entity.getEntityName(), entityClass.getName());
+
+             */
             return;
         }
 
         if (hasReachedAttributeLimit(entity, school, "spell_resistance")) {
+            /*
             MagicRealms.LOGGER.debug("Entity {} has reached maximum spell resistance bonus for {} school",
                     entity.getEntityName(), school.getId());
+
+             */
             return;
         }
 
@@ -141,9 +153,11 @@ public class MagicAttributeGainsHandler {
         );
 
         instance.addPermanentModifier(modifier);
-
+/*
         MagicRealms.LOGGER.debug("Added attribute modifier {} with value {} to entity {}",
                 modifierId, bonusValue, entity.getEntityName());
+
+ */
     }
 
     private static boolean hasReachedAttributeLimit(AbstractMercenaryEntity entity, SchoolType school, String type) {
@@ -178,8 +192,11 @@ public class MagicAttributeGainsHandler {
         boolean hasReachedLimit = currentTotalBonusPercentage >= maxBonusPercentage;
 
         if (hasReachedLimit) {
+            /*
             MagicRealms.LOGGER.debug("Entity {} has reached {}% bonus limit for {} {} (current: {}%)",
                     entity.getEntityName(), maxBonusPercentage, school.getId().getPath(), type, currentTotalBonusPercentage);
+
+             */
         }
 
         return hasReachedLimit;

@@ -1775,19 +1775,24 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     .setSpells(attackSpells, defenseSpells, tankMovement, supportSpells)
                     .setDrinksPotions()
             );
+
+            this.goalSelector.addGoal(2, new ShieldBashGoal(this, getBattlefield()));
         } else {
-            // No-shield warrior — skirmisher.
-            this.goalSelector.addGoal(3, new SkirmisherCombatGoal(this, getBattlefield(), false)
+            // No-shield warrior — BRAWLER / frontline contender.
+            // Aggressive melee pressure like a tank, but periodically creates a small 4-block tactical pocket to drink a potion or finish a non-attack cast, then reengages.
+            List<AbstractSpell> brawlerMovement = ShieldTankCombatGoal.filterMovementForTank(movementSpells);
+
+            this.goalSelector.addGoal(3, new BrawlerCombatGoal(this, getBattlefield())
                     .setMoveset(List.of(
                             new AttackAnimationData(9, "simple_sword_upward_swipe", 5),
                             new AttackAnimationData(8, "simple_sword_lunge_stab", 6),
                             new AttackAnimationData(10, "simple_sword_stab_alternate", 8),
                             new AttackAnimationData(10, "simple_sword_horizontal_cross_swipe", 8)
                     ))
-                    .setComboChance(.6f)                 // was .4 — skirmishers combo harder
-                    .setMeleeAttackInverval(10, 25)      // tighter cadence than current
-                    .setMeleeMovespeedModifier(1.6f)     // faster than current 1.5f
-                    .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
+                    .setComboChance(.5f)                 // between tank (.4) and assassin (.7)
+                    .setMeleeAttackInverval(14, 28)      // aggressive but not assassin-fast
+                    .setMeleeMovespeedModifier(1.45f)    // between tank (1.3) and assassin (2.0)
+                    .setSpells(attackSpells, defenseSpells, brawlerMovement, supportSpells)
                     .setDrinksPotions()
             );
         }
@@ -1838,7 +1843,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                         goal instanceof RangedBowAttackGoal ||
                         goal instanceof ChargeArrowAttackGoal ||
                         goal instanceof GenericAnimatedWarlockAttackGoal ||
-                        goal instanceof SniperArcherCombatGoal
+                        goal instanceof SniperArcherCombatGoal ||
+                        goal instanceof ShieldBashGoal
         );
     }
 
@@ -2070,11 +2076,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                 spellsTag.add(StringTag.valueOf(spell.getSpellResource().toString()));
             }
             compound.put("PersistedSpells", spellsTag);
-
+/*
             MagicRealms.LOGGER.debug("Saved {} spells for entity {}: [{}]",
                     persistedSpells.size(),
                     getEntityName(),
                     persistedSpells.stream().map(AbstractSpell::getSpellName).collect(java.util.stream.Collectors.joining(", ")));
+
+ */
         }
 
         OwnerHelper.serializeOwner(compound, summonerUUID);

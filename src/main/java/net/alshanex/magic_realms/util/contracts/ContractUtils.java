@@ -237,7 +237,7 @@ public class ContractUtils {
             }
         } else {
             int minutes = contractData.getRemainingMinutes(level);
-            int seconds = contractData.getRemainingSeconds(level);
+            String seconds = contractData.getRemainingSecondsFormatted(level);
 
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",

@@ -348,6 +348,12 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         return (int) ((getRemainingTime(level) % (60 * 20)) / 20);
     }
 
+    public String getRemainingSecondsFormatted(Level level){
+        if (isPermanent) return "00";
+        int seconds = (int) ((getRemainingTime(level) % (60 * 20)) / 20);
+        return String.format("%02d", seconds);
+    }
+
     public long getTotalContractDuration() {
         return totalContractDuration;
     }

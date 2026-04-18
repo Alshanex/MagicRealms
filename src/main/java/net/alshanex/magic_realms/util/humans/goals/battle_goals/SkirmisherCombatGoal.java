@@ -41,10 +41,10 @@ public class SkirmisherCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstr
     private static final int DISENGAGE_MIN_TICKS = 30;
 
     /** Safety cap on DISENGAGE duration. */
-    private static final int DISENGAGE_MAX_TICKS = 80;
+    private static final int DISENGAGE_MAX_TICKS = 50;
 
     /** Distance we must reach before ending DISENGAGE. */
-    private static final double DISENGAGE_SAFE_DIST = 14.0;
+    private static final double DISENGAGE_SAFE_DIST = 8.0;
 
     /** Cooldown (ticks) before APPROACH is allowed again — ensures a real gap. */
     private static final int APPROACH_COOLDOWN_AFTER_DISENGAGE = 20;
@@ -53,7 +53,7 @@ public class SkirmisherCombatGoal extends GenericAnimatedWarlockAttackGoal<Abstr
     private static final double MELEE_DIST = 3.0;
 
     /** How far to flee on each disengage pathfind. */
-    private static final int FLEE_PATH_DISTANCE = 16;
+    private static final int FLEE_PATH_DISTANCE = 12;
     private static final int FLEE_PATH_Y = 5;
 
     private Vec3 disengagePos = null;

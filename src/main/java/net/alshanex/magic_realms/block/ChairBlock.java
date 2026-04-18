@@ -224,15 +224,18 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
             if (random < EXCLUSIVE_MERCENARY_CHANCE) {
                 // Try to spawn an exclusive mercenary using tags
                 entityToSpawn = tryCreateExclusiveMercenaryUsingTags(level);
+                /*
                 MagicRealms.LOGGER.debug("Chair at {} rolled for exclusive mercenary ({}%), result: {}",
                         pos, (int)(EXCLUSIVE_MERCENARY_CHANCE * 100),
                         entityToSpawn != null ? entityToSpawn.getClass().getSimpleName() : "none available");
+
+                 */
             }
 
             // If no exclusive mercenary could be spawned, default to RandomHumanEntity
             if (entityToSpawn == null) {
                 entityToSpawn = new RandomHumanEntity(MREntityRegistry.HUMAN.get(), level);
-                MagicRealms.LOGGER.debug("Chair at {} spawning RandomHumanEntity (fallback or 90% chance)", pos);
+                //MagicRealms.LOGGER.debug("Chair at {} spawning RandomHumanEntity (fallback or 90% chance)", pos);
             }
 
             // Position and spawn the entity
@@ -269,8 +272,11 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
         // Create the entity using the EntityType.create method
         AbstractMercenaryEntity entity = createEntityFromType(selectedType, level);
         if (entity != null) {
+            /*
             MagicRealms.LOGGER.debug("Selected exclusive mercenary: {} (available in world)",
                     selectedType.getDescriptionId());
+
+             */
             return entity;
         }
 
@@ -317,9 +323,11 @@ public class ChairBlock extends HorizontalDirectionalBlock implements EntityBloc
                         entity.setYRot(getSittingYaw(state));
                     }
                 });
-
+/*
                 MagicRealms.LOGGER.debug("Successfully spawned {} at chair {}",
                         entity.getClass().getSimpleName(), pos);
+
+ */
             }
 
             // Update cooldown

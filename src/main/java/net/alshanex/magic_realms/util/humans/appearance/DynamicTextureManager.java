@@ -39,7 +39,7 @@ public class DynamicTextureManager {
             Minecraft.getInstance().getTextureManager().register(location, dynamicTexture);
 
             REGISTERED_TEXTURES.put(entityUUID, location);
-            MagicRealms.LOGGER.debug("Registered dynamic texture for entity: {} -> {}", entityUUID, location);
+            //MagicRealms.LOGGER.debug("Registered dynamic texture for entity: {} -> {}", entityUUID, location);
 
             return location;
 
@@ -54,7 +54,7 @@ public class DynamicTextureManager {
         if (location != null) {
             try {
                 Minecraft.getInstance().getTextureManager().release(location);
-                MagicRealms.LOGGER.debug("Unregistered texture for entity: " + entityUUID);
+                //MagicRealms.LOGGER.debug("Unregistered texture for entity: " + entityUUID);
             } catch (Exception e) {
                 MagicRealms.LOGGER.error("Failed to unregister texture for entity " + entityUUID, e);
             }

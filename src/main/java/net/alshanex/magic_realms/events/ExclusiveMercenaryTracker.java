@@ -113,8 +113,11 @@ public class ExclusiveMercenaryTracker {
             if (existing.entityUUID.equals(entityUUID)) {
                 // Same entity changing dimensions or reloading - update location
                 existing.currentDimension = dimensionKey;
+                /*
                 MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) now in dimension {} of world {}",
                         entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
+
+                 */
                 return;
             } else {
                 // Different entity with same type - this shouldn't happen!
@@ -128,9 +131,11 @@ public class ExclusiveMercenaryTracker {
         WORLD_EXCLUSIVE_REGISTRY.computeIfAbsent(worldKey, k -> ConcurrentHashMap.newKeySet()).add(entityType);
         WORLD_EXCLUSIVE_INSTANCES.computeIfAbsent(worldKey, k -> new ConcurrentHashMap<>())
                 .put(entityType, new ExclusiveMercenaryInfo(entityUUID, dimensionKey));
-
+/*
         MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) spawned in dimension {} of world {} - now tracked world-wide",
                 entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
+
+ */
     }
 
     @SubscribeEvent
@@ -176,13 +181,18 @@ public class ExclusiveMercenaryTracker {
             if (worldInstances.isEmpty()) {
                 WORLD_EXCLUSIVE_INSTANCES.remove(worldKey);
             }
-
+/*
             MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) permanently removed from world {} - world-wide tracking cleared",
                     entityType.getDescriptionId(), entityUUID, worldKey);
+
+ */
         } else {
             // Entity is just changing dimensions - keep world-wide tracking, update will happen in join event
+            /*
             MagicRealms.LOGGER.debug("Exclusive mercenary {} ({}) leaving dimension {} in world {} (dimension change, keeping world-wide tracking)",
                     entityType.getDescriptionId(), entityUUID, dimensionKey, worldKey);
+
+             */
         }
     }
 
@@ -197,7 +207,7 @@ public class ExclusiveMercenaryTracker {
 
         // Don't clean up individual dimension unloads since we want world-wide tracking
         // Only clean up when the entire server/world shuts down
-        MagicRealms.LOGGER.debug("Dimension unloaded for world {} but keeping world-wide exclusive mercenary tracking", worldKey);
+        //MagicRealms.LOGGER.debug("Dimension unloaded for world {} but keeping world-wide exclusive mercenary tracking", worldKey);
     }
 
     /**

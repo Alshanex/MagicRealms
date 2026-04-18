@@ -74,7 +74,7 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
         addPlayerHotbar(playerInventory);
         addEntityInventorySlots();
 
-        MagicRealms.LOGGER.debug("Created inventory menu with {} total slots", this.slots.size());
+        //MagicRealms.LOGGER.debug("Created inventory menu with {} total slots", this.slots.size());
     }
 
     // Constructor for client-side (from snapshot only)
@@ -102,7 +102,7 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
         addPlayerHotbar(playerInventory);
         addEntityInventorySlots();
 
-        MagicRealms.LOGGER.debug("Network created inventory menu with {} total slots", this.slots.size());
+        //MagicRealms.LOGGER.debug("Network created inventory menu with {} total slots", this.slots.size());
     }
 
     public Tab getCurrentTab() {
@@ -112,7 +112,7 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
     public void switchToTabServerSide(Tab newTab) {
         // This method is called when switching away from inventory to attributes menu
         // The actual menu switching is handled by the packet handler
-        MagicRealms.LOGGER.debug("Inventory menu received tab switch request to: {}", newTab);
+        //MagicRealms.LOGGER.debug("Inventory menu received tab switch request to: {}", newTab);
     }
 
     private AbstractMercenaryEntity findEntityByUUID(Level level, UUID entityUUID) {

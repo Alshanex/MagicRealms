@@ -35,7 +35,7 @@ public class LayeredTextureManager {
 
     @OnlyIn(Dist.CLIENT)
     public static void loadTextures() {
-        MagicRealms.LOGGER.debug("Starting to load layered textures...");
+        //MagicRealms.LOGGER.debug("Starting to load layered textures...");
 
         loadTexturesFromDirectory("textures/entity/human/skin", "skin");
         loadTexturesFromDirectory("textures/entity/human/eyes", "eyes");
@@ -54,7 +54,7 @@ public class LayeredTextureManager {
         loadTexturesFromDirectory("textures/entity/human/additional_textures/male", "additional_male");
         loadTexturesFromDirectory("textures/entity/human/additional_textures/female", "additional_female");
 
-        MagicRealms.LOGGER.debug("Finished loading textures. Total categories: " + TEXTURE_CACHE.size());
+        //MagicRealms.LOGGER.debug("Finished loading textures. Total categories: " + TEXTURE_CACHE.size());
     }
 
     private static void loadTexturesFromDirectory(String path, String category) {
@@ -74,7 +74,7 @@ public class LayeredTextureManager {
                     textures.add(resource);
                 }
 
-                MagicRealms.LOGGER.debug("Loaded " + textures.size() + " textures for category: " + category);
+                //MagicRealms.LOGGER.debug("Loaded " + textures.size() + " textures for category: " + category);
                 if (textures.isEmpty()) {
                     MagicRealms.LOGGER.debug("Warning: No textures found in directory: " + path);
                 }
@@ -98,10 +98,10 @@ public class LayeredTextureManager {
 
         int actualIndex = Math.abs(index % textures.size());
         ResourceLocation selectedTexture = textures.get(actualIndex);
-
+/*
         MagicRealms.LOGGER.debug("Selected texture by index for {}: {} (index {} -> {})",
                 category, selectedTexture, index, actualIndex);
-
+*/
         return selectedTexture.toString();
     }
 

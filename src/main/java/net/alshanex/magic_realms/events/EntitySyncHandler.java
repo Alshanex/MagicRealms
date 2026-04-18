@@ -24,9 +24,11 @@ public class EntitySyncHandler {
             int currentLevel = killData.getCurrentLevel();
             PacketDistributor.sendToPlayer(serverPlayer,
                     new SyncEntityLevelPacket(humanEntity.getId(), humanEntity.getUUID(), currentLevel));
-
+/*
             MagicRealms.LOGGER.debug("Synced entity {} (level {}) to player {}",
                     humanEntity.getEntityName(), currentLevel, serverPlayer.getName().getString());
+
+ */
         }
     }
 }

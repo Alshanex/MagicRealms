@@ -186,6 +186,37 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+        renderClassSymbolTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderClassSymbolTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (snapshot == null) return;
+        if (getSymbolItemForClass().isEmpty()) return;
+
+        int symbolX = leftPos + SYMBOL_X;
+        int symbolY = topPos + SYMBOL_Y;
+
+        boolean hovering = mouseX >= symbolX && mouseX < symbolX + 16 && mouseY >= symbolY && mouseY < symbolY + 16;
+        if (!hovering) return;
+
+        Component label = getClassDisplayName();
+        guiGraphics.renderTooltip(font, label, mouseX, mouseY);
+    }
+
+    private Component getClassDisplayName() {
+        EntityClass cls = snapshot.entityClass;
+        if (cls == null) {
+            return Component.translatable("gui.magic_realms.human_info.class.unknown");
+        }
+        return switch (cls) {
+            case MAGE -> Component.translatable("gui.magic_realms.human_info.class.mage");
+            case WARRIOR -> snapshot.hasShield
+                    ? Component.translatable("gui.magic_realms.human_info.class.warrior_shield")
+                    : Component.translatable("gui.magic_realms.human_info.class.warrior");
+            case ROGUE -> snapshot.isArcher
+                    ? Component.translatable("gui.magic_realms.human_info.class.archer")
+                    : Component.translatable("gui.magic_realms.human_info.class.assassin");
+        };
     }
 
     private AbstractMercenaryEntity getOrCreateVirtualEntity() {
@@ -313,7 +344,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
             if (components != null) {
                 setTextureComponentsDirectly(randomHuman, components);
-                MagicRealms.LOGGER.debug("Generated texture components for virtual entity from metadata");
+                //MagicRealms.LOGGER.debug("Generated texture components for virtual entity from metadata");
             }
 
         } catch (Exception e) {

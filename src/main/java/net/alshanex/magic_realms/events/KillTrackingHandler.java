@@ -133,13 +133,15 @@ public class KillTrackingHandler {
         int previousLevel = killData.getCurrentLevel();
         killData.addKill(victim);
         int newLevel = killData.getCurrentLevel();
-
+/*
         MagicRealms.LOGGER.debug("Entity {} killed {} | Total kills: {} | Current EXP: {} | EXP to next: {}",
                 humanEntity.getEntityName(),
                 victim.getType().getDescription().getString(),
                 killData.getTotalKills(),
                 killData.getExperiencePoints(),
                 killData.getExperienceToNextLevel());
+
+ */
 
         if (newLevel > previousLevel) {
             spawnLevelUpEffects(humanEntity);

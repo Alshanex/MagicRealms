@@ -64,7 +64,7 @@ public abstract class AbstractFixedTextureRenderer extends AbstractMercenaryEnti
             ResourceLocation reregistered = registerProcessedTexture(originalTexture, cachedImage);
             if (reregistered != null) {
                 PROCESSED_TEXTURES.put(originalTexture, reregistered);
-                MagicRealms.LOGGER.debug("Re-registered cached processed texture: {}", originalTexture);
+                //MagicRealms.LOGGER.debug("Re-registered cached processed texture: {}", originalTexture);
                 return reregistered;
             }
         }
@@ -102,7 +102,7 @@ public abstract class AbstractFixedTextureRenderer extends AbstractMercenaryEnti
                             ResourceLocation processed = registerProcessedTexture(originalTexture, fixedImage);
                             if (processed != null) {
                                 PROCESSED_TEXTURES.put(originalTexture, processed);
-                                MagicRealms.LOGGER.debug("Successfully processed new texture: {}", originalTexture);
+                                //MagicRealms.LOGGER.debug("Successfully processed new texture: {}", originalTexture);
                                 return processed;
                             }
                         } else {
@@ -152,7 +152,7 @@ public abstract class AbstractFixedTextureRenderer extends AbstractMercenaryEnti
             // Register with TextureManager
             mc.getTextureManager().register(processedTexture, dynamicTexture);
 
-            MagicRealms.LOGGER.debug("Registered processed texture: {} -> {}", originalTexture, processedTexture);
+            //MagicRealms.LOGGER.debug("Registered processed texture: {} -> {}", originalTexture, processedTexture);
             return processedTexture;
 
         } catch (Exception e) {

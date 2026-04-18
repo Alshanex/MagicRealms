@@ -49,8 +49,11 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
         if (components.isPresetTexture() && components.getSkinTexture() != null) {
             try {
                 ResourceLocation presetTexture = ResourceLocation.parse(components.getSkinTexture());
+                /*
                 MagicRealms.LOGGER.debug("Using preset texture for {}: {}",
                         human.getEntityName(), presetTexture);
+
+                 */
                 return presetTexture;
             } catch (Exception e) {
                 MagicRealms.LOGGER.warn("Invalid preset texture for {}: {}, falling back to default",
@@ -160,7 +163,7 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
             ResourceLocation dynamicLocation = DynamicTextureManager.registerDynamicTexture(textureId, finalTexture);
 
             if (dynamicLocation != null) {
-                MagicRealms.LOGGER.debug("Successfully created composite texture: {}", dynamicLocation);
+                //MagicRealms.LOGGER.debug("Successfully created composite texture: {}", dynamicLocation);
                 return dynamicLocation;
             } else {
                 MagicRealms.LOGGER.warn("Failed to register dynamic texture");
@@ -188,7 +191,7 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
                     try (InputStream inputStream = resource.open()) {
                         BufferedImage image = ImageIO.read(inputStream);
                         if (image != null) {
-                            MagicRealms.LOGGER.debug("Successfully loaded texture: {}", textureId);
+                            //MagicRealms.LOGGER.debug("Successfully loaded texture: {}", textureId);
                         }
                         return image;
                     }

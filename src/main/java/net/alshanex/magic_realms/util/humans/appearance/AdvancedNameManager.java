@@ -35,7 +35,7 @@ public class AdvancedNameManager {
         }
 
         String selectedName = names.get(deterministicRandom.nextInt(names.size()));
-        MagicRealms.LOGGER.debug("Selected DETERMINISTIC name '{}' for gender '{}'", selectedName, gender.getName());
+        //MagicRealms.LOGGER.debug("Selected DETERMINISTIC name '{}' for gender '{}'", selectedName, gender.getName());
         return selectedName;
     }
 
@@ -53,7 +53,7 @@ public class AdvancedNameManager {
         }
 
         String selectedName = names.get(RANDOM.nextInt(names.size()));
-        MagicRealms.LOGGER.debug("Selected name '{}' for gender '{}'", selectedName, gender.getName());
+        //MagicRealms.LOGGER.debug("Selected name '{}' for gender '{}'", selectedName, gender.getName());
         return selectedName;
     }
 

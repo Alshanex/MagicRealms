@@ -6,6 +6,7 @@
     {"id": "brewinandchewin:kimchi","required": false},
     {"id": "create:sweet_roll","required": false},
     {"id": "brewinandchewin:pickled_pickles","required": false},
+    {"id": "hazennstuff:corn_beef","required": false},
     {"id": "hearthandharvest:chicken_pot_pie_slice","required": false},
     {"id": "hearthandharvest:cooked_sausage","required": false},
     {"id": "hearthandharvest:jerky","required": false},

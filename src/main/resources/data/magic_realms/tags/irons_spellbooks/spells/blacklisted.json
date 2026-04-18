@@ -58,6 +58,7 @@
     {"id": "ess_requiem:decaying_will","required": false},
     {"id": "ess_requiem:disappearing_act","required": false},
     {"id": "ess_requiem:ebony_cataphract","required": false},
+    {"id": "ess_requiem:field_of_mourning","required": false},
     {"id": "ess_requiem:forever_dreaming","required": false},
     {"id": "ess_requiem:gild_summon","required": false},
     {"id": "ess_requiem:glacial_sculpting","required": false},

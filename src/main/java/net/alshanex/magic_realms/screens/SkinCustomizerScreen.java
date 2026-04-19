@@ -188,13 +188,10 @@ public class SkinCustomizerScreen extends Screen {
             int bg = selected ? 0xFF3A5A8C : (hovered ? 0xFF2A2A2A : 0xFF1A1A1A);
             g.fill(listX, rowY, listX + LIST_W - 8, rowY + ROW_H, bg);
 
-            // draw the texture as a tiny thumbnail (left) + name (right)
             ResourceLocation assetPath = ResourceLocation.fromNamespaceAndPath(
                     part.texture().getNamespace(),
                     "textures/" + part.texture().getPath() + ".png");
-            try {
-                g.blit(assetPath, listX + 2, rowY + 2, 0, 0, 16, 16, 64, 64);
-            } catch (Exception ignored) {}
+            drawThumbnail(g, assetPath, part.category(), listX + 2, rowY + 2);
 
             String label = prettyName(part.texture().getPath());
             g.drawString(this.font, label, listX + 22, rowY + 6, 0xFFFFFFFF, false);
@@ -210,6 +207,33 @@ public class SkinCustomizerScreen extends Screen {
         }
 
         super.render(g, mouseX, mouseY, partialTick);
+    }
+
+    private static final ResourceLocation NEUTRAL_SKIN_BG = ResourceLocation.fromNamespaceAndPath(
+            "magic_realms", "textures/entity/human/skin/base_skin_color_11.png");
+
+    private void drawThumbnail(GuiGraphics g, ResourceLocation asset, SkinCategory category, int x, int y) {
+        try {
+            switch (category) {
+                case CLOTHES -> {
+                    // Torso front
+                    g.blit(asset, x, y, 16, 16, 20, 20, 8, 12, 64, 64);
+                }
+                case SKIN -> {
+                    // Face of the skin itself
+                    g.blit(asset, x, y, 16, 16, 8, 8, 8, 8, 64, 64);
+                }
+                case EYES, HAIR -> {
+                    // Draw neutral skin underneath, then the layer on top
+                    g.blit(NEUTRAL_SKIN_BG, x, y, 16, 16, 8, 8, 8, 8, 64, 64);
+                    g.blit(asset, x, y, 16, 16, 8, 8, 8, 8, 64, 64);
+                    // Also draw the hat/overlay layer for hair (the front-of-head overlay region is at x=40, y=8)
+                    if (category == SkinCategory.HAIR) {
+                        g.blit(asset, x, y, 16, 16, 40, 8, 8, 8, 64, 64);
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private String getPending(SkinCategory cat) {

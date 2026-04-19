@@ -37,6 +37,9 @@
   "item.magic_realms.hell_pass": "Hell's Pass",
   "item.magic_realms.midas_coin": "Midas Coin",
   "item.magic_realms.permanent_blood_pact": "Binding Blood Pact",
+  "item.magic_realms.skin_customizer": "Skin Customizer",
+  "item.magic_realms.skin_customizer.no_permission": "You don't have permission to use this.",
+  "item.magic_realms.skin_customizer.preset_not_editable": "This mercenary uses a preset skin and can't be customized.",
 
   "itemGroup.magic_realms.main_tab": "Magic Realms",
 

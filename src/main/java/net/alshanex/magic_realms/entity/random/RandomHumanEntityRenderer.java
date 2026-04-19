@@ -76,14 +76,13 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
         return DEFAULT_TEXTURE;
     }
 
-    private String createCacheKey(TextureComponents components) {
+    private static String createCacheKey(TextureComponents components) {
         try {
             return String.join("|",
                     components.getSkinTexture() != null ? components.getSkinTexture() : "",
                     components.getClothesTexture() != null ? components.getClothesTexture() : "",
                     components.getEyesTexture() != null ? components.getEyesTexture() : "",
-                    components.getHairTexture() != null ? components.getHairTexture() : ""
-            );
+                    components.getHairTexture() != null ? components.getHairTexture() : "");
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to create cache key", e);
             return null;
@@ -152,7 +151,7 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
             }
 
             // Register as dynamic texture
-            String textureId = "composite_" + System.nanoTime() + "_" + Math.abs(createCacheKey(components).hashCode());
+            String textureId = "composite_" + Math.abs(createCacheKey(components).hashCode());
             ResourceLocation dynamicLocation = DynamicTextureManager.registerDynamicTexture(textureId, finalTexture);
 
             if (dynamicLocation != null) {
@@ -206,6 +205,15 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
     public static void clearCompositeCache() {
         COMPOSITE_TEXTURE_CACHE.clear();
         MagicRealms.LOGGER.debug("Cleared composite texture cache");
+    }
+
+    public static void clearCompositeCacheFor(TextureComponents components) {
+        String key = createCacheKey(components);
+        if (key == null) return;
+        ResourceLocation removed = COMPOSITE_TEXTURE_CACHE.remove(key);
+        if (removed != null) {
+            DynamicTextureManager.unregisterTexture("composite_" + Math.abs(key.hashCode()));
+        }
     }
 
     private static ResourceLocation toAssetPath(String textureId) {

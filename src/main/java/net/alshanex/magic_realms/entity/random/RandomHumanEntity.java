@@ -4,6 +4,7 @@ import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.Abstra
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.item.SkinCustomizerItem;
 import net.alshanex.magic_realms.network.SyncPresetNamePacket;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -12,13 +13,17 @@ import net.alshanex.magic_realms.skins_management.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -105,14 +110,13 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
 
         if (this.level().isClientSide() && isInitialized() && !clientTexturesGenerated) {
             // Schedule texture generation for next tick to ensure textures are loaded
-            net.minecraft.client.Minecraft.getInstance().execute(this::generateTexturesFromMetadata);
+            Minecraft.getInstance().execute(this::generateTexturesFromMetadata);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     private void generateTexturesFromMetadata() {
         if (!this.level().isClientSide()) return;
-        if (clientTexturesGenerated) return;
 
         CompoundTag metadata = getTextureMetadata();
         if (metadata.isEmpty()) {
@@ -152,6 +156,23 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to sync preset name to server", e);
         }
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (key.equals(TEXTURE_METADATA) && this.level().isClientSide()) {
+            onTextureMetadataUpdatedClient();
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void onTextureMetadataUpdatedClient() {
+        if (this.textureComponents != null && !this.textureComponents.isPresetTexture()) {
+            RandomHumanEntityRenderer.clearCompositeCacheFor(this.textureComponents);
+        }
+        this.clientTexturesGenerated = false;
+        Minecraft.getInstance().execute(this::generateTexturesFromMetadata);
     }
 
     // Getters/setters for texture metadata

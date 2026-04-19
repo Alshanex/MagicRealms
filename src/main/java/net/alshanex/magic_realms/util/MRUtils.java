@@ -12,6 +12,7 @@ import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
+import net.alshanex.magic_realms.screens.SkinCustomizerScreen;
 import net.alshanex.magic_realms.skins_management.SkinCatalog;
 import net.alshanex.magic_realms.skins_management.SkinCatalogHolder;
 import net.alshanex.magic_realms.skins_management.SkinPart;
@@ -23,6 +24,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
@@ -698,5 +700,29 @@ public class MRUtils {
         SkinCatalogHolder.setClient(catalog);
         MagicRealms.LOGGER.debug("Received skin catalog from server: {} parts, {} presets",
                 parts.size(), presets.size());
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void openTextureCustomizationScreen(OpenSkinCustomizerPacket packet){
+        Minecraft.getInstance().setScreen(new SkinCustomizerScreen(packet));
+    }
+
+    public static void handleTextureCustomizationSave(Player player, UUID entityUUID, String skin, String clothes, String eyes, String hair){
+        if (!(player instanceof ServerPlayer sp)) return;
+        if (!sp.getAbilities().instabuild) return;
+
+        ServerLevel level = sp.serverLevel();
+        Entity e = level.getEntity(entityUUID);
+        if (!(e instanceof RandomHumanEntity human)) return;
+
+        CompoundTag metadata = human.getTextureMetadata().copy();
+        if (metadata.getBoolean("usePreset")) return; // guard: never overwrite preset entities
+
+        if (!skin.isEmpty()) metadata.putString("skinTexture", skin);
+        if (!clothes.isEmpty()) metadata.putString("clothesTexture", clothes);
+        if (!eyes.isEmpty()) metadata.putString("eyesTexture", eyes);
+        if (!hair.isEmpty()) metadata.putString("hairTexture", hair);
+
+        human.setTextureMetadata(metadata);
     }
 }

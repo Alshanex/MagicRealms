@@ -99,6 +99,16 @@ runs {
         systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
     }
 
+    client2 {
+        runType 'client'
+
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+
+        workingDirectory project.file('run-client2')
+
+        arguments.addAll '--username', 'Dev2'
+    }
+
     server {
         systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         argument '--nogui'

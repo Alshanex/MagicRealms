@@ -18,8 +18,10 @@ public class PayloadHandler {
         payloadRegistrar.playToServer(SyncPresetNamePacket.TYPE, SyncPresetNamePacket.STREAM_CODEC, SyncPresetNamePacket::handle);
         payloadRegistrar.playToServer(SwitchTabPacket.TYPE, SwitchTabPacket.STREAM_CODEC, SwitchTabPacket::handle);
         payloadRegistrar.playToServer(SwitchAttributesMenuPacket.TYPE, SwitchAttributesMenuPacket.STREAM_CODEC, SwitchAttributesMenuPacket::handle);
+        payloadRegistrar.playToServer(SaveSkinPartsPacket.TYPE, SaveSkinPartsPacket.STREAM_CODEC, SaveSkinPartsPacket::handle);
 
         payloadRegistrar.playToClient(SyncEntityLevelPacket.TYPE, SyncEntityLevelPacket.STREAM_CODEC, SyncEntityLevelPacket::handle);
         payloadRegistrar.playToClient(SyncSkinCatalogPacket.TYPE, SyncSkinCatalogPacket.STREAM_CODEC, SyncSkinCatalogPacket::handle);
+        payloadRegistrar.playToClient(OpenSkinCustomizerPacket.TYPE, OpenSkinCustomizerPacket.STREAM_CODEC, OpenSkinCustomizerPacket::handle);
     }
 }

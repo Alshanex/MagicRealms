@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.item;
 
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.OpenSkinCustomizerPacket;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,11 +15,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.List;
 
 public class SkinCustomizerItem extends Item {
     private static final float REACH = 20.0f;
@@ -34,9 +38,6 @@ public class SkinCustomizerItem extends Item {
         }
 
         if (!canUse(player)) {
-            player.displayClientMessage(
-                    Component.translatable("item.magic_realms.skin_customizer.no_permission"),
-                    true);
             return InteractionResult.FAIL;
         }
 
@@ -46,9 +47,6 @@ public class SkinCustomizerItem extends Item {
 
         CompoundTag metadata = human.getTextureMetadata();
         if (metadata.getBoolean("usePreset")) {
-            player.displayClientMessage(
-                    Component.translatable("item.magic_realms.skin_customizer.preset_not_editable"),
-                    true);
             return InteractionResult.FAIL;
         }
 
@@ -67,6 +65,13 @@ public class SkinCustomizerItem extends Item {
         }
 
         return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        tooltipComponents.add(Component.translatable("item.magic_realms.skin_customizer.creative").withStyle(ChatFormatting.LIGHT_PURPLE));
+        tooltipComponents.add(Component.translatable("item.magic_realms.skin_customizer.preset_not_editable").withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY));
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 
     private boolean canUse(Player player) {

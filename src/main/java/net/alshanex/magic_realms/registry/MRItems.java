@@ -101,5 +101,5 @@ public class MRItems {
 
     public static final DeferredHolder<Item, SkinCustomizerItem> SKIN_CUSTOMIZER =
             ITEMS.register("skin_customizer", () -> new SkinCustomizerItem(
-                    new Item.Properties().stacksTo(1)));
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
 }

@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.screens;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
@@ -299,8 +300,8 @@ public class SkinCustomizerScreen extends Screen {
         pose.pushPose();
         pose.translate(cx, cy, 100);
         pose.scale(scale, scale, scale);
-        pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180));
-        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(currentYaw));
+        pose.mulPose(Axis.ZP.rotationDegrees(180));
+        pose.mulPose(Axis.YP.rotationDegrees(currentYaw));
 
         RenderSystem.runAsFancy(() -> {
             var dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();

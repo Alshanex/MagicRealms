@@ -266,6 +266,10 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                     MagicManager.spawnParticles(this.level(), new BlastwaveParticleOptions(SchoolRegistry.HOLY.get().getTargetingColor(), 3), this.getX(), this.getY() + .165f, this.getZ(), 1, 0, 0, 0, 0, true);
                 }
             }
+
+            if(getTarget() != null && getTarget().hasEffect(MobEffectRegistry.ABYSSAL_SHROUD)){
+                getTarget().removeEffect(MobEffectRegistry.ABYSSAL_SHROUD);
+            }
         }
     }
 

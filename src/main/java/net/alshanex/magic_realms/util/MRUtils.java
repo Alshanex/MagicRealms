@@ -707,16 +707,16 @@ public class MRUtils {
         Minecraft.getInstance().setScreen(new SkinCustomizerScreen(packet));
     }
 
-    public static void handleTextureCustomizationSave(Player player, UUID entityUUID, String skin, String clothes, String eyes, String hair){
+    public static void handleTextureCustomizationSave(Player player, String name, UUID entityUUID, String skin, String clothes, String eyes, String hair){
         if (!(player instanceof ServerPlayer sp)) return;
-        if (!sp.getAbilities().instabuild) return;
+        if (!sp.getAbilities().instabuild && !sp.hasPermissions(2)) return;
 
         ServerLevel level = sp.serverLevel();
         Entity e = level.getEntity(entityUUID);
         if (!(e instanceof RandomHumanEntity human)) return;
 
         CompoundTag metadata = human.getTextureMetadata().copy();
-        if (metadata.getBoolean("usePreset")) return; // guard: never overwrite preset entities
+        if (metadata.getBoolean("usePreset")) return;
 
         if (!skin.isEmpty()) metadata.putString("skinTexture", skin);
         if (!clothes.isEmpty()) metadata.putString("clothesTexture", clothes);
@@ -724,5 +724,17 @@ public class MRUtils {
         if (!hair.isEmpty()) metadata.putString("hairTexture", hair);
 
         human.setTextureMetadata(metadata);
+
+        // Update name if provided and non-empty
+        if (!name.isBlank()) {
+            String trimmed = name.trim();
+            // cap length to avoid abuse
+            if (trimmed.length() > 32) trimmed = trimmed.substring(0, 32);
+            human.setEntityName(trimmed);
+
+            // Refresh the visible nameplate with the current level
+            var killData = human.getData(MRDataAttachments.KILL_TRACKER);
+            human.updateCustomNameWithLevel(killData.getCurrentLevel());
+        }
     }
 }

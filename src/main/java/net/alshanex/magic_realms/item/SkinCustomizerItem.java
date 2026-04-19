@@ -58,6 +58,7 @@ public class SkinCustomizerItem extends Item {
                             human.getUUID(),
                             human.getGender().getName(),
                             human.getEntityClass().getName(),
+                            human.getEntityName() != null ? human.getEntityName() : "",
                             metadata.contains("skinTexture") ? metadata.getString("skinTexture") : "",
                             metadata.contains("clothesTexture") ? metadata.getString("clothesTexture") : "",
                             metadata.contains("eyesTexture") ? metadata.getString("eyesTexture") : "",

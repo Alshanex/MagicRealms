@@ -16,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.nbt.CompoundTag;
@@ -57,11 +58,15 @@ public class SkinCustomizerScreen extends Screen {
 
     private int panelX, panelY;
 
+    private EditBox nameField;
+    private final String initialName;
+
     public SkinCustomizerScreen(OpenSkinCustomizerPacket pkt) {
         super(Component.translatable("screen.magic_realms.skin_customizer"));
         this.entityUUID = pkt.entityUUID;
         this.gender = Gender.valueOf(pkt.gender.toUpperCase());
         this.entityClass = EntityClass.valueOf(pkt.entityClass.toUpperCase());
+        this.initialName = pkt.currentName;
         this.pendingSkin = pkt.currentSkin;
         this.pendingClothes = pkt.currentClothes;
         this.pendingEyes = pkt.currentEyes;
@@ -85,10 +90,19 @@ public class SkinCustomizerScreen extends Screen {
             }).bounds(panelX + i * tabW, panelY, tabW, TAB_H).build());
         }
 
-        // save / cancel
+        // name edit box — sits below the tabs, above the preview/list
+        nameField = new EditBox(this.font, panelX + 4, panelY + TAB_H + 4, PANEL_W - 8, 16,
+                Component.translatable("screen.magic_realms.skin_customizer.name"));
+        nameField.setMaxLength(32);
+        nameField.setValue(initialName != null ? initialName : "");
+        nameField.setHint(Component.literal("Entity name..."));
+        addRenderableWidget(nameField);
+
+        // save / cancel — save now sends the name too
         addRenderableWidget(Button.builder(Component.literal("Save"), b -> {
+            String newName = nameField.getValue().trim();
             PacketDistributor.sendToServer(new SaveSkinPartsPacket(
-                    entityUUID, pendingSkin, pendingClothes, pendingEyes, pendingHair));
+                    entityUUID, newName, pendingSkin, pendingClothes, pendingEyes, pendingHair));
             onClose();
         }).bounds(panelX + PANEL_W - 130, panelY + PANEL_H + 4, 60, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> onClose())
@@ -153,6 +167,8 @@ public class SkinCustomizerScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(g, mouseX, mouseY, partialTick);
 
+        int contentH = PANEL_H - TAB_H - 8 - 20;
+
         // panel bg
         g.fill(panelX, panelY, panelX + PANEL_W, panelY + PANEL_H, 0xCC101010);
         g.fill(panelX, panelY + TAB_H, panelX + PANEL_W, panelY + TAB_H + 1, 0xFF404040);
@@ -166,14 +182,14 @@ public class SkinCustomizerScreen extends Screen {
 
         // preview area (left)
         int previewX = panelX + 4;
-        int previewY = panelY + TAB_H + 4;
-        g.fill(previewX, previewY, previewX + PREVIEW_W, previewY + PANEL_H - TAB_H - 8, 0xFF202020);
-        renderPreview(g, previewX, previewY, PREVIEW_W, PANEL_H - TAB_H - 8, mouseX, mouseY, partialTick);
+        int previewY = panelY + TAB_H + 4 + 20;
+        g.fill(previewX, previewY, previewX + PREVIEW_W, previewY + contentH, 0xFF202020);
+        renderPreview(g, previewX, previewY, PREVIEW_W, contentH, mouseX, mouseY, partialTick);
 
         // list area (right)
         int listX = previewX + PREVIEW_W + 4;
         int listY = previewY;
-        int listH = PANEL_H - TAB_H - 8;
+        int listH = contentH;
         int visibleRows = listH / ROW_H;
         g.fill(listX, listY, listX + LIST_W - 8, listY + listH, 0xFF1A1A1A);
 
@@ -260,8 +276,8 @@ public class SkinCustomizerScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // list row clicks
         int listX = panelX + 4 + PREVIEW_W + 4;
-        int listY = panelY + TAB_H + 4;
-        int listH = PANEL_H - TAB_H - 8;
+        int listY = panelY + TAB_H + 4 + 20;
+        int listH = PANEL_H - TAB_H - 8 - 20;
         int visibleRows = listH / ROW_H;
 
         if (mouseX >= listX && mouseX < listX + LIST_W - 8 && mouseY >= listY && mouseY < listY + listH) {
@@ -277,7 +293,7 @@ public class SkinCustomizerScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        int visibleRows = (PANEL_H - TAB_H - 8) / ROW_H;
+        int visibleRows = (PANEL_H - TAB_H - 8 - 20) / ROW_H;
         int max = Math.max(0, currentOptions.size() - visibleRows);
         scrollOffset = Mth.clamp(scrollOffset - (int) Math.signum(deltaY), 0, max);
         return true;

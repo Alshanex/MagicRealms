@@ -19,10 +19,12 @@ public class SaveSkinPartsPacket implements CustomPacketPayload {
             CustomPacketPayload.codec(SaveSkinPartsPacket::write, SaveSkinPartsPacket::new);
 
     private final UUID entityUUID;
+    private final String name;
     private final String skin, clothes, eyes, hair;
 
-    public SaveSkinPartsPacket(UUID entityUUID, String skin, String clothes, String eyes, String hair) {
+    public SaveSkinPartsPacket(UUID entityUUID, String name, String skin, String clothes, String eyes, String hair) {
         this.entityUUID = entityUUID;
+        this.name = name;
         this.skin = skin;
         this.clothes = clothes;
         this.eyes = eyes;
@@ -30,11 +32,12 @@ public class SaveSkinPartsPacket implements CustomPacketPayload {
     }
 
     public SaveSkinPartsPacket(FriendlyByteBuf buf) {
-        this(buf.readUUID(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf());
+        this(buf.readUUID(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf());
     }
 
     public void write(FriendlyByteBuf buf) {
         buf.writeUUID(entityUUID);
+        buf.writeUtf(name);
         buf.writeUtf(skin);
         buf.writeUtf(clothes);
         buf.writeUtf(eyes);
@@ -43,7 +46,7 @@ public class SaveSkinPartsPacket implements CustomPacketPayload {
 
     public static void handle(SaveSkinPartsPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            MRUtils.handleTextureCustomizationSave(context.player(), packet.entityUUID, packet.skin, packet.clothes, packet.eyes, packet.hair);
+            MRUtils.handleTextureCustomizationSave(context.player(), packet.name, packet.entityUUID, packet.skin, packet.clothes, packet.eyes, packet.hair);
         });
     }
 

@@ -837,11 +837,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         fp.yBodyRot = yaw;
         fp.yBodyRotO = yaw;
 
-        // Snapshot all arrows in a wide area — modded bows can spawn fast-moving projectiles
-        AABB snapshotArea = this.getBoundingBox().inflate(32);
-        Set<Projectile> before = new HashSet<>(serverLevel.getEntitiesOfClass(
-                Projectile.class, snapshotArea));
-
         boolean fired = false;
         try {
             int useDuration = bow.getUseDuration(fp);
@@ -870,13 +865,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (!fired) {
             fallbackVanillaShoot(target);
             return;
-        }
-
-        // Re-parent all newly-spawned arrows to the mercenary
-        for (Projectile proj : serverLevel.getEntitiesOfClass(Projectile.class, snapshotArea)) {
-            if (!before.contains(proj) && proj.getOwner() == fp) {
-                proj.setOwner(this);
-            }
         }
 
         consumeArrow();

@@ -14,11 +14,14 @@ public class MercenaryBowFakePlayer extends FakePlayer {
             "[MercenaryBowUser]"
     );
 
+    private AbstractMercenaryEntity boundMerc;
+
     public MercenaryBowFakePlayer(ServerLevel level) {
         super(level, PROFILE);
     }
 
     public void syncFrom(AbstractMercenaryEntity merc, ItemStack bow, ItemStack arrow) {
+        this.boundMerc = merc;
         this.setPos(merc.getX(), merc.getY(), merc.getZ());
         this.setXRot(merc.getXRot());
         this.setYRot(merc.getYRot());
@@ -26,10 +29,7 @@ public class MercenaryBowFakePlayer extends FakePlayer {
         this.yBodyRot = merc.yBodyRot;
         this.setDeltaMovement(merc.getDeltaMovement());
 
-        // Aim at target — the bow reads xRot/yRot via shootFromRotation
-        // (caller sets these before calling releaseUsing)
-
-        // CRITICAL: pass the real bow stack so durability damage lands on the merc's actual item
+        // Pass the real bow stack so durability damage lands on the merc's actual item
         this.setItemInHand(InteractionHand.MAIN_HAND, bow);
         this.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
 
@@ -40,5 +40,9 @@ public class MercenaryBowFakePlayer extends FakePlayer {
 
         this.getAbilities().instabuild = false;
         this.getAbilities().invulnerable = true; // prevent weird feedback loops
+    }
+
+    public AbstractMercenaryEntity getBoundMercenary() {
+        return boundMerc;
     }
 }

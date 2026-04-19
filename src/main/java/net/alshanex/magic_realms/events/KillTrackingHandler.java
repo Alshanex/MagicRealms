@@ -10,6 +10,7 @@ import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.MercenaryBowFakePlayer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
@@ -36,6 +37,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -105,6 +107,19 @@ public class KillTrackingHandler {
             // Cancel the hit — the arrow keeps flying
             event.setCanceled(true);
         }
+    }
+
+    @SubscribeEvent
+    public static void onProjectileSpawn(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide) return;
+        if (!(event.getEntity() instanceof Projectile projectile)) return;
+        if (!(projectile.getOwner() instanceof MercenaryBowFakePlayer fakePlayer)) return;
+
+        AbstractMercenaryEntity realShooter = fakePlayer.getBoundMercenary();
+        if (realShooter == null) return;
+        if (realShooter.isRemoved() || !realShooter.isAlive()) return;  // merc died mid-fire
+
+        projectile.setOwner(realShooter);
     }
 
     private static boolean isAllyOfMerc(AbstractMercenaryEntity merc, Entity hit) {

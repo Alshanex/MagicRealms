@@ -1,0 +1,7 @@
+{
+  "texture": "magic_realms:entity/human/clothes/rogue/female/base_cloth_1",
+  "category": "clothes",
+  "gender": "female",
+  "entity_class": "rogue",
+  "weight": 2
+}

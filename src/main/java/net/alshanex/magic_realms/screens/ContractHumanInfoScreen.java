@@ -11,21 +11,18 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.SwitchTabPacket;
-import net.alshanex.magic_realms.util.humans.appearance.EntitySnapshot;
-import net.alshanex.magic_realms.util.humans.*;
-import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
-import net.alshanex.magic_realms.util.humans.appearance.TextureComponents;
+import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
+import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
+import net.alshanex.magic_realms.skins_management.TextureComponents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -41,6 +38,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -304,108 +302,21 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         if (!minecraft.level.isClientSide() || textureMetadata.isEmpty()) {
             return;
         }
-
         try {
-            // Ensure textures are loaded
-            LayeredTextureManager.ensureTexturesLoaded();
-
-            generateTextureComponentsFromMetadata(randomHuman, textureMetadata);
-
+            TextureComponents components = TextureComponents.fromMetadata(textureMetadata);
+            setTextureComponentsReflective(randomHuman, components);
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to force generate texture components for virtual entity", e);
         }
     }
 
-    private void generateTextureComponentsFromMetadata(RandomHumanEntity randomHuman, CompoundTag metadata) {
+    private void setTextureComponentsReflective(RandomHumanEntity randomHuman, TextureComponents components) {
         try {
-            Gender gender = Gender.valueOf(metadata.getString("gender").toUpperCase());
-            EntityClass entityClass = EntityClass.valueOf(metadata.getString("entityClass").toUpperCase());
-
-            TextureComponents components;
-
-            if (metadata.getBoolean("usePreset")) {
-                // Generate preset texture
-                int presetIndex = metadata.getInt("presetIndex");
-                components = generatePresetFromIndex(gender, presetIndex);
-                if (components == null) {
-                    // Fallback to layered
-                    components = generateLayeredFallback(gender, entityClass, presetIndex);
-                }
-            } else {
-                // Generate layered texture
-                components = generateLayeredFromIndices(
-                        gender, entityClass,
-                        metadata.getInt("skinIndex"),
-                        metadata.getInt("clothesIndex"),
-                        metadata.getInt("eyesIndex"),
-                        metadata.getInt("hairIndex")
-                );
-            }
-
-            if (components != null) {
-                setTextureComponentsDirectly(randomHuman, components);
-                //MagicRealms.LOGGER.debug("Generated texture components for virtual entity from metadata");
-            }
-
+            Field field = RandomHumanEntity.class.getDeclaredField("textureComponents");
+            field.setAccessible(true);
+            field.set(randomHuman, components);
         } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to generate texture components from metadata", e);
-        }
-    }
-
-    // Helper methods for texture generation (copied from RandomHumanEntity)
-    private TextureComponents generatePresetFromIndex(Gender gender, int index) {
-        if (!LayeredTextureManager.hasAdditionalTextures(gender)) {
-            return null;
-        }
-
-        int count = LayeredTextureManager.getAdditionalTextureCount(gender);
-        if (count == 0) return null;
-
-        int actualIndex = index % count;
-        LayeredTextureManager.TextureWithName preset =
-                LayeredTextureManager.getAdditionalTextureByIndex(gender, actualIndex);
-
-        if (preset != null) {
-            return new TextureComponents(
-                    preset.getTexture().toString(),
-                    null, null, null,
-                    preset.getName(),
-                    true
-            );
-        }
-        return null;
-    }
-
-    private TextureComponents generateLayeredFromIndices(Gender gender, EntityClass entityClass,
-                                                         int skinIndex, int clothesIndex,
-                                                         int eyesIndex, int hairIndex) {
-        String skinTexture = LayeredTextureManager.getTextureByIndex("skin", skinIndex);
-        String clothesTexture = LayeredTextureManager.getClothesTextureByIndex(gender, entityClass, clothesIndex);
-        String eyesTexture = LayeredTextureManager.getTextureByIndex("eyes", eyesIndex);
-        String hairTexture = LayeredTextureManager.getHairTextureByIndex(gender, hairIndex);
-
-        return new TextureComponents(skinTexture, clothesTexture, eyesTexture, hairTexture, null, false);
-    }
-
-    private TextureComponents generateLayeredFallback(Gender gender, EntityClass entityClass, int seed) {
-        RandomSource fallbackRandom = RandomSource.create(seed);
-        return generateLayeredFromIndices(
-                gender, entityClass,
-                fallbackRandom.nextInt(10000),
-                fallbackRandom.nextInt(10000),
-                fallbackRandom.nextInt(10000),
-                fallbackRandom.nextInt(10000)
-        );
-    }
-
-    private void setTextureComponentsDirectly(RandomHumanEntity randomHuman, TextureComponents components) {
-        try {
-            java.lang.reflect.Field textureComponentsField = RandomHumanEntity.class.getDeclaredField("textureComponents");
-            textureComponentsField.setAccessible(true);
-            textureComponentsField.set(randomHuman, components);
-            //MagicRealms.LOGGER.debug("Set texture components directly for virtual entity");
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to set texture components directly", e);
+            MagicRealms.LOGGER.error("Failed to set texture components reflectively", e);
         }
     }
 

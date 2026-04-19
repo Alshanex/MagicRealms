@@ -1,0 +1,7 @@
+{
+  "texture": "magic_realms:entity/human/clothes/warrior/female/base_cloth_8",
+  "category": "clothes",
+  "gender": "female",
+  "entity_class": "warrior",
+  "weight": 2
+}

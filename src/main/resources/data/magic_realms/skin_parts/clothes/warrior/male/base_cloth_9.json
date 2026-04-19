@@ -1,0 +1,7 @@
+{
+  "texture": "magic_realms:entity/human/clothes/warrior/male/base_cloth_9",
+  "category": "clothes",
+  "gender": "male",
+  "entity_class": "warrior",
+  "weight": 2
+}

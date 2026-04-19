@@ -7,11 +7,11 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.network.SyncPresetNamePacket;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
-import net.alshanex.magic_realms.util.humans.*;
 import net.alshanex.magic_realms.Config;
-import net.alshanex.magic_realms.util.humans.appearance.AdvancedNameManager;
-import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
-import net.alshanex.magic_realms.util.humans.appearance.TextureComponents;
+import net.alshanex.magic_realms.skins_management.*;
+import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
+import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
+import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -68,38 +68,34 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
 
     private CompoundTag generateTextureMetadata(Gender gender, EntityClass entityClass, RandomSource random) {
         CompoundTag metadata = new CompoundTag();
-
-        // Store the basic choices
         metadata.putString("gender", gender.getName());
         metadata.putString("entityClass", entityClass.getName());
 
-        // Determine if it should be preset or layered
-        double presetRoll = random.nextDouble();
-        boolean usePreset = presetRoll < Config.customTextureChance;
+        SkinCatalog catalog = SkinCatalogHolder.server();
+        boolean wantsPreset = random.nextDouble() < Config.customTextureChance;
+        boolean usePreset = wantsPreset && catalog.hasPresets(gender);
         metadata.putBoolean("usePreset", usePreset);
 
         if (usePreset) {
-            // Store preset index - will be modulo'd by actual count on client
-            metadata.putInt("presetIndex", random.nextInt(10000));
-            /*
-            MagicRealms.LOGGER.debug("Generated preset metadata for {} - index: {}",
-                    getEntityName(), metadata.getInt("presetIndex"));
-
-             */
+            SkinPreset preset = catalog.pickPreset(gender, random);
+            metadata.putString("presetTexture", preset.texture().toString());
+            preset.displayName().ifPresent(n -> metadata.putString("presetName", n));
         } else {
-            // Store indices for layered textures
-            metadata.putInt("skinIndex", random.nextInt(10000));
-            metadata.putInt("clothesIndex", random.nextInt(10000));
-            metadata.putInt("eyesIndex", random.nextInt(10000));
-            metadata.putInt("hairIndex", random.nextInt(10000));
-            /*
-            MagicRealms.LOGGER.debug("Generated layered metadata for {} - skin:{}, clothes:{}, eyes:{}, hair:{}",
-                    getEntityName(), metadata.getInt("skinIndex"), metadata.getInt("clothesIndex"),
-                    metadata.getInt("eyesIndex"), metadata.getInt("hairIndex"));
+            SkinPart skin = catalog.pickPart(SkinCategory.SKIN, gender, entityClass, random);
+            SkinPart clothes = catalog.pickPart(SkinCategory.CLOTHES, gender, entityClass, random);
+            SkinPart eyes = catalog.pickPart(SkinCategory.EYES, gender, entityClass, random);
+            SkinPart hair = catalog.pickPart(SkinCategory.HAIR, gender, entityClass, random);
 
-             */
+            if (skin != null) metadata.putString("skinTexture", skin.texture().toString());
+            if (clothes != null) metadata.putString("clothesTexture", clothes.texture().toString());
+            if (eyes != null) metadata.putString("eyesTexture", eyes.texture().toString());
+            if (hair != null) metadata.putString("hairTexture", hair.texture().toString());
+
+            if (skin == null || clothes == null || eyes == null || hair == null) {
+                MagicRealms.LOGGER.warn("Skin catalog missing parts for {} {} — entity will render partially defaulted",
+                        gender.getName(), entityClass.getName());
+            }
         }
-
         return metadata;
     }
 
@@ -124,63 +120,27 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
             return;
         }
 
-        // Ensure textures are loaded
-        LayeredTextureManager.ensureTexturesLoaded();
-
         try {
-            Gender gender = Gender.valueOf(metadata.getString("gender").toUpperCase());
-            EntityClass entityClass = EntityClass.valueOf(metadata.getString("entityClass").toUpperCase());
-
             if (metadata.getBoolean("usePreset")) {
-                // Generate preset texture using server-provided index
-                int presetIndex = metadata.getInt("presetIndex");
-                TextureComponents preset = generatePresetFromIndex(gender, presetIndex);
-                if (preset != null) {
-                    this.textureComponents = preset;
+                String tex = metadata.getString("presetTexture");
+                String name = metadata.contains("presetName") ? metadata.getString("presetName") : null;
+                this.textureComponents = new TextureComponents(tex, null, null, null, name, true);
 
-                    // Handle preset name synchronization
-                    if (preset.hasEntityName()) {
-                        String presetName = preset.getEntityName();
-                        String currentName = getEntityName();
-
-                        // Only update and sync if the name is different
-                        if (!presetName.equals(currentName)) {
-                            setEntityName(presetName);
-
-                            // Send name sync packet to server
-                            syncPresetNameToServer(presetName);
-/*
-                            MagicRealms.LOGGER.debug("Generated preset texture for {} with name: {} (syncing to server)",
-                                    getEntityName(), presetName);
-
- */
-                        }
-                    } else {
-                        MagicRealms.LOGGER.debug("Generated preset texture for {} without name", getEntityName());
-                    }
-                } else {
-                    // Fallback to layered if preset fails
-                    this.textureComponents = generateLayeredFallback(gender, entityClass, metadata.getInt("presetIndex"));
-                    MagicRealms.LOGGER.debug("Preset failed, using layered fallback for {}", getEntityName());
+                if (name != null && !name.equals(getEntityName())) {
+                    setEntityName(name);
+                    syncPresetNameToServer(name);
                 }
             } else {
-                // Generate layered texture using server-provided indices
-                TextureComponents layered = generateLayeredFromIndices(
-                        gender, entityClass,
-                        metadata.getInt("skinIndex"),
-                        metadata.getInt("clothesIndex"),
-                        metadata.getInt("eyesIndex"),
-                        metadata.getInt("hairIndex")
-                );
-                this.textureComponents = layered;
-                //MagicRealms.LOGGER.debug("Generated layered texture for {}", getEntityName());
+                this.textureComponents = new TextureComponents(
+                        metadata.contains("skinTexture") ? metadata.getString("skinTexture") : null,
+                        metadata.contains("clothesTexture") ? metadata.getString("clothesTexture") : null,
+                        metadata.contains("eyesTexture") ? metadata.getString("eyesTexture") : null,
+                        metadata.contains("hairTexture") ? metadata.getString("hairTexture") : null,
+                        null, false);
             }
-
             clientTexturesGenerated = true;
-
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to generate textures from metadata for {}", getEntityName(), e);
-            // Set a basic fallback
             this.textureComponents = new TextureComponents(null, null, null, null, null, false);
         }
     }
@@ -192,57 +152,6 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to sync preset name to server", e);
         }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private TextureComponents generatePresetFromIndex(Gender gender, int index) {
-        if (!LayeredTextureManager.hasAdditionalTextures(gender)) {
-            MagicRealms.LOGGER.debug("No additional textures available for gender: {}", gender.getName());
-            return null;
-        }
-
-        int count = LayeredTextureManager.getAdditionalTextureCount(gender);
-        if (count == 0) return null;
-
-        int actualIndex = index % count;
-
-        LayeredTextureManager.TextureWithName preset =
-                LayeredTextureManager.getAdditionalTextureByIndex(gender, actualIndex);
-
-        if (preset != null) {
-            return new TextureComponents(
-                    preset.getTexture().toString(),
-                    null, null, null,
-                    preset.getName(),
-                    true
-            );
-        }
-        return null;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private TextureComponents generateLayeredFromIndices(Gender gender, EntityClass entityClass,
-                                                         int skinIndex, int clothesIndex,
-                                                         int eyesIndex, int hairIndex) {
-        String skinTexture = LayeredTextureManager.getTextureByIndex("skin", skinIndex);
-        String clothesTexture = LayeredTextureManager.getClothesTextureByIndex(gender, entityClass, clothesIndex);
-        String eyesTexture = LayeredTextureManager.getTextureByIndex("eyes", eyesIndex);
-        String hairTexture = LayeredTextureManager.getHairTextureByIndex(gender, hairIndex);
-
-        return new TextureComponents(skinTexture, clothesTexture, eyesTexture, hairTexture, null, false);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private TextureComponents generateLayeredFallback(Gender gender, EntityClass entityClass, int seed) {
-        // Use the seed to generate consistent fallback indices
-        RandomSource fallbackRandom = RandomSource.create(seed);
-        return generateLayeredFromIndices(
-                gender, entityClass,
-                fallbackRandom.nextInt(10000),
-                fallbackRandom.nextInt(10000),
-                fallbackRandom.nextInt(10000),
-                fallbackRandom.nextInt(10000)
-        );
     }
 
     // Getters/setters for texture metadata
@@ -307,10 +216,27 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         this.appearanceGenerated = compound.getBoolean("AppearanceGenerated");
-        this.clientTexturesGenerated = false; // Always regenerate on client
+        this.clientTexturesGenerated = false;
 
         if (compound.contains("TextureMetadata")) {
             CompoundTag metadata = compound.getCompound("TextureMetadata");
+
+            boolean isLegacy = !metadata.contains("presetTexture")
+                    && !metadata.contains("skinTexture")
+                    && (metadata.contains("skinIndex") || metadata.contains("presetIndex"));
+
+            if (isLegacy && !this.level().isClientSide()) {
+                SkinCatalog catalog = SkinCatalogHolder.server();
+                if (catalog.allParts().isEmpty() && catalog.allPresets().isEmpty()) {
+                    MagicRealms.LOGGER.warn("Skipping texture migration for {} — catalog empty, will retry next load", getUUID());
+                    // leave old metadata in place; it'll try again next time
+                } else {
+                    Gender gender = Gender.valueOf(metadata.getString("gender").toUpperCase());
+                    EntityClass cls = EntityClass.valueOf(metadata.getString("entityClass").toUpperCase());
+                    RandomSource migrationRng = RandomSource.create(this.getUUID().getMostSignificantBits() ^ this.getUUID().getLeastSignificantBits());
+                    metadata = generateTextureMetadata(gender, cls, migrationRng);
+                }
+            }
             setTextureMetadata(metadata);
         }
     }

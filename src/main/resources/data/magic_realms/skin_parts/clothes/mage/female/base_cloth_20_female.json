@@ -1,0 +1,7 @@
+{
+  "texture": "magic_realms:entity/human/clothes/mage/female/base_cloth_20_female",
+  "category": "clothes",
+  "gender": "female",
+  "entity_class": "mage",
+  "weight": 2
+}

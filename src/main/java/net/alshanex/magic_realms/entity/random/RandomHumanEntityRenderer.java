@@ -3,9 +3,9 @@ package net.alshanex.magic_realms.entity.random;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityRenderer;
-import net.alshanex.magic_realms.util.humans.appearance.TextureComponents;
-import net.alshanex.magic_realms.util.humans.appearance.DynamicTextureManager;
-import net.alshanex.magic_realms.util.humans.appearance.ArmBackTextureFixer;
+import net.alshanex.magic_realms.skins_management.TextureComponents;
+import net.alshanex.magic_realms.skins_management.DynamicTextureManager;
+import net.alshanex.magic_realms.skins_management.ArmBackTextureFixer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
@@ -48,16 +48,9 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
         // For preset textures, use directly
         if (components.isPresetTexture() && components.getSkinTexture() != null) {
             try {
-                ResourceLocation presetTexture = ResourceLocation.parse(components.getSkinTexture());
-                /*
-                MagicRealms.LOGGER.debug("Using preset texture for {}: {}",
-                        human.getEntityName(), presetTexture);
-
-                 */
-                return presetTexture;
+                return toAssetPath(components.getSkinTexture());
             } catch (Exception e) {
-                MagicRealms.LOGGER.warn("Invalid preset texture for {}: {}, falling back to default",
-                        human.getEntityName(), components.getSkinTexture());
+                MagicRealms.LOGGER.warn("Invalid preset texture for {}: {}", human.getEntityName(), components.getSkinTexture());
                 return DEFAULT_TEXTURE;
             }
         }
@@ -182,7 +175,7 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
         }
 
         try {
-            ResourceLocation location = ResourceLocation.parse(textureId);
+            ResourceLocation location = toAssetPath(textureId);
             Minecraft mc = Minecraft.getInstance();
 
             if (mc.getResourceManager() != null) {
@@ -213,6 +206,14 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
     public static void clearCompositeCache() {
         COMPOSITE_TEXTURE_CACHE.clear();
         MagicRealms.LOGGER.debug("Cleared composite texture cache");
+    }
+
+    private static ResourceLocation toAssetPath(String textureId) {
+        ResourceLocation parsed = ResourceLocation.parse(textureId);
+        return ResourceLocation.fromNamespaceAndPath(
+                parsed.getNamespace(),
+                "textures/" + parsed.getPath() + ".png"
+        );
     }
 
     // Get cache statistics

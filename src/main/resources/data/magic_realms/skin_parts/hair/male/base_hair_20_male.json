@@ -1,0 +1,7 @@
+{
+  "texture": "magic_realms:entity/human/hair/male/base_hair_20_male",
+  "category": "hair",
+  "gender": "male",
+  "entity_class": "any",
+  "weight": 1
+}

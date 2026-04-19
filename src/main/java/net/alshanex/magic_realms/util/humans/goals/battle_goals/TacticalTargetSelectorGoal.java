@@ -1,7 +1,7 @@
 package net.alshanex.magic_realms.util.humans.goals.battle_goals;
 
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.util.humans.EntityClass;
+import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.target.TargetGoal;
 import net.minecraft.world.phys.Vec3;

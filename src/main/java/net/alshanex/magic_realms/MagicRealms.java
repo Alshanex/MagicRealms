@@ -2,7 +2,6 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.registry.*;
-import net.alshanex.magic_realms.util.humans.appearance.LayeredTextureManager;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -90,10 +89,7 @@ public class MagicRealms
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
         {
-            event.enqueueWork(() -> {
-                LayeredTextureManager.loadTextures();
-                MagicRealms.LOGGER.debug("Client setup completed - loaded base textures");
-            });
+
         }
     }
 }

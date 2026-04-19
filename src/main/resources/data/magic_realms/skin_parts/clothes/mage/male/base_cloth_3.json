@@ -1,0 +1,7 @@
+{
+  "texture": "magic_realms:entity/human/clothes/mage/male/base_cloth_3",
+  "category": "clothes",
+  "gender": "male",
+  "entity_class": "mage",
+  "weight": 2
+}

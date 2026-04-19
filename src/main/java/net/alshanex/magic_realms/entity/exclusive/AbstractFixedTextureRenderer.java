@@ -5,7 +5,7 @@ import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.Abstra
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityModel;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityRenderer;
-import net.alshanex.magic_realms.util.humans.appearance.ArmBackTextureFixer;
+import net.alshanex.magic_realms.skins_management.ArmBackTextureFixer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.DynamicTexture;

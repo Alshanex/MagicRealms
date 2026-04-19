@@ -12,9 +12,13 @@ import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
+import net.alshanex.magic_realms.skins_management.SkinCatalog;
+import net.alshanex.magic_realms.skins_management.SkinCatalogHolder;
+import net.alshanex.magic_realms.skins_management.SkinPart;
+import net.alshanex.magic_realms.skins_management.SkinPreset;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
-import net.alshanex.magic_realms.util.humans.*;
-import net.alshanex.magic_realms.util.humans.appearance.AdvancedNameManager;
+import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
+import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Holder;
@@ -34,9 +38,7 @@ import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.UUID;
@@ -689,5 +691,12 @@ public class MRUtils {
                 }
             }
         }
+    }
+
+    public static void handleSkinCatalogSync(List<SkinPart> parts, List<SkinPreset> presets){
+        SkinCatalog catalog = new SkinCatalog(parts, presets);
+        SkinCatalogHolder.setClient(catalog);
+        MagicRealms.LOGGER.debug("Received skin catalog from server: {} parts, {} presets",
+                parts.size(), presets.size());
     }
 }

@@ -1,5 +1,7 @@
 package net.alshanex.magic_realms.util.humans.goals.battle_goals;
 
+import io.redspace.ironsspellbooks.entity.spells.EarthquakeAoe;
+import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvents;
@@ -164,7 +166,7 @@ public class ShieldBashGoal extends Goal {
         if (tank.level().isClientSide()) return;
 
         // Shield whoosh sound
-        tank.playSound(SoundEvents.SHIELD_BLOCK, 1.2f, 0.85f);
+        tank.playSound(SoundRegistry.EARTHQUAKE_CAST.get(), 1.2f, 0.85f);
 
         AABB box = tank.getBoundingBox().inflate(BASH_HIT_RADIUS, BASH_HIT_RADIUS + 1.0, BASH_HIT_RADIUS);
         List<LivingEntity> candidates = tank.level().getEntitiesOfClass(
@@ -202,6 +204,16 @@ public class ShieldBashGoal extends Goal {
 
         // Survivability buff scales with how many enemies we cleared.
         applySelfBuffs(hits);
+
+        EarthquakeAoe aoeEntity = new EarthquakeAoe(tank.level());
+        aoeEntity.moveTo(tank.position());
+        aoeEntity.setOwner(tank);
+        aoeEntity.setCircular();
+        aoeEntity.setRadius((float) BASH_HIT_RADIUS);
+        aoeEntity.setDuration(20);
+        aoeEntity.setDamage(0);
+        aoeEntity.setSlownessAmplifier(0);
+        tank.level().addFreshEntity(aoeEntity);
     }
 
     private float computeBashDamage() {

@@ -21,8 +21,7 @@ import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.block.ChairBlock;
-import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.data.KillTrackerData;
+import net.alshanex.magic_realms.data.*;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.item.PermanentContractItem;
 import net.alshanex.magic_realms.item.TieredContractItem;
@@ -114,31 +113,18 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private static final byte FLAG_IS_IN_MENU_STATE = -128;
 
     // Entity state
-    private EntityType<?> fearedEntityType = null;
-    private TagKey<EntityType<?>> fearedEntityTag = null;
-    private boolean fearGoalInitialized = false;
-    private List<SchoolType> magicSchools = new ArrayList<>();
     private AbstractSpell lastCastingSpell = null;
     private boolean wasCasting = false;
-    private boolean goalsInitialized = false;
     private boolean wasChargingArrow = false;
     private boolean shouldPlayChargeAnimation = false;
-    private int starLevel = 1;
-    private BlockPos patrolPosition = BlockPos.ZERO;
     private int stunTimer = 0;
-    private BlockPos chairPosition = BlockPos.ZERO;
-    private int sittingTime = 0;
-    private int sitCooldown = 0;
+    private boolean fearGoalInitialized = false;
 
     // Inventory and items
     public static final int INVENTORY_SIZE = 42;
     private final SimpleContainer inventory = new SimpleContainer(INVENTORY_SIZE);
     private List<AbstractSpell> spellbookSpells = new ArrayList<>();
     private ItemStack lastEquippedSpellbook = ItemStack.EMPTY;
-
-    // Spell management
-    private List<AbstractSpell> persistedSpells = new ArrayList<>();
-    private boolean spellsGenerated = false;
 
     // Regeneration
     private int regenTimer = 0;
@@ -214,6 +200,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         return RandomSource.create(seed);
     }
 
+    private ChairSittingData chairData() { return this.getData(MRDataAttachments.CHAIR_SITTING); }
+    private PatrolData patrolData() { return this.getData(MRDataAttachments.PATROL); }
+    private FearData fearData() { return this.getData(MRDataAttachments.FEAR); }
+    private MercenaryIdentity identity() { return this.getData(MRDataAttachments.IDENTITY); }
+
     @Override
     public HumanoidArm getMainArm() {
         return HumanoidArm.RIGHT;
@@ -272,11 +263,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public void setPatrolPosition(BlockPos position) {
-        this.patrolPosition = position;
+        patrolData().setPatrolPosition(position);
     }
 
     public BlockPos getPatrolPosition() {
-        return this.patrolPosition;
+        return patrolData().getPatrolPosition();
     }
 
     public void setInitialized(boolean initialized) {
@@ -308,18 +299,15 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Star level management
     public int getStarLevel() {
-        return this.starLevel;
+        return identity().getStarLevel();
     }
 
     public void setStarLevel(int starLevel) {
-        if (starLevel >= 1 && starLevel <= 3) {
-            this.starLevel = starLevel;
-        }
+        identity().setStarLevel(starLevel);
     }
 
     protected void initializeStarLevel(RandomSource randomSource) {
-        int starLevel = getInitialStarLevel(randomSource);
-        this.starLevel = starLevel;
+        identity().setStarLevel(getInitialStarLevel(randomSource));
     }
 
     protected int getInitialStarLevel(RandomSource randomSource) {
@@ -358,15 +346,15 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Magic schools management
     public List<SchoolType> getMagicSchools() {
-        return new ArrayList<>(magicSchools);
+        return identity().getMagicSchools();
     }
 
     public void setMagicSchools(List<SchoolType> schools) {
-        this.magicSchools = new ArrayList<>(schools);
+        identity().setMagicSchools(schools);
     }
 
     public boolean hasSchool(SchoolType school) {
-        return getMagicSchools().contains(school);
+        return identity().hasSchool(school);
     }
 
     private List<SchoolType> generateMagicSchools(RandomSource random) {
@@ -403,42 +391,41 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public BlockPos getChairPosition() {
-        return this.chairPosition;
+        return chairData().getChairPosition();
     }
 
     public int getSittingTime() {
-        return this.sittingTime;
+        return chairData().getSittingTime();
     }
 
     public int getSitCooldown() {
-        return this.sitCooldown;
+        return chairData().getSitCooldown();
     }
 
     public void setSittingTime(int time) {
-        this.sittingTime = time;
+        chairData().setSittingTime(time);
     }
 
     public void setSitCooldown(int cooldown) {
-        this.sitCooldown = cooldown;
+        chairData().setSitCooldown(cooldown);
     }
 
     public void sitInChair(BlockPos chairPos) {
         setFlag(FLAG_IS_SITTING, true);
-        this.chairPosition = chairPos;
-        this.sittingTime = 0;
+        ChairSittingData data = chairData();
+        data.setChairPosition(chairPos);
+        data.setSittingTime(0);
         this.setPose(Pose.SITTING);
         this.getNavigation().stop();
         this.setTarget(null);
     }
 
     public void unsitFromChair() {
-        if (!isSittingInChair()) {
-            return;
-        }
+        if (!isSittingInChair()) return;
         setFlag(FLAG_IS_SITTING, false);
-        this.chairPosition = BlockPos.ZERO;
-        this.sittingTime = 0;
-        this.sitCooldown = SIT_COOLDOWN_TIME;
+        ChairSittingData data = chairData();
+        data.reset();
+        data.setSitCooldown(SIT_COOLDOWN_TIME);
         this.setPose(Pose.STANDING);
         this.moveTo(this.getX(), this.getY() + 0.7, this.getZ());
         notifyChairSittingGoalOfManualUnseat();
@@ -540,14 +527,36 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public void setFearedEntity(EntityType<?> entityType) {
-        this.fearedEntityType = entityType;
+        fearData().setFearedEntityType(entityType);
         if (this.level() != null && !this.level().isClientSide) {
             initializeFearGoal();
         }
     }
 
     public EntityType<?> getFearedEntity() {
-        return fearedEntityType;
+        return fearData().getFearedEntityType();
+    }
+
+    public TagKey<EntityType<?>> getFearedEntityTag() {
+        if (!this.isExclusiveMercenary()) return null;
+        return fearData().getFearedEntityTag();
+    }
+
+    public void setFearedEntityTag(@Nullable TagKey<EntityType<?>> entityTag) {
+        if (!this.isExclusiveMercenary()) {
+            MagicRealms.LOGGER.warn("Attempted to set entity tag fear on non-exclusive mercenary: {}", this.getEntityName());
+            return;
+        }
+        fearData().setFearedEntityTag(entityTag);
+        if (this.level() != null && !this.level().isClientSide) {
+            initializeFearGoal();
+        }
+    }
+
+    public boolean hasFear() {
+        FearData fd = fearData();
+        if (fd.getFearedEntityType() != null) return true;
+        return this.isExclusiveMercenary() && fd.getFearedEntityTag() != null;
     }
 
     public boolean isAfraidOf(Entity entity) {
@@ -568,39 +577,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         return false;
     }
 
-    public TagKey<EntityType<?>> getFearedEntityTag() {
-        if (!this.isExclusiveMercenary()) {
-            return null; // Only exclusive mercenaries can fear tags
-        }
-        return fearedEntityTag;
-    }
-
-    public void setFearedEntityTag(@Nullable TagKey<EntityType<?>> entityTag) {
-        if (!this.isExclusiveMercenary()) {
-            MagicRealms.LOGGER.warn("Attempted to set entity tag fear on non-exclusive mercenary: {}", this.getEntityName());
-            return;
-        }
-
-        this.fearedEntityTag = entityTag;
-        if (this.level() != null && !this.level().isClientSide) {
-            initializeFearGoal();
-        }
-    }
-
-    public boolean hasFear() {
-        // Check individual entity fear
-        if (getFearedEntity() != null) {
-            return true;
-        }
-
-        // Check tag fear for exclusive mercenaries
-        if (this.isExclusiveMercenary() && getFearedEntityTag() != null) {
-            return true;
-        }
-
-        return false;
-    }
-
     private void initializeFearGoal() {
         boolean hasFear = (getFearedEntity() != null) || (this.isExclusiveMercenary() && getFearedEntityTag() != null);
 
@@ -613,7 +589,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Spell management
     public List<AbstractSpell> getPersistedSpells() {
-        return new ArrayList<>(persistedSpells);
+        return identity().getPersistedSpells();
     }
 
     public List<AbstractSpell> extractSpellsFromEquipment() {
@@ -699,7 +675,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     private void updateMageGoalWithSpellbookAndEquipment(List<AbstractSpell> spellbookSpells) {
-        List<AbstractSpell> combinedSpells = new ArrayList<>(persistedSpells);
+        List<AbstractSpell> combinedSpells = new ArrayList<>(getPersistedSpells());
         combinedSpells.addAll(spellbookSpells);
 
         List<AbstractSpell> equipmentSpells = extractSpellsFromEquipment();
@@ -724,18 +700,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                     .setSpells(attackSpells, defenseSpells, movementSpells, supportSpells)
                     .setDrinksPotions()
             );
-/*
-            MagicRealms.LOGGER.debug("Mage {} updated spell roster: {} persisted + {} spellbook + {} equipment = {} total unique",
-                    getEntityName(), persistedSpells.size(), spellbookSpells.size(), equipmentSpells.size(), uniqueSpells.size());
-
- */
         } else {
-            setMageGoal(persistedSpells);
+            setMageGoal(getPersistedSpells());
         }
     }
 
     public void refreshSpellsAfterEquipmentChange() {
-        if (!spellsGenerated || persistedSpells.isEmpty()) {
+        if (!identity().areSpellsGenerated() || getPersistedSpells().isEmpty()) {
             return;
         }
 
@@ -744,12 +715,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         switch (entityClass) {
             case MAGE -> updateMageGoalWithSpellbookAndEquipment(spellbookSpells);
-            case WARRIOR -> setWarriorGoal(persistedSpells);
+            case WARRIOR -> setWarriorGoal(getPersistedSpells());
             case ROGUE -> {
                 if (isArcher()) {
-                    setArcherGoal(persistedSpells);
+                    setArcherGoal(getPersistedSpells());
                 } else {
-                    setAssassinGoal(persistedSpells);
+                    setAssassinGoal(getPersistedSpells());
                 }
             }
         }
@@ -1126,11 +1097,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             initializeClassSpells();
 
             initializeFearGoal();
-            goalsInitialized = true;
+            identity().setGoalsInitialized(true);
         } else {
-            if (spellsGenerated && !persistedSpells.isEmpty()) {
+            if (identity().areSpellsGenerated() && !getPersistedSpells().isEmpty()) {
                 reapplyGoalsWithPersistedSpells();
-                goalsInitialized = true;
+                identity().setGoalsInitialized(true);
             }
             initializeFearGoal();
         }
@@ -1163,11 +1134,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     protected void initializeClassSpells(){
-        if (!spellsGenerated) {
+        if (!identity().areSpellsGenerated()) {
             RandomSource randomSource = Utils.random;
             List<AbstractSpell> spells = generateSpellsForEntity(randomSource);
-            this.persistedSpells = new ArrayList<>(spells);
-            this.spellsGenerated = true;
+            identity().setPersistedSpells(new ArrayList<>(spells));
+            identity().setSpellsGenerated(true);
 
             if (this.getEntityClass() == EntityClass.MAGE) {
                 setMageGoal(spells);
@@ -1290,9 +1261,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             StunParticleEffect.spawnStunParticles(this, level());
         }
 
-        if (!level().isClientSide && !goalsInitialized && this.isInitialized()) {
+        if (!level().isClientSide && !identity().areGoalsInitialized() && this.isInitialized()) {
             reinitializeGoalsAfterLoad();
-            goalsInitialized = true;
+            identity().setGoalsInitialized(true);
         }
 
         if (!level().isClientSide) {
@@ -1428,12 +1399,10 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     private void handleSittingTick() {
-        if (sitCooldown > 0) {
-            sitCooldown--;
-        }
+        chairData().tickCooldown();
 
         if (isSittingInChair()) {
-            sittingTime++;
+            chairData().incrementSittingTime();
 
             BlockPos chairPos = getChairPosition();
             if (!isValidChair(chairPos)) {
@@ -1446,9 +1415,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                 this.moveTo(sittingPos.x, sittingPos.y, sittingPos.z, this.getYRot(), this.getXRot());
             }
 
-            if (sittingTime >= MIN_SITTING_TIME) {
+            if (chairData().getSittingTime() >= MIN_SITTING_TIME) {
                 float unsitChance = 0.01f;
-                if (sittingTime > MAX_SITTING_TIME) {
+                if (chairData().getSittingTime() > MAX_SITTING_TIME) {
                     unsitChance = 0.1f;
                 }
                 if (this.getRandom().nextFloat() < unsitChance) {
@@ -1866,31 +1835,31 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         EntityClass entityClass = getEntityClass();
         switch (entityClass) {
-            case MAGE -> setMageGoal(persistedSpells);
-            case WARRIOR -> setWarriorGoal(persistedSpells);
+            case MAGE -> setMageGoal(getPersistedSpells());
+            case WARRIOR -> setWarriorGoal(getPersistedSpells());
             case ROGUE -> {
                 if (isArcher()) {
-                    setArcherGoal(persistedSpells);
+                    setArcherGoal(getPersistedSpells());
                 } else {
-                    setAssassinGoal(persistedSpells);
+                    setAssassinGoal(getPersistedSpells());
                 }
             }
         }
     }
 
     private void reinitializeGoalsAfterLoad() {
-        if (spellsGenerated && !persistedSpells.isEmpty()) {
+        if (identity().areSpellsGenerated() && !getPersistedSpells().isEmpty()) {
             clearAttackGoals();
 
             EntityClass entityClass = getEntityClass();
             switch (entityClass) {
-                case MAGE -> setMageGoal(persistedSpells);
-                case WARRIOR -> setWarriorGoal(persistedSpells);
+                case MAGE -> setMageGoal(getPersistedSpells());
+                case WARRIOR -> setWarriorGoal(getPersistedSpells());
                 case ROGUE -> {
                     if (isArcher()) {
-                        setArcherGoal(persistedSpells);
+                        setArcherGoal(getPersistedSpells());
                     } else {
-                        setAssassinGoal(persistedSpells);
+                        setAssassinGoal(getPersistedSpells());
                     }
                 }
             }
@@ -1914,8 +1883,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private void generateAndApplySpells() {
         RandomSource randomSource = this.level().getRandom();
         List<AbstractSpell> spells = SpellListGenerator.generateSpellsForEntity(this, randomSource);
-        this.persistedSpells = new ArrayList<>(spells);
-        this.spellsGenerated = true;
+        identity().setPersistedSpells(new ArrayList<>(spells));
+        identity().setSpellsGenerated(true);
 
         EntityClass entityClass = getEntityClass();
         switch (entityClass) {
@@ -2095,6 +2064,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
+
+        // --- Flags byte ---
         compound.putBoolean("Initialized", isInitialized());
         compound.putBoolean("HasShield", hasShield());
         compound.putBoolean("IsArcher", isArcher());
@@ -2103,51 +2074,16 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         compound.putBoolean("IsStunned", isStunned());
         compound.putBoolean("IsSitting", isSittingInChair());
         compound.putBoolean("IsInMenuState", isInMenuState());
+
+        // --- Synched entity data we still own ---
         compound.putInt("Gender", this.entityData.get(GENDER));
         compound.putInt("EntityClass", this.entityData.get(ENTITY_CLASS));
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
-        compound.putInt("StarLevel", this.starLevel);
+
+        // --- Transient/runtime-only fields we still persist ---
         compound.putInt("StunTimer", this.stunTimer);
-        compound.putInt("SittingTime", this.sittingTime);
-        compound.putInt("SitCooldown", this.sitCooldown);
-        compound.putLong("ChairPosition", this.chairPosition.asLong());
 
-        if (!this.patrolPosition.equals(BlockPos.ZERO)) {
-            compound.putLong("PatrolPosition", this.patrolPosition.asLong());
-        }
-
-        if (fearedEntityType != null) {
-            compound.putString("FearedEntity", BuiltInRegistries.ENTITY_TYPE.getKey(fearedEntityType).toString());
-        }
-
-        if (fearedEntityTag != null) {
-            compound.putString("FearedEntityTag", fearedEntityTag.location().toString());
-        }
-
-        ListTag schoolsTag = new ListTag();
-        for (SchoolType school : this.magicSchools) {
-            schoolsTag.add(StringTag.valueOf(school.getId().toString()));
-        }
-        compound.put("MagicSchools", schoolsTag);
-
-        compound.putBoolean("SpellsGenerated", this.spellsGenerated);
-        compound.putBoolean("GoalsInitialized", this.goalsInitialized);
-
-        if (spellsGenerated && !persistedSpells.isEmpty()) {
-            ListTag spellsTag = new ListTag();
-            for (AbstractSpell spell : persistedSpells) {
-                spellsTag.add(StringTag.valueOf(spell.getSpellResource().toString()));
-            }
-            compound.put("PersistedSpells", spellsTag);
-/*
-            MagicRealms.LOGGER.debug("Saved {} spells for entity {}: [{}]",
-                    persistedSpells.size(),
-                    getEntityName(),
-                    persistedSpells.stream().map(AbstractSpell::getSpellName).collect(java.util.stream.Collectors.joining(", ")));
-
- */
-        }
-
+        // --- Owner/inventory/spellbook ---
         OwnerHelper.serializeOwner(compound, summonerUUID);
         this.writeInventoryToTag(compound, this.registryAccess());
 
@@ -2158,7 +2094,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             }
             compound.put("SpellbookSpells", spellbookSpellsTag);
         }
-
         if (!lastEquippedSpellbook.isEmpty()) {
             CompoundTag spellbookTag = new CompoundTag();
             lastEquippedSpellbook.save(this.registryAccess(), spellbookTag);
@@ -2166,17 +2101,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         compound.putBoolean("RequiresCustomPersistence", true);
-        compound.putBoolean("IsSitting", isSittingInChair());
-        compound.putLong("ChairPosition", getChairPosition().asLong());
-        compound.putInt("SittingTime", getSittingTime());
-        compound.putInt("SitCooldown", getSitCooldown());
-        compound.putBoolean("IsInMenuState", isInMenuState());
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
 
+        // --- Flags byte ---
         byte flags = 0;
         if (compound.getBoolean("Initialized")) flags |= FLAG_INITIALIZED;
         if (compound.getBoolean("HasShield")) flags |= FLAG_HAS_SHIELD;
@@ -2191,125 +2122,22 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         this.entityData.set(GENDER, compound.getInt("Gender"));
         this.entityData.set(ENTITY_CLASS, compound.getInt("EntityClass"));
 
-        int starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
-        this.starLevel = compound.contains("StarLevel") ? compound.getInt("StarLevel") : 1;
-        this.stunTimer = compound.getInt("StunTimer");
-        this.sittingTime = compound.getInt("SittingTime");
-        this.sitCooldown = compound.getInt("SitCooldown");
-        this.chairPosition = BlockPos.of(compound.getLong("ChairPosition"));
-
-        if (compound.contains("PatrolPosition")) {
-            this.patrolPosition = BlockPos.of(compound.getLong("PatrolPosition"));
-        }
-
-        if (compound.contains("FearedEntity")) {
-            String entityId = compound.getString("FearedEntity");
-            try {
-                ResourceLocation location = ResourceLocation.parse(entityId);
-                this.fearedEntityType = BuiltInRegistries.ENTITY_TYPE.get(location);
-            } catch (Exception e) {
-                MagicRealms.LOGGER.warn("Failed to parse feared entity ID: {}", entityId, e);
-            }
-        }
-
-        if (compound.contains("FearedEntityTag")) {
-            String tagId = compound.getString("FearedEntityTag");
-            try {
-                ResourceLocation location = ResourceLocation.parse(tagId);
-                this.fearedEntityTag = TagKey.create(Registries.ENTITY_TYPE, location);
-            } catch (Exception e) {
-                MagicRealms.LOGGER.warn("Failed to parse feared entity tag ID: {}", tagId, e);
-            }
-        }
-        initializeFearGoal();
-
-        this.magicSchools.clear();
-        if (compound.contains("MagicSchools")) {
-            ListTag schoolsTag = compound.getList("MagicSchools", 8);
-            for (int i = 0; i < schoolsTag.size(); i++) {
-                try {
-                    ResourceLocation location = ResourceLocation.parse(schoolsTag.getString(i));
-                    SchoolType school = SchoolRegistry.getSchool(location);
-                    if (school != null) {
-                        this.magicSchools.add(school);
-                    }
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Failed to parse school from NBT: {}", schoolsTag.getString(i), e);
-                }
-            }
-        }
-
         String savedName = compound.getString("EntityName");
         this.entityData.set(ENTITY_NAME, savedName);
-
         if (!savedName.isEmpty()) {
             updateCustomNameWithStars();
         }
 
-        this.spellsGenerated = compound.getBoolean("SpellsGenerated");
-        this.persistedSpells.clear();
+        this.stunTimer = compound.getInt("StunTimer");
 
-        if (compound.contains("PersistedSpells")) {
-            ListTag spellsTag = compound.getList("PersistedSpells", 8);
-            for (int i = 0; i < spellsTag.size(); i++) {
-                try {
-                    ResourceLocation spellLocation = ResourceLocation.parse(spellsTag.getString(i));
-                    AbstractSpell spell = SpellRegistry.getSpell(spellLocation);
-                    if (spell != null) {
-                        persistedSpells.add(spell);
-                    } else {
-                        MagicRealms.LOGGER.warn("Failed to find spell: {}", spellLocation);
-                    }
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Failed to parse spell from NBT: {}", spellsTag.getString(i), e);
-                }
-            }
-        }
+        // --- Legacy NBT migration: copy old keys into new attachments if attachments are empty ---
+        MRUtils.migrateLegacyNbtIfNeeded(compound, identity(), chairData(), patrolData(), fearData());
 
-        if (!goalsInitialized) {
-            //MagicRealms.LOGGER.debug("Entity {} loaded from NBT, goals will be reinitialized", getEntityName());
-        }
-
+        // --- Owner ---
         this.summonerUUID = OwnerHelper.deserializeOwner(compound);
-        setPatrolMode(compound.getBoolean("PatrolMode"));
 
-        if (compound.contains("PatrolPosition")) {
-            BlockPos patrolPos = BlockPos.of(compound.getLong("PatrolPosition"));
-            setPatrolPosition(patrolPos);
-        }
-
-        this.readInventoryFromTag(compound, this.registryAccess());
-
-        this.spellbookSpells.clear();
-        if (compound.contains("SpellbookSpells")) {
-            ListTag spellbookSpellsTag = compound.getList("SpellbookSpells", 8);
-            for (int i = 0; i < spellbookSpellsTag.size(); i++) {
-                try {
-                    ResourceLocation spellLocation = ResourceLocation.parse(spellbookSpellsTag.getString(i));
-                    AbstractSpell spell = SpellRegistry.getSpell(spellLocation);
-                    if (spell != null) {
-                        spellbookSpells.add(spell);
-                    }
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Failed to parse spellbook spell from NBT: {}", spellbookSpellsTag.getString(i), e);
-                }
-            }
-        }
-
-        if (compound.contains("LastEquippedSpellbook")) {
-            CompoundTag spellbookTag = compound.getCompound("LastEquippedSpellbook");
-            this.lastEquippedSpellbook = ItemStack.parseOptional(this.registryAccess(), spellbookTag);
-        } else {
-            this.lastEquippedSpellbook = ItemStack.EMPTY;
-        }
-
-        if (isSittingInChair() && !isValidChair(getChairPosition())) {
-            unsitFromChair();
-        }
-
-        if (isInMenuState()) {
-            setMenuState(false);
-        }
+        // --- Fear goal wiring (attachment is already populated by now) ---
+        initializeFearGoal();
     }
 
     // Helper methods for flag management

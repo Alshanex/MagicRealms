@@ -1,8 +1,8 @@
 package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.data.KillTrackerData;
+import net.alshanex.magic_realms.data.*;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -24,7 +24,35 @@ public class MRDataAttachments {
             "contract_data", () -> AttachmentType.builder(() -> new ContractData()).serialize(new ContractData.Serializer()).build()
     );
 
-    public static void register(net.neoforged.bus.api.IEventBus eventBus) {
+    public static final Supplier<AttachmentType<ChairSittingData>> CHAIR_SITTING = ATTACHMENT_TYPES.register(
+            "chair_sitting",
+            () -> AttachmentType.builder(ChairSittingData::new)
+                    .serialize(ChairSittingData.CODEC)
+                    .build()
+    );
+
+    public static final Supplier<AttachmentType<PatrolData>> PATROL = ATTACHMENT_TYPES.register(
+            "patrol",
+            () -> AttachmentType.builder(PatrolData::new)
+                    .serialize(PatrolData.CODEC)
+                    .build()
+    );
+
+    public static final Supplier<AttachmentType<FearData>> FEAR = ATTACHMENT_TYPES.register(
+            "fear",
+            () -> AttachmentType.builder(FearData::new)
+                    .serialize(new FearData.Serializer())
+                    .build()
+    );
+
+    public static final Supplier<AttachmentType<MercenaryIdentity>> IDENTITY = ATTACHMENT_TYPES.register(
+            "identity",
+            () -> AttachmentType.builder(MercenaryIdentity::new)
+                    .serialize(new MercenaryIdentity.Serializer())
+                    .build()
+    );
+
+    public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);
     }
 }

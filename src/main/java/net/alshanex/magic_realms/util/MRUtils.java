@@ -1,11 +1,13 @@
 package net.alshanex.magic_realms.util;
 
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.*;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.KillTrackerData;
+import net.alshanex.magic_realms.data.*;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.*;
@@ -22,11 +24,18 @@ import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -42,6 +51,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -735,6 +745,84 @@ public class MRUtils {
             // Refresh the visible nameplate with the current level
             var killData = human.getData(MRDataAttachments.KILL_TRACKER);
             human.updateCustomNameWithLevel(killData.getCurrentLevel());
+        }
+    }
+
+    public static void migrateLegacyNbtIfNeeded(CompoundTag compound, MercenaryIdentity id, ChairSittingData chairData, PatrolData patrolData, FearData fearData) {
+        // Star level
+        if (compound.contains("StarLevel")) {
+            id.setStarLevel(compound.getInt("StarLevel"));
+        }
+        // Spells-generated / goals-initialized flags
+        if (compound.contains("SpellsGenerated")) {
+            id.setSpellsGenerated(compound.getBoolean("SpellsGenerated"));
+        }
+        if (compound.contains("GoalsInitialized")) {
+            id.setGoalsInitialized(compound.getBoolean("GoalsInitialized"));
+        }
+        // Magic schools
+        if (compound.contains("MagicSchools") && id.getMagicSchools().isEmpty()) {
+            ListTag schoolsTag = compound.getList("MagicSchools", Tag.TAG_STRING);
+            List<SchoolType> schools = new ArrayList<>();
+            for (int i = 0; i < schoolsTag.size(); i++) {
+                try {
+                    ResourceLocation loc = ResourceLocation.parse(schoolsTag.getString(i));
+                    SchoolType school = SchoolRegistry.getSchool(loc);
+                    if (school != null) schools.add(school);
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Legacy school parse failed: {}", schoolsTag.getString(i), e);
+                }
+            }
+            id.setMagicSchools(schools);
+        }
+        // Persisted spells
+        if (compound.contains("PersistedSpells") && id.getPersistedSpells().isEmpty()) {
+            ListTag spellsTag = compound.getList("PersistedSpells", Tag.TAG_STRING);
+            List<AbstractSpell> spells = new ArrayList<>();
+            for (int i = 0; i < spellsTag.size(); i++) {
+                try {
+                    ResourceLocation loc = ResourceLocation.parse(spellsTag.getString(i));
+                    AbstractSpell spell = SpellRegistry.getSpell(loc);
+                    if (spell != null) spells.add(spell);
+                } catch (Exception e) {
+                    MagicRealms.LOGGER.warn("Legacy spell parse failed: {}", spellsTag.getString(i), e);
+                }
+            }
+            id.setPersistedSpells(spells);
+        }
+
+        // Patrol position
+        if (compound.contains("PatrolPosition")) {
+            patrolData.setPatrolPosition(BlockPos.of(compound.getLong("PatrolPosition")));
+        }
+
+        // Chair data
+        if (compound.contains("ChairPosition")) {
+            chairData.setChairPosition(BlockPos.of(compound.getLong("ChairPosition")));
+        }
+        if (compound.contains("SittingTime")) {
+            chairData.setSittingTime(compound.getInt("SittingTime"));
+        }
+        if (compound.contains("SitCooldown")) {
+            chairData.setSitCooldown(compound.getInt("SitCooldown"));
+        }
+
+        // Fear data
+        if (compound.contains("FearedEntity") && fearData.getFearedEntityType() == null) {
+            try {
+                ResourceLocation loc = ResourceLocation.parse(compound.getString("FearedEntity"));
+                fearData.setFearedEntityType(BuiltInRegistries.ENTITY_TYPE.get(loc));
+            } catch (Exception e) {
+                MagicRealms.LOGGER.warn("Legacy feared entity parse failed", e);
+            }
+        }
+        if (compound.contains("FearedEntityTag") && fearData.getFearedEntityTag() == null) {
+            try {
+                ResourceLocation loc = ResourceLocation.parse(compound.getString("FearedEntityTag"));
+                fearData.setFearedEntityTag(TagKey.create(Registries.ENTITY_TYPE, loc));
+            } catch (Exception e) {
+                MagicRealms.LOGGER.warn("Legacy feared entity tag parse failed", e);
+            }
         }
     }
 }

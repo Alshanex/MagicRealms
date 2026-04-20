@@ -148,7 +148,11 @@ public class ContractData implements INBTSerializable<CompoundTag> {
 
     public boolean trySetPermanentContract(UUID playerUUID, Level level, boolean isCreativeMode) {
         if(isCreativeMode){
-            return contractorUUID == null || contractorUUID.equals(playerUUID);
+            if (contractorUUID == null || contractorUUID.equals(playerUUID)) {
+                setPermanentContract(playerUUID, level);
+                return true;
+            }
+            return false;
         }
 
         if (!canEstablishPermanentContract(playerUUID, level)) {

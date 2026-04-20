@@ -84,7 +84,7 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     }
 
     @Override
-    protected void handleContractInteraction(Player player, ContractData contractData, ItemStack heldItem) {
+    public void handleContractInteraction(Player player, ContractData contractData, ItemStack heldItem) {
 
     }
 

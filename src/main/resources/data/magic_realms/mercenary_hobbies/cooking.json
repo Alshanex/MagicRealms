@@ -1,0 +1,20 @@
+{
+  "id": "cooking",
+  "display_key": "personality.magic_realms.hobby.cooking",
+  "keywords": ["cooking", "recipe", "kitchen", "stew", "bake"],
+  "responses": {
+    "default": [
+      "message.magic_realms.hobby.cooking.default.0",
+      "message.magic_realms.hobby.cooking.default.1"
+    ],
+    "jovial": [
+      "message.magic_realms.hobby.cooking.jovial.0"
+    ],
+    "cheerful": [
+      "message.magic_realms.hobby.cooking.cheerful.0"
+    ],
+    "scholarly": [
+      "message.magic_realms.hobby.cooking.scholarly.0"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "music",
+  "display_key": "personality.magic_realms.hobby.music",
+  "keywords": ["music", "song", "singing", "lute", "bard", "tune"],
+  "responses": {
+    "default": [
+      "message.magic_realms.hobby.music.default.0",
+      "message.magic_realms.hobby.music.default.1"
+    ],
+    "cheerful": [
+      "message.magic_realms.hobby.music.cheerful.0",
+      "message.magic_realms.hobby.music.cheerful.1"
+    ],
+    "jovial": [
+      "message.magic_realms.hobby.music.jovial.0"
+    ],
+    "stoic": [
+      "message.magic_realms.hobby.music.stoic.0"
+    ]
+  }
+}

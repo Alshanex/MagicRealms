@@ -13,6 +13,10 @@ import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.RandomSource;
@@ -20,7 +24,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
     private final String name = "Alshanex";
@@ -108,5 +114,19 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
         return "ui.magic_realms.introduction.alshanex";
+    }
+
+    @Override
+    public PersonalityInitializer.FixedPersonality getFixedPersonality() {
+        Set<Quirk> quirks = EnumSet.of(Quirk.SINGS_WHILE_WALKING);
+        return new PersonalityInitializer.FixedPersonality(
+                PersonalityArchetype.JOVIAL,
+                "magic_realms:favorite_foods/sweet",
+                "magic_realms:disliked_foods/bitter",
+                "music",
+                "Somewhere only we know",
+                0,
+                quirks
+        );
     }
 }

@@ -19,6 +19,6 @@ public class MRDataGenerator {
         PackOutput packOutput = generator.getPackOutput();
         CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
 
-        generator.addProvider(event.includeClient(), new MRLanguageProvider(packOutput));
+        //generator.addProvider(event.includeClient(), new MRLanguageProvider(packOutput));
     }
 }

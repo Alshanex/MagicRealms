@@ -52,6 +52,14 @@ public class MRDataAttachments {
                     .build()
     );
 
+    public static final Supplier<AttachmentType<PersonalityData>> PERSONALITY = ATTACHMENT_TYPES.register(
+            "personality",
+            () -> AttachmentType.builder(PersonalityData::new)
+                    .serialize(new PersonalityData.Serializer())
+                    .sync(PersonalityData.STREAM_CODEC)
+                    .build()
+    );
+
     public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);
     }

@@ -8,8 +8,6 @@ import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.util.ModTags;
-import net.alshanex.magic_realms.util.humans.goals.ChargeArrowAttackGoal;
-import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
 import net.alshanex.magic_realms.util.humans.goals.battle_goals.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
@@ -25,17 +23,15 @@ import java.util.stream.Collectors;
 /**
  * Centralized configuration of class-specific combat goals for mercenaries.
  */
-public final class MercenaryCombatGoals {
+public final class MercenaryGoalManager {
 
-    private MercenaryCombatGoals() {}
+    private MercenaryGoalManager() {}
 
-    // ======================================================================
+
     // Public entry points
-    // ======================================================================
 
     /**
-     * Installs the appropriate class-specific combat goal for a freshly generated
-     * spell list. Used during first-time spawn initialization.
+     * Installs the appropriate class-specific combat goal for a freshly generated spell list. Used during first-time spawn initialization.
      */
     public static void applyForClass(AbstractMercenaryEntity entity, List<AbstractSpell> spells) {
         EntityClass entityClass = entity.getEntityClass();
@@ -50,8 +46,7 @@ public final class MercenaryCombatGoals {
     }
 
     /**
-     * Re-applies goals using the entity's persisted spell list. Used after
-     * equipment changes to re-evaluate the combat kit.
+     * Re-applies goals using the entity's persisted spell list. Used after equipment changes to re-evaluate the combat kit.
      */
     public static void reapplyWithPersistedSpells(AbstractMercenaryEntity entity) {
         clearAttackGoals(entity);
@@ -59,8 +54,7 @@ public final class MercenaryCombatGoals {
     }
 
     /**
-     * Called on world load. Uses persisted spells if available, otherwise
-     * regenerates a fresh spell list for already-initialized entities that lost theirs.
+     * Called on world load. Uses persisted spells if available, otherwise regenerates a fresh spell list for already-initialized entities that lost theirs.
      */
     public static void reinitializeAfterLoad(AbstractMercenaryEntity entity) {
         if (entity.areSpellsGenerated() && !entity.getPersistedSpells().isEmpty()) {
@@ -74,8 +68,7 @@ public final class MercenaryCombatGoals {
     }
 
     /**
-     * Generates a new spell list for this entity, persists it, and installs
-     * the class-specific combat goal. Used as a recovery path when persisted
+     * Generates a new spell list for this entity, persists it, and installs the class-specific combat goal. Used as a recovery path when persisted
      * spells were lost.
      */
     public static void generateAndApplySpells(AbstractMercenaryEntity entity) {
@@ -87,8 +80,7 @@ public final class MercenaryCombatGoals {
     }
 
     /**
-     * Re-evaluates the mage's combat goal when the equipped spellbook or
-     * spell-containing gear changes.
+     * Re-evaluates the mage's combat goal when the equipped spellbook or spell-containing gear changes.
      */
     public static void refreshAfterEquipmentChange(AbstractMercenaryEntity entity) {
         if (!entity.areSpellsGenerated() || entity.getPersistedSpells().isEmpty()) return;
@@ -105,8 +97,7 @@ public final class MercenaryCombatGoals {
     }
 
     /**
-     * Updates the mage goal to reflect a newly-equipped spellbook. Combines the
-     * mage's persisted spells, the spellbook's spells, and any other equipment
+     * Updates the mage goal to reflect a newly-equipped spellbook. Combines the mage's persisted spells, the spellbook's spells, and any other equipment
      * spells into a single deduplicated kit.
      */
     public static void updateMageGoalWithSpellbookAndEquipment(
@@ -136,9 +127,8 @@ public final class MercenaryCombatGoals {
         }
     }
 
-    // ======================================================================
+
     // Equipment spell extraction
-    // ======================================================================
 
     public static List<AbstractSpell> extractSpellsFromEquipment(AbstractMercenaryEntity entity) {
         List<AbstractSpell> equipmentSpells = new ArrayList<>();
@@ -177,9 +167,8 @@ public final class MercenaryCombatGoals {
         return spells;
     }
 
-    // ======================================================================
+
     // Class-specific goal installers
-    // ======================================================================
 
     private static void setMageGoal(AbstractMercenaryEntity entity, List<AbstractSpell> spells) {
         entity.goalSelector.removeAllGoals(g -> g instanceof HumanGoals.HumanWizardAttackGoal);
@@ -258,24 +247,22 @@ public final class MercenaryCombatGoals {
             entity.goalSelector.addGoal(2, new ShieldBashGoal(entity, entity.getBattlefield()));
         } else {
             // No-shield warrior — BRAWLER / frontline contender.
-            // Aggressive melee pressure, periodically creating a small 4-block tactical
-            // pocket to drink a potion or finish a non-attack cast, then reengaging.
+            // Aggressive melee pressure, periodically creating a small 4-block tactical pocket to drink a potion or finish a non-attack cast, then reengaging.
             List<AbstractSpell> brawlerMovement = ShieldTankCombatGoal.filterMovementForTank(buckets.movement);
 
             entity.goalSelector.addGoal(3, new BrawlerCombatGoal(entity, entity.getBattlefield())
                     .setMoveset(SWORD_MOVESET)
-                    .setComboChance(.5f)                 // between tank (.4) and assassin (.7)
-                    .setMeleeAttackInverval(14, 28)      // aggressive but not assassin-fast
-                    .setMeleeMovespeedModifier(1.45f)    // between tank (1.3) and assassin (2.0)
+                    .setComboChance(.5f)
+                    .setMeleeAttackInverval(14, 28)
+                    .setMeleeMovespeedModifier(1.45f)
                     .setSpells(buckets.attack, buckets.defense, brawlerMovement, buckets.support)
                     .setDrinksPotions()
             );
         }
     }
 
-    // ======================================================================
+
     // Goal removal
-    // ======================================================================
 
     public static void clearAttackGoals(AbstractMercenaryEntity entity) {
         entity.goalSelector.removeAllGoals(goal ->
@@ -288,9 +275,8 @@ public final class MercenaryCombatGoals {
         );
     }
 
-    // ======================================================================
+
     // Internal helpers
-    // ======================================================================
 
     /** Shared sword moveset used by all melee classes. */
     private static final List<AttackAnimationData> SWORD_MOVESET = List.of(
@@ -316,8 +302,7 @@ public final class MercenaryCombatGoals {
     }
 
     /**
-     * Deduplicates, filters blacklist, bucketizes by role, and re-adds any
-     * unclassified spells into the attack bucket if the config allows.
+     * Deduplicates, filters blacklist, bucketizes by role, and re-adds any unclassified spells into the attack bucket if the config allows.
      */
     private static SpellBuckets dedupAndBucketize(List<AbstractSpell> spells) {
         List<AbstractSpell> finalSpells = spells.stream()

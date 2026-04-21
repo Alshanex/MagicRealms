@@ -1,0 +1,21 @@
+{
+  "id": "fishing",
+  "display_key": "personality.magic_realms.hobby.fishing",
+  "keywords": ["fishing", "fish", "river", "lake", "rod"],
+  "responses": {
+    "default": [
+      "message.magic_realms.hobby.fishing.default.0",
+      "message.magic_realms.hobby.fishing.default.1"
+    ],
+    "cheerful": [
+      "message.magic_realms.hobby.fishing.cheerful.0",
+      "message.magic_realms.hobby.fishing.cheerful.1"
+    ],
+    "grim": [
+      "message.magic_realms.hobby.fishing.grim.0"
+    ],
+    "scholarly": [
+      "message.magic_realms.hobby.fishing.scholarly.0"
+    ]
+  }
+}

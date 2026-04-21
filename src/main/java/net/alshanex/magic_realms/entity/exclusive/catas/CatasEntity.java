@@ -14,6 +14,10 @@ import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -32,7 +36,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
     private final String name = "Catas";
@@ -145,6 +151,20 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
         return "ui.magic_realms.introduction.catas";
+    }
+
+    @Override
+    public PersonalityInitializer.FixedPersonality getFixedPersonality() {
+        Set<Quirk> quirks = EnumSet.of(Quirk.BOOKWORM, Quirk.ANIMAL_FRIEND);
+        return new PersonalityInitializer.FixedPersonality(
+                PersonalityArchetype.SCHOLARLY,
+                "magic_realms:favorite_foods/sweet",
+                "magic_realms:disliked_foods/gross",
+                "history",
+                "Stonewick",
+                302,
+                quirks
+        );
     }
 
     @Override

@@ -13,6 +13,10 @@ import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,7 +28,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
     private final String name = "Amadeus Voidwalker";
@@ -122,6 +128,20 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
     @Override
     protected void initializeDefaultEquipment() {
         super.initializeDefaultEquipment();
+    }
+
+    @Override
+    public PersonalityInitializer.FixedPersonality getFixedPersonality() {
+        Set<Quirk> quirks = EnumSet.of(Quirk.BOOKWORM, Quirk.NIGHT_OWL);
+        return new PersonalityInitializer.FixedPersonality(
+                PersonalityArchetype.LOYAL,
+                "magic_realms:favorite_foods/bread",
+                "magic_realms:disliked_foods/gross",
+                "history",
+                "The Voidwalker Estate",
+                64,
+                quirks
+        );
     }
 
     @Override

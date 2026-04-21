@@ -15,6 +15,10 @@ import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -30,7 +34,9 @@ import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveMercenary {
     private final String name = "Aliana";
@@ -147,6 +153,20 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
         return "ui.magic_realms.introduction.aliana";
+    }
+
+    @Override
+    public PersonalityInitializer.FixedPersonality getFixedPersonality() {
+        Set<Quirk> quirks = EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON);
+        return new PersonalityInitializer.FixedPersonality(
+                PersonalityArchetype.CHEERFUL,
+                "magic_realms:favorite_foods/fruit",
+                "magic_realms:disliked_foods/gross",
+                "gardening",
+                "Brackenfield",
+                175,
+                quirks
+        );
     }
 
     @Override

@@ -1,0 +1,22 @@
+{
+  "id": "history",
+  "display_key": "personality.magic_realms.hobby.history",
+  "keywords": ["history", "ancient", "ruins", "legend", "old"],
+  "responses": {
+    "default": [
+      "message.magic_realms.hobby.history.default.0",
+      "message.magic_realms.hobby.history.default.1"
+    ],
+    "scholarly": [
+      "message.magic_realms.hobby.history.scholarly.0",
+      "message.magic_realms.hobby.history.scholarly.1",
+      "message.magic_realms.hobby.history.scholarly.2"
+    ],
+    "superstitious": [
+      "message.magic_realms.hobby.history.superstitious.0"
+    ],
+    "jovial": [
+      "message.magic_realms.hobby.history.jovial.0"
+    ]
+  }
+}

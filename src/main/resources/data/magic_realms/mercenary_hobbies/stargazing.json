@@ -1,0 +1,24 @@
+{
+  "id": "stargazing",
+  "display_key": "personality.magic_realms.hobby.stargazing",
+  "keywords": ["stars", "moon", "sky", "constellation", "night"],
+  "responses": {
+    "default": [
+      "message.magic_realms.hobby.stargazing.default.0",
+      "message.magic_realms.hobby.stargazing.default.1"
+    ],
+    "scholarly": [
+      "message.magic_realms.hobby.stargazing.scholarly.0"
+    ],
+    "superstitious": [
+      "message.magic_realms.hobby.stargazing.superstitious.0",
+      "message.magic_realms.hobby.stargazing.superstitious.1"
+    ],
+    "pious": [
+      "message.magic_realms.hobby.stargazing.pious.0"
+    ],
+    "grim": [
+      "message.magic_realms.hobby.stargazing.grim.0"
+    ]
+  }
+}

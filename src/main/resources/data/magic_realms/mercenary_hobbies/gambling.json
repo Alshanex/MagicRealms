@@ -1,0 +1,22 @@
+{
+  "id": "gambling",
+  "display_key": "personality.magic_realms.hobby.gambling",
+  "keywords": ["gambling", "bet", "dice", "luck", "cards", "wager"],
+  "responses": {
+    "default": [
+      "message.magic_realms.hobby.gambling.default.0",
+      "message.magic_realms.hobby.gambling.default.1"
+    ],
+    "greedy": [
+      "message.magic_realms.hobby.gambling.greedy.0",
+      "message.magic_realms.hobby.gambling.greedy.1",
+      "message.magic_realms.hobby.gambling.greedy.2"
+    ],
+    "pious": [
+      "message.magic_realms.hobby.gambling.pious.0"
+    ],
+    "superstitious": [
+      "message.magic_realms.hobby.gambling.superstitious.0"
+    ]
+  }
+}

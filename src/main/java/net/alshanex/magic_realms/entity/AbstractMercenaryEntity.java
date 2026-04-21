@@ -23,9 +23,10 @@ import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
 import net.alshanex.magic_realms.util.humans.goals.MercenaryArchery;
-import net.alshanex.magic_realms.util.humans.goals.MercenaryCombatGoals;
+import net.alshanex.magic_realms.util.humans.goals.MercenaryGoalManager;
 import net.alshanex.magic_realms.util.humans.goals.battle_goals.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.*;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.stats.HumanStatsManager;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
 import net.minecraft.core.BlockPos;
@@ -141,6 +142,10 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     protected abstract void initializeAppearance(RandomSource randomSource);
     protected abstract void handlePostSpawnInitialization();
     public abstract boolean isExclusiveMercenary();
+    @Nullable
+    public PersonalityInitializer.FixedPersonality getFixedPersonality() {
+        return null;
+    }
 
 
     // Control construction
@@ -413,15 +418,15 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     // Spell / spellbook lifecycle
 
     public List<AbstractSpell> extractSpellsFromEquipment() {
-        return MercenaryCombatGoals.extractSpellsFromEquipment(this);
+        return MercenaryGoalManager.extractSpellsFromEquipment(this);
     }
 
     public void refreshSpellsAfterEquipmentChange() {
-        MercenaryCombatGoals.refreshAfterEquipmentChange(this);
+        MercenaryGoalManager.refreshAfterEquipmentChange(this);
     }
 
     public void reinitializeGoalsAfterLoad() {
-        MercenaryCombatGoals.reinitializeAfterLoad(this);
+        MercenaryGoalManager.reinitializeAfterLoad(this);
     }
 
     public void updateSpellbookSpells() {
@@ -430,7 +435,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         ItemStack currentOffhand = this.getOffhandItem();
         if (!ItemStack.isSameItemSameComponents(currentOffhand, lastEquippedSpellbook)) {
             List<AbstractSpell> newSpellbookSpells = extractSpellsFromSpellbook(currentOffhand);
-            MercenaryCombatGoals.updateMageGoalWithSpellbookAndEquipment(this, newSpellbookSpells);
+            MercenaryGoalManager.updateMageGoalWithSpellbookAndEquipment(this, newSpellbookSpells);
             this.spellbookSpells = new ArrayList<>(newSpellbookSpells);
             this.lastEquippedSpellbook = currentOffhand.copy();
         }
@@ -547,6 +552,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         if (!this.isInitialized()) {
             initializeStarLevel(randomsource);
             initializeAppearance(randomsource);
+            initializePersonality(randomsource);
             initializeClassSpecifics(randomsource);
             initializeDefaultEquipment();
             initializeFearedEntity(randomsource);
@@ -569,10 +575,17 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             setGoalsInitialized(true);
         } else {
             if (areSpellsGenerated() && !getPersistedSpells().isEmpty()) {
-                MercenaryCombatGoals.reapplyWithPersistedSpells(this);
+                MercenaryGoalManager.reapplyWithPersistedSpells(this);
                 setGoalsInitialized(true);
             }
             initializeFearGoal();
+        }
+
+        if (!this.level().isClientSide) {
+            PersonalityData personality = this.getData(MRDataAttachments.PERSONALITY);
+            if (!personality.isInitialized()) {
+                initializePersonality(Utils.random);
+            }
         }
 
         if (!this.level().isClientSide) {
@@ -582,6 +595,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
 
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
+    }
+
+    protected void initializePersonality(RandomSource randomSource) {
+        RandomSource deterministic = getDeterministicRandom();
+        PersonalityInitializer.initializeFor(this, deterministic);
     }
 
     protected void initializeHumanLevel(RandomSource randomSource, KillTrackerData killTrackerData) {
@@ -605,7 +623,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             List<AbstractSpell> spells = generateSpellsForEntity(randomSource);
             setPersistedSpells(new ArrayList<>(spells));
             setSpellsGenerated(true);
-            MercenaryCombatGoals.applyForClass(this, spells);
+            MercenaryGoalManager.applyForClass(this, spells);
         }
     }
 
@@ -854,9 +872,16 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     public void onAddedToLevel() {
-        if (!this.level().isClientSide && this.isInitialized()) {
-            if (this.getEntityClass() == EntityClass.MAGE) updateSpellbookSpells();
-            refreshSpellsAfterEquipmentChange();
+        if (!this.level().isClientSide) {
+            if(this.isInitialized()){
+                if (this.getEntityClass() == EntityClass.MAGE) updateSpellbookSpells();
+                refreshSpellsAfterEquipmentChange();
+            }
+
+            PersonalityData data = this.getData(MRDataAttachments.PERSONALITY);
+            if (!data.isInitialized()){
+                PersonalityInitializer.initializeFor(this, getDeterministicRandom());
+            }
         }
         super.onAddedToLevel();
     }

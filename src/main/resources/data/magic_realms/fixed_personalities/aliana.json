@@ -1,10 +1,7 @@
 {
   "archetype": "cheerful",
-  "favorite_food_tag": "magic_realms:favorite_foods/fruit",
-  "disliked_food_tag": "magic_realms:disliked_foods/gross",
   "hobby": "cooking",
   "hometown": "Brackenfield",
-  "birthday_day_of_year": 175,
   "quirks": [
     "animal_friend",
     "glutton"

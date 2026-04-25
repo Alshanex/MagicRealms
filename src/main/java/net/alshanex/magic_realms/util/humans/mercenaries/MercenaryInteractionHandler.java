@@ -7,7 +7,6 @@ import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.AffinityOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -64,21 +63,6 @@ public final class MercenaryInteractionHandler {
             return handleHellPass(entity, player, heldItem);
         }
 
-        boolean isActiveContractor = contractData != null
-                && contractData.isContractor(player.getUUID(), entity.level());
-
-        // Food gifting (only available to current contractor while not in combat).
-        if (isActiveContractor && !entity.isInCombat()) {
-            if (AffinityOps.tryGiftFood(entity, player, heldItem)) {
-                if (!player.getAbilities().instabuild) {
-                    heldItem.shrink(1);
-                }
-                // Cosmetic feedback
-                entity.playSound(SoundEvents.PLAYER_BURP, 0.8f, 1.2f);
-                return InteractionResult.SUCCESS;
-            }
-        }
-
         boolean isContractor = contractData != null
                 && contractData.getContractorUUID() != null
                 && contractData.getContractorUUID().equals(player.getUUID());
@@ -115,7 +99,6 @@ public final class MercenaryInteractionHandler {
         }
 
         entity.setImmortal(true);
-        AffinityOps.onGiftHellPass(entity, player.getUUID());
         if (!player.getAbilities().instabuild) {
             heldItem.shrink(1);
         }

@@ -122,11 +122,8 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
                 "magic_realms:alshanex",
                 () -> new PersonalityInitializer.FixedPersonality(
                         PersonalityArchetype.JOVIAL,
-                        "magic_realms:favorite_foods/sweet",
-                        "magic_realms:disliked_foods/bitter",
                         "music",
                         "Somewhere only we know",
-                        0,
                         EnumSet.of(Quirk.SINGS_WHILE_WALKING)
                 )
         );

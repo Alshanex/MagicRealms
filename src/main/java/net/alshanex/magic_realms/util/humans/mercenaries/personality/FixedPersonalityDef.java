@@ -32,11 +32,8 @@ import java.util.Set;
 public record FixedPersonalityDef(
         String id,
         PersonalityArchetype archetype,
-        String favoriteFoodTagId,
-        String dislikedFoodTagId,
         String hobbyId,
         String hometown,
-        int birthdayDayOfYear,
         Set<Quirk> quirks,
         Optional<String> overrideEntityName,
         boolean inRandomPool,
@@ -68,24 +65,18 @@ public record FixedPersonalityDef(
 
     public static final Codec<FixedPersonalityDef> BODY_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ARCHETYPE_CODEC.fieldOf("archetype").forGetter(FixedPersonalityDef::archetype),
-            Codec.STRING.optionalFieldOf("favorite_food_tag", "").forGetter(d -> d.favoriteFoodTagId == null ? "" : d.favoriteFoodTagId),
-            Codec.STRING.optionalFieldOf("disliked_food_tag", "").forGetter(d -> d.dislikedFoodTagId == null ? "" : d.dislikedFoodTagId),
             Codec.STRING.optionalFieldOf("hobby", "").forGetter(d -> d.hobbyId == null ? "" : d.hobbyId),
             Codec.STRING.optionalFieldOf("hometown", "").forGetter(d -> d.hometown == null ? "" : d.hometown),
-            Codec.INT.optionalFieldOf("birthday_day_of_year", 0).forGetter(FixedPersonalityDef::birthdayDayOfYear),
             QUIRK_CODEC.listOf().optionalFieldOf("quirks", List.of()).forGetter(d -> new ArrayList<>(d.quirks)),
             Codec.STRING.optionalFieldOf("override_entity_name").forGetter(FixedPersonalityDef::overrideEntityName),
             Codec.BOOL.optionalFieldOf("in_random_pool", true).forGetter(FixedPersonalityDef::inRandomPool),
             Codec.INT.optionalFieldOf("weight", 1).forGetter(FixedPersonalityDef::weight),
             Codec.BOOL.optionalFieldOf("unique", true).forGetter(FixedPersonalityDef::unique)
-    ).apply(instance, (arch, favStr, disStr, hob, home, bday, quirksList, overrideName, inPool, w, uniq) -> new FixedPersonalityDef(
+    ).apply(instance, (arch, hob, home, quirksList, overrideName, inPool, w, uniq) -> new FixedPersonalityDef(
             "", // id is filled in by the reload listener from the filename
             arch,
-            favStr.isEmpty() ? null : favStr,
-            disStr.isEmpty() ? null : disStr,
             hob.isEmpty() ? null : hob,
             home.isEmpty() ? null : home,
-            bday,
             quirksList.isEmpty() ? EnumSet.noneOf(Quirk.class) : EnumSet.copyOf(quirksList),
             overrideName,
             inPool,
@@ -96,8 +87,8 @@ public record FixedPersonalityDef(
     /** Return a copy of this def with the id filled in (reload listener uses this). */
     public FixedPersonalityDef withId(String newId) {
         return new FixedPersonalityDef(
-                newId, archetype, favoriteFoodTagId, dislikedFoodTagId, hobbyId,
-                hometown, birthdayDayOfYear, quirks, overrideEntityName,
+                newId, archetype, hobbyId,
+                hometown, quirks, overrideEntityName,
                 inRandomPool, weight, unique
         );
     }
@@ -105,8 +96,8 @@ public record FixedPersonalityDef(
     /** Convert to the runtime FixedPersonality record used by PersonalityData.initialize. */
     public PersonalityInitializer.FixedPersonality toRuntime() {
         return new PersonalityInitializer.FixedPersonality(
-                archetype, favoriteFoodTagId, dislikedFoodTagId, hobbyId,
-                hometown, birthdayDayOfYear, quirks
+                archetype, hobbyId,
+                hometown, quirks
         );
     }
 
@@ -115,11 +106,8 @@ public record FixedPersonalityDef(
     public static void writeToBuf(FriendlyByteBuf buf, FixedPersonalityDef def) {
         buf.writeUtf(def.id);
         buf.writeUtf(def.archetype.getId());
-        buf.writeUtf(def.favoriteFoodTagId == null ? "" : def.favoriteFoodTagId);
-        buf.writeUtf(def.dislikedFoodTagId == null ? "" : def.dislikedFoodTagId);
         buf.writeUtf(def.hobbyId == null ? "" : def.hobbyId);
         buf.writeUtf(def.hometown == null ? "" : def.hometown);
-        buf.writeVarInt(def.birthdayDayOfYear);
 
         buf.writeVarInt(def.quirks.size());
         for (Quirk q : def.quirks) buf.writeUtf(q.getId());
@@ -153,7 +141,7 @@ public record FixedPersonalityDef(
         int weight = buf.readVarInt();
         boolean unique = buf.readBoolean();
 
-        return new FixedPersonalityDef(id, arch, fav, dis, hob, home, bday,
+        return new FixedPersonalityDef(id, arch, hob, home,
                 quirks, overrideName, inPool, weight, unique);
     }
 }

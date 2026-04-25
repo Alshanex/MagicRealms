@@ -96,25 +96,19 @@ public final class PersonalityInitializer {
     private static void applyRuntime(PersonalityData data, FixedPersonality fixed) {
         data.initialize(
                 fixed.archetype(),
-                fixed.favoriteFoodTagId(),
-                fixed.dislikedFoodTagId(),
                 fixed.hobbyId(),
                 fixed.hometown(),
-                fixed.birthdayDayOfYear(),
                 fixed.quirks()
         );
     }
 
     private static void applyRandomRoll(AbstractMercenaryEntity entity, PersonalityData data, RandomSource random) {
         PersonalityArchetype archetype = PersonalityArchetype.roll(entity.getEntityClass(), random);
-        String favoriteTag = FoodPreferenceRoller.rollFavoriteTagId(entity.getEntityClass(), random);
-        String dislikedTag = FoodPreferenceRoller.rollDislikedTagId(favoriteTag, random);
         String hobbyId = rollHobbyId(random);
         String hometown = HometownRoller.roll(random);
-        int birthday = random.nextInt(365);
         Set<Quirk> quirks = Quirk.rollSet(random);
 
-        data.initialize(archetype, favoriteTag, dislikedTag, hobbyId, hometown, birthday, quirks);
+        data.initialize(archetype, hobbyId, hometown, quirks);
     }
 
     private static String rollHobbyId(RandomSource random) {
@@ -181,11 +175,8 @@ public final class PersonalityInitializer {
      */
     public record FixedPersonality(
             PersonalityArchetype archetype,
-            String favoriteFoodTagId,
-            String dislikedFoodTagId,
             String hobbyId,
             String hometown,
-            int birthdayDayOfYear,
             Set<Quirk> quirks
     ) {
         /**

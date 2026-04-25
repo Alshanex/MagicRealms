@@ -1,10 +1,7 @@
 {
   "archetype": "scholarly",
-  "favorite_food_tag": "magic_realms:favorite_foods/bread",
-  "disliked_food_tag": "magic_realms:disliked_foods/dangerous",
   "hobby": "stargazing",
   "hometown": "Kingsreach",
-  "birthday_day_of_year": 245,
   "quirks": [
     "bookworm",
     "night_owl"

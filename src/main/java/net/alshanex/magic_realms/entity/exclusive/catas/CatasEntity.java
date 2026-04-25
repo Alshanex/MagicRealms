@@ -159,11 +159,8 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
                 "magic_realms:catas",
                 () -> new PersonalityInitializer.FixedPersonality(
                         PersonalityArchetype.SCHOLARLY,
-                        "magic_realms:favorite_foods/sweet",
-                        "magic_realms:disliked_foods/gross",
                         "history",
                         "Stonewick",
-                        302,
                         EnumSet.of(Quirk.BOOKWORM, Quirk.ANIMAL_FRIEND)
                 )
         );

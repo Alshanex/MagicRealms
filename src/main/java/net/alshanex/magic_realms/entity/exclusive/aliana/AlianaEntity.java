@@ -161,11 +161,8 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
                 "magic_realms:aliana",
                 () -> new PersonalityInitializer.FixedPersonality(
                         PersonalityArchetype.CHEERFUL,
-                        "magic_realms:favorite_foods/fruit",
-                        "magic_realms:disliked_foods/gross",
                         "gardening",
                         "Brackenfield",
-                        175,
                         EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON)
                 )
         );

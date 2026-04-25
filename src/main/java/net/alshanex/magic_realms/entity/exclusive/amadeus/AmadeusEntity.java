@@ -136,11 +136,8 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
                 "magic_realms:amadeus",
                 () -> new PersonalityInitializer.FixedPersonality(
                         PersonalityArchetype.LOYAL,
-                        "magic_realms:favorite_foods/bread",
-                        "magic_realms:disliked_foods/gross",
                         "history",
                         "The Voidwalker Estate",
-                        64,
                         EnumSet.of(Quirk.BOOKWORM, Quirk.NIGHT_OWL)
                 )
         );

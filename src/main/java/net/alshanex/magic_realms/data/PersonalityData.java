@@ -1,6 +1,5 @@
 package net.alshanex.magic_realms.data;
 
-import net.alshanex.magic_realms.util.FoodTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.*;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
@@ -43,16 +42,12 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
 
     private boolean initialized = false;
     private PersonalityArchetype archetype;
-    private String favoriteFoodTagId;
-    private String dislikedFoodTagId;
     private String hobbyId;
     private String hometown;
-    private int birthdayDayOfYear;
     private Set<Quirk> quirks = EnumSet.noneOf(Quirk.class);
 
     private int mood = 50;
     private final Map<UUID, Integer> affinityByPlayer = new HashMap<>();
-    private final Map<UUID, Deque<MemoryEvent>> memoryByPlayer = new HashMap<>();
 
     private static final int MEMORY_LIMIT_PER_PLAYER = 10;
     public static final int MOOD_MIN = 0;
@@ -68,19 +63,13 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
     public PersonalityData() {}
 
     public void initialize(PersonalityArchetype archetype,
-                           String favoriteFoodTagId,
-                           String dislikedFoodTagId,
                            String hobbyId,
                            String hometown,
-                           int birthdayDayOfYear,
                            Set<Quirk> quirks) {
         if (initialized) return;
         this.archetype = archetype;
-        this.favoriteFoodTagId = favoriteFoodTagId;
-        this.dislikedFoodTagId = dislikedFoodTagId;
         this.hobbyId = hobbyId;
         this.hometown = hometown;
-        this.birthdayDayOfYear = birthdayDayOfYear;
         this.quirks = quirks != null ? EnumSet.copyOf(quirks) : EnumSet.noneOf(Quirk.class);
         this.mood = MOOD_NEUTRAL;
         this.initialized = true;
@@ -95,26 +84,6 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
     @Nullable
     public PersonalityArchetype getArchetype() {
         return archetype;
-    }
-
-    @Nullable
-    public TagKey<Item> getFavoriteFoodTag() {
-        return FoodTags.parse(favoriteFoodTagId);
-    }
-
-    @Nullable
-    public String getFavoriteFoodTagId() {
-        return favoriteFoodTagId;
-    }
-
-    @Nullable
-    public TagKey<Item> getDislikedFoodTag() {
-        return FoodTags.parse(dislikedFoodTagId);
-    }
-
-    @Nullable
-    public String getDislikedFoodTagId() {
-        return dislikedFoodTagId;
     }
 
     /**
@@ -137,88 +106,12 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
         return hometown;
     }
 
-    public int getBirthdayDayOfYear() {
-        return birthdayDayOfYear;
-    }
-
     public Set<Quirk> getQuirks() {
         return EnumSet.copyOf(quirks);
     }
 
     public boolean hasQuirk(Quirk q) {
         return quirks.contains(q);
-    }
-
-    // Mood
-
-    public int getMood() {
-        return mood;
-    }
-
-    public void adjustMood(int delta) {
-        this.mood = clamp(this.mood + delta, MOOD_MIN, MOOD_MAX);
-    }
-
-    public void setMood(int value) {
-        this.mood = clamp(value, MOOD_MIN, MOOD_MAX);
-    }
-
-    public void decayMood() {
-        if (mood > MOOD_NEUTRAL) mood--;
-        else if (mood < MOOD_NEUTRAL) mood++;
-    }
-
-    public MoodTier getMoodTier() {
-        if (mood >= 70) return MoodTier.HAPPY;
-        if (mood >= 40) return MoodTier.CONTENT;
-        if (mood >= 20) return MoodTier.GRUMPY;
-        return MoodTier.MISERABLE;
-    }
-
-    public enum MoodTier { HAPPY, CONTENT, GRUMPY, MISERABLE }
-
-    // Affinity
-
-    public int getAffinity(UUID playerId) {
-        if (playerId == null) return 0;
-        return affinityByPlayer.getOrDefault(playerId, 0);
-    }
-
-    public void adjustAffinity(UUID playerId, int delta) {
-        if (playerId == null) return;
-        int current = affinityByPlayer.getOrDefault(playerId, 0);
-        affinityByPlayer.put(playerId, clamp(current + delta, AFFINITY_MIN, AFFINITY_MAX));
-    }
-
-    public void setAffinity(UUID playerId, int value) {
-        if (playerId == null) return;
-        affinityByPlayer.put(playerId, clamp(value, AFFINITY_MIN, AFFINITY_MAX));
-    }
-
-    public AffinityTier getAffinityTier(UUID playerId) {
-        int a = getAffinity(playerId);
-        if (a <= AFFINITY_STRANGER_MAX) return AffinityTier.STRANGER;
-        if (a >= AFFINITY_CLOSE_MIN) return AffinityTier.CLOSE;
-        if (a >= AFFINITY_FRIEND_MIN) return AffinityTier.FRIEND;
-        return AffinityTier.ACQUAINTANCE;
-    }
-
-    public enum AffinityTier { STRANGER, ACQUAINTANCE, FRIEND, CLOSE }
-
-    // Memory
-
-    public void addMemory(UUID playerId, MemoryEvent event) {
-        if (playerId == null || event == null) return;
-        Deque<MemoryEvent> log = memoryByPlayer.computeIfAbsent(playerId, k -> new ArrayDeque<>());
-        if (!log.isEmpty() && log.peekLast() == event) return;
-        log.offerLast(event);
-        while (log.size() > MEMORY_LIMIT_PER_PLAYER) log.pollFirst();
-    }
-
-    public boolean remembers(UUID playerId, MemoryEvent event) {
-        if (playerId == null || event == null) return false;
-        Deque<MemoryEvent> log = memoryByPlayer.get(playerId);
-        return log != null && log.contains(event);
     }
 
     // NBT Serialization
@@ -229,11 +122,8 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
         tag.putBoolean("initialized", initialized);
 
         if (archetype != null) tag.putString("archetype", archetype.getId());
-        if (favoriteFoodTagId != null) tag.putString("favorite_food_tag", favoriteFoodTagId);
-        if (dislikedFoodTagId != null) tag.putString("disliked_food_tag", dislikedFoodTagId);
         if (hobbyId != null) tag.putString("hobby", hobbyId);
         if (hometown != null) tag.putString("hometown", hometown);
-        tag.putInt("birthday", birthdayDayOfYear);
 
         ListTag quirksTag = new ListTag();
         for (Quirk q : quirks) quirksTag.add(StringTag.valueOf(q.getId()));
@@ -247,14 +137,6 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
         }
         tag.put("affinity", affinityTag);
 
-        CompoundTag memoryTag = new CompoundTag();
-        for (Map.Entry<UUID, Deque<MemoryEvent>> e : memoryByPlayer.entrySet()) {
-            ListTag list = new ListTag();
-            for (MemoryEvent ev : e.getValue()) list.add(StringTag.valueOf(ev.name()));
-            memoryTag.put(e.getKey().toString(), list);
-        }
-        tag.put("memory", memoryTag);
-
         return tag;
     }
 
@@ -262,11 +144,8 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
     public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
         this.initialized = tag.getBoolean("initialized");
         this.archetype = PersonalityArchetype.fromId(tag.getString("archetype"));
-        this.favoriteFoodTagId = tag.contains("favorite_food_tag") ? tag.getString("favorite_food_tag") : null;
-        this.dislikedFoodTagId = tag.contains("disliked_food_tag") ? tag.getString("disliked_food_tag") : null;
         this.hobbyId = tag.contains("hobby") ? tag.getString("hobby") : null;
         this.hometown = tag.contains("hometown") ? tag.getString("hometown") : null;
-        this.birthdayDayOfYear = tag.getInt("birthday");
 
         this.quirks = EnumSet.noneOf(Quirk.class);
         if (tag.contains("quirks", Tag.TAG_LIST)) {
@@ -288,23 +167,6 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
                 try {
                     UUID uuid = UUID.fromString(key);
                     affinityByPlayer.put(uuid, affinityTag.getInt(key));
-                } catch (IllegalArgumentException ignored) {}
-            }
-        }
-
-        this.memoryByPlayer.clear();
-        if (tag.contains("memory", Tag.TAG_COMPOUND)) {
-            CompoundTag memoryTag = tag.getCompound("memory");
-            for (String key : memoryTag.getAllKeys()) {
-                try {
-                    UUID uuid = UUID.fromString(key);
-                    ListTag list = memoryTag.getList(key, Tag.TAG_STRING);
-                    Deque<MemoryEvent> log = new ArrayDeque<>();
-                    for (int i = 0; i < list.size(); i++) {
-                        MemoryEvent ev = MemoryEvent.fromName(list.getString(i));
-                        if (ev != null) log.offerLast(ev);
-                    }
-                    memoryByPlayer.put(uuid, log);
                 } catch (IllegalArgumentException ignored) {}
             }
         }

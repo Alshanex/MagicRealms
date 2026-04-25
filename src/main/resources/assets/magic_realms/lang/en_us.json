@@ -38,6 +38,7 @@
   "item.magic_realms.midas_coin": "Midas Coin",
   "item.magic_realms.permanent_blood_pact": "Binding Blood Pact",
   "item.magic_realms.skin_customizer": "Skin Customizer",
+  "item.magic_realms.sleeping_pass": "Sleeping Pass",
   "item.magic_realms.skin_customizer.creative": "Creative Mode only",
   "item.magic_realms.skin_customizer.preset_not_editable": "Doesn't work on preset texture mercenaries or custom mercenaries",
 
@@ -82,6 +83,7 @@
   "message.magic_realms.mercenary.busy_fighting.1": "Not now — I'm busy!",
   "message.magic_realms.mercenary.busy_fighting.2": "Talk to me after this fight!",
   "message.magic_realms.mercenary.busy_fighting.3": "Get back, I'm in the middle of something!",
+  "message.magic_realms.tavern.unable_to_sleep": "Tavernkeep: Hey you there, if you want to sleep in my tavern you will have to buy a Sleeping Pass like everyone else!",
 
   "tooltip.magic_realms.wisewood_chair": "Seats visiting Mercenaries",
   "tooltip.magic_realms.wisewood_chair_inert": "Safe for building",

@@ -383,6 +383,15 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, drink, 3, 8).getOffer(this, this.random));
             }
 
+            this.offers.add(new MerchantOffer(
+                    new ItemCost(Items.EMERALD, 10),
+                    Optional.empty(),
+                    new ItemStack(MRItems.SLEEPING_PASS.get(), 1),
+                    5,
+                    0,
+                    0.05f
+            ));
+
             ItemStack food = getRandomItemsFromTag(ModTags.TAVERNKEEP_SELLS_FOOD, this.random);
             if(!food.isEmpty()){
                 this.offers.add(new AdditionalWanderingTrades.SimpleSell(10, food, 7, 14).getOffer(this, this.random));

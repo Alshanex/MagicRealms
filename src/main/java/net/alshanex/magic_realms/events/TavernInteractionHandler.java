@@ -3,12 +3,17 @@ package net.alshanex.magic_realms.events;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.registry.MRBlocks;
+import net.alshanex.magic_realms.registry.MRItems;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
@@ -16,13 +21,13 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.CanPlayerSleepEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerWakeUpEvent;
+import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @EventBusSubscriber(modid = MagicRealms.MODID)
 public class TavernInteractionHandler {
@@ -139,6 +144,68 @@ public class TavernInteractionHandler {
         StructureStart start = getTavernAt(level, pos);
         // We ensure the structure exists AND the keeper/chairs are intact
         return start != null && getValidKeeper(level, start.getBoundingBox()) != null;
+    }
+
+    @SubscribeEvent
+    public static void onPlayerSleep(CanPlayerSleepEvent event) {
+        Player player = event.getEntity();
+        if (player.level() instanceof ServerLevel serverLevel) {
+
+            // Check if the bed they clicked is inside the tavern
+            if (isPositionInTavern(serverLevel, event.getPos())) {
+
+                // Check if they have the sleeping pass anywhere in their inventory
+                boolean hasPass = false;
+                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                    if (player.getInventory().getItem(i).is(MRItems.SLEEPING_PASS.get())) {
+                        hasPass = true;
+                        break;
+                    }
+                }
+
+                // If they don't have a pass, stop them from sleeping
+                if (!hasPass) {
+                    event.setProblem(Player.BedSleepingProblem.OTHER_PROBLEM);
+                    player.sendSystemMessage(Component.translatable("message.magic_realms.tavern.unable_to_sleep").withStyle(ChatFormatting.RED));
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSleepFinished(SleepFinishedTimeEvent event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+
+            // The night was successfully skipped! Loop through all players in this dimension
+            for (Player player : serverLevel.players()) {
+
+                // Only target players who are actively sleeping right now
+                if (player.isSleeping()) {
+                    Optional<BlockPos> sleepPos = player.getSleepingPos();
+
+                    // Check if they are sleeping inside a tavern bed
+                    if (sleepPos.isPresent() && isPositionInTavern(serverLevel, sleepPos.get())) {
+
+                        // Consume 1 pass from their inventory
+                        boolean consumed = false;
+                        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                            ItemStack stack = player.getInventory().getItem(i);
+                            if (stack.is(MRItems.SLEEPING_PASS.get())) {
+                                stack.shrink(1);
+                                consumed = true;
+                                break;
+                            }
+                        }
+
+                        // If successfully consumed, grant the buffs
+                        if (consumed) {
+                            player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 6000, 0));
+                            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 6000, 5));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**

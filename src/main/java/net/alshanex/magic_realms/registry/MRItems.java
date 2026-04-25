@@ -102,4 +102,10 @@ public class MRItems {
     public static final DeferredHolder<Item, SkinCustomizerItem> SKIN_CUSTOMIZER =
             ITEMS.register("skin_customizer", () -> new SkinCustomizerItem(
                     new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+
+    public static final DeferredHolder<Item, Item> SLEEPING_PASS =
+            ITEMS.register("sleeping_pass", () -> new Item(new Item.Properties()
+                    .stacksTo(16)
+                    .rarity(Rarity.UNCOMMON)
+            ));
 }

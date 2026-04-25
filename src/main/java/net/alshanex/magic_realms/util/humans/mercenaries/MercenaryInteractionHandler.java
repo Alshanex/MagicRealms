@@ -7,6 +7,7 @@ import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.AffinityOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -52,6 +53,19 @@ public final class MercenaryInteractionHandler {
             return handleHellPass(entity, player, heldItem);
         }
 
+        boolean isActiveContractor = contractData != null
+                && contractData.isContractor(player.getUUID(), entity.level());
+        if (isActiveContractor && !entity.isInCombat()) {
+            if (AffinityOps.tryGiftFood(entity, player, heldItem)) {
+                if (!player.getAbilities().instabuild) {
+                    heldItem.shrink(1);
+                }
+                // Cosmetic feedback
+                entity.playSound(net.minecraft.sounds.SoundEvents.PLAYER_BURP, 0.8f, 1.2f);
+                return InteractionResult.SUCCESS;
+            }
+        }
+
         // Contractor interacting with a non-contract item mid-combat gets a flavor refusal line rather than opening the menu.
         boolean isContractor = contractData != null
                 && contractData.getContractorUUID() != null
@@ -88,6 +102,7 @@ public final class MercenaryInteractionHandler {
         }
 
         entity.setImmortal(true);
+        AffinityOps.onGiftHellPass(entity, player.getUUID());
         if (!player.getAbilities().instabuild) {
             heldItem.shrink(1);
         }

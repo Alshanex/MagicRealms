@@ -155,15 +155,17 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
 
     @Override
     public PersonalityInitializer.FixedPersonality getFixedPersonality() {
-        Set<Quirk> quirks = EnumSet.of(Quirk.BOOKWORM, Quirk.ANIMAL_FRIEND);
-        return new PersonalityInitializer.FixedPersonality(
-                PersonalityArchetype.SCHOLARLY,
-                "magic_realms:favorite_foods/sweet",
-                "magic_realms:disliked_foods/gross",
-                "history",
-                "Stonewick",
-                302,
-                quirks
+        return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
+                "magic_realms:catas",
+                () -> new PersonalityInitializer.FixedPersonality(
+                        PersonalityArchetype.SCHOLARLY,
+                        "magic_realms:favorite_foods/sweet",
+                        "magic_realms:disliked_foods/gross",
+                        "history",
+                        "Stonewick",
+                        302,
+                        EnumSet.of(Quirk.BOOKWORM, Quirk.ANIMAL_FRIEND)
+                )
         );
     }
 

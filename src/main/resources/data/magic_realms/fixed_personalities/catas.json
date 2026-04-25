@@ -1,0 +1,14 @@
+{
+  "archetype": "scholarly",
+  "favorite_food_tag": "magic_realms:favorite_foods/sweet",
+  "disliked_food_tag": "magic_realms:disliked_foods/gross",
+  "hobby": "history",
+  "hometown": "Stonewick",
+  "birthday_day_of_year": 302,
+  "quirks": [
+    "bookworm",
+    "animal_friend"
+  ],
+  "in_random_pool": false,
+  "unique": true
+}

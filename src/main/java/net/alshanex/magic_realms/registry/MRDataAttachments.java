@@ -60,6 +60,14 @@ public class MRDataAttachments {
                     .build()
     );
 
+    public static final Supplier<AttachmentType<AssignedFixedPersonalitiesData>> ASSIGNED_FIXED_PERSONALITIES =
+            ATTACHMENT_TYPES.register(
+                    "assigned_fixed_personalities",
+                    () -> AttachmentType.builder(AssignedFixedPersonalitiesData::new)
+                            .serialize(new AssignedFixedPersonalitiesData.Serializer())
+                            .build()
+            );
+
     public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);
     }

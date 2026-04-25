@@ -118,15 +118,17 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
 
     @Override
     public PersonalityInitializer.FixedPersonality getFixedPersonality() {
-        Set<Quirk> quirks = EnumSet.of(Quirk.SINGS_WHILE_WALKING);
-        return new PersonalityInitializer.FixedPersonality(
-                PersonalityArchetype.JOVIAL,
-                "magic_realms:favorite_foods/sweet",
-                "magic_realms:disliked_foods/bitter",
-                "music",
-                "Somewhere only we know",
-                0,
-                quirks
+        return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
+                "magic_realms:alshanex",
+                () -> new PersonalityInitializer.FixedPersonality(
+                        PersonalityArchetype.JOVIAL,
+                        "magic_realms:favorite_foods/sweet",
+                        "magic_realms:disliked_foods/bitter",
+                        "music",
+                        "Somewhere only we know",
+                        0,
+                        EnumSet.of(Quirk.SINGS_WHILE_WALKING)
+                )
         );
     }
 }

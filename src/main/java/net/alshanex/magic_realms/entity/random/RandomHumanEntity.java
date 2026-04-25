@@ -13,6 +13,8 @@ import net.alshanex.magic_realms.skins_management.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityCatalogHolder;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityDef;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -84,6 +86,23 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
         if (usePreset) {
             SkinPreset preset = catalog.pickPreset(gender, random);
             metadata.putString("presetTexture", preset.texture().toString());
+
+            // If the preset specifies a fixed personality, write its id so PersonalityInitializer can apply it on the server. We also
+            // copy the personality's override_entity_name into "presetName" ONLY when the preset itself didn't specify a display_name -
+            // that way the existing client-side name-sync flow propagates the chosen name without any new packet plumbing.
+            preset.fixedPersonalityId().ifPresent(fpId -> {
+                metadata.putString("presetFixedPersonalityId", fpId);
+                if (preset.displayName().isEmpty()) {
+                    FixedPersonalityDef def = FixedPersonalityCatalogHolder.server().byId(fpId);
+                    if (def != null) {
+                        def.overrideEntityName().ifPresent(name -> {
+                            if (!name.isEmpty()) metadata.putString("presetName", name);
+                        });
+                    }
+                }
+            });
+
+            // The preset's own display_name still wins if both are present.
             preset.displayName().ifPresent(n -> metadata.putString("presetName", n));
         } else {
             SkinPart skin = catalog.pickPart(SkinCategory.SKIN, gender, entityClass, random);

@@ -132,15 +132,17 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
 
     @Override
     public PersonalityInitializer.FixedPersonality getFixedPersonality() {
-        Set<Quirk> quirks = EnumSet.of(Quirk.BOOKWORM, Quirk.NIGHT_OWL);
-        return new PersonalityInitializer.FixedPersonality(
-                PersonalityArchetype.LOYAL,
-                "magic_realms:favorite_foods/bread",
-                "magic_realms:disliked_foods/gross",
-                "history",
-                "The Voidwalker Estate",
-                64,
-                quirks
+        return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
+                "magic_realms:amadeus",
+                () -> new PersonalityInitializer.FixedPersonality(
+                        PersonalityArchetype.LOYAL,
+                        "magic_realms:favorite_foods/bread",
+                        "magic_realms:disliked_foods/gross",
+                        "history",
+                        "The Voidwalker Estate",
+                        64,
+                        EnumSet.of(Quirk.BOOKWORM, Quirk.NIGHT_OWL)
+                )
         );
     }
 

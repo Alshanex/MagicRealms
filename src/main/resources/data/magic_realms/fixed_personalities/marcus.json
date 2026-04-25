@@ -1,0 +1,16 @@
+{
+  "archetype": "scholarly",
+  "favorite_food_tag": "magic_realms:favorite_foods/bread",
+  "disliked_food_tag": "magic_realms:disliked_foods/dangerous",
+  "hobby": "history",
+  "hometown": "Kingsreach",
+  "birthday_day_of_year": 245,
+  "quirks": [
+    "bookworm",
+    "night_owl"
+  ],
+  "override_entity_name": "Marcus",
+  "in_random_pool": false,
+  "weight": 1,
+  "unique": true
+}

@@ -24,5 +24,6 @@ public class PayloadHandler {
         payloadRegistrar.playToClient(SyncSkinCatalogPacket.TYPE, SyncSkinCatalogPacket.STREAM_CODEC, SyncSkinCatalogPacket::handle);
         payloadRegistrar.playToClient(SyncHobbyCatalogPacket.TYPE, SyncHobbyCatalogPacket.STREAM_CODEC, SyncHobbyCatalogPacket::handle);
         payloadRegistrar.playToClient(OpenSkinCustomizerPacket.TYPE, OpenSkinCustomizerPacket.STREAM_CODEC, OpenSkinCustomizerPacket::handle);
+        payloadRegistrar.playToClient(SyncFixedPersonalityCatalogPacket.TYPE, SyncFixedPersonalityCatalogPacket.STREAM_CODEC, SyncFixedPersonalityCatalogPacket::handle);
     }
 }

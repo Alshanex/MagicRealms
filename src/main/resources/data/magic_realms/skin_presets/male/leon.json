@@ -2,5 +2,6 @@
   "texture": "magic_realms:entity/human/additional_textures/male/leon",
   "display_name": "Leon",
   "gender": "male",
-  "weight": 1
+  "weight": 1,
+  "fixed_personality_id": "magic_realms:marcus"
 }

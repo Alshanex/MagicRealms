@@ -1,0 +1,14 @@
+{
+  "archetype": "loyal",
+  "favorite_food_tag": "magic_realms:favorite_foods/bread",
+  "disliked_food_tag": "magic_realms:disliked_foods/gross",
+  "hobby": "history",
+  "hometown": "The Voidwalker Estate",
+  "birthday_day_of_year": 64,
+  "quirks": [
+    "bookworm",
+    "night_owl"
+  ],
+  "in_random_pool": false,
+  "unique": true
+}

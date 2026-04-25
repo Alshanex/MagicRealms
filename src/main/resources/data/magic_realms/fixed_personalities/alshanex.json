@@ -1,0 +1,13 @@
+{
+  "archetype": "jovial",
+  "favorite_food_tag": "magic_realms:favorite_foods/sweet",
+  "disliked_food_tag": "magic_realms:disliked_foods/bitter",
+  "hobby": "music",
+  "hometown": "Somewhere only we know",
+  "birthday_day_of_year": 0,
+  "quirks": [
+    "sings_while_walking"
+  ],
+  "in_random_pool": false,
+  "unique": true
+}

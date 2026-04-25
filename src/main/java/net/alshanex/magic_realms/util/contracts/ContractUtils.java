@@ -11,6 +11,7 @@ import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.AffinityOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -86,6 +87,8 @@ public class ContractUtils {
 
         humanEntity.updateCustomNameWithStars();
 
+        AffinityOps.onContractPermanent(humanEntity, player.getUUID());
+
         if (player instanceof ServerPlayer serverPlayer) {
             MutableComponent message;
             message = Component.translatable("ui.magic_realms.contract_established_permanent", humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
@@ -150,6 +153,9 @@ public class ContractUtils {
         boolean success;
         if (isRenewal) {
             success = contractData.renewContract(player.getUUID(), starLevel, level);
+            if(success){
+                AffinityOps.onContractRenewed(humanEntity, player.getUUID());
+            }
         } else {
             success = contractData.trySetTemporaryContract(player.getUUID(), starLevel, level);
             if (success) {

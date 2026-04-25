@@ -157,15 +157,17 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
 
     @Override
     public PersonalityInitializer.FixedPersonality getFixedPersonality() {
-        Set<Quirk> quirks = EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON);
-        return new PersonalityInitializer.FixedPersonality(
-                PersonalityArchetype.CHEERFUL,
-                "magic_realms:favorite_foods/fruit",
-                "magic_realms:disliked_foods/gross",
-                "gardening",
-                "Brackenfield",
-                175,
-                quirks
+        return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
+                "magic_realms:aliana",
+                () -> new PersonalityInitializer.FixedPersonality(
+                        PersonalityArchetype.CHEERFUL,
+                        "magic_realms:favorite_foods/fruit",
+                        "magic_realms:disliked_foods/gross",
+                        "gardening",
+                        "Brackenfield",
+                        175,
+                        EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON)
+                )
         );
     }
 

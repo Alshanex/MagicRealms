@@ -1,10 +1,13 @@
 package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.network.SyncFixedPersonalityCatalogPacket;
 import net.alshanex.magic_realms.network.SyncHobbyCatalogPacket;
 import net.alshanex.magic_realms.network.SyncSkinCatalogPacket;
 import net.alshanex.magic_realms.skins_management.SkinCatalogHolder;
 import net.alshanex.magic_realms.skins_management.SkinCatalogReloadListener;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityCatalogHolder;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityCatalogReloadListener;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.HobbyCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.HobbyCatalogReloadListener;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +25,7 @@ public class ServerReloadEvents {
         event.addListener(SkinCatalogReloadListener.parts());
         event.addListener(SkinCatalogReloadListener.presets());
         event.addListener(new HobbyCatalogReloadListener());
+        event.addListener(new FixedPersonalityCatalogReloadListener());
     }
 
     @SubscribeEvent
@@ -42,6 +46,15 @@ public class ServerReloadEvents {
         } else {
             for (ServerPlayer p : event.getPlayerList().getPlayers()) {
                 PacketDistributor.sendToPlayer(p, hobbyPacket);
+            }
+        }
+
+        SyncFixedPersonalityCatalogPacket fpPacket = new SyncFixedPersonalityCatalogPacket(FixedPersonalityCatalogHolder.server());
+        if (target != null) {
+            PacketDistributor.sendToPlayer(target, fpPacket);
+        } else {
+            for (ServerPlayer p : event.getPlayerList().getPlayers()) {
+                PacketDistributor.sendToPlayer(p, fpPacket);
             }
         }
     }

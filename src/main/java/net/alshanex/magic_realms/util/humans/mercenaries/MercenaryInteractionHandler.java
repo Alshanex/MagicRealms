@@ -7,6 +7,7 @@ import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -93,8 +94,7 @@ public final class MercenaryInteractionHandler {
             AbstractMercenaryEntity entity, Player player, ItemStack heldItem) {
 
         if (entity.isImmortal()) {
-            player.sendSystemMessage(Component.translatable("message.magic_realms.already_immortal",
-                    entity.getEntityName()).withStyle(ChatFormatting.GOLD));
+            player.sendSystemMessage(MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.already_immortal"));
             return InteractionResult.FAIL;
         }
 
@@ -105,8 +105,7 @@ public final class MercenaryInteractionHandler {
 
         player.playSound(SoundEvents.TOTEM_USE, 1.0F, 1.0F);
         if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.sendSystemMessage(Component.translatable("message.magic_realms.granted_immortality",
-                    entity.getEntityName()).withStyle(ChatFormatting.GOLD));
+            serverPlayer.sendSystemMessage(MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.granted_immortality"));
         }
         return InteractionResult.SUCCESS;
     }
@@ -122,9 +121,8 @@ public final class MercenaryInteractionHandler {
         if (heldItem.getItem() instanceof PermanentContractItem) {
             if (entity.isExclusiveMercenary()) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = Component.translatable(
-                            "ui.magic_realms.contract_reject_permanent",
-                            entity.getEntityName()).withStyle(ChatFormatting.GOLD);
+                    MutableComponent message = MercenaryMessageFormatter.buildFor(entity,
+                            "ui.magic_realms.contract_reject_permanent");
                     serverPlayer.sendSystemMessage(message);
                 }
             } else {
@@ -140,7 +138,6 @@ public final class MercenaryInteractionHandler {
     /** Picks one of four flavor-text refusal lines for a contractor's mid-combat interaction. */
     private static Component pickCombatRefusalLine(AbstractMercenaryEntity entity) {
         int variant = entity.getRandom().nextInt(4);
-        String key = "message.magic_realms.mercenary.busy_fighting." + variant;
-        return Component.translatable(key);
+        return MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.mercenary.busy_fighting." + variant);
     }
 }

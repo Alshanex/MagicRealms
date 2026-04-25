@@ -1,4 +1,4 @@
-package net.alshanex.magic_realms.util.humans.mercenaries;
+package net.alshanex.magic_realms.util.humans.mercenaries.chat;
 
 import net.alshanex.magic_realms.data.PersonalityData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
@@ -54,8 +54,7 @@ public final class MercenarySpeechHelper {
         if (pool.isEmpty()) return false;
 
         String translationKey = pool.get(mercenary.getRandom().nextInt(pool.size()));
-        MutableComponent component = Component.translatable(translationKey, mercenary.getEntityName())
-                .withStyle(ChatFormatting.WHITE);
+        MutableComponent component = MercenaryMessageFormatter.buildFor(mercenary, translationKey);
         player.sendSystemMessage(component);
 
         lastSpeechTick.put(mercenary.getUUID(), now);

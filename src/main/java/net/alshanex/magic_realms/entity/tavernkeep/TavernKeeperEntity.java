@@ -21,6 +21,7 @@ import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.SpellInventoryUtils;
 import net.alshanex.magic_realms.util.humans.goals.WalkToSpawnGoal;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -70,7 +71,7 @@ import software.bernie.geckolib.animation.AnimationState;
 
 import java.util.*;
 
-public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttacker, IMerchantWizard {
+public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttacker, IMerchantWizard, IChatFaceProvider {
     @Nullable
     private BlockPos spawnPos;
     private boolean hasSetSpawnPos = false;
@@ -185,6 +186,11 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             return true;
         }
         return super.isHostileTowards(entity);
+    }
+
+    @Override
+    public ResourceLocation getChatFaceTextureCS() {
+        return TavernKeeperEntityModel.TEXTURE;
     }
 
     public static AttributeSupplier.Builder prepareAttributes() {

@@ -24,6 +24,7 @@ import net.alshanex.magic_realms.skins_management.SkinPreset;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
 import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -879,8 +880,7 @@ public class MRUtils {
 
         switch (choice) {
             case ASK_ABOUT_BLOOD_PACTS -> {
-                MutableComponent message = Component.translatable("message.magic_realms.tavernkeep_tip")
-                        .withStyle(ChatFormatting.GOLD);
+                MutableComponent message = MercenaryMessageFormatter.buildFor(tavernkeep, "message.magic_realms.tavernkeep_tip");
                 serverPlayer.sendSystemMessage(message);
             }
             case OPEN_TRADES -> tavernkeep.openTradesForPlayer(serverPlayer);

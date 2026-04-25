@@ -13,6 +13,7 @@ import net.alshanex.magic_realms.skins_management.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityDef;
 import net.minecraft.client.Minecraft;
@@ -20,6 +21,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -31,7 +33,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public class RandomHumanEntity extends AbstractMercenaryEntity {
+public class RandomHumanEntity extends AbstractMercenaryEntity implements IChatFaceProvider {
 
     private static final EntityDataAccessor<CompoundTag> TEXTURE_METADATA =
             SynchedEntityData.defineId(RandomHumanEntity.class, EntityDataSerializers.COMPOUND_TAG);
@@ -232,6 +234,14 @@ public class RandomHumanEntity extends AbstractMercenaryEntity {
     @Override
     public boolean isExclusiveMercenary() {
         return false;
+    }
+
+    @Override
+    public ResourceLocation getChatFaceTextureCS() {
+        if (this.level().isClientSide()) {
+            return RandomHumanEntityRenderer.getOrBuildTextureFor(getTextureComponents());
+        }
+        return null;
     }
 
     @Override

@@ -11,7 +11,8 @@ import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
-import net.alshanex.magic_realms.util.humans.mercenaries.MercenarySpeechHelper;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenarySpeechHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -39,7 +40,7 @@ public class ContractUtils {
         if (contractData.hasActiveContract(level) && !contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
-                message = Component.translatable("ui.magic_realms.already_have_contract").withStyle(ChatFormatting.GOLD);
+                message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.already_have_contract");
                 serverPlayer.sendSystemMessage(message);
             }
             return;
@@ -47,8 +48,8 @@ public class ContractUtils {
 
         if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_already_permanent",
-                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
+                MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
+                        "ui.magic_realms.contract_already_permanent");
                 serverPlayer.sendSystemMessage(message);
             }
             return;
@@ -59,8 +60,8 @@ public class ContractUtils {
                 if (player instanceof ServerPlayer serverPlayer) {
                     int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID(), level);
 
-                    MutableComponent message = Component.translatable("ui.magic_realms.permanent_contract_insufficient_time",
-                            humanEntity.getEntityName(), remainingMinutes).withStyle(ChatFormatting.GOLD);
+                    MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
+                            "ui.magic_realms.permanent_contract_insufficient_time", remainingMinutes);
 
                     serverPlayer.sendSystemMessage(message);
                 }
@@ -89,8 +90,8 @@ public class ContractUtils {
 
         if (player instanceof ServerPlayer serverPlayer) {
             MutableComponent message;
-            message = Component.translatable("ui.magic_realms.contract_established_permanent",
-                    humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
+            message = MercenaryMessageFormatter.buildFor(humanEntity,
+                    "ui.magic_realms.contract_established_permanent");
             serverPlayer.sendSystemMessage(message);
         }
 
@@ -110,7 +111,7 @@ public class ContractUtils {
         if (contractData.hasActiveContract(level) && !contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
-                message = Component.translatable("ui.magic_realms.already_have_contract").withStyle(ChatFormatting.GOLD);
+                message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.already_have_contract");
                 serverPlayer.sendSystemMessage(message);
             }
             return;
@@ -118,8 +119,8 @@ public class ContractUtils {
 
         if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_already_permanent",
-                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
+                MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
+                        "ui.magic_realms.contract_already_permanent");
                 serverPlayer.sendSystemMessage(message);
             }
             return;
@@ -131,8 +132,8 @@ public class ContractUtils {
         if (tieredContract.getTier().ordinal() < requiredTier.ordinal()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
-                message = Component.translatable("ui.magic_realms.entity_level_too_low",
-                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
+                message = MercenaryMessageFormatter.buildFor(humanEntity,
+                        "ui.magic_realms.entity_level_too_low");
 
                 serverPlayer.sendSystemMessage(message);
             }
@@ -165,13 +166,11 @@ public class ContractUtils {
         if (player instanceof ServerPlayer serverPlayer) {
             MutableComponent message;
             if (isRenewal) {
-                message = Component.translatable("ui.magic_realms.contract_extended",
-                        humanEntity.getEntityName(),
-                        additionalMinutes);
+                message = MercenaryMessageFormatter.buildFor(humanEntity,
+                        "ui.magic_realms.contract_extended", additionalMinutes);
             } else {
-                message = Component.translatable("ui.magic_realms.contract_established",
-                        humanEntity.getEntityName(),
-                        additionalMinutes).withStyle(ChatFormatting.GOLD);
+                message = MercenaryMessageFormatter.buildFor(humanEntity,
+                        "ui.magic_realms.contract_established", additionalMinutes);
             }
             serverPlayer.sendSystemMessage(message);
         }
@@ -201,8 +200,7 @@ public class ContractUtils {
         if (!contractData.isContractor(player.getUUID(), level)) {
             if (contractData.hasActiveContract(level)) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = Component.translatable("ui.magic_realms.already_have_contract",
-                            humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
+                    MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.already_have_contract");
                     serverPlayer.sendSystemMessage(message);
                 }
             } else {
@@ -226,8 +224,7 @@ public class ContractUtils {
         // Shift + right-click: open the contract menu (and tell the player how much time is left).
         if (contractData.isPermanent()) {
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_time_permanent",
-                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
+                MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.contract_time_permanent");
                 serverPlayer.sendSystemMessage(message);
             }
         } else {
@@ -235,8 +232,8 @@ public class ContractUtils {
             String seconds = contractData.getRemainingSecondsFormatted(level);
 
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_time_remaining_with_extension",
-                        humanEntity.getEntityName(), minutes, seconds).withStyle(ChatFormatting.GOLD);
+                MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
+                        "ui.magic_realms.contract_time_remaining_with_extension", minutes, seconds);
                 serverPlayer.sendSystemMessage(message);
             }
         }
@@ -318,10 +315,10 @@ public class ContractUtils {
             messageKey = exclusiveMercenary.getExclusiveMercenaryPresentationMessage();
         }
 
-        MutableComponent message = Component.translatable(messageKey,
-                entityName,
+        MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
+                messageKey,
                 requiredTier.getDisplayName().getString(),
-                contractMinutes).withStyle(ChatFormatting.GOLD);
+                contractMinutes);
 
         serverPlayer.sendSystemMessage(message);
     }

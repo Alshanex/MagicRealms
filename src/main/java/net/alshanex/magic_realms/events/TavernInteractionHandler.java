@@ -4,6 +4,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.registry.MRBlocks;
 import net.alshanex.magic_realms.registry.MRItems;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -84,6 +85,12 @@ public class TavernInteractionHandler {
         return null;
     }
 
+    private static TavernKeeperEntity getValidKeeperAt(ServerLevel level, BlockPos pos) {
+        StructureStart start = getTavernAt(level, pos);
+        if (start == null) return null;
+        return getValidKeeper(level, start.getBoundingBox());
+    }
+
     // Events
 
     @SubscribeEvent
@@ -110,7 +117,9 @@ public class TavernInteractionHandler {
                     if (keeper != null && keeper.hasLineOfSight(player)) {
 
                         int randomMessageIndex = player.getRandom().nextInt(3) + 1;
-                        player.sendSystemMessage(Component.translatable("message.magic_realms.tavernkeep_welcome" + randomMessageIndex));
+                        player.sendSystemMessage(MercenaryMessageFormatter.buildFor(
+                                keeper,
+                                "message.magic_realms.tavernkeep_welcome" + randomMessageIndex));
 
                         // ONLY log them into the tracker AFTER they have been seen
                         PLAYERS_IN_TAVERNS.put(playerId, currentTavernId);
@@ -131,7 +140,9 @@ public class TavernInteractionHandler {
                     for (TavernKeeperEntity keeper : nearbyKeepers) {
                         if (keeper.distanceToSqr(player) <= 400.0D) {
                             int randomMessageIndex = player.getRandom().nextInt(3) + 1;
-                            player.sendSystemMessage(Component.translatable("message.magic_realms.tavernkeep_farewell" + randomMessageIndex));
+                            player.sendSystemMessage(MercenaryMessageFormatter.buildFor(
+                                    keeper,
+                                    "message.magic_realms.tavernkeep_farewell" + randomMessageIndex));
                             break;
                         }
                     }
@@ -151,8 +162,9 @@ public class TavernInteractionHandler {
         Player player = event.getEntity();
         if (player.level() instanceof ServerLevel serverLevel) {
 
-            // Check if the bed they clicked is inside the tavern
-            if (isPositionInTavern(serverLevel, event.getPos())) {
+            // Resolve the tavern's keeper (if any).
+            TavernKeeperEntity keeper = getValidKeeperAt(serverLevel, event.getPos());
+            if (keeper != null) {
 
                 // Check if they have the sleeping pass anywhere in their inventory
                 boolean hasPass = false;
@@ -166,7 +178,10 @@ public class TavernInteractionHandler {
                 // If they don't have a pass, stop them from sleeping
                 if (!hasPass) {
                     event.setProblem(Player.BedSleepingProblem.OTHER_PROBLEM);
-                    player.sendSystemMessage(Component.translatable("message.magic_realms.tavern.unable_to_sleep").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(MercenaryMessageFormatter.buildForWithBodyColor(
+                            keeper,
+                            "message.magic_realms.tavern.unable_to_sleep",
+                            ChatFormatting.RED));
                 }
             }
         }

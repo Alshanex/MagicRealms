@@ -14,6 +14,7 @@ import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -43,7 +44,12 @@ public class MercenariesEventHandler {
     public static void amadeusCheerEvent(LivingDamageEvent.Pre event){
         if(event.getEntity() instanceof Player player && !player.level().isClientSide && (player.getHealth() - event.getOriginalDamage()) < 6){
             if(hasContractedAmadeusNearby(player, player.level())){
-                player.sendSystemMessage(Component.translatable("message.magic_realms.amadeus.combat.contractor_low_health", "Amadeus Voidwalker", player.getDisplayName()).withStyle(ChatFormatting.GOLD));
+                AmadeusEntity amadeus = hasContractedAmadeusNearby(player.blockPosition(), player.level());
+                player.sendSystemMessage(
+                        MercenaryMessageFormatter.buildTwoNamed(amadeus, "Amadeus Voidwalker",
+                                player.getDisplayName(),
+                                "message.magic_realms.amadeus.combat.contractor_low_health")
+                );
             }
         }
     }
@@ -52,7 +58,8 @@ public class MercenariesEventHandler {
     public static void onChangedDimension(EntityJoinLevelEvent event){
         if(event.getEntity() instanceof AlianaEntity aliana && !aliana.level().isClientSide && event.getLevel().dimension() == Level.NETHER){
             if(aliana.getSummoner() != null && hasContractorNearby(aliana, aliana.getSummoner(), aliana.level())){
-                aliana.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.aliana.travel.nether", aliana.getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
+                aliana.getSummoner().sendSystemMessage(
+                        MercenaryMessageFormatter.buildFor(aliana, "message.magic_realms.aliana.travel.nether"));
             }
         }
     }
@@ -126,21 +133,22 @@ public class MercenariesEventHandler {
         if(event.getEntity() instanceof EnderMan enderman && !enderman.level().isClientSide && event.getSource().getEntity() instanceof Player player){
             AmadeusEntity amadeus = hasContractedAmadeusNearby(enderman.blockPosition(), enderman.level());
             if(amadeus != null && amadeus.getSummoner().is(player) && hasContractorNearby(amadeus, player, amadeus.level())){
-                player.sendSystemMessage(Component.translatable("message.magic_realms.amadeus.enderman.killed", amadeus.getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
+                player.sendSystemMessage(
+                        MercenaryMessageFormatter.buildFor(amadeus, "message.magic_realms.amadeus.enderman.killed"));
             }
         }
 
         if(event.getEntity().getType().is(ModTags.BOSSES_TAG) && !event.getEntity().level().isClientSide){
             AmadeusEntity amadeus = hasContractedAmadeusNearby(event.getEntity().blockPosition(), event.getEntity().level());
             if(amadeus != null && !amadeus.level().isClientSide && hasContractorNearby(amadeus, amadeus.getSummoner(), amadeus.level())){
-                amadeus.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.boss.killed", amadeus.getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
+                amadeus.getSummoner().sendSystemMessage(MercenaryMessageFormatter.buildFor(amadeus, "message.magic_realms.amadeus.boss.killed"));
             }
         }
 
         if(event.getEntity() instanceof AbstractMercenaryEntity mercenary && !mercenary.isImmortal() && !mercenary.level().isClientSide){
             AmadeusEntity amadeus = hasContractedAmadeusNearby(mercenary.blockPosition(), mercenary.level());
             if(amadeus != null && !amadeus.level().isClientSide && amadeus.isAlliedTo(mercenary) && hasContractorNearby(amadeus, amadeus.getSummoner(), amadeus.level())){
-                amadeus.getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.ally.killed", amadeus.getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
+                amadeus.getSummoner().sendSystemMessage(MercenaryMessageFormatter.buildFor(amadeus, "message.magic_realms.amadeus.ally.killed"));
             }
         }
     }

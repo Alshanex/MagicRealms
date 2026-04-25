@@ -4,6 +4,8 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.exclusive.AbstractFixedTextureRenderer;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
 import net.alshanex.magic_realms.skins_management.DynamicTextureManager;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatFaceRenderer;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatLineFaceTable;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,6 +22,9 @@ public class ClientWorldEventHandler {
             DynamicTextureManager.clearAllTextures();
             RandomHumanEntityRenderer.clearCompositeCache();
             AbstractFixedTextureRenderer.clearTextureCache();
+
+            ChatLineFaceTable.clear();
+            ChatFaceRenderer.clearCache();
 
             MagicRealms.LOGGER.debug("Cleared client texture caches on world unload");
         }

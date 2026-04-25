@@ -89,7 +89,7 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
         }
     }
 
-    private ResourceLocation createCompositeTexture(TextureComponents components) {
+    private static ResourceLocation createCompositeTexture(TextureComponents components) {
         try {
             // Load base skin texture - this is required
             BufferedImage skinImage = loadTextureImage(components.getSkinTexture());
@@ -168,7 +168,7 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
         }
     }
 
-    private BufferedImage loadTextureImage(String textureId) {
+    private static BufferedImage loadTextureImage(String textureId) {
         if (textureId == null || textureId.isEmpty()) {
             return null;
         }
@@ -199,6 +199,26 @@ public class RandomHumanEntityRenderer extends AbstractMercenaryEntityRenderer {
 
     private ResourceLocation getDefaultTexture() {
         return DEFAULT_TEXTURE;
+    }
+
+    public static ResourceLocation getOrBuildTextureFor(TextureComponents components) {
+        if (components == null) return null;
+
+        if (components.isPresetTexture() && components.getSkinTexture() != null) {
+            try {
+                return toAssetPath(components.getSkinTexture());
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        if (!components.isPresetTexture()) {
+            String cacheKey = createCacheKey(components);
+            if (cacheKey == null) return null;
+            return COMPOSITE_TEXTURE_CACHE.computeIfAbsent(cacheKey, k -> createCompositeTexture(components));
+        }
+
+        return null;
     }
 
     // Clean up cache when needed

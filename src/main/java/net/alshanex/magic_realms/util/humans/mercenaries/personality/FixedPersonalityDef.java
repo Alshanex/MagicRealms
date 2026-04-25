@@ -123,11 +123,8 @@ public record FixedPersonalityDef(
     public static FixedPersonalityDef readFromBuf(FriendlyByteBuf buf) {
         String id = buf.readUtf();
         PersonalityArchetype arch = PersonalityArchetype.fromId(buf.readUtf());
-        String fav = buf.readUtf(); if (fav.isEmpty()) fav = null;
-        String dis = buf.readUtf(); if (dis.isEmpty()) dis = null;
         String hob = buf.readUtf(); if (hob.isEmpty()) hob = null;
         String home = buf.readUtf(); if (home.isEmpty()) home = null;
-        int bday = buf.readVarInt();
 
         int quirkCount = buf.readVarInt();
         Set<Quirk> quirks = EnumSet.noneOf(Quirk.class);

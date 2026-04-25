@@ -7,9 +7,11 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
 import java.util.ArrayList;
@@ -49,6 +51,10 @@ public class ModTags {
     public static TagKey<AbstractSpell> CATAS_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_spells"));
 
     public static TagKey<AbstractSpell> CREEPER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "fizzle_casts"));
+
+    public static final TagKey<Biome> HOT_BIOMES = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "hot_biomes"));
+    public static final TagKey<Biome> COLD_BIOMES = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "cold_biomes"));
+    public static final TagKey<Item> BOOKS = ItemTags.create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "books"));
 
     // Structures
     public static TagKey<Structure> FURLED_MAP_STRUCTURES = create("furled_map_structures");

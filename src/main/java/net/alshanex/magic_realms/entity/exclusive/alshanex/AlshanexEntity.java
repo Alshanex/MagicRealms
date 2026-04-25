@@ -124,7 +124,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
                         PersonalityArchetype.JOVIAL,
                         "music",
                         "Somewhere only we know",
-                        EnumSet.of(Quirk.SINGS_WHILE_WALKING)
+                        EnumSet.of(Quirk.AFRAID_OF_THE_DARK)
                 )
         );
     }

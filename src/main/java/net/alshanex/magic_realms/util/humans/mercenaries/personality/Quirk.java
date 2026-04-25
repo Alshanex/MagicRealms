@@ -14,10 +14,7 @@ import java.util.Set;
 public enum Quirk {
     AFRAID_OF_THE_DARK("afraid_of_the_dark"),
     HATES_RAIN("hates_rain"),
-    LOVES_CATS("loves_cats"),
     CANT_SWIM("cant_swim"),
-    GOLD_OBSESSED("gold_obsessed"),
-    SINGS_WHILE_WALKING("sings_while_walking"),
     CLAUSTROPHOBIC("claustrophobic"),
     NIGHT_OWL("night_owl"),
     EARLY_RISER("early_riser"),

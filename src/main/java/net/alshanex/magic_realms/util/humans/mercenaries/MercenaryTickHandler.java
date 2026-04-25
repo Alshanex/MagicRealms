@@ -9,6 +9,7 @@ import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
+import net.alshanex.magic_realms.events.QuirkEffectHandler;
 import net.alshanex.magic_realms.particles.StunParticleEffect;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.ChatFormatting;
@@ -47,6 +48,8 @@ public final class MercenaryTickHandler {
     /** Main entry point from {@link AbstractMercenaryEntity#tick()}. */
     public static void tick(AbstractMercenaryEntity entity) {
         boolean serverSide = !entity.level().isClientSide;
+
+        QuirkEffectHandler.tickQuirks(entity);
 
         if (serverSide) {
             handleSittingTick(entity);

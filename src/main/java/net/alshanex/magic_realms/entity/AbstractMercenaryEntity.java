@@ -29,6 +29,7 @@ import net.alshanex.magic_realms.util.humans.goals.MercenaryGoalManager;
 import net.alshanex.magic_realms.util.humans.goals.battle_goals.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.alshanex.magic_realms.util.humans.stats.HumanStatsManager;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
 import net.minecraft.core.BlockPos;
@@ -688,7 +689,16 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new FloatGoal(this) {
+            @Override
+            public boolean canUse() {
+                PersonalityData personality = AbstractMercenaryEntity.this.getData(MRDataAttachments.PERSONALITY);
+                if (personality != null && personality.getQuirks() != null && personality.getQuirks().contains(Quirk.CANT_SWIM)) {
+                    return false;
+                }
+                return super.canUse();
+            }
+        });
         this.goalSelector.addGoal(2, new WizardRecoverGoal(this));
         this.goalSelector.addGoal(3, new HumanGoals.PatrolAroundPositionGoal(this, 0.8D, 10));
         this.goalSelector.addGoal(3, new HumanGoals.HumanFollowOwnerGoal(this, this::getSummoner, 1.3f, 15, 5, false, 25));
@@ -778,6 +788,14 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         if (this.isInsideTavern) {
             if (target instanceof AbstractMercenaryEntity || target instanceof TavernKeeperEntity) {
+                return false;
+            }
+        }
+
+        PersonalityData personality = this.getData(MRDataAttachments.PERSONALITY);
+        if (personality != null && personality.getQuirks() != null && personality.getQuirks().contains(Quirk.HATES_RAIN)) {
+            // If contracted and currently standing in rain
+            if (this.getSummoner() != null && this.level().isRainingAt(this.blockPosition())) {
                 return false;
             }
         }

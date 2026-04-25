@@ -1,7 +1,7 @@
 {
   "id": "fishing",
   "display_key": "personality.magic_realms.hobby.fishing",
-  "keywords": ["fishing", "fish", "river", "lake", "rod"],
+  "in_random_pool": true,
   "responses": {
     "default": [
       "message.magic_realms.hobby.fishing.default.0",

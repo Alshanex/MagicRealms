@@ -1,7 +1,7 @@
 {
   "id": "history",
   "display_key": "personality.magic_realms.hobby.history",
-  "keywords": ["history", "ancient", "ruins", "legend", "old"],
+  "in_random_pool": true,
   "responses": {
     "default": [
       "message.magic_realms.hobby.history.default.0",

@@ -1,7 +1,7 @@
 {
   "id": "gambling",
   "display_key": "personality.magic_realms.hobby.gambling",
-  "keywords": ["gambling", "bet", "dice", "luck", "cards", "wager"],
+  "in_random_pool": false,
   "responses": {
     "default": [
       "message.magic_realms.hobby.gambling.default.0",

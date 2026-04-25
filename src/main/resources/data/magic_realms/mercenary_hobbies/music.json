@@ -1,7 +1,7 @@
 {
   "id": "music",
   "display_key": "personality.magic_realms.hobby.music",
-  "keywords": ["music", "song", "singing", "lute", "bard", "tune"],
+  "in_random_pool": true,
   "responses": {
     "default": [
       "message.magic_realms.hobby.music.default.0",

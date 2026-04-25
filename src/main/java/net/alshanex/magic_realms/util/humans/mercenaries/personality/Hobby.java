@@ -17,16 +17,16 @@ import java.util.Map;
 public record Hobby(
         String id,
         String displayKey,
-        List<String> keywords,
-        Map<String, List<String>> responses
+        Map<String, List<String>> responses,
+        boolean inRandomPool
 ) {
     public static final String DEFAULT_POOL_KEY = "default";
 
     public static final Codec<Hobby> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("id").forGetter(Hobby::id),
             Codec.STRING.fieldOf("display_key").forGetter(Hobby::displayKey),
-            Codec.STRING.listOf().fieldOf("keywords").forGetter(Hobby::keywords),
-            Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf()).fieldOf("responses").forGetter(Hobby::responses)
+            Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf()).fieldOf("responses").forGetter(Hobby::responses),
+            Codec.BOOL.optionalFieldOf("in_random_pool", true).forGetter(Hobby::inRandomPool)
     ).apply(instance, Hobby::new));
 
     /**
@@ -47,20 +47,20 @@ public record Hobby(
     public static void writeToBuf(FriendlyByteBuf buf, Hobby h) {
         buf.writeUtf(h.id);
         buf.writeUtf(h.displayKey);
-        buf.writeCollection(h.keywords, FriendlyByteBuf::writeUtf);
         buf.writeMap(h.responses,
                 FriendlyByteBuf::writeUtf,
                 (b, list) -> b.writeCollection(list, FriendlyByteBuf::writeUtf));
+        buf.writeBoolean(h.inRandomPool);
     }
 
     public static Hobby readFromBuf(FriendlyByteBuf buf) {
         String id = buf.readUtf();
         String displayKey = buf.readUtf();
-        List<String> keywords = buf.readList(FriendlyByteBuf::readUtf);
         Map<String, List<String>> responses = buf.readMap(
                 FriendlyByteBuf::readUtf,
                 b -> b.readList(FriendlyByteBuf::readUtf)
         );
-        return new Hobby(id, displayKey, keywords, responses);
+        boolean inRandomPool = buf.readBoolean();
+        return new Hobby(id, displayKey, responses, inRandomPool);
     }
 }

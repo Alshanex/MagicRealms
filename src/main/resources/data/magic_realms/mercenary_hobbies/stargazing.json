@@ -1,7 +1,7 @@
 {
   "id": "stargazing",
   "display_key": "personality.magic_realms.hobby.stargazing",
-  "keywords": ["stars", "moon", "sky", "constellation", "night"],
+  "in_random_pool": true,
   "responses": {
     "default": [
       "message.magic_realms.hobby.stargazing.default.0",

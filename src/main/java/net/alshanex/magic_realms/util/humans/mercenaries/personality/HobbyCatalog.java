@@ -2,20 +2,26 @@ package net.alshanex.magic_realms.util.humans.mercenaries.personality;
 
 import net.minecraft.util.RandomSource;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class HobbyCatalog {
 
     public static final HobbyCatalog EMPTY = new HobbyCatalog(List.of());
 
     private final List<Hobby> allHobbies;
+    /** Subset of {@link #allHobbies} eligible for the random roll, computed once at construction. */
+    private final List<Hobby> rollablePool;
     private final Map<String, Hobby> byId;
 
     public HobbyCatalog(List<Hobby> hobbies) {
         this.allHobbies = List.copyOf(hobbies);
+
+        List<Hobby> rollable = new ArrayList<>();
+        for (Hobby h : hobbies) {
+            if (h.inRandomPool()) rollable.add(h);
+        }
+        this.rollablePool = List.copyOf(rollable);
+
         Map<String, Hobby> map = new HashMap<>();
         for (Hobby h : hobbies) {
             map.put(h.id(), h);
@@ -41,10 +47,11 @@ public final class HobbyCatalog {
     }
 
     /**
-     * Pick a random hobby.
+     * Pick a random hobby from the rollable pool only (i.e. hobbies whose JSON sets {@code in_random_pool: true} or omits the field, which defaults to true).
+     * Returns null if no rollable hobbies exist - callers should treat this as "no hobby".
      */
     public Hobby pickRandom(RandomSource random) {
-        if (allHobbies.isEmpty()) return null;
-        return allHobbies.get(random.nextInt(allHobbies.size()));
+        if (rollablePool.isEmpty()) return null;
+        return rollablePool.get(random.nextInt(rollablePool.size()));
     }
 }

@@ -1,7 +1,7 @@
 {
   "id": "cooking",
   "display_key": "personality.magic_realms.hobby.cooking",
-  "keywords": ["cooking", "recipe", "kitchen", "stew", "bake"],
+  "in_random_pool": true,
   "responses": {
     "default": [
       "message.magic_realms.hobby.cooking.default.0",

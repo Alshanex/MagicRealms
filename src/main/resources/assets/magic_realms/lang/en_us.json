@@ -125,6 +125,7 @@
   "ui.magic_realms.introduction.default": "%s: Hello, i'm a mercenary ready to serve. I only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.mage": "%s: Hello, i'm a mercenary specialized in fighting with magic. I only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.warrior": "%s: Hello, i'm a mercenary specialized in close range combat and my position is usually tank. I only accept a %s, which will last for %d minutes",
+  "ui.magic_realms.introduction.warrior_no_shield": "%s: Hello, i'm a mercenary specialized in close range combat and my position is usually at the frontline. I only accept a %s, which will last for %d minutes",
   "ui.magic_realms.no_items_to_trade": "%s: Sorry, I have nothing I can give you for that emerald",
   "ui.magic_realms.patrol_active": "PATROL MODE",
   "ui.magic_realms.patrol_following": "FOLLOWING",

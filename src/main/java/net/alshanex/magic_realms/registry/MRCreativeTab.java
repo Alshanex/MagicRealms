@@ -27,6 +27,7 @@ public class MRCreativeTab {
                 entries.accept(MRItems.CONTRACT_MASTER.get());
                 entries.accept(MRItems.CONTRACT_APPRENTICE.get());
                 entries.accept(MRItems.CONTRACT_JOURNEYMAN.get());
+                entries.accept(MRItems.SLEEPING_PASS.get());
                 entries.accept(MRItems.HELL_PASS.get());
                 entries.accept(MRItems.BLOOD_PACT.get());
                 entries.accept(MRItems.PERMANENT_BLOOD_PACT.get());

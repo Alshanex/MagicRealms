@@ -299,7 +299,13 @@ public class ContractUtils {
 
         String messageKey;
         switch (entityClass) {
-            case WARRIOR -> messageKey = "ui.magic_realms.introduction.warrior";
+            case WARRIOR -> {
+                if(humanEntity.hasShield()){
+                    messageKey = "ui.magic_realms.introduction.warrior";
+                } else {
+                    messageKey = "ui.magic_realms.introduction.warrior_no_shield";
+                }
+            }
             case ROGUE -> {
                 if (humanEntity.isArcher()) {
                     messageKey = "ui.magic_realms.introduction.archer";

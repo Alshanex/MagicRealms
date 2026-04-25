@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "#magic_realms:mercenaries",
-    "magic_realms:tavernkeep"
+    "magic_realms:tavernkeep",
+    "magic_realms:bandit"
   ]
 }

@@ -170,6 +170,14 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
     }
 
     @Override
+    public List<String> getExclusiveSpeechTranslationKeys() {
+        return List.of(
+                "message.magic_realms.catas.moth.response",
+                "message.magic_realms.catas.geology.response"
+        );
+    }
+
+    @Override
     protected void initializeDefaultEquipment() {
         ItemStack robes = new ItemStack(ItemRegistry.PRIEST_CHESTPLATE.get());
         this.setItemSlot(EquipmentSlot.CHEST, robes);

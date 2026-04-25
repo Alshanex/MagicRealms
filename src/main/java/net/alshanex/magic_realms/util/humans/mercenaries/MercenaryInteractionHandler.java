@@ -21,6 +21,17 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Handles the cascading {@code mobInteract} logic for mercenaries: sitting / stunned shortcuts, hell pass immortality grants, contract creation, and
  * combat-busy refusal messages.
+ *
+ * <p><b>Contractor interaction model</b>:
+ * <ul>
+ *     <li>Right-click (no item, no shift): mercenary speaks a random line.</li>
+ *     <li>Shift + right-click (no item): opens the contract menu.</li>
+ *     <li>Holding a contract item: contract creation / extension / upgrade flow regardless of shift.</li>
+ *     <li>Holding food the mercenary considers a gift: gift accepted.</li>
+ *     <li>Holding the Hell Pass: immortality grant.</li>
+ * </ul>
+ *
+ * <p>Patrol/follow toggling has been moved out of shift+right-click and into a button inside the contract screen.
  */
 public final class MercenaryInteractionHandler {
 
@@ -55,24 +66,26 @@ public final class MercenaryInteractionHandler {
 
         boolean isActiveContractor = contractData != null
                 && contractData.isContractor(player.getUUID(), entity.level());
+
+        // Food gifting (only available to current contractor while not in combat).
         if (isActiveContractor && !entity.isInCombat()) {
             if (AffinityOps.tryGiftFood(entity, player, heldItem)) {
                 if (!player.getAbilities().instabuild) {
                     heldItem.shrink(1);
                 }
                 // Cosmetic feedback
-                entity.playSound(net.minecraft.sounds.SoundEvents.PLAYER_BURP, 0.8f, 1.2f);
+                entity.playSound(SoundEvents.PLAYER_BURP, 0.8f, 1.2f);
                 return InteractionResult.SUCCESS;
             }
         }
 
-        // Contractor interacting with a non-contract item mid-combat gets a flavor refusal line rather than opening the menu.
         boolean isContractor = contractData != null
                 && contractData.getContractorUUID() != null
                 && contractData.getContractorUUID().equals(player.getUUID());
         boolean isContractItem = heldItem.getItem() instanceof PermanentContractItem
                 || heldItem.getItem() instanceof TieredContractItem;
 
+        // Contractor interacting with a non-contract item mid-combat gets a flavor refusal line rather than opening the menu.
         if (isContractor && !isContractItem && entity.isInCombat()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 Component message = Component.translatable(
@@ -85,7 +98,7 @@ public final class MercenaryInteractionHandler {
             return InteractionResult.SUCCESS;
         }
 
-        // Contract-related interactions.
+        // Contract-related interactions (introduction for non-contractor, contract creation for held contract items, menu/speech for current contractor).
         handleContractInteraction(entity, player, contractData, heldItem);
 
         // Let the parent class run its own logic (e.g., opening the inventory menu).

@@ -11,6 +11,7 @@ import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
+import net.alshanex.magic_realms.util.humans.mercenaries.MercenarySpeechHelper;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.AffinityOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -91,8 +92,8 @@ public class ContractUtils {
 
         if (player instanceof ServerPlayer serverPlayer) {
             MutableComponent message;
-            message = Component.translatable("ui.magic_realms.contract_established_permanent", humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
-
+            message = Component.translatable("ui.magic_realms.contract_established_permanent",
+                    humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
             serverPlayer.sendSystemMessage(message);
         }
 
@@ -105,37 +106,32 @@ public class ContractUtils {
                                                     AbstractMercenaryEntity humanEntity,
                                                     ContractData contractData,
                                                     ItemStack heldItem,
-                                                    TieredContractItem contractItem) {
+                                                    TieredContractItem tieredContract) {
 
-        Level level = humanEntity.level();  // Get the level from the entity
+        Level level = humanEntity.level();
 
-        if (!contractData.canEstablishTemporaryContract(player.getUUID(), level)) {
+        if (contractData.hasActiveContract(level) && !contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
-                if (contractData.isPermanent()) {
-                    if (contractData.isContractor(player.getUUID(), level)) {
-                        message = Component.translatable("ui.magic_realms.contract_already_permanent",
-                                humanEntity.getEntityName());
-                    } else {
-                        message = Component.translatable("ui.magic_realms.already_have_contract",
-                                humanEntity.getEntityName());
-                    }
-                } else {
-                    message = Component.translatable("ui.magic_realms.already_have_contract",
-                            humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
-                }
+                message = Component.translatable("ui.magic_realms.already_have_contract").withStyle(ChatFormatting.GOLD);
                 serverPlayer.sendSystemMessage(message);
             }
             return;
         }
 
-        // Obtener el nivel de la entidad
-        KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
-        int entityLevel = killTracker.getCurrentLevel();
-        ContractTier contractTier = contractItem.getTier();
+        if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                MutableComponent message = Component.translatable("ui.magic_realms.contract_already_permanent",
+                        humanEntity.getEntityName()).withStyle(ChatFormatting.GOLD);
+                serverPlayer.sendSystemMessage(message);
+            }
+            return;
+        }
 
-        // Verificar si el contrato es apropiado para el nivel de la entidad
-        if (!contractTier.canContractLevel(entityLevel)) {
+        ContractTier requiredTier = ContractTier.getRequiredTierForLevel(
+                humanEntity.getData(MRDataAttachments.KILL_TRACKER).getCurrentLevel());
+
+        if (tieredContract.getTier().ordinal() < requiredTier.ordinal()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message;
                 message = Component.translatable("ui.magic_realms.entity_level_too_low",
@@ -191,6 +187,17 @@ public class ContractUtils {
         }
     }
 
+    /**
+     * Handle a "bare hands" right-click (no contract item, no food, no hell pass) on a mercenary.
+     *
+     * <p>Behavior depends on whether the player is the active contractor:
+     * <ul>
+     *     <li>Not the contractor + no active contract: send introduction message.</li>
+     *     <li>Not the contractor + someone else holds the contract: refuse politely.</li>
+     *     <li>Is the contractor + plain right-click: pick a random speech line from the mercenary's pool.</li>
+     *     <li>Is the contractor + shift held: open the contract menu.</li>
+     * </ul>
+     */
     public static void handleContractInteraction(Player player,
                                                  AbstractMercenaryEntity humanEntity,
                                                  ContractData contractData) {
@@ -212,29 +219,17 @@ public class ContractUtils {
             return;
         }
 
-        if (player.isShiftKeyDown()) {
-            boolean currentPatrolState = humanEntity.isPatrolMode();
+        // From here on the player IS the contractor.
 
-            if (currentPatrolState) {
-                humanEntity.setPatrolMode(false);
-
-                if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = Component.translatable("ui.magic_realms.patrol_following");
-                    message = message.withStyle(ChatFormatting.YELLOW);
-                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
-                }
-            } else {
-                humanEntity.setPatrolMode(true);
-
-                if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = Component.translatable("ui.magic_realms.patrol_active");
-                    message = message.withStyle(ChatFormatting.YELLOW);
-                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
-                }
+        // Plain right-click: speech line.
+        if (!player.isShiftKeyDown()) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                MercenarySpeechHelper.trySpeak(humanEntity, serverPlayer);
             }
             return;
         }
 
+        // Shift + right-click: open the contract menu (and tell the player how much time is left).
         if (contractData.isPermanent()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MutableComponent message = Component.translatable("ui.magic_realms.contract_time_permanent",
@@ -270,6 +265,7 @@ public class ContractUtils {
             CompoundTag snapshotNbt = snapshot.serialize();
             buf.writeNbt(snapshotNbt);
             buf.writeUUID(humanEntity.getUUID());
+            buf.writeBoolean(humanEntity.isPatrolMode());
         });
     }
 
@@ -283,6 +279,7 @@ public class ContractUtils {
             CompoundTag snapshotNbt = snapshot.serialize();
             buf.writeNbt(snapshotNbt);
             buf.writeUUID(entity.getUUID());
+            buf.writeBoolean(entity.isPatrolMode());
         });
     }
 
@@ -296,6 +293,7 @@ public class ContractUtils {
             CompoundTag snapshotNbt = snapshot.serialize();
             buf.writeNbt(snapshotNbt);
             buf.writeUUID(entity.getUUID());
+            buf.writeBoolean(entity.isPatrolMode());
         });
     }
 
@@ -380,7 +378,9 @@ public class ContractUtils {
         public Component getDisplayName() {
             String starDisplay = "★".repeat(entity != null ? entity.getStarLevel() : 1);
             MutableComponent title = Component.translatable("gui.magic_realms.human_info.title");
-            String entityName = entity != null ? entity.getEntityName() : "Unknown";
+            String entityName = entity != null ?
+                    entity.getEntityName() :
+                    (snapshot != null ? snapshot.entityName : "Unknown");
             MutableComponent entityInfo = Component.literal(starDisplay + " " + entityName);
             entityInfo = entityInfo.withStyle(ChatFormatting.AQUA);
             return Component.literal(title.getString() + " - " + entityInfo.getString());
@@ -404,6 +404,7 @@ public class ContractUtils {
             CompoundTag snapshotNbt = snapshot.serialize();
             buf.writeNbt(snapshotNbt);
             buf.writeUUID(entity.getUUID());
+            buf.writeBoolean(entity.isPatrolMode());
         });
     }
 
@@ -430,6 +431,8 @@ public class ContractUtils {
             CompoundTag snapshotNbt = snapshot.serialize();
             buf.writeNbt(snapshotNbt);
             buf.writeUUID(snapshot.entityUUID);
+            // No live entity available here, so we default to follow-mode. This entry point isn't reached by the normal interaction flow.
+            buf.writeBoolean(false);
         });
     }
 }

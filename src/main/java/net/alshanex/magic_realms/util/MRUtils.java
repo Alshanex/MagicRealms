@@ -10,8 +10,10 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.*;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.screens.BloodPactDialogScreen;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.screens.SkinCustomizerScreen;
@@ -22,6 +24,7 @@ import net.alshanex.magic_realms.skins_management.SkinPreset;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
 import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -32,6 +35,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -49,6 +55,7 @@ import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
@@ -823,6 +830,60 @@ public class MRUtils {
             } catch (Exception e) {
                 MagicRealms.LOGGER.warn("Legacy feared entity tag parse failed", e);
             }
+        }
+    }
+
+    public static void handlePatrolModePacket(Player player, UUID entityUUID){
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        if (!(serverPlayer.level() instanceof ServerLevel serverLevel)) return;
+
+        Entity entity = serverLevel.getEntity(entityUUID);
+        if (!(entity instanceof AbstractMercenaryEntity mercenary)) return;
+
+        // Only the active contractor may toggle patrol mode.
+        ContractData contractData = mercenary.getData(MRDataAttachments.CONTRACT_DATA);
+        if (contractData == null || !contractData.isContractor(serverPlayer.getUUID(), mercenary.level())) {
+            return;
+        }
+
+        boolean wasPatrolling = mercenary.isPatrolMode();
+        mercenary.setPatrolMode(!wasPatrolling);
+
+        String key = wasPatrolling ? "ui.magic_realms.patrol_following" : "ui.magic_realms.patrol_active";
+        MutableComponent message = Component.translatable(key).withStyle(ChatFormatting.YELLOW);
+        serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void handleTavernkeeperScreenPacket(UUID tavernkeepUUID){
+        Minecraft.getInstance().setScreen(new BloodPactDialogScreen(tavernkeepUUID));
+    }
+
+    public static final double MAX_INTERACT_DISTANCE_SQ = 8.0 * 8.0;
+
+    public enum Choice {
+        ASK_ABOUT_BLOOD_PACTS,
+        OPEN_TRADES
+    }
+
+    public static void handleTavernkeeperChoicePacket(Player player, UUID tavernkeepUUID, MRUtils.Choice choice){
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        if (!(serverPlayer.level() instanceof ServerLevel serverLevel)) return;
+
+        Entity entity = serverLevel.getEntity(tavernkeepUUID);
+        if (!(entity instanceof TavernKeeperEntity tavernkeep)) return;
+
+        // Sanity check distance so a malicious client can't trigger this from across the world.
+        if (serverPlayer.distanceToSqr(tavernkeep) > MAX_INTERACT_DISTANCE_SQ) return;
+        if (tavernkeep.getTarget() != null) return;
+
+        switch (choice) {
+            case ASK_ABOUT_BLOOD_PACTS -> {
+                MutableComponent message = Component.translatable("message.magic_realms.tavernkeep_tip")
+                        .withStyle(ChatFormatting.GOLD);
+                serverPlayer.sendSystemMessage(message);
+            }
+            case OPEN_TRADES -> tavernkeep.openTradesForPlayer(serverPlayer);
         }
     }
 }

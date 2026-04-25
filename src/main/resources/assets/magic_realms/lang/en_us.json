@@ -122,6 +122,12 @@
   "ui.magic_realms.patrol_following": "FOLLOWING",
   "ui.magic_realms.permanent_contract_insufficient_time": "%s: I don't completely trust you, sorry, maybe ask me in %d minutes?",
   "ui.magic_realms.trade_success": "%s: Thanks for the emerald! Take this in return",
+  "ui.magic_realms.button.switch_to_patrol": "Switch to Patrol",
+  "ui.magic_realms.button.switch_to_follow": "Switch to Follow",
+  "ui.magic_realms.tavernkeep_dialog.title": "Tavernkeeper",
+  "ui.magic_realms.tavernkeep_dialog.ask_blood_pacts": "Ask about blood pacts",
+  "ui.magic_realms.tavernkeep_dialog.buy": "I want to buy something",
+  "ui.magic_realms.tavernkeep_dialog.question": "How can i help you?",
 
   "gui.magic_realms.human_info.class.mage": "Mage",
   "gui.magic_realms.human_info.class.warrior": "Warrior",

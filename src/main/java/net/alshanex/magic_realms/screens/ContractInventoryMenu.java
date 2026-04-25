@@ -5,6 +5,7 @@ import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.registry.MRMenus;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
 import net.minecraft.network.FriendlyByteBuf;
@@ -22,6 +23,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 
+import java.util.Timer;
 import java.util.UUID;
 
 public class ContractInventoryMenu extends AbstractContainerMenu {
@@ -30,7 +32,8 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
     private final AbstractMercenaryEntity entity;
     private final Player player;
     private final EntityType<? extends AbstractMercenaryEntity> entityType;
-    private java.util.Timer saveTimer;
+    private Timer saveTimer;
+    private boolean patrolMode;
 
     // Tab management - keep all tabs for UI consistency
     public enum Tab {
@@ -56,11 +59,12 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
     // Full constructor with explicit entity type
     public ContractInventoryMenu(int containerId, Inventory playerInventory, EntitySnapshot snapshot,
                                  AbstractMercenaryEntity entity, EntityType<? extends AbstractMercenaryEntity> entityType) {
-        super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_INVENTORY_MENU.get(), containerId);
+        super(MRMenus.CONTRACT_INVENTORY_MENU.get(), containerId);
         this.snapshot = snapshot;
         this.entity = entity;
         this.player = playerInventory.player;
         this.entityType = entityType;
+        this.patrolMode = entity != null && entity.isPatrolMode();
 
         this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS);
 
@@ -82,12 +86,13 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
 
     // Network constructor
     public ContractInventoryMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
-        super(net.alshanex.magic_realms.registry.MRMenus.CONTRACT_INVENTORY_MENU.get(), containerId);
+        super(MRMenus.CONTRACT_INVENTORY_MENU.get(), containerId);
 
         this.snapshot = EntitySnapshot.deserialize(buf.readNbt());
         UUID entityUUID = buf.readUUID();
         this.player = playerInventory.player;
         this.entityType = snapshot != null ? snapshot.entityType : null;
+        this.patrolMode = buf.readBoolean();
 
         this.entity = findEntityByUUID(playerInventory.player.level(), entityUUID);
         this.equipmentContainer = new SimpleContainer(EQUIPMENT_SLOTS);
@@ -121,6 +126,17 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
             }
         }
         return null;
+    }
+
+    /** Used by the screen to render the patrol/follow toggle button label. */
+    public boolean isPatrolMode() {
+        if (entity != null) return entity.isPatrolMode();
+        return patrolMode;
+    }
+
+    /** Updates the local mirror after a successful client-side click on the toggle button. */
+    public void setPatrolModeLocal(boolean value) {
+        this.patrolMode = value;
     }
 
     private void loadEquipmentFromEntity() {

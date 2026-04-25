@@ -7,11 +7,13 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.network.SwitchAttributesMenuPacket;
+import net.alshanex.magic_realms.network.TogglePatrolModePacket;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
 import net.alshanex.magic_realms.skins_management.TextureComponents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -82,6 +84,8 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
     private final AbstractMercenaryEntity entity;
     private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new HashMap<>();
 
+    private Button patrolToggleButton;
+
     public ContractInventoryScreen(ContractInventoryMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.snapshot = menu.getSnapshot();
@@ -96,6 +100,40 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
         super.init();
         this.inventoryLabelY = 10000; // Hide default labels
         this.titleLabelY = 10000;
+
+        // Patrol/follow toggle button. Same coords in both screens so it stays in place when switching tabs.
+        int buttonX = leftPos + 12;
+        int buttonY = topPos;
+        int buttonW = 100;
+        int buttonH = 14;
+
+        this.patrolToggleButton = Button.builder(
+                getPatrolButtonLabel(),
+                b -> onPatrolButtonClicked()
+        ).bounds(buttonX, buttonY, buttonW, buttonH).build();
+        this.addRenderableWidget(this.patrolToggleButton);
+    }
+
+    private Component getPatrolButtonLabel() {
+        boolean patrolling = this.menu.isPatrolMode();
+        String key = patrolling
+                ? "ui.magic_realms.button.switch_to_follow"
+                : "ui.magic_realms.button.switch_to_patrol";
+        return Component.translatable(key);
+    }
+
+    private void onPatrolButtonClicked() {
+        if (minecraft == null || minecraft.level == null) return;
+        UUID entityUUID = this.menu.getSnapshot() != null ? this.menu.getSnapshot().entityUUID : null;
+        if (entityUUID == null) return;
+
+        boolean newState = !this.menu.isPatrolMode();
+        this.menu.setPatrolModeLocal(newState);
+        PacketDistributor.sendToServer(new TogglePatrolModePacket(entityUUID));
+
+        if (this.patrolToggleButton != null) {
+            this.patrolToggleButton.setMessage(getPatrolButtonLabel());
+        }
     }
 
     @Override

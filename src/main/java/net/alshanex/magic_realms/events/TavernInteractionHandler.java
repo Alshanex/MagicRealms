@@ -135,6 +135,12 @@ public class TavernInteractionHandler {
         }
     }
 
+    public static boolean isPositionInTavern(ServerLevel level, BlockPos pos) {
+        StructureStart start = getTavernAt(level, pos);
+        // We ensure the structure exists AND the keeper/chairs are intact
+        return start != null && getValidKeeper(level, start.getBoundingBox()) != null;
+    }
+
     /**
      * Memory cleanup
      */

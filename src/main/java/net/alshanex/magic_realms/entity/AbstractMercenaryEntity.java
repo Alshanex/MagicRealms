@@ -17,6 +17,8 @@ import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.*;
+import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
+import net.alshanex.magic_realms.events.TavernInteractionHandler;
 import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.MRUtils;
@@ -38,6 +40,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.TagKey;
@@ -62,6 +65,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import software.bernie.geckolib.animation.*;
@@ -113,6 +117,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     private BattlefieldAnalysis battlefield;
 
     private final MercenaryArchery archery = new MercenaryArchery(this);
+
+    private boolean isInsideTavern = false;
 
 
     // Animations
@@ -709,6 +715,18 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     public void tick() {
         super.tick();
         MercenaryTickHandler.tick(this);
+
+        // Check safe-zone status once per second
+        if (!this.level().isClientSide() && this.tickCount % 20 == 0) {
+            this.isInsideTavern = TavernInteractionHandler.isPositionInTavern((ServerLevel) this.level(), this.blockPosition());
+
+            // If they just entered the tavern, force them to drop aggro on friends/keepers
+            if (this.isInsideTavern && this.getTarget() != null) {
+                if (this.getTarget() instanceof AbstractMercenaryEntity || this.getTarget() instanceof TavernKeeperEntity) {
+                    this.setTarget(null);
+                }
+            }
+        }
     }
 
 
@@ -757,6 +775,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public boolean canAttack(LivingEntity target) {
         if (isSittingInChair() || this.isStunned()) return false;
+
+        if (this.isInsideTavern) {
+            if (target instanceof AbstractMercenaryEntity || target instanceof TavernKeeperEntity) {
+                return false;
+            }
+        }
+
         return super.canAttack(target);
     }
 
@@ -782,6 +807,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
+        if (this.isInsideTavern && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+                && (source.getEntity() instanceof AbstractMercenaryEntity || source.getEntity() instanceof TavernKeeperEntity)) {
+            return true;
+        }
+
         if (isStunned() && !(source.getDirectEntity() instanceof DevourJaw)) return true;
         if (source.getEntity() != null && source.getEntity().is(this.getSummoner())) return true;
         if (source.getEntity() instanceof AbstractMercenaryEntity human
@@ -835,7 +865,30 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             return false;
         }
 
-        return super.hurt(pSource, pAmount);
+        // Process the actual damage
+        boolean wasHurt = super.hurt(pSource, pAmount);
+
+        // TAVERN BRAWL LOGIC! >:)
+        if (wasHurt && this.isInsideTavern) {
+            Entity attacker = pSource.getEntity();
+
+            if (attacker instanceof LivingEntity livingAttacker && !(attacker instanceof AbstractMercenaryEntity) &&
+                    !(attacker instanceof TavernKeeperEntity)) {
+
+                // Create a 20-block search area around the attacked mercenary
+                AABB alertBox = this.getBoundingBox().inflate(20.0D);
+
+                // Sweep for all nearby mercenaries and make them aggressive
+                List<AbstractMercenaryEntity> allies = this.level().getEntitiesOfClass(AbstractMercenaryEntity.class, alertBox);
+                for (AbstractMercenaryEntity ally : allies) {
+                    if (ally != this && ally.isAlive()) {
+                        ally.setTarget(livingAttacker);
+                    }
+                }
+            }
+        }
+
+        return wasHurt;
     }
 
     private void forceCloseContractorMenu() {

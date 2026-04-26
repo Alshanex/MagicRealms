@@ -5,6 +5,7 @@ import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.Abstra
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityModel;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityRenderer;
+import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntityRenderer;
 import net.alshanex.magic_realms.skins_management.ArmBackTextureFixer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -91,8 +92,13 @@ public abstract class AbstractFixedTextureRenderer extends AbstractMercenaryEnti
                     BufferedImage originalImage = ImageIO.read(inputStream);
 
                     if (originalImage != null) {
-                        // Apply the arm back texture fixer
-                        BufferedImage fixedImage = ArmBackTextureFixer.fixArmBackStripes(originalImage);
+                        BufferedImage fixedImage = null;
+
+                        if(shouldFixArms()){
+                            fixedImage = ArmBackTextureFixer.fixArmBackStripes(originalImage);
+                        } else {
+                            fixedImage = originalImage;
+                        }
 
                         if (fixedImage != null) {
                             // Cache the processed image for potential re-registration
@@ -259,6 +265,10 @@ public abstract class AbstractFixedTextureRenderer extends AbstractMercenaryEnti
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public boolean shouldFixArms(){
+        return !(this instanceof LilacEntityRenderer);
     }
 
     /**

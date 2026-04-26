@@ -217,4 +217,11 @@ public class AceEntity extends AbstractMercenaryEntity implements IExclusiveMerc
     public ResourceLocation getChatFaceTextureCS() {
         return ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/entity/exclusive_mercenaries/eden.png");
     }
+
+    @Override
+    public List<String> getExclusiveSpeechTranslationKeys() {
+        return List.of(
+                "message.magic_realms.eden.special_phrase"
+        );
+    }
 }

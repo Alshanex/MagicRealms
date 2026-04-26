@@ -250,7 +250,9 @@ public class Config
         return Arrays.asList(
                 "message.magic_realms.tavernkeep_tip.1",
                 "message.magic_realms.tavernkeep_tip.2",
-                "message.magic_realms.tavernkeep_tip.3"
+                "message.magic_realms.tavernkeep_tip.3",
+                "message.magic_realms.tavernkeep_tip.4",
+                "message.magic_realms.tavernkeep_tip.5"
         );
     }
 }

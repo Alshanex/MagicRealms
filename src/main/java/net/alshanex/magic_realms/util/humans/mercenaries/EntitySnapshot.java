@@ -6,10 +6,13 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
+import net.alshanex.magic_realms.data.PersonalityData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.skins_management.TextureComponents;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -26,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class EntitySnapshot {
@@ -45,13 +49,17 @@ public class EntitySnapshot {
     public final List<String> entitySpells;
     public final EntityType<? extends AbstractMercenaryEntity> entityType;
     public final CompoundTag textureComponents;
+    public final String archetypeId;
+    public final String hobbyId;
+    public final List<String> quirkIds;
 
     public EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
-                          int starLevel, int currentLevel, int totalKills, int experiencePoints,
-                          boolean hasShield, boolean isArcher, List<String> magicSchools,
-                          CompoundTag attributes, CompoundTag equipment, List<String> entitySpells,
-                          EntityType<? extends AbstractMercenaryEntity> entityType,
-                          CompoundTag textureComponents) {
+                         int starLevel, int currentLevel, int totalKills, int experiencePoints,
+                         boolean hasShield, boolean isArcher, List<String> magicSchools,
+                         CompoundTag attributes, CompoundTag equipment, List<String> entitySpells,
+                         String archetypeId, String hobbyId, List<String> quirkIds,
+                         EntityType<? extends AbstractMercenaryEntity> entityType,
+                         CompoundTag textureComponents) {
         this.entityUUID = entityUUID;
         this.entityName = entityName;
         this.gender = gender;
@@ -66,6 +74,9 @@ public class EntitySnapshot {
         this.attributes = attributes;
         this.equipment = equipment;
         this.entitySpells = entitySpells != null ? new ArrayList<>(entitySpells) : new ArrayList<>();
+        this.archetypeId = archetypeId;
+        this.hobbyId = hobbyId;
+        this.quirkIds = quirkIds != null ? new ArrayList<>(quirkIds) : new ArrayList<>();
         this.entityType = entityType;
         this.textureComponents = textureComponents;
     }
@@ -102,6 +113,25 @@ public class EntitySnapshot {
             }
         }
 
+        // Capture personality (may be null/uninitialized — we still snapshot what's there)
+        String archetypeId = null;
+        String hobbyId = null;
+        List<String> quirkIds = new ArrayList<>();
+        try {
+            PersonalityData personality = entity.getData(MRDataAttachments.PERSONALITY);
+            if (personality != null && personality.isInitialized()) {
+                archetypeId = personality.getArchetypeId();
+                Hobby hobby = personality.getHobby(false); // server-side lookup
+                hobbyId = hobby != null ? hobby.id() : null;
+                Set<Quirk> quirks = personality.getQuirks();
+                if (quirks != null) {
+                    for (Quirk q : quirks) quirkIds.add(q.getId());
+                }
+            }
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Could not capture personality data for snapshot: {}", e.getMessage());
+        }
+
         return new EntitySnapshot(
                 entity.getUUID(),
                 entity.getEntityName(),
@@ -117,9 +147,9 @@ public class EntitySnapshot {
                 attributes,
                 equipment,
                 spells,
+                archetypeId, hobbyId, quirkIds,
                 (EntityType<? extends AbstractMercenaryEntity>) entity.getType(),
-                textureComponents
-        );
+                textureComponents);
     }
 
     private static void captureAttributes(AbstractMercenaryEntity entity, CompoundTag attributes) {
@@ -331,6 +361,18 @@ public class EntitySnapshot {
         }
         tag.put("entity_spells", spellsTag);
 
+        if (archetypeId != null && !archetypeId.isEmpty()) {
+            tag.putString("archetype_id", archetypeId);
+        }
+        if (hobbyId != null && !hobbyId.isEmpty()) {
+            tag.putString("hobby_id", hobbyId);
+        }
+        if (quirkIds != null && !quirkIds.isEmpty()) {
+            ListTag quirksTag = new ListTag();
+            for (String q : quirkIds) quirksTag.add(StringTag.valueOf(q));
+            tag.put("quirk_ids", quirksTag);
+        }
+
         tag.put("attributes", attributes);
         tag.put("equipment", equipment);
 
@@ -371,6 +413,19 @@ public class EntitySnapshot {
                 }
             }
 
+            String archetypeId = tag.contains("archetype_id") ? tag.getString("archetype_id") : null;
+            if (archetypeId != null && archetypeId.isEmpty()) archetypeId = null;
+            String hobbyId = tag.contains("hobby_id") ? tag.getString("hobby_id") : null;
+            if (hobbyId != null && hobbyId.isEmpty()) hobbyId = null;
+            List<String> quirkIds = new java.util.ArrayList<>();
+            if (tag.contains("quirk_ids")) {
+                ListTag quirksTag = tag.getList("quirk_ids", 8);
+                for (int i = 0; i < quirksTag.size(); i++) {
+                    String q = quirksTag.getString(i);
+                    if (!q.isEmpty()) quirkIds.add(q);
+                }
+            }
+
             CompoundTag attributes = tag.getCompound("attributes");
             CompoundTag equipment = tag.getCompound("equipment");
 
@@ -395,7 +450,9 @@ public class EntitySnapshot {
 
             return new EntitySnapshot(entityUUID, entityName, gender, entityClass, starLevel,
                     currentLevel, totalKills, experiencePoints, hasShield, isArcher,
-                    schools, attributes, equipment, spells, entityType, textureComponents);
+                    schools, attributes, equipment, spells,
+                    archetypeId, hobbyId, quirkIds,
+                    entityType, textureComponents);
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to deserialize EntitySnapshot: {}", e.getMessage());
             return null;

@@ -15,6 +15,10 @@ import net.alshanex.magic_realms.network.TogglePatrolModePacket;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
 import net.alshanex.magic_realms.skins_management.TextureComponents;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Archetype;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.ArchetypeCatalogHolder;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality.HobbyCatalogHolder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -925,7 +929,19 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private int getIronSpellsAttributeLines() {
-        int lines = 2;
+        // Personality section: 3 sub-sections (Personality, Hobby, Quirks).
+        // Each header + 1 row = 2 lines minimum; quirks can have multiple rows.
+        int lines = 0;
+        lines += 2; // Personality header + 1 archetype line
+        lines += 2; // Hobby header + 1 hobby line
+        lines += 2; // Quirks header
+        if (snapshot != null && snapshot.quirkIds != null && !snapshot.quirkIds.isEmpty()) {
+            lines += snapshot.quirkIds.size();
+        } else {
+            lines += 1; // "• None"
+        }
+
+        lines += 2;
         lines += 8;
         lines += 2;
         try {
@@ -985,6 +1001,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         int x = leftPos + ATTRIBUTES_X;
         int y = topPos + ATTRIBUTES_Y - scrollOffset;
+
+        y = renderPersonalitySectionScrollable(guiGraphics, x, y);
 
         if (snapshot.entityClass == EntityClass.MAGE) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
@@ -1119,6 +1137,79 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
         y = renderAttributeWithTruncation(guiGraphics, "Projectile Dmg", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
+    }
+
+    private int renderPersonalitySectionScrollable(GuiGraphics guiGraphics, int x, int y) {
+        // Archetype
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Personality", x, y, ChatFormatting.GREEN);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        Component archetypeLine;
+        if (snapshot.archetypeId != null && !snapshot.archetypeId.isEmpty()) {
+            Archetype archetype = ArchetypeCatalogHolder.client().byId(snapshot.archetypeId);
+            Component archetypeName = (archetype != null && archetype.displayKey() != null && !archetype.displayKey().isEmpty())
+                    ? Component.translatable(archetype.displayKey())
+                    : Component.literal(capitalizeFirst(snapshot.archetypeId));
+            archetypeLine = Component.literal("• ").append(archetypeName).withStyle(ChatFormatting.WHITE);
+        } else {
+            archetypeLine = Component.literal("• Unknown").withStyle(ChatFormatting.GRAY);
+        }
+        renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+        String archetypeText = truncateText(archetypeLine.getString(), ATTRIBUTES_WIDTH - 10);
+        guiGraphics.drawString(font, Component.literal(archetypeText).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, true);
+        y += LINE_HEIGHT;
+        attributeRowCounter++;
+
+        // Hobby
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Hobby", x, y, ChatFormatting.BLUE);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        Component hobbyLine;
+        if (snapshot.hobbyId != null && !snapshot.hobbyId.isEmpty()) {
+            Hobby hobby = HobbyCatalogHolder.client().byId(snapshot.hobbyId);
+            Component hobbyName = (hobby != null && hobby.displayKey() != null && !hobby.displayKey().isEmpty())
+                    ? Component.translatable(hobby.displayKey())
+                    : Component.literal(capitalizeFirst(snapshot.hobbyId));
+            hobbyLine = Component.literal("• ").append(hobbyName).withStyle(ChatFormatting.WHITE);
+        } else {
+            hobbyLine = Component.literal("• None").withStyle(ChatFormatting.GRAY);
+        }
+        renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+        String hobbyText = truncateText(hobbyLine.getString(), ATTRIBUTES_WIDTH - 10);
+        guiGraphics.drawString(font, Component.literal(hobbyText).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, true);
+        y += LINE_HEIGHT;
+        attributeRowCounter++;
+
+        // Quirks
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Quirks", x, y, ChatFormatting.AQUA);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        if (snapshot.quirkIds == null || snapshot.quirkIds.isEmpty()) {
+            renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+            guiGraphics.drawString(font, Component.literal("• None").withStyle(ChatFormatting.GRAY), x, y, 0xFFFFFF, true);
+            y += LINE_HEIGHT;
+            attributeRowCounter++;
+        } else {
+            for (String quirkId : snapshot.quirkIds) {
+                String key = "personality.magic_realms.quirk." + quirkId;
+                Component quirkName = Component.translatable(key);
+                // If the translation is missing, Component.translatable returns the key itself; fall back to a humanized id.
+                String displayed = quirkName.getString();
+                if (displayed.equals(key)) {
+                    displayed = capitalizeFirst(quirkId.replace('_', ' '));
+                }
+                String displayText = truncateText("• " + displayed, ATTRIBUTES_WIDTH - 10);
+                renderAttributeBackground(guiGraphics, x, y, ATTRIBUTES_WIDTH, attributeRowCounter % 2 == 1);
+                guiGraphics.drawString(font, Component.literal(displayText).withStyle(ChatFormatting.WHITE), x, y, 0xFFFFFF, true);
+                y += LINE_HEIGHT;
+                attributeRowCounter++;
+            }
+        }
+
+        return y;
     }
 
     private int renderAttributeWithTruncation(GuiGraphics guiGraphics, String name, CompoundTag attributes,

@@ -169,14 +169,18 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
     }
 
     @Override
-    protected void initializeDefaultEquipment() {
-        ItemStack robes = new ItemStack(ItemRegistry.WIZARD_CHESTPLATE.get());
-        robes.set(DataComponents.DYED_COLOR, new DyedItemColor(0x80C71F, false));
-        this.setItemSlot(EquipmentSlot.CHEST, robes);
-
-        ItemStack leggings = new ItemStack(ItemRegistry.WIZARD_LEGGINGS.get());
-        leggings.set(DataComponents.DYED_COLOR, new DyedItemColor(0x80C71F, false));
-        this.setItemSlot(EquipmentSlot.LEGS, leggings);
+    public ItemStack getDefaultVisualArmor(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.CHEST) {
+            ItemStack robes = new ItemStack(ItemRegistry.WIZARD_CHESTPLATE.get());
+            robes.set(DataComponents.DYED_COLOR, new DyedItemColor(0x80C71F, false));
+            return robes;
+        }
+        if (slot == EquipmentSlot.LEGS) {
+            ItemStack leggings = new ItemStack(ItemRegistry.WIZARD_LEGGINGS.get());
+            leggings.set(DataComponents.DYED_COLOR, new DyedItemColor(0x80C71F, false));
+            return leggings;
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override

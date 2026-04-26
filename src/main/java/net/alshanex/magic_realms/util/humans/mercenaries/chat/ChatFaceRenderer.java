@@ -23,7 +23,7 @@ public final class ChatFaceRenderer {
     public static final int ICON_SIZE = 8;
 
     /** Horizontal gap between the face and the start of the message text. */
-    public static final int ICON_PADDING = 1;
+    public static final int ICON_PADDING = 2;
 
     /** How long an entity-by-UUID lookup result stays cached, in real milliseconds. */
     private static final long CACHE_TTL_MS = 5_000L;

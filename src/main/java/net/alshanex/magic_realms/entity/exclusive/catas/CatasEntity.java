@@ -175,15 +175,17 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
     }
 
     @Override
-    protected void initializeDefaultEquipment() {
-        ItemStack robes = new ItemStack(ItemRegistry.PRIEST_CHESTPLATE.get());
-        this.setItemSlot(EquipmentSlot.CHEST, robes);
-
-        ItemStack leggings = new ItemStack(ItemRegistry.PRIEST_LEGGINGS.get());
-        this.setItemSlot(EquipmentSlot.LEGS, leggings);
-
-        ItemStack boots = new ItemStack(ItemRegistry.PRIEST_BOOTS.get());
-        this.setItemSlot(EquipmentSlot.FEET, boots);
+    public ItemStack getDefaultVisualArmor(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.CHEST) {
+            return new ItemStack(ItemRegistry.PRIEST_CHESTPLATE);
+        }
+        if (slot == EquipmentSlot.LEGS) {
+            return new ItemStack(ItemRegistry.PRIEST_LEGGINGS);
+        }
+        if (slot == EquipmentSlot.FEET) {
+            return new ItemStack(ItemRegistry.PRIEST_BOOTS);
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override

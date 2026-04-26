@@ -105,10 +105,10 @@ public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCasti
 
     private void renderAzureLibArmor(PoseStack poseStack, AbstractSpellCastingMob animatable, BakedGeoModel model,
                                      float partialTick, int packedLight) {
-        ItemStack helmet = animatable.getItemBySlot(EquipmentSlot.HEAD);
-        ItemStack chest  = animatable.getItemBySlot(EquipmentSlot.CHEST);
-        ItemStack legs   = animatable.getItemBySlot(EquipmentSlot.LEGS);
-        ItemStack boots  = animatable.getItemBySlot(EquipmentSlot.FEET);
+        ItemStack helmet = getVisualOrRealArmor(animatable, EquipmentSlot.HEAD);
+        ItemStack chest = getVisualOrRealArmor(animatable, EquipmentSlot.CHEST);
+        ItemStack legs = getVisualOrRealArmor(animatable, EquipmentSlot.LEGS);
+        ItemStack boots = getVisualOrRealArmor(animatable, EquipmentSlot.FEET);
 
         if (!AzureLibArmorCompat.hasRenderer(helmet) && !AzureLibArmorCompat.hasRenderer(chest)
                 && !AzureLibArmorCompat.hasRenderer(legs)  && !AzureLibArmorCompat.hasRenderer(boots)) {
@@ -138,6 +138,14 @@ public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCasti
         } finally {
             poseStack.popPose();
         }
+    }
+
+    private ItemStack getVisualOrRealArmor(AbstractSpellCastingMob animatable, EquipmentSlot slot) {
+        ItemStack actual = animatable.getItemBySlot(slot);
+        if ((actual.isEmpty()) && animatable instanceof IExclusiveMercenary exclusive) {
+            return exclusive.getDefaultVisualArmor(slot);
+        }
+        return actual;
     }
 
     private static void poseBaseFromGeo(HumanoidModel<?> base, BakedGeoModel model) {

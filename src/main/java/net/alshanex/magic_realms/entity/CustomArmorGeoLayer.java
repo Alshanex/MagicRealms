@@ -31,21 +31,47 @@ public class CustomArmorGeoLayer extends ItemArmorGeoLayer<AbstractSpellCastingM
     @Nullable
     @Override
     protected ItemStack getArmorItemForBone(GeoBone bone, AbstractSpellCastingMob animatable) {
-        return switch (bone.getName()) {
+        // 1. Safely identify which armor slot this bone belongs to
+        EquipmentSlot intendedSlot = switch (bone.getName()) {
             case DefaultBipedBoneIdents.LEFT_FOOT_ARMOR_BONE_IDENT,
                  DefaultBipedBoneIdents.RIGHT_FOOT_ARMOR_BONE_IDENT,
                  DefaultBipedBoneIdents.LEFT_FOOT_ARMOR_BONE_2_IDENT,
-                 DefaultBipedBoneIdents.RIGHT_FOOT_ARMOR_BONE_2_IDENT -> this.bootsStack;
+                 DefaultBipedBoneIdents.RIGHT_FOOT_ARMOR_BONE_2_IDENT -> EquipmentSlot.FEET;
+
             case DefaultBipedBoneIdents.LEFT_LEG_ARMOR_BONE_IDENT,
                  DefaultBipedBoneIdents.RIGHT_LEG_ARMOR_BONE_IDENT,
                  DefaultBipedBoneIdents.LEFT_LEG_ARMOR_BONE_2_IDENT,
-                 DefaultBipedBoneIdents.RIGHT_LEG_ARMOR_BONE_2_IDENT -> this.leggingsStack;
+                 DefaultBipedBoneIdents.RIGHT_LEG_ARMOR_BONE_2_IDENT -> EquipmentSlot.LEGS;
+
             case DefaultBipedBoneIdents.BODY_ARMOR_BONE_IDENT,
                  DefaultBipedBoneIdents.RIGHT_ARM_ARMOR_BONE_IDENT,
-                 DefaultBipedBoneIdents.LEFT_ARM_ARMOR_BONE_IDENT -> this.chestplateStack;
-            case DefaultBipedBoneIdents.HEAD_ARMOR_BONE_IDENT -> this.helmetStack;
-            default -> null;
+                 DefaultBipedBoneIdents.LEFT_ARM_ARMOR_BONE_IDENT -> EquipmentSlot.CHEST;
+
+            case DefaultBipedBoneIdents.HEAD_ARMOR_BONE_IDENT -> EquipmentSlot.HEAD;
+
+            default -> null; // It's NOT an armor bone (e.g., weapon, root, cape)
         };
+
+        // 2. If it's not an armor bone, skip it immediately
+        if (intendedSlot == null) {
+            return null;
+        }
+
+        // 3. Get the actual equipped stack based on the intended slot
+        ItemStack actualStack = switch (intendedSlot) {
+            case FEET -> this.bootsStack;
+            case LEGS -> this.leggingsStack;
+            case CHEST -> this.chestplateStack;
+            case HEAD -> this.helmetStack;
+            default -> ItemStack.EMPTY;
+        };
+
+        // 4. Inject the visual default armor ONLY for valid armor bones
+        if ((actualStack == null || actualStack.isEmpty()) && animatable instanceof IExclusiveMercenary exclusive) {
+            return exclusive.getDefaultVisualArmor(intendedSlot);
+        }
+
+        return actualStack;
     }
 
     @Nonnull

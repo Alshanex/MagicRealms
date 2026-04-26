@@ -5,6 +5,7 @@ import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
@@ -22,7 +23,9 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import java.util.EnumSet;
@@ -132,5 +135,19 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     @Override
     public ResourceLocation getChatFaceTextureCS() {
         return ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/entity/exclusive_mercenaries/alshanex.png");
+    }
+
+    @Override
+    public ItemStack getDefaultVisualArmor(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.CHEST) {
+            return new ItemStack(ItemRegistry.SHADOWWALKER_CHESTPLATE);
+        }
+        if (slot == EquipmentSlot.LEGS) {
+            return new ItemStack(ItemRegistry.SHADOWWALKER_LEGGINGS);
+        }
+        if (slot == EquipmentSlot.FEET) {
+            return new ItemStack(ItemRegistry.SHADOWWALKER_BOOTS);
+        }
+        return ItemStack.EMPTY;
     }
 }

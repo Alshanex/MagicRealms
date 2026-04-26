@@ -181,7 +181,7 @@ public class TavernInteractionHandler {
                     player.sendSystemMessage(MercenaryMessageFormatter.buildForWithBodyColor(
                             keeper,
                             "message.magic_realms.tavern.unable_to_sleep",
-                            ChatFormatting.RED));
+                            ChatFormatting.WHITE));
                 }
             }
         }

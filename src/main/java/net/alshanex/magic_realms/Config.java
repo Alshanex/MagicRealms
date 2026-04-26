@@ -252,7 +252,8 @@ public class Config
                 "message.magic_realms.tavernkeep_tip.2",
                 "message.magic_realms.tavernkeep_tip.3",
                 "message.magic_realms.tavernkeep_tip.4",
-                "message.magic_realms.tavernkeep_tip.5"
+                "message.magic_realms.tavernkeep_tip.5",
+                "message.magic_realms.tavernkeep_tip.6"
         );
     }
 }

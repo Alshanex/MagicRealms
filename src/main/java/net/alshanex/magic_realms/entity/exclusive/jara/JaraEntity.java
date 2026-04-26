@@ -173,7 +173,7 @@ public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMer
                     return new ItemStack(compatItem.get());
                 }
             }
-            return new ItemStack(ItemRegistry.NETHERITE_MAGE_CHESTPLATE);
+            return new ItemStack(ItemRegistry.PALADIN_CHESTPLATE);
         }
         if (slot == EquipmentSlot.LEGS) {
             if (ModList.get().isLoaded("magic_of_color")) {
@@ -184,7 +184,7 @@ public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMer
                     return new ItemStack(compatItem.get());
                 }
             }
-            return new ItemStack(ItemRegistry.NETHERITE_MAGE_LEGGINGS);
+            return new ItemStack(ItemRegistry.PRIEST_LEGGINGS);
         }
         if (slot == EquipmentSlot.FEET) {
             if (ModList.get().isLoaded("magic_of_color")) {
@@ -195,7 +195,7 @@ public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMer
                     return new ItemStack(compatItem.get());
                 }
             }
-            return new ItemStack(ItemRegistry.NETHERITE_MAGE_BOOTS);
+            return new ItemStack(ItemRegistry.PRIEST_BOOTS);
         }
         return ItemStack.EMPTY;
     }

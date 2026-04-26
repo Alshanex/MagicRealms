@@ -3,20 +3,18 @@
   "display_key": "personality.magic_realms.hobby.gambling",
   "in_random_pool": false,
   "responses": {
-    "default": [
-      "message.magic_realms.hobby.gambling.default.0",
-      "message.magic_realms.hobby.gambling.default.1"
-    ],
-    "greedy": [
-      "message.magic_realms.hobby.gambling.greedy.0",
-      "message.magic_realms.hobby.gambling.greedy.1",
-      "message.magic_realms.hobby.gambling.greedy.2"
-    ],
-    "pious": [
-      "message.magic_realms.hobby.gambling.pious.0"
-    ],
-    "superstitious": [
-      "message.magic_realms.hobby.gambling.superstitious.0"
-    ]
+    "default": [ "message.magic_realms.hobby.gambling.default.0", "message.magic_realms.hobby.gambling.default.1", "message.magic_realms.hobby.gambling.default.2", "message.magic_realms.hobby.gambling.default.3" ],
+    "arrogant": [ "message.magic_realms.hobby.gambling.arrogant.0" ],
+    "cheerful": [ "message.magic_realms.hobby.gambling.cheerful.0" ],
+    "cowardly": [ "message.magic_realms.hobby.gambling.cowardly.0" ],
+    "greedy": [ "message.magic_realms.hobby.gambling.greedy.0", "message.magic_realms.hobby.gambling.greedy.1", "message.magic_realms.hobby.gambling.greedy.2", "message.magic_realms.hobby.gambling.greedy.3", "message.magic_realms.hobby.gambling.greedy.4" ],
+    "grim": [ "message.magic_realms.hobby.gambling.grim.0" ],
+    "hotheaded": [ "message.magic_realms.hobby.gambling.hotheaded.0" ],
+    "jovial": [ "message.magic_realms.hobby.gambling.jovial.0" ],
+    "loyal": [ "message.magic_realms.hobby.gambling.loyal.0" ],
+    "pious": [ "message.magic_realms.hobby.gambling.pious.0", "message.magic_realms.hobby.gambling.pious.1", "message.magic_realms.hobby.gambling.pious.2" ],
+    "scholarly": [ "message.magic_realms.hobby.gambling.scholarly.0" ],
+    "stoic": [ "message.magic_realms.hobby.gambling.stoic.0" ],
+    "superstitious": [ "message.magic_realms.hobby.gambling.superstitious.0", "message.magic_realms.hobby.gambling.superstitious.1", "message.magic_realms.hobby.gambling.superstitious.2" ]
   }
 }

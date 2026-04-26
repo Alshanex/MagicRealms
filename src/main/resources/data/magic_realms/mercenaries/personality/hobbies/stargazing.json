@@ -3,22 +3,18 @@
   "display_key": "personality.magic_realms.hobby.stargazing",
   "in_random_pool": true,
   "responses": {
-    "default": [
-      "message.magic_realms.hobby.stargazing.default.0",
-      "message.magic_realms.hobby.stargazing.default.1"
-    ],
-    "scholarly": [
-      "message.magic_realms.hobby.stargazing.scholarly.0"
-    ],
-    "superstitious": [
-      "message.magic_realms.hobby.stargazing.superstitious.0",
-      "message.magic_realms.hobby.stargazing.superstitious.1"
-    ],
-    "pious": [
-      "message.magic_realms.hobby.stargazing.pious.0"
-    ],
-    "grim": [
-      "message.magic_realms.hobby.stargazing.grim.0"
-    ]
+    "default": [ "message.magic_realms.hobby.stargazing.default.0", "message.magic_realms.hobby.stargazing.default.1", "message.magic_realms.hobby.stargazing.default.2", "message.magic_realms.hobby.stargazing.default.3" ],
+    "arrogant": [ "message.magic_realms.hobby.stargazing.arrogant.0", "message.magic_realms.hobby.stargazing.arrogant.1" ],
+    "cheerful": [ "message.magic_realms.hobby.stargazing.cheerful.0", "message.magic_realms.hobby.stargazing.cheerful.1" ],
+    "cowardly": [ "message.magic_realms.hobby.stargazing.cowardly.0", "message.magic_realms.hobby.stargazing.cowardly.1" ],
+    "greedy": [ "message.magic_realms.hobby.stargazing.greedy.0" ],
+    "grim": [ "message.magic_realms.hobby.stargazing.grim.0", "message.magic_realms.hobby.stargazing.grim.1", "message.magic_realms.hobby.stargazing.grim.2" ],
+    "hotheaded": [ "message.magic_realms.hobby.stargazing.hotheaded.0" ],
+    "jovial": [ "message.magic_realms.hobby.stargazing.jovial.0", "message.magic_realms.hobby.stargazing.jovial.1" ],
+    "loyal": [ "message.magic_realms.hobby.stargazing.loyal.0" ],
+    "pious": [ "message.magic_realms.hobby.stargazing.pious.0", "message.magic_realms.hobby.stargazing.pious.1", "message.magic_realms.hobby.stargazing.pious.2" ],
+    "scholarly": [ "message.magic_realms.hobby.stargazing.scholarly.0", "message.magic_realms.hobby.stargazing.scholarly.1", "message.magic_realms.hobby.stargazing.scholarly.2" ],
+    "stoic": [ "message.magic_realms.hobby.stargazing.stoic.0" ],
+    "superstitious": [ "message.magic_realms.hobby.stargazing.superstitious.0", "message.magic_realms.hobby.stargazing.superstitious.1", "message.magic_realms.hobby.stargazing.superstitious.2", "message.magic_realms.hobby.stargazing.superstitious.3" ]
   }
 }

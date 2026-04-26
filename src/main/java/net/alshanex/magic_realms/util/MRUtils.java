@@ -13,7 +13,6 @@ import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
-import net.alshanex.magic_realms.screens.BloodPactDialogScreen;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.screens.SkinCustomizerScreen;
@@ -56,7 +55,6 @@ import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
@@ -853,37 +851,5 @@ public class MRUtils {
         String key = wasPatrolling ? "ui.magic_realms.patrol_following" : "ui.magic_realms.patrol_active";
         MutableComponent message = Component.translatable(key).withStyle(ChatFormatting.YELLOW);
         serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static void handleTavernkeeperScreenPacket(UUID tavernkeepUUID){
-        Minecraft.getInstance().setScreen(new BloodPactDialogScreen(tavernkeepUUID));
-    }
-
-    public static final double MAX_INTERACT_DISTANCE_SQ = 8.0 * 8.0;
-
-    public enum Choice {
-        ASK_ABOUT_BLOOD_PACTS,
-        OPEN_TRADES
-    }
-
-    public static void handleTavernkeeperChoicePacket(Player player, UUID tavernkeepUUID, MRUtils.Choice choice){
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
-        if (!(serverPlayer.level() instanceof ServerLevel serverLevel)) return;
-
-        Entity entity = serverLevel.getEntity(tavernkeepUUID);
-        if (!(entity instanceof TavernKeeperEntity tavernkeep)) return;
-
-        // Sanity check distance so a malicious client can't trigger this from across the world.
-        if (serverPlayer.distanceToSqr(tavernkeep) > MAX_INTERACT_DISTANCE_SQ) return;
-        if (tavernkeep.getTarget() != null) return;
-
-        switch (choice) {
-            case ASK_ABOUT_BLOOD_PACTS -> {
-                MutableComponent message = MercenaryMessageFormatter.buildFor(tavernkeep, "message.magic_realms.tavernkeep_tip");
-                serverPlayer.sendSystemMessage(message);
-            }
-            case OPEN_TRADES -> tavernkeep.openTradesForPlayer(serverPlayer);
-        }
     }
 }

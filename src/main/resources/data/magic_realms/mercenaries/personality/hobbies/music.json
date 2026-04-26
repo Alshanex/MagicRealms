@@ -3,19 +3,18 @@
   "display_key": "personality.magic_realms.hobby.music",
   "in_random_pool": true,
   "responses": {
-    "default": [
-      "message.magic_realms.hobby.music.default.0",
-      "message.magic_realms.hobby.music.default.1"
-    ],
-    "cheerful": [
-      "message.magic_realms.hobby.music.cheerful.0",
-      "message.magic_realms.hobby.music.cheerful.1"
-    ],
-    "jovial": [
-      "message.magic_realms.hobby.music.jovial.0"
-    ],
-    "stoic": [
-      "message.magic_realms.hobby.music.stoic.0"
-    ]
+    "default": [ "message.magic_realms.hobby.music.default.0", "message.magic_realms.hobby.music.default.1", "message.magic_realms.hobby.music.default.2", "message.magic_realms.hobby.music.default.3" ],
+    "arrogant": [ "message.magic_realms.hobby.music.arrogant.0", "message.magic_realms.hobby.music.arrogant.1" ],
+    "cheerful": [ "message.magic_realms.hobby.music.cheerful.0", "message.magic_realms.hobby.music.cheerful.1", "message.magic_realms.hobby.music.cheerful.2", "message.magic_realms.hobby.music.cheerful.3" ],
+    "cowardly": [ "message.magic_realms.hobby.music.cowardly.0", "message.magic_realms.hobby.music.cowardly.1" ],
+    "greedy": [ "message.magic_realms.hobby.music.greedy.0" ],
+    "grim": [ "message.magic_realms.hobby.music.grim.0", "message.magic_realms.hobby.music.grim.1" ],
+    "hotheaded": [ "message.magic_realms.hobby.music.hotheaded.0", "message.magic_realms.hobby.music.hotheaded.1" ],
+    "jovial": [ "message.magic_realms.hobby.music.jovial.0", "message.magic_realms.hobby.music.jovial.1", "message.magic_realms.hobby.music.jovial.2" ],
+    "loyal": [ "message.magic_realms.hobby.music.loyal.0" ],
+    "pious": [ "message.magic_realms.hobby.music.pious.0", "message.magic_realms.hobby.music.pious.1" ],
+    "scholarly": [ "message.magic_realms.hobby.music.scholarly.0", "message.magic_realms.hobby.music.scholarly.1" ],
+    "stoic": [ "message.magic_realms.hobby.music.stoic.0", "message.magic_realms.hobby.music.stoic.1", "message.magic_realms.hobby.music.stoic.2" ],
+    "superstitious": [ "message.magic_realms.hobby.music.superstitious.0" ]
   }
 }

@@ -3,19 +3,18 @@
   "display_key": "personality.magic_realms.hobby.fishing",
   "in_random_pool": true,
   "responses": {
-    "default": [
-      "message.magic_realms.hobby.fishing.default.0",
-      "message.magic_realms.hobby.fishing.default.1"
-    ],
-    "cheerful": [
-      "message.magic_realms.hobby.fishing.cheerful.0",
-      "message.magic_realms.hobby.fishing.cheerful.1"
-    ],
-    "grim": [
-      "message.magic_realms.hobby.fishing.grim.0"
-    ],
-    "scholarly": [
-      "message.magic_realms.hobby.fishing.scholarly.0"
-    ]
+    "default": [ "message.magic_realms.hobby.fishing.default.0", "message.magic_realms.hobby.fishing.default.1", "message.magic_realms.hobby.fishing.default.2", "message.magic_realms.hobby.fishing.default.3" ],
+    "arrogant": [ "message.magic_realms.hobby.fishing.arrogant.0" ],
+    "cheerful": [ "message.magic_realms.hobby.fishing.cheerful.0", "message.magic_realms.hobby.fishing.cheerful.1", "message.magic_realms.hobby.fishing.cheerful.2", "message.magic_realms.hobby.fishing.cheerful.3" ],
+    "cowardly": [ "message.magic_realms.hobby.fishing.cowardly.0" ],
+    "greedy": [ "message.magic_realms.hobby.fishing.greedy.0" ],
+    "grim": [ "message.magic_realms.hobby.fishing.grim.0", "message.magic_realms.hobby.fishing.grim.1", "message.magic_realms.hobby.fishing.grim.2" ],
+    "hotheaded": [ "message.magic_realms.hobby.fishing.hotheaded.0" ],
+    "jovial": [ "message.magic_realms.hobby.fishing.jovial.0" ],
+    "loyal": [ "message.magic_realms.hobby.fishing.loyal.0" ],
+    "pious": [ "message.magic_realms.hobby.fishing.pious.0" ],
+    "scholarly": [ "message.magic_realms.hobby.fishing.scholarly.0", "message.magic_realms.hobby.fishing.scholarly.1", "message.magic_realms.hobby.fishing.scholarly.2" ],
+    "stoic": [ "message.magic_realms.hobby.fishing.stoic.0" ],
+    "superstitious": [ "message.magic_realms.hobby.fishing.superstitious.0" ]
   }
 }

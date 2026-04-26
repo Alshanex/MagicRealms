@@ -16,7 +16,6 @@ import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.network.OpenBloodPactDialogPacket;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.SpellInventoryUtils;
@@ -312,7 +311,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                     restock();
                 }
 
-                // Blood-pact dialog short-circuit: if the player is carrying a Blood-school spell anywhere, present them with the choice between asking about blood pacts and trading.
+                // Tips
                 if (pHand == InteractionHand.MAIN_HAND && pPlayer instanceof ServerPlayer serverPlayer && SpellInventoryUtils.playerHasBloodSpell(pPlayer)) {
                     PacketDistributor.sendToPlayer(serverPlayer, new OpenBloodPactDialogPacket(this.getUUID()));
                     return InteractionResult.sidedSuccess(this.level().isClientSide);

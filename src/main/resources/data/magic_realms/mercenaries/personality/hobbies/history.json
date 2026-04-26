@@ -3,20 +3,18 @@
   "display_key": "personality.magic_realms.hobby.history",
   "in_random_pool": true,
   "responses": {
-    "default": [
-      "message.magic_realms.hobby.history.default.0",
-      "message.magic_realms.hobby.history.default.1"
-    ],
-    "scholarly": [
-      "message.magic_realms.hobby.history.scholarly.0",
-      "message.magic_realms.hobby.history.scholarly.1",
-      "message.magic_realms.hobby.history.scholarly.2"
-    ],
-    "superstitious": [
-      "message.magic_realms.hobby.history.superstitious.0"
-    ],
-    "jovial": [
-      "message.magic_realms.hobby.history.jovial.0"
-    ]
+    "default": [ "message.magic_realms.hobby.history.default.0", "message.magic_realms.hobby.history.default.1", "message.magic_realms.hobby.history.default.2", "message.magic_realms.hobby.history.default.3" ],
+    "arrogant": [ "message.magic_realms.hobby.history.arrogant.0" ],
+    "cheerful": [ "message.magic_realms.hobby.history.cheerful.0" ],
+    "cowardly": [ "message.magic_realms.hobby.history.cowardly.0" ],
+    "greedy": [ "message.magic_realms.hobby.history.greedy.0" ],
+    "grim": [ "message.magic_realms.hobby.history.grim.0", "message.magic_realms.hobby.history.grim.1" ],
+    "hotheaded": [ "message.magic_realms.hobby.history.hotheaded.0" ],
+    "jovial": [ "message.magic_realms.hobby.history.jovial.0", "message.magic_realms.hobby.history.jovial.1", "message.magic_realms.hobby.history.jovial.2" ],
+    "loyal": [ "message.magic_realms.hobby.history.loyal.0", "message.magic_realms.hobby.history.loyal.1" ],
+    "pious": [ "message.magic_realms.hobby.history.pious.0", "message.magic_realms.hobby.history.pious.1" ],
+    "scholarly": [ "message.magic_realms.hobby.history.scholarly.0", "message.magic_realms.hobby.history.scholarly.1", "message.magic_realms.hobby.history.scholarly.2", "message.magic_realms.hobby.history.scholarly.3", "message.magic_realms.hobby.history.scholarly.4" ],
+    "stoic": [ "message.magic_realms.hobby.history.stoic.0" ],
+    "superstitious": [ "message.magic_realms.hobby.history.superstitious.0", "message.magic_realms.hobby.history.superstitious.1", "message.magic_realms.hobby.history.superstitious.2" ]
   }
 }

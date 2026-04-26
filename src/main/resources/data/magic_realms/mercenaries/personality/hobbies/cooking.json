@@ -3,18 +3,18 @@
   "display_key": "personality.magic_realms.hobby.cooking",
   "in_random_pool": true,
   "responses": {
-    "default": [
-      "message.magic_realms.hobby.cooking.default.0",
-      "message.magic_realms.hobby.cooking.default.1"
-    ],
-    "jovial": [
-      "message.magic_realms.hobby.cooking.jovial.0"
-    ],
-    "cheerful": [
-      "message.magic_realms.hobby.cooking.cheerful.0"
-    ],
-    "scholarly": [
-      "message.magic_realms.hobby.cooking.scholarly.0"
-    ]
+    "default": [ "message.magic_realms.hobby.cooking.default.0", "message.magic_realms.hobby.cooking.default.1", "message.magic_realms.hobby.cooking.default.2", "message.magic_realms.hobby.cooking.default.3" ],
+    "arrogant": [ "message.magic_realms.hobby.cooking.arrogant.0", "message.magic_realms.hobby.cooking.arrogant.1" ],
+    "cheerful": [ "message.magic_realms.hobby.cooking.cheerful.0", "message.magic_realms.hobby.cooking.cheerful.1", "message.magic_realms.hobby.cooking.cheerful.2" ],
+    "cowardly": [ "message.magic_realms.hobby.cooking.cowardly.0" ],
+    "greedy": [ "message.magic_realms.hobby.cooking.greedy.0" ],
+    "grim": [ "message.magic_realms.hobby.cooking.grim.0" ],
+    "hotheaded": [ "message.magic_realms.hobby.cooking.hotheaded.0" ],
+    "jovial": [ "message.magic_realms.hobby.cooking.jovial.0", "message.magic_realms.hobby.cooking.jovial.1", "message.magic_realms.hobby.cooking.jovial.2" ],
+    "loyal": [ "message.magic_realms.hobby.cooking.loyal.0" ],
+    "pious": [ "message.magic_realms.hobby.cooking.pious.0" ],
+    "scholarly": [ "message.magic_realms.hobby.cooking.scholarly.0", "message.magic_realms.hobby.cooking.scholarly.1", "message.magic_realms.hobby.cooking.scholarly.2" ],
+    "stoic": [ "message.magic_realms.hobby.cooking.stoic.0" ],
+    "superstitious": [ "message.magic_realms.hobby.cooking.superstitious.0" ]
   }
 }

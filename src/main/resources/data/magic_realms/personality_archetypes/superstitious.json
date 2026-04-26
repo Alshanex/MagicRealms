@@ -1,0 +1,8 @@
+{
+  "id": "superstitious",
+  "display_key": "personality.magic_realms.archetype.superstitious",
+  "base_weight": 10,
+  "class_weights": {
+    "mage": 5
+  }
+}

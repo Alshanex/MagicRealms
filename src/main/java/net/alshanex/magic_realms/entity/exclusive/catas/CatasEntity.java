@@ -17,15 +17,11 @@ import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -42,7 +38,6 @@ import net.minecraft.world.level.Level;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Catas";
@@ -163,7 +158,7 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
         return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
                 "magic_realms:catas",
                 () -> new PersonalityInitializer.FixedPersonality(
-                        PersonalityArchetype.SCHOLARLY,
+                        "scholarly",
                         "history",
                         "Stonewick",
                         EnumSet.of(Quirk.BOOKWORM, Quirk.ANIMAL_FRIEND)

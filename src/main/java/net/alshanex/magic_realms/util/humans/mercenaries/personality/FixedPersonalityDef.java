@@ -12,26 +12,31 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Datapack-loaded fixed personality. Each file at data/<namespace>/fixed_personalities/<n>.json becomes one of these,
- * with its id taken from the file path (e.g. "magic_realms:alice").
+ * Datapack-loaded fixed personality. Each file at {@code data/<namespace>/fixed_personalities/<n>.json} becomes one of
+ * these, with its id taken from the file path (e.g. {@code "magic_realms:alice"}).
  *
- * A fixed personality is a pre-rolled collection of personality traits that can be stamped onto a mercenary instead of rolling a fresh random one.
- * There are three ways it gets applied:
- *   1. An exclusive mercenary's Java override can reference it by id.
- *   2. A skin preset JSON can specify it, locking personality to the preset.
- *   3. A regular mercenary rolls it from the random pool (if in_random_pool).
+ * <p>A fixed personality is a pre-rolled collection of personality traits that can be stamped onto a mercenary instead
+ * of rolling a fresh random one. There are three ways it gets applied:
+ * <ol>
+ *   <li>An exclusive mercenary's Java override can reference it by id.</li>
+ *   <li>A skin preset JSON can specify it, locking personality to the preset.</li>
+ *   <li>A regular mercenary rolls it from the random pool (if {@code in_random_pool}).</li>
+ * </ol>
  *
- * overrideEntityName lets the personality rename the mercenary when assigned
+ * <p>{@code overrideEntityName} lets the personality rename the mercenary when assigned.
  *
- * unique controls whether the id can be assigned to multiple mercenaries in the same world. When true (the default), once assigned the id is
- * claimed for the life of the world - even after death - preserving the narrative convention that named characters are one-of-a-kind.
+ * <p>{@code unique} controls whether the id can be assigned to multiple mercenaries in the same world. When true (the
+ * default), once assigned the id is claimed for the life of the world - even after death - preserving the narrative
+ * convention that named characters are one-of-a-kind.
  *
- * in_random_pool controls whether random mercenaries can roll this personality. Set to false for preset-locked character personalities
- * that should only appear on their matching skin preset.
+ * <p>{@code in_random_pool} controls whether random mercenaries can roll this personality. Set to false for
+ * preset-locked character personalities that should only appear on their matching skin preset.
+ *
+ * <p><b>Archetype is now data-driven</b>: stored as a string id referencing an entry in the {@link ArchetypeCatalog}.
  */
 public record FixedPersonalityDef(
         String id,
-        PersonalityArchetype archetype,
+        String archetypeId,
         String hobbyId,
         String hometown,
         Set<Quirk> quirks,
@@ -40,16 +45,6 @@ public record FixedPersonalityDef(
         int weight,
         boolean unique
 ) {
-
-    private static final Codec<PersonalityArchetype> ARCHETYPE_CODEC = Codec.STRING.comapFlatMap(
-            s -> {
-                PersonalityArchetype a = PersonalityArchetype.fromId(s);
-                return a != null
-                        ? DataResult.success(a)
-                        : DataResult.error(() -> "Unknown personality archetype: " + s);
-            },
-            PersonalityArchetype::getId
-    );
 
     private static final Codec<Quirk> QUIRK_CODEC = Codec.STRING.comapFlatMap(
             s -> {
@@ -64,7 +59,7 @@ public record FixedPersonalityDef(
     // Codec for the JSON body
 
     public static final Codec<FixedPersonalityDef> BODY_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ARCHETYPE_CODEC.fieldOf("archetype").forGetter(FixedPersonalityDef::archetype),
+            Codec.STRING.fieldOf("archetype").forGetter(FixedPersonalityDef::archetypeId),
             Codec.STRING.optionalFieldOf("hobby", "").forGetter(d -> d.hobbyId == null ? "" : d.hobbyId),
             Codec.STRING.optionalFieldOf("hometown", "").forGetter(d -> d.hometown == null ? "" : d.hometown),
             QUIRK_CODEC.listOf().optionalFieldOf("quirks", List.of()).forGetter(d -> new ArrayList<>(d.quirks)),
@@ -87,7 +82,7 @@ public record FixedPersonalityDef(
     /** Return a copy of this def with the id filled in (reload listener uses this). */
     public FixedPersonalityDef withId(String newId) {
         return new FixedPersonalityDef(
-                newId, archetype, hobbyId,
+                newId, archetypeId, hobbyId,
                 hometown, quirks, overrideEntityName,
                 inRandomPool, weight, unique
         );
@@ -96,7 +91,7 @@ public record FixedPersonalityDef(
     /** Convert to the runtime FixedPersonality record used by PersonalityData.initialize. */
     public PersonalityInitializer.FixedPersonality toRuntime() {
         return new PersonalityInitializer.FixedPersonality(
-                archetype, hobbyId,
+                archetypeId, hobbyId,
                 hometown, quirks
         );
     }
@@ -105,7 +100,7 @@ public record FixedPersonalityDef(
 
     public static void writeToBuf(FriendlyByteBuf buf, FixedPersonalityDef def) {
         buf.writeUtf(def.id);
-        buf.writeUtf(def.archetype.getId());
+        buf.writeUtf(def.archetypeId == null ? "" : def.archetypeId);
         buf.writeUtf(def.hobbyId == null ? "" : def.hobbyId);
         buf.writeUtf(def.hometown == null ? "" : def.hometown);
 
@@ -122,7 +117,8 @@ public record FixedPersonalityDef(
 
     public static FixedPersonalityDef readFromBuf(FriendlyByteBuf buf) {
         String id = buf.readUtf();
-        PersonalityArchetype arch = PersonalityArchetype.fromId(buf.readUtf());
+        String arch = buf.readUtf();
+        if (arch.isEmpty()) arch = null;
         String hob = buf.readUtf(); if (hob.isEmpty()) hob = null;
         String home = buf.readUtf(); if (home.isEmpty()) home = null;
 

@@ -10,15 +10,11 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
 import net.neoforged.neoforge.attachment.IAttachmentSerializer;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import javax.annotation.Nullable;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,52 +22,27 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Per-mercenary personality state. Combines rolled-once traits (archetype, food preferences, hobby, hometown, birthday, quirks) with dynamic state
- * (mood, per-player affinity map, per-player memory events).
- *
- * Affinity is an int per player, roughly bounded [-100, 100]:
- *   < 0    : stranger / distrustful - refuses permanent contracts, charges more
- *   0-50   : acquaintance - default behavior
- *   50-100 : friend - warmer dialogue, small perks
- *   100+   : close - unique lines, refuses to work for others while you're active
- *
- * Mood is a short-term int [0, 100], decays toward 50 (neutral) at 1 unit per ~30 seconds of real time. Driven by nearby events (combat, damage, weather,
- * biome, etc.).
+ * Per-mercenary personality state. Combines rolled-once traits (archetype, hobby, hometown, quirks) with dynamic state.
  */
 public class PersonalityData implements INBTSerializable<CompoundTag> {
 
     private boolean initialized = false;
-    private PersonalityArchetype archetype;
+    private String archetypeId;
     private String hobbyId;
     private String hometown;
     private Set<Quirk> quirks = EnumSet.noneOf(Quirk.class);
 
-    private int mood = 50;
-    private final Map<UUID, Integer> affinityByPlayer = new HashMap<>();
-
-    private static final int MEMORY_LIMIT_PER_PLAYER = 10;
-    public static final int MOOD_MIN = 0;
-    public static final int MOOD_MAX = 100;
-    public static final int MOOD_NEUTRAL = 50;
-    public static final int AFFINITY_MIN = -200;
-    public static final int AFFINITY_MAX = 200;
-
-    public static final int AFFINITY_STRANGER_MAX = -1;
-    public static final int AFFINITY_FRIEND_MIN = 50;
-    public static final int AFFINITY_CLOSE_MIN = 100;
-
     public PersonalityData() {}
 
-    public void initialize(PersonalityArchetype archetype,
+    public void initialize(String archetypeId,
                            String hobbyId,
                            String hometown,
                            Set<Quirk> quirks) {
         if (initialized) return;
-        this.archetype = archetype;
+        this.archetypeId = archetypeId;
         this.hobbyId = hobbyId;
         this.hometown = hometown;
         this.quirks = quirks != null ? EnumSet.copyOf(quirks) : EnumSet.noneOf(Quirk.class);
-        this.mood = MOOD_NEUTRAL;
         this.initialized = true;
     }
 
@@ -81,13 +52,25 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
 
     // Trait getters
 
+    /** The archetype's short id (e.g. {@code "stoic"}). May be null if uninitialized or if the original datapack entry was removed. */
     @Nullable
-    public PersonalityArchetype getArchetype() {
-        return archetype;
+    public String getArchetypeId() {
+        return archetypeId;
     }
 
     /**
-     * Look up the current Hobby definition for this mercenary. Returns null f the hobby id no longer exists in the catalog (datapack removed it).
+     * Look up the current {@link Archetype} definition for this mercenary. Returns null if the archetype id is null
+     * or no longer exists in the catalog.
+     */
+    @Nullable
+    public Archetype getArchetype(boolean isClientSide) {
+        if (archetypeId == null) return null;
+        return ArchetypeCatalogHolder.get(isClientSide).byId(archetypeId);
+    }
+
+    /**
+     * Look up the current Hobby definition for this mercenary. Returns null if the hobby id no longer exists in the
+     * catalog (datapack removed it).
      */
     @Nullable
     public Hobby getHobby(boolean isClientSide) {
@@ -121,7 +104,7 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("initialized", initialized);
 
-        if (archetype != null) tag.putString("archetype", archetype.getId());
+        if (archetypeId != null) tag.putString("archetype", archetypeId);
         if (hobbyId != null) tag.putString("hobby", hobbyId);
         if (hometown != null) tag.putString("hometown", hometown);
 
@@ -129,21 +112,15 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
         for (Quirk q : quirks) quirksTag.add(StringTag.valueOf(q.getId()));
         tag.put("quirks", quirksTag);
 
-        tag.putInt("mood", mood);
-
-        CompoundTag affinityTag = new CompoundTag();
-        for (Map.Entry<UUID, Integer> e : affinityByPlayer.entrySet()) {
-            affinityTag.putInt(e.getKey().toString(), e.getValue());
-        }
-        tag.put("affinity", affinityTag);
-
         return tag;
     }
 
     @Override
     public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
         this.initialized = tag.getBoolean("initialized");
-        this.archetype = PersonalityArchetype.fromId(tag.getString("archetype"));
+        // Archetype is a free-form string now; we keep whatever's saved even if the catalog no longer has it (graceful degradation).
+        this.archetypeId = tag.contains("archetype") ? tag.getString("archetype") : null;
+        if (archetypeId != null && archetypeId.isEmpty()) archetypeId = null;
         this.hobbyId = tag.contains("hobby") ? tag.getString("hobby") : null;
         this.hometown = tag.contains("hometown") ? tag.getString("hometown") : null;
 
@@ -153,21 +130,6 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
             for (int i = 0; i < quirksTag.size(); i++) {
                 Quirk q = Quirk.fromId(quirksTag.getString(i));
                 if (q != null) quirks.add(q);
-            }
-        }
-
-        this.mood = tag.contains("mood")
-                ? clamp(tag.getInt("mood"), MOOD_MIN, MOOD_MAX)
-                : MOOD_NEUTRAL;
-
-        this.affinityByPlayer.clear();
-        if (tag.contains("affinity", Tag.TAG_COMPOUND)) {
-            CompoundTag affinityTag = tag.getCompound("affinity");
-            for (String key : affinityTag.getAllKeys()) {
-                try {
-                    UUID uuid = UUID.fromString(key);
-                    affinityByPlayer.put(uuid, affinityTag.getInt(key));
-                } catch (IllegalArgumentException ignored) {}
             }
         }
     }

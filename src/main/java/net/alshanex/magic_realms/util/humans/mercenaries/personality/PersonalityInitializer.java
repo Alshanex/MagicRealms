@@ -16,8 +16,11 @@ import java.util.Set;
 /**
  * Entry point for stamping personality onto a mercenary.
  *
- * For exclusive mercenaries with a fixed archetype (Catas, Amadeus, etc.) the entity's {@link AbstractMercenaryEntity#getFixedPersonality} hook returns
- * non-null and we use that preset instead of rolling.
+ * <p>For exclusive mercenaries with a fixed archetype (Catas, Amadeus, etc.) the entity's
+ * {@link AbstractMercenaryEntity#getFixedPersonality} hook returns non-null and we use that preset instead of rolling.
+ *
+ * <p>Archetype rolling is now data-driven through {@link ArchetypeCatalog}: each catalog entry contributes a base
+ * weight plus optional per-class bonuses, exactly mirroring the old hardcoded enum table.
  */
 public final class PersonalityInitializer {
 
@@ -25,6 +28,9 @@ public final class PersonalityInitializer {
 
     /** Odds that a random-rolling mercenary gets a fixed personality from the catalog instead of a pure random roll. */
     public static final double FIXED_POOL_ROLL_CHANCE = 0.1;
+
+    /** Hardcoded fallback archetype id used only when the archetype catalog is empty (broken datapack). */
+    private static final String FALLBACK_ARCHETYPE_ID = "stoic";
 
     public static void initializeFor(AbstractMercenaryEntity entity, RandomSource random) {
         PersonalityData data = entity.getData(MRDataAttachments.PERSONALITY);
@@ -69,7 +75,7 @@ public final class PersonalityInitializer {
         applyRandomRoll(entity, data, random);
     }
 
-    // =============== Application helpers ===============
+    // Application helpers
 
     /**
      * Apply a catalog-sourced fixed personality. Handles the "claim unique" bookkeeping and the optional name override.
@@ -95,7 +101,7 @@ public final class PersonalityInitializer {
     /** Apply a runtime FixedPersonality record (from Java override or catalog). */
     private static void applyRuntime(PersonalityData data, FixedPersonality fixed) {
         data.initialize(
-                fixed.archetype(),
+                fixed.archetypeId(),
                 fixed.hobbyId(),
                 fixed.hometown(),
                 fixed.quirks()
@@ -103,12 +109,26 @@ public final class PersonalityInitializer {
     }
 
     private static void applyRandomRoll(AbstractMercenaryEntity entity, PersonalityData data, RandomSource random) {
-        PersonalityArchetype archetype = PersonalityArchetype.roll(entity.getEntityClass(), random);
+        String archetypeId = rollArchetypeId(entity, random);
         String hobbyId = rollHobbyId(random);
         String hometown = HometownRoller.roll(random);
         Set<Quirk> quirks = Quirk.rollSet(random);
 
-        data.initialize(archetype, hobbyId, hometown, quirks);
+        data.initialize(archetypeId, hobbyId, hometown, quirks);
+    }
+
+    private static String rollArchetypeId(AbstractMercenaryEntity entity, RandomSource random) {
+        ArchetypeCatalog catalog = ArchetypeCatalogHolder.server();
+        if (catalog.isEmpty()) {
+            MagicRealms.LOGGER.warn("Archetype catalog empty during personality init - falling back to '{}'", FALLBACK_ARCHETYPE_ID);
+            return FALLBACK_ARCHETYPE_ID;
+        }
+        Archetype pick = catalog.pickWeighted(entity.getEntityClass(), random);
+        if (pick == null) {
+            MagicRealms.LOGGER.warn("Archetype catalog has no rollable entries - falling back to '{}'", FALLBACK_ARCHETYPE_ID);
+            return FALLBACK_ARCHETYPE_ID;
+        }
+        return pick.id();
     }
 
     private static String rollHobbyId(RandomSource random) {
@@ -124,8 +144,8 @@ public final class PersonalityInitializer {
     // Preset-locked id extraction
 
     /**
-     * Read the optional "presetFixedPersonalityId" string from the mercenary's texture metadata if it's a RandomHumanEntity whose
-     * preset specified one. Returns null for non-RandomHumanEntity or entities without a preset or without a preset-locked personality.
+     * Read the optional "presetFixedPersonalityId" string from the mercenary's texture metadata if it's a
+     * RandomHumanEntity whose preset specified one. Returns null for non-RandomHumanEntity or entities without a preset or without a preset-locked personality.
      */
     @Nullable
     private static String extractPresetLockedFixedPersonalityId(AbstractMercenaryEntity entity) {
@@ -156,7 +176,8 @@ public final class PersonalityInitializer {
     }
 
     /**
-     * Record that `id` has been assigned to a mercenary in this world. Writes to the overworld's AssignedFixedPersonalitiesData attachment.
+     * Record that {@code id} has been assigned to a mercenary in this world. Writes to the overworld's
+     * AssignedFixedPersonalitiesData attachment.
      */
     private static void claimId(AbstractMercenaryEntity entity, String id) {
         Level level = entity.level();
@@ -171,17 +192,17 @@ public final class PersonalityInitializer {
     // Preset-locked record
 
     /**
-     * Preset for exclusive mercenaries (Java-side). Data-driven personalities go through FixedPersonalityDef.toRuntime().
+     * Preset for exclusive mercenaries (Java-side). Data-driven personalities go through {@link FixedPersonalityDef#toRuntime()}.
      */
     public record FixedPersonality(
-            PersonalityArchetype archetype,
+            String archetypeId,
             String hobbyId,
             String hometown,
             Set<Quirk> quirks
     ) {
         /**
-         * Factory helper for Java exclusives that want to reference a data-driven fixed personality by id. Returns null if the catalog has no such entry
-         * (caller falls back to their literal inline FixedPersonality).
+         * Factory helper for Java exclusives that want to reference a data-driven fixed personality by id. Returns
+         * null if the catalog has no such entry (caller falls back to their literal inline FixedPersonality).
          */
         @Nullable
         public static FixedPersonality fromCatalog(String fixedPersonalityId) {

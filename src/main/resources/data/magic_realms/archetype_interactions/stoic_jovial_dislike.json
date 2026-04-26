@@ -1,0 +1,14 @@
+{
+  "archetype_a": "stoic",
+  "archetype_b": "jovial",
+  "kind": "rival",
+  "radius": 12.0,
+  "attribute_modifiers": [
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "id": "magic_realms:archetype_interaction.stoic_jovial_dislike.attack_penalty",
+      "amount": -0.05,
+      "operation": "add_multiplied_total"
+    }
+  ]
+}

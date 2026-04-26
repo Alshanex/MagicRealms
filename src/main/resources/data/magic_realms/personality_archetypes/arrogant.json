@@ -1,0 +1,9 @@
+{
+  "id": "arrogant",
+  "display_key": "personality.magic_realms.archetype.arrogant",
+  "base_weight": 10,
+  "class_weights": {
+    "mage": 3,
+    "rogue": 5
+  }
+}

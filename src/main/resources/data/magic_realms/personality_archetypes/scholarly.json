@@ -1,0 +1,8 @@
+{
+  "id": "scholarly",
+  "display_key": "personality.magic_realms.archetype.scholarly",
+  "base_weight": 10,
+  "class_weights": {
+    "mage": 8
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "id": "grim",
+  "display_key": "personality.magic_realms.archetype.grim",
+  "base_weight": 10,
+  "class_weights": {
+    "mage": 2
+  }
+}

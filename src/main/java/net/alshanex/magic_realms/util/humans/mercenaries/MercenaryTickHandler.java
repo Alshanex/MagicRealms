@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.data.ChairSittingData;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.events.ArchetypeInteractionTickHandler;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.events.QuirkEffectHandler;
 import net.alshanex.magic_realms.particles.StunParticleEffect;
@@ -48,6 +49,10 @@ public final class MercenaryTickHandler {
     /** Main entry point from {@link AbstractMercenaryEntity#tick()}. */
     public static void tick(AbstractMercenaryEntity entity) {
         boolean serverSide = !entity.level().isClientSide;
+
+        if (serverSide && entity.tickCount % ArchetypeInteractionTickHandler.CHECK_INTERVAL_TICKS == 0) {
+            ArchetypeInteractionTickHandler.tick(entity);
+        }
 
         QuirkEffectHandler.tickQuirks(entity);
 

@@ -18,14 +18,10 @@ import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -40,7 +36,6 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Aliana";
@@ -165,7 +160,7 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
         return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
                 "magic_realms:aliana",
                 () -> new PersonalityInitializer.FixedPersonality(
-                        PersonalityArchetype.CHEERFUL,
+                        "cheerful",
                         "gardening",
                         "Brackenfield",
                         EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON)

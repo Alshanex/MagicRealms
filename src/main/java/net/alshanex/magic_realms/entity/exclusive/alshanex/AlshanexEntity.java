@@ -15,8 +15,6 @@ import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.minecraft.nbt.CompoundTag;
@@ -29,7 +27,6 @@ import net.minecraft.world.level.Level;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Alshanex";
@@ -124,7 +121,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
         return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
                 "magic_realms:alshanex",
                 () -> new PersonalityInitializer.FixedPersonality(
-                        PersonalityArchetype.JOVIAL,
+                        "jovial",
                         "music",
                         "Somewhere only we know",
                         EnumSet.of(Quirk.AFRAID_OF_THE_DARK)

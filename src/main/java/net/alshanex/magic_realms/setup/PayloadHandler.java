@@ -28,5 +28,7 @@ public class PayloadHandler {
         payloadRegistrar.playToClient(OpenSkinCustomizerPacket.TYPE, OpenSkinCustomizerPacket.STREAM_CODEC, OpenSkinCustomizerPacket::handle);
         payloadRegistrar.playToClient(SyncFixedPersonalityCatalogPacket.TYPE, SyncFixedPersonalityCatalogPacket.STREAM_CODEC, SyncFixedPersonalityCatalogPacket::handle);
         payloadRegistrar.playToClient(OpenBloodPactDialogPacket.TYPE, OpenBloodPactDialogPacket.STREAM_CODEC, OpenBloodPactDialogPacket::handle);
+        payloadRegistrar.playToClient(SyncArchetypeCatalogPacket.TYPE, SyncArchetypeCatalogPacket.STREAM_CODEC, SyncArchetypeCatalogPacket::handle);
+        payloadRegistrar.playToClient(SyncArchetypeInteractionCatalogPacket.TYPE, SyncArchetypeInteractionCatalogPacket.STREAM_CODEC, SyncArchetypeInteractionCatalogPacket::handle);
     }
 }

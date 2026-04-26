@@ -5,9 +5,6 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -20,12 +17,15 @@ import java.util.UUID;
 /**
  * Picks a random speech line for a contracted mercenary when their contractor right-clicks them.
  *
- * The pool is built from:
- *   - the mercenary's rolled hobby response pool (archetype-specific, falling back to default)
- *   - any extra translation keys exposed by an exclusive mercenary via {@link IExclusiveMercenary#getExclusiveSpeechTranslationKeys()}
+ * <p>The pool is built from:
+ * <ul>
+ *   <li>the mercenary's rolled hobby response pool (archetype-specific, falling back to default)</li>
+ *   <li>any extra translation keys exposed by an exclusive mercenary via
+ *       {@link IExclusiveMercenary#getExclusiveSpeechTranslationKeys()}</li>
+ * </ul>
  *
- * A small per-mercenary cooldown is applied so spam-clicking doesn't fill chat with repeated lines, but the cooldown is short
- * enough that picking up a conversation a few seconds later still works.
+ * <p>A small per-mercenary cooldown is applied so spam-clicking doesn't fill chat with repeated lines, but the
+ * cooldown is short enough that picking up a conversation a few seconds later still works.
  */
 public final class MercenarySpeechHelper {
 
@@ -37,9 +37,9 @@ public final class MercenarySpeechHelper {
     private MercenarySpeechHelper() {}
 
     /**
-     * Try to send a random speech line from the mercenary to the player. Returns true if a line was actually sent (and the cooldown should
-     * be considered consumed by the caller's perspective). Returns false if the cooldown is still active, the merc has no lines, or the
-     * mercenary's personality isn't initialized.
+     * Try to send a random speech line from the mercenary to the player. Returns true if a line was actually sent
+     * (and the cooldown should be considered consumed by the caller's perspective). Returns false if the cooldown is
+     * still active, the merc has no lines, or the mercenary's personality isn't initialized.
      */
     public static boolean trySpeak(AbstractMercenaryEntity mercenary, ServerPlayer player) {
         if (mercenary == null || player == null) return false;
@@ -78,8 +78,7 @@ public final class MercenarySpeechHelper {
         if (personality != null && personality.isInitialized()) {
             Hobby hobby = personality.getHobby(false);
             if (hobby != null) {
-                PersonalityArchetype archetype = personality.getArchetype();
-                String archetypeId = archetype != null ? archetype.getId() : null;
+                String archetypeId = personality.getArchetypeId();
                 List<String> hobbyPool = hobby.getResponsePool(archetypeId);
                 if (hobbyPool != null && !hobbyPool.isEmpty()) {
                     result.addAll(hobbyPool);

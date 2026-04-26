@@ -1,0 +1,20 @@
+{
+  "archetype_a": "cheerful",
+  "archetype_b": "jovial",
+  "kind": "friend",
+  "radius": 16.0,
+  "attribute_modifiers": [
+    {
+      "attribute": "minecraft:generic.attack_damage",
+      "id": "magic_realms:archetype_interaction.cheerful_jovial_camaraderie.attack_bonus",
+      "amount": 0.1,
+      "operation": "add_multiplied_total"
+    },
+    {
+      "attribute": "minecraft:generic.movement_speed",
+      "id": "magic_realms:archetype_interaction.cheerful_jovial_camaraderie.speed_bonus",
+      "amount": 0.1,
+      "operation": "add_multiplied_total"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "archetype_a": "pious",
+  "archetype_b": "greedy",
+  "kind": "rival",
+  "radius": 12.0,
+  "attribute_modifiers": [
+    {
+      "attribute": "minecraft:generic.movement_speed",
+      "id": "magic_realms:archetype_interaction.pious_greedy_disgust.speed_penalty",
+      "amount": -0.05,
+      "operation": "add_multiplied_total"
+    }
+  ]
+}

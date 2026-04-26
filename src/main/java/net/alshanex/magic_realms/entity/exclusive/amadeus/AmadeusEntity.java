@@ -15,8 +15,6 @@ import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityArchetype;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
 import net.minecraft.ChatFormatting;
@@ -33,7 +31,6 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Amadeus Voidwalker";
@@ -138,7 +135,7 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
         return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
                 "magic_realms:amadeus",
                 () -> new PersonalityInitializer.FixedPersonality(
-                        PersonalityArchetype.LOYAL,
+                        "loyal",
                         "history",
                         "The Voidwalker Estate",
                         EnumSet.of(Quirk.BOOKWORM, Quirk.NIGHT_OWL)

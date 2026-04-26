@@ -1,0 +1,14 @@
+{
+  "archetype_a": "loyal",
+  "archetype_b": "stoic",
+  "kind": "friend",
+  "radius": 16.0,
+  "attribute_modifiers": [
+    {
+      "attribute": "minecraft:generic.armor",
+      "id": "magic_realms:archetype_interaction.loyal_stoic_brotherhood.armor_bonus",
+      "amount": 1.0,
+      "operation": "add_value"
+    }
+  ]
+}

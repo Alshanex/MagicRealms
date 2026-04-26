@@ -82,6 +82,7 @@
   "message.magic_realms.mercenary.busy_fighting.2": "Talk to me after this fight!",
   "message.magic_realms.mercenary.busy_fighting.3": "Get back, I'm in the middle of something!",
   "message.magic_realms.tavern.unable_to_sleep": "%s Hey you there, if you want to sleep in my tavern you will have to buy a Sleeping Pass like everyone else!",
+  "message.magic_realms.lilac.special_phrase": "%s You know, Aliana though she had a chance at being the paragon over me, do you believe that?",
 
   "tooltip.magic_realms.wisewood_chair": "Seats visiting Mercenaries",
   "tooltip.magic_realms.wisewood_chair_inert": "Safe for building",
@@ -118,6 +119,7 @@
   "ui.magic_realms.introduction.alshanex": "%s Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because I saw the tavernkeep fighting like this and thought he looked very cool. If you want to contract me, I'll only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.amadeus": "%s Salutations! I am Amadeus, the  Starfire Sorcerer! If you wish to contract me, I'll only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.eden": "%s Why are you bothering me? If you want to contract me, I'll only accept a %s, which will last for %d minutes",
+  "ui.magic_realms.introduction.lilac": "%s Oh hi there, I was a paragon in the peak of power a while back, now I'm here looking for a challenge. I'm always trying to increase my survivability, but I also know how to win fights. If you manage to find a %s, then I'll head over and follow you for %d minutes",
   "ui.magic_realms.introduction.archer": "%s Hello, i'm a mercenary specialized in long range combat with my bow. I only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.assassin": "%s Hello, i'm a mercenary specialized in close range combat and my specialty is dodging attacks and dealing high damage. I only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.catas": "%s I don’t know why I’m here, I don’t drink and I don’t really know anyone. Anyways, if you want to contract me, I'll only accept a %s, which will last for %d minutes",
@@ -132,7 +134,6 @@
   "ui.magic_realms.trade_success": "%s Thanks for the emerald! Take this in return",
   "ui.magic_realms.button.switch_to_patrol": "Switch to Patrol",
   "ui.magic_realms.button.switch_to_follow": "Switch to Follow",
-  "ui.magic_realms.tavernkeep_dialog.title": "Tavernkeeper",
 
   "gui.magic_realms.human_info.class.mage": "Mage",
   "gui.magic_realms.human_info.class.warrior": "Warrior",

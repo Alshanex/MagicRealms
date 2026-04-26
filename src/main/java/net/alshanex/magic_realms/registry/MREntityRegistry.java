@@ -9,6 +9,7 @@ import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
+import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
@@ -77,6 +78,12 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "eden_mercenary").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<LilacEntity>> LILAC =
+            ENTITIES.register("lilac_mercenary", () -> EntityType.Builder.<LilacEntity>of(LilacEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "lilac_mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MagicSlimeEntity>> MAGIC_SLIME =
             ENTITIES.register("chuchu", () -> EntityType.Builder.<MagicSlimeEntity>of(MagicSlimeEntity::new, MobCategory.MONSTER)

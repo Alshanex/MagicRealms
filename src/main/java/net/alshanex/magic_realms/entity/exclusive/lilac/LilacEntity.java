@@ -1,11 +1,9 @@
-package net.alshanex.magic_realms.entity.exclusive.alshanex;
+package net.alshanex.magic_realms.entity.exclusive.lilac;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
-import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
-import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
@@ -19,40 +17,43 @@ import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SuspiciousStewEffects;
 import net.minecraft.world.level.Level;
-import net.neoforged.fml.ModList;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
-public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
-    private final String name = "Alshanex";
+public class LilacEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
+    private final String name = "Lilac";
 
-    public AlshanexEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
+    public LilacEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
     }
 
-    public AlshanexEntity(Level level, LivingEntity owner) {
-        this(MREntityRegistry.ALSHANEX.get(), level);
+    public LilacEntity(Level level, LivingEntity owner) {
+        this(MREntityRegistry.LILAC.get(), level);
         setSummoner(owner);
     }
 
     @Override
     protected void initializeAppearance(RandomSource randomSource) {
         setGender(Gender.MALE);
-        setEntityClass(EntityClass.MAGE);
+        setEntityClass(EntityClass.WARRIOR);
         setEntityName(name);
     }
 
@@ -62,23 +63,33 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
     }
 
     @Override
-    protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
-        return SpellListGenerator.getSpellsFromTag(ModTags.ALSHANEX_SPELLS);
+    protected void initializeClassSpecifics(RandomSource randomSource) {
+        List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().filter(
+                schoolType -> ModTags.isSchoolInTag(schoolType, ModTags.LILAC_SCHOOLS)
+        ).toList();
+        setMagicSchools(schools);
     }
 
     @Override
-    protected void initializeClassSpecifics(RandomSource randomSource) {
-        List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().filter(
-                schoolType -> ModTags.isSchoolInTag(schoolType, ModTags.ALSHANEX_SCHOOLS)
-        ).toList();
-        setMagicSchools(schools);
+    protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
+        return SpellListGenerator.getSpellsFromTag(ModTags.LILAC_SPELLS);
     }
 
     @Override
     protected void handlePostSpawnInitialization() {
         if (!this.level().isClientSide) {
             this.setImmortal(true);
-            setFearedEntityTag(ModTags.ALSHANEX_FEARS);
+            setFearedEntityTag(ModTags.LILAC_FEARS);
+            this.setHasShield(true);
+
+            ItemStack stew = new ItemStack(Items.SUSPICIOUS_STEW);
+            SuspiciousStewEffects.Entry saturationEntry = new SuspiciousStewEffects.Entry(MobEffects.SATURATION, 160);
+            SuspiciousStewEffects effects = SuspiciousStewEffects.EMPTY.withEffectAdded(saturationEntry);
+            stew.set(DataComponents.SUSPICIOUS_STEW_EFFECTS, effects);
+            this.getInventory().addItem(stew);
+
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+            this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
@@ -117,62 +128,45 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
 
     @Override
     public String getExclusiveMercenaryPresentationMessage() {
-        return "ui.magic_realms.introduction.alshanex";
+        return "ui.magic_realms.introduction.lilac";
     }
 
     @Override
     public PersonalityInitializer.FixedPersonality getFixedPersonality() {
         return PersonalityInitializer.FixedPersonality.fromCatalogOrElse(
-                "magic_realms:alshanex",
+                "magic_realms:lilac",
                 () -> new PersonalityInitializer.FixedPersonality(
-                        "jovial",
-                        "music",
-                        "Somewhere only we know",
-                        EnumSet.of(Quirk.AFRAID_OF_THE_DARK)
+                        "loyal",
+                        "fishing",
+                        "Mushroom",
+                        EnumSet.of(Quirk.EARLY_RISER)
                 )
         );
     }
 
     @Override
-    public ResourceLocation getChatFaceTextureCS() {
-        return ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/entity/exclusive_mercenaries/alshanex.png");
+    public ItemStack getDefaultVisualArmor(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.CHEST) {
+            return new ItemStack(Items.IRON_CHESTPLATE);
+        }
+        if (slot == EquipmentSlot.LEGS) {
+            return new ItemStack(Items.IRON_LEGGINGS);
+        }
+        if (slot == EquipmentSlot.FEET) {
+            return new ItemStack(Items.IRON_BOOTS);
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override
-    public ItemStack getDefaultVisualArmor(EquipmentSlot slot) {
-        if (slot == EquipmentSlot.CHEST) {
-            if (ModList.get().isLoaded("hazennstuff")) {
-                ResourceLocation itemLoc = ResourceLocation.fromNamespaceAndPath("hazennstuff", "gabriel_ultrakill_chestplate");
-                Optional<Item> compatItem = BuiltInRegistries.ITEM.getOptional(itemLoc);
+    public ResourceLocation getChatFaceTextureCS() {
+        return ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/entity/exclusive_mercenaries/lilac.png");
+    }
 
-                if (compatItem.isPresent()) {
-                    return new ItemStack(compatItem.get());
-                }
-            }
-            return new ItemStack(ItemRegistry.SHADOWWALKER_CHESTPLATE);
-        }
-        if (slot == EquipmentSlot.LEGS) {
-            if (ModList.get().isLoaded("hazennstuff")) {
-                ResourceLocation itemLoc = ResourceLocation.fromNamespaceAndPath("hazennstuff", "gabriel_ultrakill_leggings");
-                Optional<Item> compatItem = BuiltInRegistries.ITEM.getOptional(itemLoc);
-
-                if (compatItem.isPresent()) {
-                    return new ItemStack(compatItem.get());
-                }
-            }
-            return new ItemStack(ItemRegistry.SHADOWWALKER_LEGGINGS);
-        }
-        if (slot == EquipmentSlot.FEET) {
-            if (ModList.get().isLoaded("hazennstuff")) {
-                ResourceLocation itemLoc = ResourceLocation.fromNamespaceAndPath("hazennstuff", "gabriel_ultrakill_boots");
-                Optional<Item> compatItem = BuiltInRegistries.ITEM.getOptional(itemLoc);
-
-                if (compatItem.isPresent()) {
-                    return new ItemStack(compatItem.get());
-                }
-            }
-            return new ItemStack(ItemRegistry.SHADOWWALKER_BOOTS);
-        }
-        return ItemStack.EMPTY;
+    @Override
+    public List<String> getExclusiveSpeechTranslationKeys() {
+        return List.of(
+                "message.magic_realms.lilac.special_phrase"
+        );
     }
 }

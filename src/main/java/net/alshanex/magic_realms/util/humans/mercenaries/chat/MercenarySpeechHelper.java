@@ -3,10 +3,17 @@ package net.alshanex.magic_realms.util.humans.mercenaries.chat;
 import net.alshanex.magic_realms.data.PersonalityData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
+import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
+import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
+import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -89,10 +96,36 @@ public final class MercenarySpeechHelper {
         if (mercenary instanceof IExclusiveMercenary exclusive) {
             List<String> extra = exclusive.getExclusiveSpeechTranslationKeys();
             if (extra != null && !extra.isEmpty()) {
-                result.addAll(extra);
+                if(mercenary instanceof LilacEntity lilac && !lilac.level().isClientSide() && lilac.getSummoner() != null){
+                    if(hasContractedAlianaNearby(lilac, lilac.level())){
+                        result.addAll(extra);
+                    }
+                } else {
+                    result.addAll(extra);
+                }
             }
         }
 
         return result;
+    }
+
+    private static boolean hasContractedAlianaNearby(LilacEntity entity, Level level) {
+        double SEARCH_RADIUS = 20.0;
+        AABB searchArea = new AABB(
+                entity.getX() - SEARCH_RADIUS,
+                entity.getY() - SEARCH_RADIUS,
+                entity.getZ() - SEARCH_RADIUS,
+                entity.getX() + SEARCH_RADIUS,
+                entity.getY() + SEARCH_RADIUS,
+                entity.getZ() + SEARCH_RADIUS
+        );
+
+        List<AlianaEntity> nearbyAliana = level.getEntitiesOfClass(
+                AlianaEntity.class,
+                searchArea,
+                alianaEntity -> alianaEntity.getSummoner() != null && alianaEntity.getSummoner().is(entity.getSummoner())
+        );
+
+        return !nearbyAliana.isEmpty();
     }
 }

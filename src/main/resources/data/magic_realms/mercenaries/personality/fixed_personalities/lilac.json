@@ -1,0 +1,10 @@
+{
+  "archetype": "loyal",
+  "hobby": "fishing",
+  "hometown": "Mushroom",
+  "quirks": [
+    "early_riser"
+  ],
+  "in_random_pool": false,
+  "unique": true
+}

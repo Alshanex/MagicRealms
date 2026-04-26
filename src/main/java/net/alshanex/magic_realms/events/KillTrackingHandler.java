@@ -12,6 +12,7 @@ import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.MercenaryBowFakePlayer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
+import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRItems;
@@ -145,6 +146,23 @@ public class KillTrackingHandler {
         event.setCanceled(true);
         human.setHealth(human.getMaxHealth() / 2);
         knockbackAndStun(event.getSource(), human);
+    }
+
+    @SubscribeEvent
+    public static void onTavernkeeperDeath(LivingDeathEvent event){
+        if(!(event.getEntity() instanceof TavernKeeperEntity tavernKeeper)){
+            return;
+        }
+
+        if(!tavernKeeper.level().isClientSide){
+            TavernKeeperEntity newTavernkeeper = new TavernKeeperEntity(MREntityRegistry.TAVERNKEEP.get(), tavernKeeper.level());
+            newTavernkeeper.setPos(tavernKeeper.position());
+            newTavernkeeper.setSpawnPos(tavernKeeper.getSpawnPos());
+            newTavernkeeper.setHasSetSpawnPos(true);
+            newTavernkeeper.finalizeSpawn((ServerLevel) tavernKeeper.level(), tavernKeeper.level().getCurrentDifficultyAt(tavernKeeper.getOnPos()), MobSpawnType.MOB_SUMMONED, null);
+
+            tavernKeeper.level().addFreshEntity(newTavernkeeper);
+        }
     }
 
     @SubscribeEvent

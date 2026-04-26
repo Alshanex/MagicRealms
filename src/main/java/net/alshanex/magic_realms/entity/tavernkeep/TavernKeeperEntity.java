@@ -236,6 +236,14 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         return this.spawnPos;
     }
 
+    public void setSpawnPos(BlockPos pos) {
+        this.spawnPos = pos;
+    }
+
+    public void setHasSetSpawnPos(boolean hasSetSpawnPos){
+        this.hasSetSpawnPos = hasSetSpawnPos;
+    }
+
     @Override
     public Optional<SoundEvent> getAngerSound() {
         return Optional.of(SoundRegistry.TRADER_NO.get());
@@ -349,12 +357,11 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         return super.mobInteract(pPlayer, pHand);
     }
 
-    public void openTradesForPlayer(Player player) {
-        if (this.level().isClientSide) return;
-        if (this.getOffers().isEmpty()) return;
-        if (this.getTarget() != null || isAngryAt(player)) return;
-        if (shouldRestock()) restock();
-        startTrading(player);
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
+        ItemStack customDrop = new ItemStack(MRItems.BLOOD_PACT, 1);
+        this.spawnAtLocation(customDrop);
+        super.dropCustomDeathLoot(level, damageSource, recentlyHit);
     }
 
     private void startTrading(Player pPlayer) {

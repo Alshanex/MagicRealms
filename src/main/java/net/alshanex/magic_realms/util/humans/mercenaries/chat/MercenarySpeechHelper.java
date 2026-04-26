@@ -3,8 +3,10 @@ package net.alshanex.magic_realms.util.humans.mercenaries.chat;
 import net.alshanex.magic_realms.data.PersonalityData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
+import net.alshanex.magic_realms.entity.exclusive.ace.AceEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
+import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
@@ -100,6 +102,10 @@ public final class MercenarySpeechHelper {
                     if(hasContractedAlianaNearby(lilac, lilac.level())){
                         result.addAll(extra);
                     }
+                } else if (mercenary instanceof JaraEntity jara && !jara.level().isClientSide() && jara.getSummoner() != null) {
+                    if(hasContractedEdenNearby(jara, jara.level())){
+                        result.addAll(extra);
+                    }
                 } else {
                     result.addAll(extra);
                 }
@@ -127,5 +133,25 @@ public final class MercenarySpeechHelper {
         );
 
         return !nearbyAliana.isEmpty();
+    }
+
+    private static boolean hasContractedEdenNearby(JaraEntity entity, Level level) {
+        double SEARCH_RADIUS = 20.0;
+        AABB searchArea = new AABB(
+                entity.getX() - SEARCH_RADIUS,
+                entity.getY() - SEARCH_RADIUS,
+                entity.getZ() - SEARCH_RADIUS,
+                entity.getX() + SEARCH_RADIUS,
+                entity.getY() + SEARCH_RADIUS,
+                entity.getZ() + SEARCH_RADIUS
+        );
+
+        List<AceEntity> nearbyEden = level.getEntitiesOfClass(
+                AceEntity.class,
+                searchArea,
+                aceEntity -> aceEntity.getSummoner() != null && aceEntity.getSummoner().is(entity.getSummoner())
+        );
+
+        return !nearbyEden.isEmpty();
     }
 }

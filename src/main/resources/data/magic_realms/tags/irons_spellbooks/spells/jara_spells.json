@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:sunbeam",
+    "irons_spellbooks:raise_hell",
+    "irons_spellbooks:divine_smite",
+    "irons_spellbooks:charged",
+    "irons_spellbooks:heal",
+    {"id": "discerning_the_eldritch:esoteric_edge","required": false}
+  ]
+}

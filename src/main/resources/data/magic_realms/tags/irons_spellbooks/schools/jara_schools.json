@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:eldritch",
+    "irons_spellbooks:holy",
+    "irons_spellbooks:fire",
+    "irons_spellbooks:lightning"
+  ]
+}

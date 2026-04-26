@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.events;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
+import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.FireBossEntity;
 import io.redspace.ironsspellbooks.entity.spells.devour_jaw.DevourJaw;
 import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
@@ -11,6 +12,7 @@ import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
+import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
@@ -151,6 +153,38 @@ public class MercenariesEventHandler {
                 amadeus.getSummoner().sendSystemMessage(MercenaryMessageFormatter.buildFor(amadeus, "message.magic_realms.amadeus.ally.killed"));
             }
         }
+
+        if(event.getEntity() instanceof FireBossEntity tyros && !tyros.level().isClientSide && event.getSource().getEntity() instanceof Player player){
+            JaraEntity jara = hasContractedJaraNearby(tyros.blockPosition(), tyros.level());
+            if(jara != null && jara.getSummoner().is(player) && hasContractorNearby(jara, player, jara.level())){
+                player.sendSystemMessage(
+                        MercenaryMessageFormatter.buildFor(jara, "message.magic_realms.jara.special_phrase.1"));
+            }
+        }
+    }
+
+    private static JaraEntity hasContractedJaraNearby(BlockPos pos, Level level) {
+        double SEARCH_RADIUS = 20.0;
+        AABB searchArea = new AABB(
+                pos.getX() - SEARCH_RADIUS,
+                pos.getY() - SEARCH_RADIUS,
+                pos.getZ() - SEARCH_RADIUS,
+                pos.getX() + SEARCH_RADIUS,
+                pos.getY() + SEARCH_RADIUS,
+                pos.getZ() + SEARCH_RADIUS
+        );
+
+        List<JaraEntity> nearbyJara = level.getEntitiesOfClass(
+                JaraEntity.class,
+                searchArea,
+                jaraEntity -> jaraEntity.getSummoner() != null
+        );
+
+        if(nearbyJara.size() == 1){
+            return nearbyJara.getFirst();
+        }
+
+        return null;
     }
 }
 

@@ -1,0 +1,11 @@
+{
+  "archetype": "superstitious",
+  "hobby": "stargazing",
+  "hometown": "Furryland",
+  "quirks": [
+    "hates_rain",
+    "cant_swim"
+  ],
+  "in_random_pool": false,
+  "unique": true
+}

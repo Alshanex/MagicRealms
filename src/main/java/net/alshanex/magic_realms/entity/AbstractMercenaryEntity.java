@@ -17,6 +17,7 @@ import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.*;
+import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.events.TavernInteractionHandler;
 import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
@@ -643,7 +644,11 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         switch (entityClass) {
             case MAGE -> setMagicSchools(generateMagicSchools(randomSource));
             case WARRIOR -> setHasShield(randomSource.nextFloat() < 0.25f);
-            case ROGUE -> setIsArcher(randomSource.nextFloat() < 0.25f);
+            case ROGUE -> {
+                if(!(this instanceof JaraEntity)){
+                    setIsArcher(randomSource.nextFloat() < 0.25f);
+                }
+            }
         }
     }
 

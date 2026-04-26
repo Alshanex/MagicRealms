@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:burning_dash",
+    "irons_spellbooks:flaming_strike",
+    "irons_spellbooks:fireball",
+    "irons_spellbooks:heat_surge",
+    "irons_spellbooks:starfall",
+    "irons_spellbooks:teleport",
+    "irons_spellbooks:magic_missile",
+    "irons_spellbooks:magic_arrow"
+  ]
+}

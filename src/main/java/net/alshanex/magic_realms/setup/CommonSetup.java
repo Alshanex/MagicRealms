@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.enderman.WizardEndermanEntity;
+import net.alshanex.magic_realms.entity.exclusive.ace.AceEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
@@ -28,6 +29,7 @@ public class CommonSetup {
         event.put(MREntityRegistry.ALIANA.get(), AlianaEntity.prepareAttributes().build());
         event.put(MREntityRegistry.CATAS.get(), CatasEntity.prepareAttributes().build());
         event.put(MREntityRegistry.AMADEUS.get(), AmadeusEntity.prepareAttributes().build());
+        event.put(MREntityRegistry.ACE.get(), AceEntity.prepareAttributes().build());
         event.put(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntity.prepareAttributes().build());
         event.put(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());
         event.put(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());

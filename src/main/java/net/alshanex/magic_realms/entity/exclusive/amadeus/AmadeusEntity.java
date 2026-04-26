@@ -14,6 +14,7 @@ import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
@@ -29,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -58,25 +60,15 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
 
     @Override
     protected void initializeClassSpecifics(RandomSource randomSource) {
-        List<SchoolType> schools = List.of(
-                SchoolRegistry.FIRE.get(),
-                SchoolRegistry.ENDER.get()
-        );
+        List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().filter(
+                schoolType -> ModTags.isSchoolInTag(schoolType, ModTags.AMADEUS_SCHOOLS)
+        ).toList();
         setMagicSchools(schools);
     }
 
     @Override
     protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
-        return List.of(
-                SpellRegistry.BURNING_DASH_SPELL.get(),
-                SpellRegistry.FLAMING_STRIKE_SPELL.get(),
-                SpellRegistry.FIREBALL_SPELL.get(),
-                SpellRegistry.HEAT_SURGE_SPELL.get(),
-                SpellRegistry.STARFALL_SPELL.get(),
-                SpellRegistry.TELEPORT_SPELL.get(),
-                SpellRegistry.MAGIC_MISSILE_SPELL.get(),
-                SpellRegistry.MAGIC_ARROW_SPELL.get()
-        );
+        return SpellListGenerator.getSpellsFromTag(ModTags.AMADEUS_SPELLS);
     }
 
     @Override

@@ -63,17 +63,19 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
 
     @Override
     protected void initializeClassSpecifics(RandomSource randomSource) {
-        List<SchoolType> schools = List.of(
-                SchoolRegistry.NATURE.get()
-        );
+        List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().filter(
+                schoolType -> ModTags.isSchoolInTag(schoolType, ModTags.ALIANA_SCHOOLS)
+        ).toList();
         setMagicSchools(schools);
     }
 
     @Override
     protected List<AbstractSpell> generateSpellsForEntity(RandomSource randomSource) {
         List<AbstractSpell> spells = SpellListGenerator.generateSpellsForEntity(this, randomSource);
-        if (!spells.contains(SpellRegistry.ROOT_SPELL.get())) {
-            spells.add(SpellRegistry.ROOT_SPELL.get());
+        for(AbstractSpell spell : SpellRegistry.getEnabledSpells()){
+            if(ModTags.isSpellInTag(spell, ModTags.ALIANA_SPELLS) && !spells.contains(spell)){
+                spells.add(spell);
+            }
         }
         return spells;
     }

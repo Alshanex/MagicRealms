@@ -1,0 +1,11 @@
+{
+  "archetype": "stoic",
+  "hobby": "stargazing",
+  "hometown": "Eldritch Dome",
+  "quirks": [
+    "animal_friend",
+    "night_owl"
+  ],
+  "in_random_pool": false,
+  "unique": true
+}

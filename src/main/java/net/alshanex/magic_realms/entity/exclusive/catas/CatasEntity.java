@@ -65,11 +65,9 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
 
     @Override
     protected void initializeClassSpecifics(RandomSource randomSource) {
-        List<SchoolType> schools = List.of(
-                SchoolRegistry.HOLY.get(),
-                SchoolRegistry.FIRE.get(),
-                SchoolRegistry.LIGHTNING.get()
-        );
+        List<SchoolType> schools = SchoolRegistry.REGISTRY.stream().filter(
+                schoolType -> ModTags.isSchoolInTag(schoolType, ModTags.CATAS_SCHOOLS)
+        ).toList();
         setMagicSchools(schools);
     }
 

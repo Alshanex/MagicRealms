@@ -4,6 +4,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.SeatEntity;
 import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntity;
 import net.alshanex.magic_realms.entity.enderman.WizardEndermanEntity;
+import net.alshanex.magic_realms.entity.exclusive.ace.AceEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
@@ -70,6 +71,12 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "amadeus_mercenary").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AceEntity>> ACE =
+            ENTITIES.register("eden_mercenary", () -> EntityType.Builder.<AceEntity>of(AceEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "eden_mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MagicSlimeEntity>> MAGIC_SLIME =
             ENTITIES.register("chuchu", () -> EntityType.Builder.<MagicSlimeEntity>of(MagicSlimeEntity::new, MobCategory.MONSTER)

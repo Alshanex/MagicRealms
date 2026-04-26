@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:teleport",
+    "irons_spellbooks:evasion",
+    "irons_spellbooks:sunbeam"
+  ]
+}

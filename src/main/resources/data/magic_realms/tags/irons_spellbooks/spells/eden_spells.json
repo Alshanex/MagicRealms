@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "irons_spellbooks:acupuncture",
+    "irons_spellbooks:blood_step",
+    "irons_spellbooks:echoing_strikes",
+    "irons_spellbooks:eldritch_blast",
+    "irons_spellbooks:sculk_tentacles",
+    {"id": "discerning_the_eldritch:esoteric_edge","required": false},
+    {"id": "discerning_the_eldritch:abracadabra","required": false},
+    {"id": "discerning_the_eldritch:rift_walker","required": false},
+    {"id": "ess_requiem:tentacle_whip","required": false},
+    {"id": "ess_requiem:ebony_armor","required": false}
+  ]
+}

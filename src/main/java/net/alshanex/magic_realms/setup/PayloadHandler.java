@@ -20,14 +20,12 @@ public class PayloadHandler {
         payloadRegistrar.playToServer(SwitchAttributesMenuPacket.TYPE, SwitchAttributesMenuPacket.STREAM_CODEC, SwitchAttributesMenuPacket::handle);
         payloadRegistrar.playToServer(SaveSkinPartsPacket.TYPE, SaveSkinPartsPacket.STREAM_CODEC, SaveSkinPartsPacket::handle);
         payloadRegistrar.playToServer(TogglePatrolModePacket.TYPE, TogglePatrolModePacket.STREAM_CODEC, TogglePatrolModePacket::handle);
-        payloadRegistrar.playToServer(TavernkeepBloodPactChoicePacket.TYPE, TavernkeepBloodPactChoicePacket.STREAM_CODEC, TavernkeepBloodPactChoicePacket::handle);
 
         payloadRegistrar.playToClient(SyncEntityLevelPacket.TYPE, SyncEntityLevelPacket.STREAM_CODEC, SyncEntityLevelPacket::handle);
         payloadRegistrar.playToClient(SyncSkinCatalogPacket.TYPE, SyncSkinCatalogPacket.STREAM_CODEC, SyncSkinCatalogPacket::handle);
         payloadRegistrar.playToClient(SyncHobbyCatalogPacket.TYPE, SyncHobbyCatalogPacket.STREAM_CODEC, SyncHobbyCatalogPacket::handle);
         payloadRegistrar.playToClient(OpenSkinCustomizerPacket.TYPE, OpenSkinCustomizerPacket.STREAM_CODEC, OpenSkinCustomizerPacket::handle);
         payloadRegistrar.playToClient(SyncFixedPersonalityCatalogPacket.TYPE, SyncFixedPersonalityCatalogPacket.STREAM_CODEC, SyncFixedPersonalityCatalogPacket::handle);
-        payloadRegistrar.playToClient(OpenBloodPactDialogPacket.TYPE, OpenBloodPactDialogPacket.STREAM_CODEC, OpenBloodPactDialogPacket::handle);
         payloadRegistrar.playToClient(SyncArchetypeCatalogPacket.TYPE, SyncArchetypeCatalogPacket.STREAM_CODEC, SyncArchetypeCatalogPacket::handle);
         payloadRegistrar.playToClient(SyncArchetypeInteractionCatalogPacket.TYPE, SyncArchetypeInteractionCatalogPacket.STREAM_CODEC, SyncArchetypeInteractionCatalogPacket::handle);
     }

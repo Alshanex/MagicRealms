@@ -125,6 +125,10 @@ public class Config
             .comment("List of hometown names for mercenary backstory flavor")
             .defineList("hometowns", getDefaultHometowns(), obj -> obj instanceof String);
 
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> TAVERN_TIPS = BUILDER
+            .comment("List of translation keys for the Tavernkeeper's tips.")
+            .defineList("tavernTips", getDefaultTavernTips(), obj -> obj instanceof String);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     public static int maxLevel;
@@ -156,6 +160,7 @@ public class Config
     public static List<String> maleNames;
     public static List<String> femaleNames;
     public static List<String> hometowns;
+    public static List<String> tavernTips;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
@@ -188,6 +193,7 @@ public class Config
         maleNames = MALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
         femaleNames = FEMALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
         hometowns = HOMETOWNS.get().stream().map(String::valueOf).collect(Collectors.toList());
+        tavernTips = TAVERN_TIPS.get().stream().map(String::valueOf).collect(Collectors.toList());
     }
 
     private static List<String> getDefaultMaleNames() {
@@ -237,6 +243,14 @@ public class Config
                 "Marshend", "Nightvale", "Oldbridge", "Pebblestone", "Ravenhold",
                 "Swiftbrook", "Tallgrass", "Undermoor", "Willowdeep", "Yewcross",
                 "Stonewick", "Grimsby", "Fairhaven", "Mistmoor", "Saltcove"
+        );
+    }
+
+    private static List<String> getDefaultTavernTips() {
+        return Arrays.asList(
+                "message.magic_realms.tavernkeep_tip.1",
+                "message.magic_realms.tavernkeep_tip.2",
+                "message.magic_realms.tavernkeep_tip.3"
         );
     }
 }

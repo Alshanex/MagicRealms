@@ -20,8 +20,8 @@ import java.util.Map;
 public class SkinCatalogReloadListener extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
-    private static final String PARTS_FOLDER   = "skin_parts";
-    private static final String PRESETS_FOLDER = "skin_presets";
+    private static final String PARTS_FOLDER   = "mercenaries/skin_parts";
+    private static final String PRESETS_FOLDER = "mercenaries/skin_presets";
 
     private final boolean presets; // false = parts, true = presets
 

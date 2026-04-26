@@ -9,7 +9,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Datapack-loaded personality archetype. Each file at {@code data/<namespace>/personality_archetypes/<name>.json}
+ * Datapack-loaded personality archetype. Each file at {@code data/<namespace>/mercenaries/personality/archetypes/<n>.json}
  * becomes one of these, with its id taken from the file path (e.g. {@code "magic_realms:stoic"} but the catalog
  * indexes it by the short name {@code "stoic"} so JSON references stay terse).
  *

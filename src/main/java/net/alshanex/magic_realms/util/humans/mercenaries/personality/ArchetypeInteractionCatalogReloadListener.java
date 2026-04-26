@@ -16,7 +16,7 @@ import java.util.Map;
 public class ArchetypeInteractionCatalogReloadListener extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
-    private static final String FOLDER = "archetype_interactions";
+    private static final String FOLDER = "mercenaries/personality/archetype_interactions";
 
     public ArchetypeInteractionCatalogReloadListener() {
         super(GSON, FOLDER);

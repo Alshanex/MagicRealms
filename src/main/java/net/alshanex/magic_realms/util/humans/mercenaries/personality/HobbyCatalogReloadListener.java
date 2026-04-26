@@ -16,7 +16,7 @@ import java.util.Map;
 public class HobbyCatalogReloadListener extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
-    private static final String FOLDER = "mercenary_hobbies";
+    private static final String FOLDER = "mercenaries/personality/hobbies";
 
     public HobbyCatalogReloadListener() {
         super(GSON, FOLDER);
@@ -37,7 +37,7 @@ public class HobbyCatalogReloadListener extends SimpleJsonResourceReloadListener
         HobbyCatalogHolder.setServer(catalog);
 
         if (catalog.isEmpty()) {
-            MagicRealms.LOGGER.warn("Hobby catalog loaded empty - no mercenary_hobbies JSONs found");
+            MagicRealms.LOGGER.warn("Hobby catalog loaded empty - no hobbies JSONs found");
         } else {
             MagicRealms.LOGGER.debug("Hobby catalog rebuilt: {} hobbies", catalog.size());
         }

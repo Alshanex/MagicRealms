@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Datapack-loaded archetype interaction. Each file at {@code data/<namespace>/archetype_interactions/<n>.json}
+ * Datapack-loaded archetype interaction. Each file at {@code data/<namespace>/mercenaries/personality/archetype_interactions/<n>.json}
  * defines what happens when two contracted mercenaries with the given pair of archetypes are within range of each
  * other while both contracted by the same player.
  *

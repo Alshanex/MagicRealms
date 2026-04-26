@@ -16,7 +16,7 @@ import java.util.Map;
 public class ArchetypeCatalogReloadListener extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
-    private static final String FOLDER = "personality_archetypes";
+    private static final String FOLDER = "mercenaries/personality/archetypes";
 
     public ArchetypeCatalogReloadListener() {
         super(GSON, FOLDER);
@@ -37,7 +37,7 @@ public class ArchetypeCatalogReloadListener extends SimpleJsonResourceReloadList
         ArchetypeCatalogHolder.setServer(catalog);
 
         if (catalog.isEmpty()) {
-            MagicRealms.LOGGER.warn("Archetype catalog loaded empty - no personality_archetypes JSONs found");
+            MagicRealms.LOGGER.warn("Archetype catalog loaded empty - no archetypes JSONs found");
         } else {
             MagicRealms.LOGGER.debug("Archetype catalog rebuilt: {} archetypes", catalog.size());
         }

@@ -16,7 +16,7 @@ import java.util.Map;
 public class FixedPersonalityCatalogReloadListener extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
-    private static final String FOLDER = "fixed_personalities";
+    private static final String FOLDER = "mercenaries/personality/fixed_personalities";
 
     public FixedPersonalityCatalogReloadListener() {
         super(GSON, FOLDER);

@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Datapack-loaded fixed personality. Each file at {@code data/<namespace>/fixed_personalities/<n>.json} becomes one of
+ * Datapack-loaded fixed personality. Each file at {@code data/<namespace>/mercenaries/personality/fixed_personalities/<n>.json} becomes one of
  * these, with its id taken from the file path (e.g. {@code "magic_realms:alice"}).
  *
  * <p>A fixed personality is a pre-rolled collection of personality traits that can be stamped onto a mercenary instead

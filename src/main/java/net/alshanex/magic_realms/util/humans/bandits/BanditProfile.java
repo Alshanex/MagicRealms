@@ -64,7 +64,7 @@ public record BanditProfile(
         // Visuals
         Optional<Float> entityScale,
         Optional<String> overrideName,
-        Optional<ResourceLocation> presetTexture,
+        Optional<ResourceLocation> skinPreset,
 
         // Magic schools (mage profiles)
         List<ResourceLocation> magicSchools,
@@ -108,32 +108,31 @@ public record BanditProfile(
         ).apply(instance, AttributeBoost::new));
     }
 
-    // Codec for EntityClass
+    // Codec for EntityClass — string ↔ enum, with safe parsing.
     private static final Codec<EntityClass> ENTITY_CLASS_CODEC = Codec.STRING.comapFlatMap(
             s -> {
                 try {
-                    return DataResult.success(EntityClass.valueOf(s.toUpperCase(Locale.ROOT)));
+                    return com.mojang.serialization.DataResult.success(EntityClass.valueOf(s.toUpperCase(Locale.ROOT)));
                 } catch (IllegalArgumentException e) {
-                    return DataResult.error(() -> "Unknown entity_class: " + s);
+                    return com.mojang.serialization.DataResult.error(() -> "Unknown entity_class: " + s);
                 }
             },
             EntityClass::getName
     );
 
-    // Codec for Gender
+    // Codec for Gender — string ↔ enum, with safe parsing.
     private static final Codec<Gender> GENDER_CODEC = Codec.STRING.comapFlatMap(
             s -> {
                 try {
-                    return DataResult.success(Gender.valueOf(s.toUpperCase(Locale.ROOT)));
+                    return com.mojang.serialization.DataResult.success(Gender.valueOf(s.toUpperCase(Locale.ROOT)));
                 } catch (IllegalArgumentException e) {
-                    return DataResult.error(() -> "Unknown gender: " + s);
+                    return com.mojang.serialization.DataResult.error(() -> "Unknown gender: " + s);
                 }
             },
             Gender::getName
     );
 
-    // Codec for the JSON body. Mojang's RecordCodecBuilder.group has a hard arity limit (~16), so we split the codec into two halves as MapCodecs and combine them with
-    // MapCodec.pair so both halves read from the same flat JSON object. The id is filled in by the reload listener after parsing.
+    // Codec for the JSON body.
 
     /** First half: identity, build, level, visuals. */
     private record Half1(
@@ -149,7 +148,7 @@ public record BanditProfile(
             Optional<Integer> maxLevelAbsolute,
             Optional<Float> entityScale,
             Optional<String> overrideName,
-            Optional<ResourceLocation> presetTexture
+            Optional<ResourceLocation> skinPreset
     ) {}
 
     /** Second half: schools, spells, equipment, attribute boosts, flags. */
@@ -167,7 +166,7 @@ public record BanditProfile(
             boolean inRandomPool
     ) {}
 
-    private static final MapCodec<Half1> HALF1_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+    private static final com.mojang.serialization.MapCodec<Half1> HALF1_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.INT.optionalFieldOf("weight", 1).forGetter(Half1::weight),
             ENTITY_CLASS_CODEC.optionalFieldOf("entity_class").forGetter(Half1::entityClass),
             GENDER_CODEC.optionalFieldOf("gender").forGetter(Half1::gender),
@@ -180,10 +179,10 @@ public record BanditProfile(
             Codec.INT.optionalFieldOf("max_level_absolute").forGetter(Half1::maxLevelAbsolute),
             Codec.FLOAT.optionalFieldOf("entity_scale").forGetter(Half1::entityScale),
             Codec.STRING.optionalFieldOf("override_name").forGetter(Half1::overrideName),
-            ResourceLocation.CODEC.optionalFieldOf("preset_texture").forGetter(Half1::presetTexture)
+            ResourceLocation.CODEC.optionalFieldOf("skin_preset").forGetter(Half1::skinPreset)
     ).apply(instance, Half1::new));
 
-    private static final MapCodec<Half2> HALF2_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+    private static final com.mojang.serialization.MapCodec<Half2> HALF2_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.listOf().optionalFieldOf("magic_schools", List.of()).forGetter(Half2::magicSchools),
             ResourceLocation.CODEC.optionalFieldOf("magic_schools_tag").forGetter(Half2::magicSchoolsTagId),
             ResourceLocation.CODEC.listOf().optionalFieldOf("explicit_spells", List.of()).forGetter(Half2::explicitSpells),
@@ -199,10 +198,10 @@ public record BanditProfile(
     ).apply(instance, Half2::new));
 
     /**
-     * Combine the two MapCodec halves into a single MapCodec that reads from the same flat JSON object, then promote it to a regular Codec via .codec().
-     * Both halves see the full field set; each picks up the keys it knows about.
+     * Combine the two MapCodec halves into a single MapCodec that reads from the same flat JSON object,
+     * then promote it to a regular Codec via .codec(). Both halves see the full field set; each picks up the keys it knows about.
      */
-    public static final Codec<BanditProfile> BODY_CODEC = RecordCodecBuilder
+    public static final Codec<BanditProfile> BODY_CODEC = com.mojang.serialization.codecs.RecordCodecBuilder
             .<BanditProfile>create(instance -> instance.group(
                     HALF1_CODEC.forGetter(BanditProfile::splitHalf1),
                     HALF2_CODEC.forGetter(BanditProfile::splitHalf2)
@@ -213,7 +212,7 @@ public record BanditProfile(
                 Math.max(1, h1.weight()),
                 h1.entityClass(), h1.gender(), h1.hasShield(), h1.isArcher(), h1.starLevel(),
                 h1.minLevelPercent(), h1.maxLevelPercent(), h1.minLevelAbsolute(), h1.maxLevelAbsolute(),
-                h1.entityScale(), h1.overrideName(), h1.presetTexture(),
+                h1.entityScale(), h1.overrideName(), h1.skinPreset(),
                 h2.magicSchools(), h2.magicSchoolsTagId(),
                 h2.explicitSpells(), h2.spellsTagId(), h2.spellsTagPickCount(),
                 h2.equipment(),
@@ -225,7 +224,7 @@ public record BanditProfile(
         return new Half1(weight,
                 entityClass, gender, hasShield, isArcher, starLevel,
                 minLevelPercent, maxLevelPercent, minLevelAbsolute, maxLevelAbsolute,
-                entityScale, overrideName, presetTexture);
+                entityScale, overrideName, skinPreset);
     }
 
     private Half2 splitHalf2() {
@@ -240,7 +239,7 @@ public record BanditProfile(
     public BanditProfile withId(String newId) {
         return new BanditProfile(newId, weight, entityClass, gender, hasShield, isArcher, starLevel,
                 minLevelPercent, maxLevelPercent, minLevelAbsolute, maxLevelAbsolute,
-                entityScale, overrideName, presetTexture,
+                entityScale, overrideName, skinPreset,
                 magicSchools, magicSchoolsTagId,
                 explicitSpells, spellsTagId, spellsTagPickCount,
                 equipment,
@@ -259,7 +258,8 @@ public record BanditProfile(
     }
 
     /**
-     * Resolve the equipment map into actual {@link EquipmentSlot}/{@link ItemStack} pairs, dropping any malformed slot names with a warning.
+     * Resolve the equipment map into actual {@link EquipmentSlot}/{@link ItemStack} pairs, dropping any malformed slot
+     * names with a warning.
      */
     public Map<EquipmentSlot, ItemStack> resolveEquipment() {
         Map<EquipmentSlot, ItemStack> resolved = new EnumMap<>(EquipmentSlot.class);
@@ -305,7 +305,7 @@ public record BanditProfile(
 
         writeOptFloat(buf, p.entityScale);
         writeOptString(buf, p.overrideName);
-        writeOptResLoc(buf, p.presetTexture);
+        writeOptResLoc(buf, p.skinPreset);
 
         buf.writeCollection(p.magicSchools, FriendlyByteBuf::writeResourceLocation);
         writeOptResLoc(buf, p.magicSchoolsTagId);
@@ -348,7 +348,7 @@ public record BanditProfile(
 
         Optional<Float> scale = readOptFloat(buf);
         Optional<String> name = readOptString(buf);
-        Optional<ResourceLocation> preset = readOptResLoc(buf);
+        Optional<ResourceLocation> skinPreset = readOptResLoc(buf);
 
         List<ResourceLocation> schools = new ArrayList<>(buf.readList(FriendlyByteBuf::readResourceLocation));
         Optional<ResourceLocation> schoolsTag = readOptResLoc(buf);
@@ -378,7 +378,7 @@ public record BanditProfile(
 
         return new BanditProfile(id, weight, ec, g, hs, ia, sl,
                 minP, maxP, minA, maxA,
-                scale, name, preset,
+                scale, name, skinPreset,
                 schools, schoolsTag,
                 spells, spellsTag, spellsCount,
                 equip,

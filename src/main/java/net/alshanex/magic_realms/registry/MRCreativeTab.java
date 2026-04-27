@@ -31,7 +31,7 @@ public class MRCreativeTab {
                 entries.accept(MRItems.HELL_PASS.get());
                 entries.accept(MRItems.BLOOD_PACT.get());
                 entries.accept(MRItems.PERMANENT_BLOOD_PACT.get());
-                entries.accept(MRItems.MIDAS_COIN.get());
+                //entries.accept(MRItems.MIDAS_COIN.get());
                 entries.accept(MRItems.WOODEN_CHAIR.get());
                 entries.accept(MRItems.WOODEN_CHAIR_SIMPLE.get());
                 entries.accept(MRItems.SKIN_CUSTOMIZER.get());

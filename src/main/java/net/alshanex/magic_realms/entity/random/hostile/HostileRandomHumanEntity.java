@@ -15,6 +15,9 @@ import net.alshanex.magic_realms.util.humans.bandits.BanditProfile;
 import net.alshanex.magic_realms.util.humans.bandits.BanditProfileApplier;
 import net.alshanex.magic_realms.util.humans.bandits.BanditProfileCatalogHolder;
 import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
+import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
+import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
+import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityDef;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
@@ -47,17 +50,9 @@ import java.util.List;
 
 public class HostileRandomHumanEntity extends RandomHumanEntity {
 
-    /**
-     * Synced profile id. Lets the client side know about the profile (e.g. for boss-bar names).
-     * Empty string means "no profile, use random rolls".
-     */
     private static final EntityDataAccessor<String> PROFILE_ID =
             SynchedEntityData.defineId(HostileRandomHumanEntity.class, EntityDataSerializers.STRING);
 
-    /**
-     * Pending profile id assigned via constructor or NBT before {@code finalizeSpawn} runs.
-     * Once init completes, this is folded into the synced PROFILE_ID and cleared.
-     */
     @Nullable
     private String pendingProfileId;
 
@@ -69,9 +64,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         this(MREntityRegistry.HOSTILE_HUMAN.get(), level);
     }
 
-    /**
-     * Constructor for spawning a profile-driven bandit. The id is consumed during finalizeSpawn.
-     */
     public HostileRandomHumanEntity(Level level, String profileId) {
         this(MREntityRegistry.HOSTILE_HUMAN.get(), level);
         this.pendingProfileId = profileId;
@@ -124,15 +116,12 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.FAIL;
         }
-
         if (heldItem.is(Items.EMERALD)) {
             return InteractionResult.FAIL;
         }
-
         if (heldItem.is(MRItems.HELL_PASS.get())) {
             return InteractionResult.FAIL;
         }
-
         if (heldItem.getItem() instanceof TieredContractItem || heldItem.getItem() instanceof PermanentContractItem) {
             return InteractionResult.FAIL;
         }
@@ -145,16 +134,50 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         // Bandits cannot be contracted.
     }
 
-    // Profile-aware initialization overrides
+    // Profile-aware appearance hooks
+
+    @Override
+    protected Gender chooseGender(RandomSource rng) {
+        BanditProfile profile = resolveProfile();
+        if (profile != null) {
+            Gender g = profile.gender().orElse(null);
+            if (g != null) return g;
+        }
+        return super.chooseGender(rng);
+    }
+
+    @Override
+    protected EntityClass chooseEntityClass(Gender gender, RandomSource rng) {
+        BanditProfile profile = resolveProfile();
+        if (profile != null) {
+            EntityClass c = profile.entityClass().orElse(null);
+            if (c != null) return c;
+        }
+        return super.chooseEntityClass(gender, rng);
+    }
+
+    @Override
+    protected String chooseName(Gender gender, RandomSource rng) {
+        BanditProfile profile = resolveProfile();
+        if (profile != null) {
+            String n = profile.overrideName().orElse(null);
+            if (n != null && !n.isEmpty()) return n;
+        }
+        return super.chooseName(gender, rng);
+    }
+
+    // Other profile-aware initialization overrides
 
     @Override
     protected void initializeAppearance(RandomSource randomSource) {
-        // First let the random roll populate gender/class/name/textures so we have sensible defaults for any field the profile doesn't override.
         super.initializeAppearance(randomSource);
 
+        // Consume the pending profile id (set via constructor or NBT) and fold it into the synced
+        // PROFILE_ID. The hooks above already pinned gender/class/name; this step applies the
+        // skin preset (if any), which has to happen AFTER the random texture metadata generation
+        // so we replace it cleanly.
         BanditProfile profile = resolvePendingProfile();
         if (profile != null) {
-            BanditProfileApplier.applyAppearance(this, profile);
             applyPresetTextureOverride(profile);
         }
     }
@@ -162,7 +185,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     @Override
     protected void initializeClassSpecifics(RandomSource randomSource) {
         BanditProfile profile = resolveProfile();
-        // If the profile pins entity_class via setEntityClass in applyAppearance, that's already done.
         super.initializeClassSpecifics(randomSource);
         if (profile != null) {
             BanditProfileApplier.applyClassSpecifics(this, profile, randomSource);
@@ -184,7 +206,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         if (profile != null) {
             boolean handled = BanditProfileApplier.applyLevelRoll(this, profile, killTrackerData, randomSource);
             if (handled) {
-                // Apply the per-level attribute scaling for the chosen level.
                 LevelingStatsManager.applyLevelBasedAttributes(this, killTrackerData.getCurrentLevel());
                 return;
             }
@@ -210,7 +231,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
             FixedPersonalityDef def = FixedPersonalityCatalogHolder.server().byId(fpId);
             if (def != null) {
                 PersonalityInitializer.FixedPersonality fixed = def.toRuntime();
-                // Apply directly via the runtime path; mirrors what FixedPersonality does for exclusives.
                 this.getData(MRDataAttachments.PERSONALITY).initialize(
                         fixed.archetypeId(), fixed.hobbyId(), fixed.hometown(), fixed.quirks());
                 if (def.overrideEntityName().isPresent() && !def.overrideEntityName().get().isEmpty()) {
@@ -231,7 +251,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         BanditProfile profile = resolveProfile();
         if (profile != null) {
             BanditProfileApplier.applyPostInit(this, profile);
-            // Make sure name update reflects any override.
             this.updateCustomNameWithStars();
         }
     }
@@ -272,10 +291,7 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
             String saved = compound.getString("BanditProfileId");
             if (!saved.isEmpty()) {
                 setProfileId(saved);
-                this.pendingProfileId = null; // already initialized; don't re-run
-                // Re-apply the post-init effects (scale modifier, attribute boosts) since they're not
-                // serialized as part of the save data — they're re-derived from the profile.
-                // The initialized flag prevents finalizeSpawn from re-running, so we apply them here.
+                this.pendingProfileId = null;
                 if (this.isInitialized() && !this.level().isClientSide()) {
                     BanditProfile profile = BanditProfileCatalogHolder.server().byId(saved);
                     if (profile != null) {
@@ -298,8 +314,8 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     // Profile resolution helpers
 
     /**
-     * Called by the appearance init step. Pulls the pending id (from constructor or NBT-read entry path),
-     * folds it into the synced PROFILE_ID, and returns the resolved profile.
+     * Folds the pending profile id (set via constructor or NBT) into the synced PROFILE_ID and returns
+     * the resolved profile. Called once during {@code initializeAppearance}.
      */
     @Nullable
     private BanditProfile resolvePendingProfile() {
@@ -314,14 +330,15 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
             pendingProfileId = null;
             return profile;
         }
-        // No pending — but if PROFILE_ID is already set (e.g. partway through init re-entry), honor it.
         if (hasProfile()) {
             return BanditProfileCatalogHolder.server().byId(getProfileId());
         }
         return null;
     }
 
-    /** Like resolvePendingProfile but doesn't consume the pending id — for later init steps. */
+    /**
+     * Resolves the active profile without consuming the pending id. Safe to call multiple times.
+     */
     @Nullable
     private BanditProfile resolveProfile() {
         if (this.level().isClientSide()) return null;
@@ -335,17 +352,23 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     }
 
     /**
-     * If the profile specifies a {@code skin_preset} (resource location of the preset's texture), look up the matching {@link SkinPreset} in the catalog and apply
-     * its full metadata block — preset texture, optional display name, and optional fixed-personality binding.
+     * If the profile specifies a {@code skin_preset} (the id of an entry in the skin_presets/ catalog,
+     * e.g. {@code "magic_realms:vex"} for {@code data/.../skin_presets/vex.json}, or
+     * {@code "magic_realms:male/leon"} for a file in a subdirectory), look up the matching SkinPreset
+     * and apply its full metadata block: preset texture, optional display name, and optional
+     * fixed-personality binding.
+     *
+     * <p>If no preset matches the given id, logs a warning and leaves the metadata as the layered
+     * random skin already produced by {@code RandomHumanEntity.initializeAppearance}.
      */
     private void applyPresetTextureOverride(BanditProfile profile) {
         if (profile.skinPreset().isEmpty()) return;
         if (this.level().isClientSide()) return;
 
         ResourceLocation presetId = profile.skinPreset().get();
-        SkinPreset preset = findPresetByTexture(presetId);
+        SkinPreset preset = findPresetById(presetId);
         if (preset == null) {
-            MagicRealms.LOGGER.warn("Bandit profile {} references unknown skin_preset '{}' (no preset with that texture path is loaded); falling back to random skin",
+            MagicRealms.LOGGER.warn("Bandit profile {} references unknown skin_preset '{}' (no preset with that id is loaded); falling back to random skin",
                     profile.id(), presetId);
             return;
         }
@@ -354,8 +377,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         metadata.putBoolean("usePreset", true);
         metadata.putString("presetTexture", preset.texture().toString());
 
-        // Mirror the RandomHumanEntity preset path: bind a preset-locked fixed personality if the preset
-        // has one, and propagate the display name from either the preset itself or its linked personality.
         preset.fixedPersonalityId().ifPresent(fpId -> {
             metadata.putString("presetFixedPersonalityId", fpId);
             if (preset.displayName().isEmpty()) {
@@ -369,7 +390,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         });
         preset.displayName().ifPresent(n -> metadata.putString("presetName", n));
 
-        // Clear layered texture keys so the renderer doesn't try to compose them on top.
         metadata.remove("skinTexture");
         metadata.remove("clothesTexture");
         metadata.remove("eyesTexture");
@@ -379,13 +399,11 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     }
 
     /**
-     * Look up a {@link SkinPreset} by its texture resource location.
+     * Look up a skin preset by its id (the resource location of its JSON file). Requires SkinPreset
+     * to have been migrated to use the id-based lookup (see SkinCatalog.presetById).
      */
     @Nullable
-    private static SkinPreset findPresetByTexture(ResourceLocation textureId) {
-        for (SkinPreset p : SkinCatalogHolder.server().allPresets()) {
-            if (textureId.equals(p.texture())) return p;
-        }
-        return null;
+    private static SkinPreset findPresetById(ResourceLocation presetId) {
+        return SkinCatalogHolder.server().presetById(presetId);
     }
 }

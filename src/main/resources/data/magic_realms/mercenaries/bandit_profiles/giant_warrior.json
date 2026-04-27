@@ -8,6 +8,7 @@
   "entity_scale": 2.0,
   "star_level": 3,
   "override_name": "Corn",
+  "skin_preset": "magic_realms:leon",
   "magic_schools": [
     "irons_spellbooks:fire",
     "irons_spellbooks:evocation"
@@ -25,19 +26,19 @@
   },
   "attribute_boosts": [
     {
-      "attribute": "minecraft:max_health",
+      "attribute": "minecraft:generic.max_health",
       "id": "magic_realms:bandit/giant_warrior/health",
       "amount": 0.5,
       "operation": "add_multiplied_base"
     },
     {
-      "attribute": "minecraft:knockback_resistance",
+      "attribute": "minecraft:generic.knockback_resistance",
       "id": "magic_realms:bandit/giant_warrior/kb_resist",
       "amount": 0.5,
       "operation": "add_value"
     },
     {
-      "attribute": "minecraft:attack_damage",
+      "attribute": "minecraft:generic.attack_damage",
       "id": "magic_realms:bandit/giant_warrior/damage",
       "amount": 3,
       "operation": "add_value"

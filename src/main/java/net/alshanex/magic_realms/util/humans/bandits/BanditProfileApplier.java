@@ -10,10 +10,13 @@ import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -26,14 +29,10 @@ import java.util.*;
  */
 public final class BanditProfileApplier {
 
-    /** Modifier id namespace prefix for profile-applied attribute boosts. */
     private static final String BOOST_ID_PREFIX = "bandit_profile";
 
     private BanditProfileApplier() {}
 
-    // Resolution
-
-    /** Resolve a profile id from either the server or client catalog. Returns null if not found. */
     public static BanditProfile resolve(String profileId, boolean isClientSide) {
         if (profileId == null || profileId.isEmpty()) return null;
         return BanditProfileCatalogHolder.get(isClientSide).byId(profileId);
@@ -42,7 +41,10 @@ public final class BanditProfileApplier {
     // Per-stage appliers — call in this order during finalizeSpawn
 
     /**
-     * Apply the visual/identity portion: gender, name, preset texture metadata. Should run during {@code initializeAppearance}.
+     * Apply the visual/identity portion: gender, name, entity class. Should run during {@code initializeAppearance},
+     * but in practice the new flow uses the {@code chooseGender}/{@code chooseEntityClass}/{@code chooseName} hooks
+     * in {@link HostileRandomHumanEntity} to seed the values directly so the random texture roll uses the right
+     * gender. This method remains for any post-hoc adjustments and for compatibility.
      */
     public static void applyAppearance(HostileRandomHumanEntity entity, BanditProfile profile) {
         if (profile == null) return;
@@ -54,26 +56,18 @@ public final class BanditProfileApplier {
         });
     }
 
-    /**
-     * Apply class-specific build flags: shield/archer toggles and explicit magic schools. Should run during {@code initializeClassSpecifics}, AFTER the entity class is settled.
-     */
     public static void applyClassSpecifics(HostileRandomHumanEntity entity, BanditProfile profile, RandomSource random) {
         if (profile == null) return;
 
         profile.hasShield().ifPresent(entity::setHasShield);
         profile.isArcher().ifPresent(entity::setIsArcher);
 
-        // Resolve magic schools: explicit list takes precedence; otherwise tag.
         List<SchoolType> schools = resolveMagicSchools(profile);
         if (!schools.isEmpty()) {
             entity.setMagicSchools(schools);
         }
     }
 
-    /**
-     * Apply equipment overrides on top of (or replacing) the default equipment for unspecified slots.
-     * Should run AFTER {@code initializeDefaultEquipment} so profile-specified slots overwrite defaults but unset slots keep their defaults (e.g. warrior wooden sword fallback).
-     */
     public static void applyEquipment(HostileRandomHumanEntity entity, BanditProfile profile) {
         if (profile == null) return;
 
@@ -83,14 +77,10 @@ public final class BanditProfileApplier {
         }
     }
 
-    /**
-     * Override the level roll using the profile's range (absolute over percent).
-     * Returns true if a profile-driven level was set, false if the caller should fall back to vanilla rolling. Should run inside {@code initializeHumanLevel}.
-     */
     public static boolean applyLevelRoll(HostileRandomHumanEntity entity, BanditProfile profile,
                                          KillTrackerData killData, RandomSource random) {
         if (profile == null) return false;
-        if (killData.isInitialized()) return true; // already set by a previous run
+        if (killData.isInitialized()) return true;
 
         int maxLevel = Config.maxLevel;
 
@@ -98,7 +88,6 @@ public final class BanditProfileApplier {
         Integer max = profile.maxLevelAbsolute().orElse(null);
 
         if (min == null || max == null) {
-            // Try percent-based range
             Float minPct = profile.minLevelPercent().orElse(null);
             Float maxPct = profile.maxLevelPercent().orElse(null);
             if (minPct != null || maxPct != null) {
@@ -110,9 +99,7 @@ public final class BanditProfileApplier {
             }
         }
 
-        if (min == null || max == null) {
-            return false; // no level configuration — caller falls back to default roll
-        }
+        if (min == null || max == null) return false;
 
         min = clamp(min, 1, maxLevel);
         max = clamp(max, min, maxLevel);
@@ -122,15 +109,10 @@ public final class BanditProfileApplier {
         return true;
     }
 
-    /**
-     * Generate the spell list according to the profile's preferences.
-     * Returns null if the profile doesn't override spell selection (caller falls back to default generator).
-     */
     public static List<AbstractSpell> resolveSpells(HostileRandomHumanEntity entity, BanditProfile profile,
                                                     RandomSource random) {
         if (profile == null) return null;
 
-        // Mode 1: explicit spell ids
         if (!profile.explicitSpells().isEmpty()) {
             List<AbstractSpell> spells = new ArrayList<>();
             for (ResourceLocation id : profile.explicitSpells()) {
@@ -141,7 +123,6 @@ public final class BanditProfileApplier {
             return spells;
         }
 
-        // Mode 2: tag-based
         if (profile.spellsTag().isPresent()) {
             TagKey<AbstractSpell> tag = profile.spellsTag().get();
             List<AbstractSpell> tagSpells = SpellListGenerator.getSpellsFromTag(tag);
@@ -151,20 +132,14 @@ public final class BanditProfileApplier {
             if (pickCount >= tagSpells.size()) {
                 return new ArrayList<>(tagSpells);
             }
-            // Random subset
             List<AbstractSpell> shuffled = new ArrayList<>(tagSpells);
             Collections.shuffle(shuffled, new Random(random.nextLong()));
             return new ArrayList<>(shuffled.subList(0, pickCount));
         }
 
-        // No override — caller falls back.
         return null;
     }
 
-    /**
-     * Apply post-init effects: scale, attribute boosts, immortal flag.
-     * Should run at the END of {@code handlePostSpawnInitialization}, AFTER class/level attribute math has set base values, so boosts stack cleanly on top.
-     */
     public static void applyPostInit(HostileRandomHumanEntity entity, BanditProfile profile) {
         if (profile == null) return;
 
@@ -180,25 +155,21 @@ public final class BanditProfileApplier {
             }
         });
 
-        // Attribute boosts
         for (int i = 0; i < profile.attributeBoosts().size(); i++) {
             BanditProfile.AttributeBoost boost = profile.attributeBoosts().get(i);
             applyBoost(entity, profile, i, boost);
         }
 
-        // Immortal flag
         if (profile.immortal()) {
             entity.setImmortal(true);
         }
 
-        // Heal to full so all the new max-health stacks visibly.
         entity.heal(entity.getMaxHealth());
     }
 
     // Helpers
 
     private static List<SchoolType> resolveMagicSchools(BanditProfile profile) {
-        // Explicit list wins
         if (!profile.magicSchools().isEmpty()) {
             List<SchoolType> result = new ArrayList<>();
             for (ResourceLocation id : profile.magicSchools()) {
@@ -209,7 +180,6 @@ public final class BanditProfileApplier {
             return result;
         }
 
-        // Tag-based
         if (profile.magicSchoolsTag().isPresent()) {
             TagKey<SchoolType> tag = profile.magicSchoolsTag().get();
             return SchoolRegistry.REGISTRY.stream()
@@ -220,12 +190,25 @@ public final class BanditProfileApplier {
         return List.of();
     }
 
+    /**
+     * Apply one attribute boost.
+     */
     private static void applyBoost(HostileRandomHumanEntity entity, BanditProfile profile, int index,
                                    BanditProfile.AttributeBoost boost) {
-        AttributeInstance instance = entity.getAttribute(boost.attribute());
-        if (instance == null) return;
+        Holder<Attribute> attrHolder = BuiltInRegistries.ATTRIBUTE.getHolder(boost.attribute()).orElse(null);
+        if (attrHolder == null) {
+            MagicRealms.LOGGER.warn("Bandit profile {} references unknown attribute {} (boost #{} skipped)",
+                    profile.id(), boost.attribute(), index);
+            return;
+        }
 
-        // Derive a stable, idempotent modifier id from the profile id and index so re-application (e.g. on world load) replaces rather than stacks.
+        AttributeInstance instance = entity.getAttribute(attrHolder);
+        if (instance == null) {
+            MagicRealms.LOGGER.debug("Bandit profile {} boost #{} targets attribute {} not present on entity",
+                    profile.id(), index, boost.attribute());
+            return;
+        }
+
         ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID,
                 BOOST_ID_PREFIX + "/" + sanitizeId(profile.id()) + "/" + index);
 
@@ -240,7 +223,6 @@ public final class BanditProfileApplier {
         return Math.max(min, Math.min(max, v));
     }
 
-    /** Strip namespace separators so we can safely embed an id in a ResourceLocation path. */
     private static String sanitizeId(String id) {
         if (id == null || id.isEmpty()) return "unknown";
         return id.toLowerCase(Locale.ROOT).replace(':', '_').replace('/', '_');

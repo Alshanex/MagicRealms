@@ -51,9 +51,11 @@ public class SkinCatalogReloadListener extends SimpleJsonResourceReloadListener 
         } else {
             STAGING_PRESETS.clear();
             for (Map.Entry<ResourceLocation, JsonElement> e : map.entrySet()) {
+                ResourceLocation key = e.getKey();
                 SkinPreset.CODEC.parse(JsonOps.INSTANCE, e.getValue())
                         .resultOrPartial(err -> MagicRealms.LOGGER.error(
-                                "Failed to parse skin preset {}: {}", e.getKey(), err))
+                                "Failed to parse skin preset {}: {}", key, err))
+                        .map(parsed -> parsed.withId(key))
                         .ifPresent(STAGING_PRESETS::add);
             }
             MagicRealms.LOGGER.debug("Loaded {} skin presets", STAGING_PRESETS.size());

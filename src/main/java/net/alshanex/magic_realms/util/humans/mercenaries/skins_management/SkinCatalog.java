@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.util.humans.mercenaries.skins_management;
 
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
 import java.util.*;
@@ -16,14 +17,25 @@ public final class SkinCatalog {
 
     private final List<SkinPart> allParts;
     private final List<SkinPreset> allPresets;
+    private final Map<ResourceLocation, SkinPreset> presetsById;
 
     public SkinCatalog(List<SkinPart> parts, List<SkinPreset> presets) {
         this.allParts = List.copyOf(parts);
         this.allPresets = List.copyOf(presets);
+        Map<ResourceLocation, SkinPreset> m = new HashMap<>(presets.size());
+        for (SkinPreset p : presets) {
+            if (p.id() != null) m.put(p.id(), p);
+        }
+        this.presetsById = Collections.unmodifiableMap(m);
     }
 
     public List<SkinPart> allParts() { return allParts; }
     public List<SkinPreset> allPresets() { return allPresets; }
+
+    /** Direct lookup by preset id (the data file's resource location, e.g. {@code "magic_realms:vex"}). */
+    public SkinPreset presetById(ResourceLocation id) {
+        return id == null ? null : presetsById.get(id);
+    }
 
     /** Parts matching category + gender + class, honoring ANY filters. */
     public List<SkinPart> partsFor(SkinCategory category, Gender gender, EntityClass entityClass) {

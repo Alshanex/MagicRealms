@@ -52,23 +52,43 @@ public class RandomHumanEntity extends AbstractMercenaryEntity implements IChatF
         if (appearanceGenerated) return;
 
         RandomSource deterministicRandom = getDeterministicRandom();
-        Gender gender = Gender.values()[deterministicRandom.nextInt(Gender.values().length)];
-        EntityClass entityClass = EntityClass.values()[deterministicRandom.nextInt(EntityClass.values().length)];
+
+        // Hooks let subclasses pin any of these. Subclasses see the chosen gender/class so e.g. a
+        // pinned-gender bandit gets a name (and texture roll) consistent with that gender.
+        Gender gender = chooseGender(deterministicRandom);
+        EntityClass entityClass = chooseEntityClass(gender, deterministicRandom);
+        String name = chooseName(gender, deterministicRandom);
 
         setGender(gender);
         setEntityClass(entityClass);
-        setEntityName(AdvancedNameManager.getRandomName(gender, deterministicRandom));
+        setEntityName(name);
 
-        // SERVER SIDE: Generate deterministic texture metadata
+        // SERVER SIDE: Generate deterministic texture metadata using the (now possibly pinned) gender.
         CompoundTag textureMetadata = generateTextureMetadata(gender, entityClass, deterministicRandom);
         setTextureMetadata(textureMetadata);
 
         this.appearanceGenerated = true;
-/*
-        MagicRealms.LOGGER.debug("Initialized appearance for {} - Gender: {}, Class: {}, Server: {}",
-                getEntityName(), gender.getName(), entityClass.getName(), !this.level().isClientSide());
+    }
 
- */
+    /**
+     * Picks a gender for this entity. Default behavior is uniform random; subclasses override to consult a profile and pin the value.
+     */
+    protected Gender chooseGender(RandomSource rng) {
+        return Gender.values()[rng.nextInt(Gender.values().length)];
+    }
+
+    /**
+     * Picks an entity class.
+     */
+    protected EntityClass chooseEntityClass(Gender gender, RandomSource rng) {
+        return EntityClass.values()[rng.nextInt(EntityClass.values().length)];
+    }
+
+    /**
+     * Picks a name for this entity. Receives the (already-chosen) gender so the default can pull from the gender-appropriate name pool.
+     */
+    protected String chooseName(Gender gender, RandomSource rng) {
+        return AdvancedNameManager.getRandomName(gender, rng);
     }
 
     private CompoundTag generateTextureMetadata(Gender gender, EntityClass entityClass, RandomSource random) {

@@ -100,10 +100,16 @@ public record BanditProfile(
             false, false, Optional.empty(), true
     );
 
-    /** Attribute + modifier pair, mirroring {@code ArchetypeInteraction.Entry}. */
-    public record AttributeBoost(Holder<Attribute> attribute, AttributeModifier modifier) {
+    /**
+     * Attribute boost: a target attribute id plus an {@link AttributeModifier}. The attribute is stored as a
+     * {@link ResourceLocation} rather than a {@code Holder<Attribute>} because vanilla attributes
+     * ({@code minecraft:max_health}, etc.) live in the datapack registry and aren't resolvable through
+     * {@code BuiltInRegistries.ATTRIBUTE} at codec-parse time. The applier resolves the id against the
+     * entity's registries when applying the boost.
+     */
+    public record AttributeBoost(ResourceLocation attribute, AttributeModifier modifier) {
         public static final Codec<AttributeBoost> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                BuiltInRegistries.ATTRIBUTE.holderByNameCodec().fieldOf("attribute").forGetter(AttributeBoost::attribute),
+                ResourceLocation.CODEC.fieldOf("attribute").forGetter(AttributeBoost::attribute),
                 AttributeModifier.MAP_CODEC.forGetter(AttributeBoost::modifier)
         ).apply(instance, AttributeBoost::new));
     }
@@ -112,9 +118,9 @@ public record BanditProfile(
     private static final Codec<EntityClass> ENTITY_CLASS_CODEC = Codec.STRING.comapFlatMap(
             s -> {
                 try {
-                    return com.mojang.serialization.DataResult.success(EntityClass.valueOf(s.toUpperCase(Locale.ROOT)));
+                    return DataResult.success(EntityClass.valueOf(s.toUpperCase(Locale.ROOT)));
                 } catch (IllegalArgumentException e) {
-                    return com.mojang.serialization.DataResult.error(() -> "Unknown entity_class: " + s);
+                    return DataResult.error(() -> "Unknown entity_class: " + s);
                 }
             },
             EntityClass::getName
@@ -124,15 +130,16 @@ public record BanditProfile(
     private static final Codec<Gender> GENDER_CODEC = Codec.STRING.comapFlatMap(
             s -> {
                 try {
-                    return com.mojang.serialization.DataResult.success(Gender.valueOf(s.toUpperCase(Locale.ROOT)));
+                    return DataResult.success(Gender.valueOf(s.toUpperCase(Locale.ROOT)));
                 } catch (IllegalArgumentException e) {
-                    return com.mojang.serialization.DataResult.error(() -> "Unknown gender: " + s);
+                    return DataResult.error(() -> "Unknown gender: " + s);
                 }
             },
             Gender::getName
     );
 
-    // Codec for the JSON body.
+    // Codec for the JSON body. Mojang's RecordCodecBuilder.group has a hard arity limit (~16), so we split the codec into two halves as MapCodecs and combine them
+    // with MapCodec.pair so both halves read from the same flat JSON object. The id is filled in by the reload listener after parsing.
 
     /** First half: identity, build, level, visuals. */
     private record Half1(
@@ -166,7 +173,7 @@ public record BanditProfile(
             boolean inRandomPool
     ) {}
 
-    private static final com.mojang.serialization.MapCodec<Half1> HALF1_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+    private static final MapCodec<Half1> HALF1_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.INT.optionalFieldOf("weight", 1).forGetter(Half1::weight),
             ENTITY_CLASS_CODEC.optionalFieldOf("entity_class").forGetter(Half1::entityClass),
             GENDER_CODEC.optionalFieldOf("gender").forGetter(Half1::gender),
@@ -182,7 +189,7 @@ public record BanditProfile(
             ResourceLocation.CODEC.optionalFieldOf("skin_preset").forGetter(Half1::skinPreset)
     ).apply(instance, Half1::new));
 
-    private static final com.mojang.serialization.MapCodec<Half2> HALF2_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+    private static final MapCodec<Half2> HALF2_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.listOf().optionalFieldOf("magic_schools", List.of()).forGetter(Half2::magicSchools),
             ResourceLocation.CODEC.optionalFieldOf("magic_schools_tag").forGetter(Half2::magicSchoolsTagId),
             ResourceLocation.CODEC.listOf().optionalFieldOf("explicit_spells", List.of()).forGetter(Half2::explicitSpells),
@@ -201,7 +208,7 @@ public record BanditProfile(
      * Combine the two MapCodec halves into a single MapCodec that reads from the same flat JSON object,
      * then promote it to a regular Codec via .codec(). Both halves see the full field set; each picks up the keys it knows about.
      */
-    public static final Codec<BanditProfile> BODY_CODEC = com.mojang.serialization.codecs.RecordCodecBuilder
+    public static final Codec<BanditProfile> BODY_CODEC = RecordCodecBuilder
             .<BanditProfile>create(instance -> instance.group(
                     HALF1_CODEC.forGetter(BanditProfile::splitHalf1),
                     HALF2_CODEC.forGetter(BanditProfile::splitHalf2)
@@ -318,8 +325,7 @@ public record BanditProfile(
 
         buf.writeVarInt(p.attributeBoosts.size());
         for (AttributeBoost ab : p.attributeBoosts) {
-            ResourceLocation attrId = BuiltInRegistries.ATTRIBUTE.getKey(ab.attribute().value());
-            buf.writeResourceLocation(attrId);
+            buf.writeResourceLocation(ab.attribute());
             buf.writeResourceLocation(ab.modifier().id());
             buf.writeDouble(ab.modifier().amount());
             buf.writeEnum(ab.modifier().operation());
@@ -363,12 +369,10 @@ public record BanditProfile(
         List<AttributeBoost> boosts = new ArrayList<>(boostCount);
         for (int i = 0; i < boostCount; i++) {
             ResourceLocation attrId = buf.readResourceLocation();
-            Holder<Attribute> attrHolder = BuiltInRegistries.ATTRIBUTE.getHolder(attrId).orElse(null);
             ResourceLocation modId = buf.readResourceLocation();
             double amount = buf.readDouble();
             AttributeModifier.Operation op = buf.readEnum(AttributeModifier.Operation.class);
-            if (attrHolder == null) continue;
-            boosts.add(new AttributeBoost(attrHolder, new AttributeModifier(modId, amount, op)));
+            boosts.add(new AttributeBoost(attrId, new AttributeModifier(modId, amount, op)));
         }
 
         boolean miniBoss = buf.readBoolean();

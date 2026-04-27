@@ -29,6 +29,7 @@ public class ModTags {
     public static final TagKey<EntityType<?>> ACE_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "eden_fears"));
     public static final TagKey<EntityType<?>> LILAC_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "lilac_fears"));
     public static final TagKey<EntityType<?>> JARA_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "jara_fears"));
+    public static final TagKey<EntityType<?>> GOJO_MOJO_FEARS = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "gojo_mojo_fears"));
 
     public static final TagKey<Item> TAVERNKEEP_SELLS_FOOD = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_foods"));
     public static final TagKey<Item> TAVERNKEEP_SELLS_DRINKS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_drinks"));
@@ -58,6 +59,7 @@ public class ModTags {
     public static TagKey<AbstractSpell> ACE_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "eden_spells"));
     public static TagKey<AbstractSpell> LILAC_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "lilac_spells"));
     public static TagKey<AbstractSpell> JARA_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "jara_spells"));
+    public static TagKey<AbstractSpell> GOJO_MOJO_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "gojo_mojo_spells"));
 
     public static TagKey<SchoolType> CATAS_SCHOOLS= createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "catas_schools"));
     public static TagKey<SchoolType> ALIANA_SCHOOLS= createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "aliana_schools"));
@@ -66,6 +68,7 @@ public class ModTags {
     public static TagKey<SchoolType> ACE_SCHOOLS= createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "eden_schools"));
     public static TagKey<SchoolType> LILAC_SCHOOLS= createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "eden_schools"));
     public static TagKey<SchoolType> JARA_SCHOOLS= createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "jara_schools"));
+    public static TagKey<SchoolType> GOJO_MOJO_SCHOOLS= createSchoolTag(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "gojo_mojo_schools"));
 
     public static TagKey<AbstractSpell> CREEPER_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "fizzle_casts"));
 

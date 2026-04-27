@@ -89,6 +89,8 @@
   "message.magic_realms.eden.special_phrase": "%s Did you know i once fought the Tavernkeeper? He sure was strong, and he told me that I was the first human to defeat him.",
   "message.magic_realms.jara.special_phrase.1": "%s Such a tragic tale....",
   "message.magic_realms.jara.special_phrase.2": "%s Eden you are a waste of resonance. You should jump into the void NOW. Maybe if you took your time caring for people instead of murdering people's loved ones you'd have someone who LOVED YOU. YOU ARE A WASTE OF SPACE. YOU SHOULD TURN INTO EXPERIENCE NOW.",
+  "message.magic_realms.gojo_mojo.special_phrase.1": "%s Hey bud, If you so happen to have a spare Mace lying around, I could use it & deal heavy damage to our foes.",
+  "message.magic_realms.gojo_mojo.special_phrase.2": "%s I don't know about you but after a tough fight.. I'm starving for a classic sundae!",
 
   "tooltip.magic_realms.wisewood_chair": "Seats visiting Mercenaries",
   "tooltip.magic_realms.wisewood_chair_inert": "Safe for building",
@@ -121,6 +123,7 @@
   "ui.magic_realms.contract_time_permanent": "%s In case you forgot, our contract never expires",
   "ui.magic_realms.contract_time_remaining_with_extension": "%s In case you forgot, the contract will last for %d:%s",
   "ui.magic_realms.entity_level_too_low": "%s Sorry but I can't accept that tier of contracts",
+  "ui.magic_realms.introduction.gojo_mojo": "%s Greetings, I'm Gojo! No not that Gojo your thinking off... Besides that, I'm a mercenary that specializes in fighting in close quarters combat dealing damage but can also double as a tank. I can help aid in your adventures but I only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.aliana": "%s MtheNinja? No no no that's not me..... But I am available for hire though!!! If you want to contract me, I'll only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.alshanex": "%s Hey there, i'm Alshanex, not the mod creator but just a random roaming mage, trust. Anyways, i'm a mage who likes to use Sunbeam and a couple movement spells, because I saw the tavernkeep fighting like this and thought he looked very cool. If you want to contract me, I'll only accept a %s, which will last for %d minutes",
   "ui.magic_realms.introduction.amadeus": "%s Salutations! I am Amadeus, the  Starfire Sorcerer! If you wish to contract me, I'll only accept a %s, which will last for %d minutes",

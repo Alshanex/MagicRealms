@@ -1,0 +1,11 @@
+{
+  "archetype": "pious",
+  "hobby": "gambling",
+  "hometown": "My House",
+  "quirks": [
+    "claustrophobic",
+    "heat_intolerant"
+  ],
+  "in_random_pool": false,
+  "unique": true
+}

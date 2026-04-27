@@ -7,6 +7,7 @@ import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
+import net.alshanex.magic_realms.entity.exclusive.gojo_mojo.GojoMojoEntity;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
@@ -34,6 +35,7 @@ public class CommonSetup {
         event.put(MREntityRegistry.ACE.get(), AceEntity.prepareAttributes().build());
         event.put(MREntityRegistry.LILAC.get(), LilacEntity.prepareAttributes().build());
         event.put(MREntityRegistry.JARA.get(), JaraEntity.prepareAttributes().build());
+        event.put(MREntityRegistry.GOJO_MOJO.get(), GojoMojoEntity.prepareAttributes().build());
         event.put(MREntityRegistry.TAVERNKEEP.get(), TavernKeeperEntity.prepareAttributes().build());
         event.put(MREntityRegistry.MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());
         event.put(MREntityRegistry.SUMMONED_MAGIC_SLIME.get(), MagicSlimeEntity.prepareAttributes().build());

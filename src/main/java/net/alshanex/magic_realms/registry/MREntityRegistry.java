@@ -9,6 +9,7 @@ import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.alshanex.AlshanexEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
+import net.alshanex.magic_realms.entity.exclusive.gojo_mojo.GojoMojoEntity;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
@@ -91,6 +92,12 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "jara_mercenary").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<GojoMojoEntity>> GOJO_MOJO =
+            ENTITIES.register("gojo_mojo_mercenary", () -> EntityType.Builder.<GojoMojoEntity>of(GojoMojoEntity::new, MobCategory.MONSTER)
+                    .sized(.6f, 1.8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "gojo_mojo_mercenary").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MagicSlimeEntity>> MAGIC_SLIME =
             ENTITIES.register("chuchu", () -> EntityType.Builder.<MagicSlimeEntity>of(MagicSlimeEntity::new, MobCategory.MONSTER)

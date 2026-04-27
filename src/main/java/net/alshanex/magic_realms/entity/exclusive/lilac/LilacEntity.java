@@ -15,20 +15,17 @@ import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
@@ -36,7 +33,6 @@ import net.minecraft.world.level.Level;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 
 public class LilacEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Lilac";

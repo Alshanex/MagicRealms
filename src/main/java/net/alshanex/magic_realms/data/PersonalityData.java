@@ -1,6 +1,6 @@
 package net.alshanex.magic_realms.data;
 
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.*;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.*;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
@@ -16,10 +16,7 @@ import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Per-mercenary personality state. Combines rolled-once traits (archetype, hobby, hometown, quirks) with dynamic state.

@@ -1,9 +1,9 @@
 package net.alshanex.magic_realms.network;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.HobbyCatalog;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.HobbyCatalogHolder;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.HobbyCatalog;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.HobbyCatalogHolder;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

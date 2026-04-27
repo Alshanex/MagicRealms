@@ -1,7 +1,6 @@
 package net.alshanex.magic_realms.entity.exclusive.amadeus;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
-import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
@@ -16,8 +15,8 @@ import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -30,7 +29,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 

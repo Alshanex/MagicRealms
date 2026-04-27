@@ -5,15 +5,12 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.entity.exclusive.ace.AceEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
-import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Hobby;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 

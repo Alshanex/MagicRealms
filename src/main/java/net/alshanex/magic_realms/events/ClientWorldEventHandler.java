@@ -3,7 +3,7 @@ package net.alshanex.magic_realms.events;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.exclusive.AbstractFixedTextureRenderer;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
-import net.alshanex.magic_realms.skins_management.DynamicTextureManager;
+import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.DynamicTextureManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatFaceRenderer;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatLineFaceTable;
 import net.neoforged.api.distmarker.Dist;

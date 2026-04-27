@@ -5,6 +5,7 @@ import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
+import net.alshanex.magic_realms.util.BanditCommands;
 import net.alshanex.magic_realms.util.HumanEntityCommands;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.ChatFormatting;
@@ -61,6 +62,7 @@ public class ServerEvents {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         HumanEntityCommands.register(event.getDispatcher());
+        BanditCommands.register(event.getDispatcher());
         MagicRealms.LOGGER.info("Registered Magic Realms commands");
     }
 

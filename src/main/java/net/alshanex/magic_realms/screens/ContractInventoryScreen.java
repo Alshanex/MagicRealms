@@ -10,7 +10,7 @@ import net.alshanex.magic_realms.network.SwitchAttributesMenuPacket;
 import net.alshanex.magic_realms.network.TogglePatrolModePacket;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
-import net.alshanex.magic_realms.skins_management.TextureComponents;
+import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.TextureComponents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;

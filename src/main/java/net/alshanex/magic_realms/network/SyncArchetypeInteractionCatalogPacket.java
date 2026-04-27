@@ -1,9 +1,9 @@
 package net.alshanex.magic_realms.network;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.ArchetypeInteraction;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.ArchetypeInteractionCatalog;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.ArchetypeInteractionCatalogHolder;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.ArchetypeInteraction;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.ArchetypeInteractionCatalog;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.ArchetypeInteractionCatalogHolder;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

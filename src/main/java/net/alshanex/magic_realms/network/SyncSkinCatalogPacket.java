@@ -1,9 +1,9 @@
 package net.alshanex.magic_realms.network;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.skins_management.SkinCatalog;
-import net.alshanex.magic_realms.skins_management.SkinPart;
-import net.alshanex.magic_realms.skins_management.SkinPreset;
+import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalog;
+import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinPart;
+import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinPreset;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;

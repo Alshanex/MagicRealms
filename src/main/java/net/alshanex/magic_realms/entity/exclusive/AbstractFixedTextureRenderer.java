@@ -6,7 +6,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityModel;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntityRenderer;
-import net.alshanex.magic_realms.skins_management.ArmBackTextureFixer;
+import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.ArmBackTextureFixer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.DynamicTexture;

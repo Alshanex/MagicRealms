@@ -1,0 +1,50 @@
+{
+  "weight": 5,
+  "entity_class": "warrior",
+  "gender": "male",
+  "has_shield": false,
+  "min_level_percent": 0.5,
+  "max_level_percent": 0.8,
+  "entity_scale": 2.0,
+  "star_level": 3,
+  "override_name": "Corn",
+  "magic_schools": [
+    "irons_spellbooks:fire",
+    "irons_spellbooks:evocation"
+  ],
+  "explicit_spells": [
+    "irons_spellbooks:heat_surge",
+    "irons_spellbooks:flaming_strike",
+    "irons_spellbooks:throw"
+  ],
+  "equipment": {
+    "mainhand": "minecraft:netherite_axe",
+    "chest": "minecraft:iron_chestplate",
+    "legs": "minecraft:iron_leggings",
+    "feet": "minecraft:iron_boots"
+  },
+  "attribute_boosts": [
+    {
+      "attribute": "minecraft:max_health",
+      "id": "magic_realms:bandit/giant_warrior/health",
+      "amount": 0.5,
+      "operation": "add_multiplied_base"
+    },
+    {
+      "attribute": "minecraft:knockback_resistance",
+      "id": "magic_realms:bandit/giant_warrior/kb_resist",
+      "amount": 0.5,
+      "operation": "add_value"
+    },
+    {
+      "attribute": "minecraft:attack_damage",
+      "id": "magic_realms:bandit/giant_warrior/damage",
+      "amount": 3,
+      "operation": "add_value"
+    }
+  ],
+  "is_mini_boss": true,
+  "immortal": true,
+  "fixed_personality_id": "magic_realms:marcus",
+  "in_random_pool": false
+}

@@ -1,7 +1,6 @@
 package net.alshanex.magic_realms.entity.exclusive.ace;
 
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
-import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
@@ -17,10 +16,8 @@ import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
-import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.PersonalityInitializer;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.Quirk;
-import net.minecraft.core.component.DataComponents;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -29,12 +26,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.fml.ModList;
 
 import java.util.EnumSet;

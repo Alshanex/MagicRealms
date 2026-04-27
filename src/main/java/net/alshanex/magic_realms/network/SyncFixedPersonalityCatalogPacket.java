@@ -1,9 +1,9 @@
 package net.alshanex.magic_realms.network;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityCatalog;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityCatalogHolder;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality.FixedPersonalityDef;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityCatalog;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityCatalogHolder;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityDef;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

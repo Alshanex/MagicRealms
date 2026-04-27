@@ -12,14 +12,16 @@ public record SkinPreset(
         Optional<String> displayName,
         GenderFilter gender,
         int weight,
-        Optional<String> fixedPersonalityId
+        Optional<String> fixedPersonalityId,
+        boolean addedToPool
 ) {
     public static final Codec<SkinPreset> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("texture").forGetter(SkinPreset::texture),
             Codec.STRING.optionalFieldOf("display_name").forGetter(SkinPreset::displayName),
             GenderFilter.CODEC.optionalFieldOf("gender", GenderFilter.ANY).forGetter(SkinPreset::gender),
             Codec.INT.optionalFieldOf("weight", 1).forGetter(SkinPreset::weight),
-            Codec.STRING.optionalFieldOf("fixed_personality_id").forGetter(SkinPreset::fixedPersonalityId)
+            Codec.STRING.optionalFieldOf("fixed_personality_id").forGetter(SkinPreset::fixedPersonalityId),
+            Codec.BOOL.optionalFieldOf("added_to_pool", true).forGetter(SkinPreset::addedToPool)
     ).apply(instance, SkinPreset::new));
 
     public static void writeToBuf(FriendlyByteBuf buf, SkinPreset preset) {
@@ -30,6 +32,7 @@ public record SkinPreset(
         buf.writeVarInt(preset.weight);
         buf.writeBoolean(preset.fixedPersonalityId.isPresent());
         preset.fixedPersonalityId.ifPresent(buf::writeUtf);
+        buf.writeBoolean(preset.addedToPool);
     }
 
     public static SkinPreset readFromBuf(FriendlyByteBuf buf) {
@@ -38,6 +41,7 @@ public record SkinPreset(
         GenderFilter gender = buf.readEnum(GenderFilter.class);
         int weight = buf.readVarInt();
         Optional<String> fixedPersonalityId = buf.readBoolean() ? Optional.of(buf.readUtf()) : Optional.empty();
-        return new SkinPreset(tex, name, gender, weight, fixedPersonalityId);
+        boolean addedToPool = buf.readBoolean();
+        return new SkinPreset(tex, name, gender, weight, fixedPersonalityId, addedToPool);
     }
 }

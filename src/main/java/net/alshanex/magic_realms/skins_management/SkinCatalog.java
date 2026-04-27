@@ -40,6 +40,7 @@ public final class SkinCatalog {
     public List<SkinPreset> presetsFor(Gender gender) {
         List<SkinPreset> out = new ArrayList<>();
         for (SkinPreset p : allPresets) {
+            if (!p.addedToPool()) continue;
             if (p.gender().matches(gender)) out.add(p);
         }
         return out;

@@ -38,7 +38,6 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 public class HostileRandomHumanEntity extends RandomHumanEntity {
-    private int waveSummoned = 1;
 
     public HostileRandomHumanEntity(EntityType<? extends RandomHumanEntity> entityType, Level level) {
         super(entityType, level);
@@ -46,7 +45,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
 
     public HostileRandomHumanEntity(Level level, int wave) {
         this(MREntityRegistry.HOSTILE_HUMAN.get(), level);
-        this.waveSummoned = wave;
     }
 
     @Override
@@ -80,6 +78,10 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
             return InteractionResult.FAIL;
         }
 
+        if (heldItem.getItem() instanceof TieredContractItem || heldItem.getItem() instanceof PermanentContractItem) {
+            return InteractionResult.FAIL;
+        }
+
         return super.mobInteract(player, hand);
     }
 
@@ -90,7 +92,7 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
 
     @Override
     protected void initializeHumanLevel(RandomSource randomSource, KillTrackerData killTrackerData) {
-        killTrackerData.initializeRandomSpawnLevelForWave(randomSource, getWaveSummoned());
+        //killTrackerData.initializeRandomSpawnLevelForWave(randomSource, getWaveSummoned());
     }
 
     @Override
@@ -101,10 +103,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     @Override
     protected boolean isHostileHuman() {
         return true;
-    }
-
-    private int getWaveSummoned(){
-        return waveSummoned;
     }
 
     @Override

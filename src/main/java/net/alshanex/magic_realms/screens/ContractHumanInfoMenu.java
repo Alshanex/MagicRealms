@@ -429,13 +429,19 @@ public class ContractHumanInfoMenu extends AbstractContainerMenu {
                 return item instanceof StaffItem;
             }
 
-            boolean isWeapon = item instanceof SwordItem || item instanceof AxeItem || item instanceof TridentItem;
+            boolean isWeapon = item instanceof SwordItem;
+            boolean isWarriorWeapon = isWeapon || item instanceof AxeItem || item instanceof TridentItem || item instanceof MaceItem;
             String itemName = item.toString().toLowerCase();
-            boolean isModdedWeapon = itemName.contains("sword") || itemName.contains("axe") ||
+            boolean isModdedWeapon = itemName.contains("sword") ||
                     itemName.contains("blade") || itemName.contains("dagger");
 
             if (snapshot != null && snapshot.entityClass.name().equals("ROGUE") && snapshot.isArcher) {
                 return item instanceof BowItem || stack.is(ModTags.BOWS);
+            }
+
+            boolean isWarrior = (snapshot != null && snapshot.entityClass.name().equals("WARRIOR"));
+            if(isWarrior){
+                return isWeapon || isModdedWeapon || isWarriorWeapon;
             }
 
             return isWeapon || isModdedWeapon;

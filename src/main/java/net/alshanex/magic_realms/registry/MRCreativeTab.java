@@ -35,6 +35,7 @@ public class MRCreativeTab {
                 entries.accept(MRItems.WOODEN_CHAIR.get());
                 entries.accept(MRItems.WOODEN_CHAIR_SIMPLE.get());
                 entries.accept(MRItems.SKIN_CUSTOMIZER.get());
+                //entries.accept(MRItems.FLOATING_ARROW_WEAPON.get());
             })
             .withTabsBefore(CreativeTabRegistry.EQUIPMENT_TAB.getId())
             .build());

@@ -9,7 +9,9 @@ import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.*;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.flying_arrow.FloatingArrowEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.item.FloatingArrowItem;
 import net.alshanex.magic_realms.network.*;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
@@ -849,5 +851,22 @@ public class MRUtils {
         String key = wasPatrolling ? "ui.magic_realms.patrol_following" : "ui.magic_realms.patrol_active";
         MutableComponent message = Component.translatable(key).withStyle(ChatFormatting.YELLOW);
         serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+    }
+
+    public static void handleFlyingArrowPacket(Player player, byte mode){
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+
+        // Validate: player must actually be holding a FloatingArrowItem in main or offhand.
+        ItemStack main = serverPlayer.getMainHandItem();
+        ItemStack off = serverPlayer.getOffhandItem();
+        boolean holding = main.getItem() instanceof FloatingArrowItem
+                || off.getItem() instanceof FloatingArrowItem;
+        if (!holding) return;
+
+        // Clamp to valid range.
+        if (mode < FloatingArrowEntity.MODE_IDLE || mode > FloatingArrowEntity.MODE_HOLD) {
+            mode = FloatingArrowEntity.MODE_IDLE;
+        }
+        FloatingArrowItem.setModeForPlayer(serverPlayer, mode);
     }
 }

@@ -11,6 +11,7 @@ import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.gojo_mojo.GojoMojoEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntityRenderer;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntityRenderer;
+import net.alshanex.magic_realms.entity.flying_arrow.FloatingArrowEntityRenderer;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntityRenderer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntityRenderer;
@@ -56,6 +57,8 @@ public class ClientSetup {
 
         ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR_SIMPLE.get() , RenderType.cutout());
         ItemBlockRenderTypes.setRenderLayer(MRBlocks.WOODEN_CHAIR.get() , RenderType.cutout());
+
+        event.registerEntityRenderer(MREntityRegistry.FLOATING_ARROW.get(), FloatingArrowEntityRenderer::new);
     }
 
     @SubscribeEvent

@@ -108,4 +108,11 @@ public class MRItems {
                     .stacksTo(16)
                     .rarity(Rarity.UNCOMMON)
             ));
+
+    public static final DeferredHolder<Item, FloatingArrowItem> FLOATING_ARROW_WEAPON =
+            ITEMS.register("floating_arrow_weapon", () -> new FloatingArrowItem(
+                    new Item.Properties()
+                            .stacksTo(1)
+                            .rarity(Rarity.EPIC)
+            ));
 }

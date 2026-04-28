@@ -12,6 +12,7 @@ import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.exclusive.gojo_mojo.GojoMojoEntity;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
+import net.alshanex.magic_realms.entity.flying_arrow.FloatingArrowEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
@@ -135,4 +136,12 @@ public class MREntityRegistry {
                     .sized(.6f, 1.8f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "endermage").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<FloatingArrowEntity>> FLOATING_ARROW =
+            ENTITIES.register("floating_arrow", () -> EntityType.Builder.<FloatingArrowEntity>of(FloatingArrowEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.5f)
+                    .clientTrackingRange(8)
+                    .updateInterval(1) // sync every tick
+                    .noSummon() // can't be /summon-ed, must be spawned via the item
+                    .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "floating_arrow").toString()));
 }

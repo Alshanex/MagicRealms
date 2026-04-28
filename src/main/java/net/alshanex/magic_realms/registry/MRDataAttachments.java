@@ -68,6 +68,13 @@ public class MRDataAttachments {
                             .build()
             );
 
+    public static final Supplier<AttachmentType<FloatingArrowData>> FLOATING_ARROW =
+            ATTACHMENT_TYPES.register(
+                    "floating_arrow",
+                    () -> AttachmentType.builder(FloatingArrowData::new)
+                            .build()
+            );
+
     public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);
     }

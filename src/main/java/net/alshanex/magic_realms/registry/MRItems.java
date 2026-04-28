@@ -115,4 +115,7 @@ public class MRItems {
                             .stacksTo(1)
                             .rarity(Rarity.EPIC)
             ));
+
+    public static final DeferredHolder<Item, Item> KNOWLEDGE_CRYSTAL =
+            ITEMS.register("knowledge_crystal", KnowledgeCrystalItem::new);
 }

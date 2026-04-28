@@ -135,21 +135,18 @@ public class LilacEntity extends AbstractMercenaryEntity implements IExclusiveMe
                         "loyal",
                         "fishing",
                         "Mushroom",
-                        EnumSet.of(Quirk.EARLY_RISER)
+                        EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON)
                 )
         );
     }
 
     @Override
     public ItemStack getDefaultVisualArmor(EquipmentSlot slot) {
-        if (slot == EquipmentSlot.CHEST) {
-            return new ItemStack(Items.IRON_CHESTPLATE);
-        }
         if (slot == EquipmentSlot.LEGS) {
-            return new ItemStack(Items.IRON_LEGGINGS);
+            return new ItemStack(Items.NETHERITE_LEGGINGS);
         }
         if (slot == EquipmentSlot.FEET) {
-            return new ItemStack(Items.IRON_BOOTS);
+            return new ItemStack(Items.NETHERITE_BOOTS);
         }
         return ItemStack.EMPTY;
     }

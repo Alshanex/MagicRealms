@@ -137,22 +137,18 @@ public class MagicAttributeGainsHandler {
             return;
         }
 
-        long timestamp = System.currentTimeMillis();
-        int randomSuffix = RANDOM.nextInt(10000);
-
         ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath(
                 MagicRealms.MODID,
-                type + "_" + school.getId().getPath() + "_" + timestamp + "_" + randomSuffix
+                type + "_" + school.getId().getPath()  // no timestamp, no random
         );
 
         double bonusValue = bonusPercentage / 100.0;
-        AttributeModifier modifier = new AttributeModifier(
-                modifierId,
-                bonusValue,
-                AttributeModifier.Operation.ADD_MULTIPLIED_BASE
-        );
 
-        instance.addPermanentModifier(modifier);
+        AttributeModifier existing = instance.getModifier(modifierId);
+        double newValue = (existing != null ? existing.amount() : 0.0) + bonusValue;
+
+        if (existing != null) instance.removeModifier(existing);
+        instance.addPermanentModifier(new AttributeModifier(modifierId, newValue, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
 /*
         MagicRealms.LOGGER.debug("Added attribute modifier {} with value {} to entity {}",
                 modifierId, bonusValue, entity.getEntityName());
@@ -177,29 +173,16 @@ public class MagicAttributeGainsHandler {
             return false;
         }
 
-        // Calcular el bonus total actual sumando todos los modificadores de Magic Realms para esta escuela
-        // Formato: type_school_timestamp_random (ej: spell_power_fire_1642534823_7439)
-        String expectedPrefix = type + "_" + school.getId().getPath() + "_";
+        // Single modifier per (type, school) — look it up directly instead of summing a prefix scan.
+        ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath(
+                MagicRealms.MODID,
+                type + "_" + school.getId().getPath()
+        );
 
-        double currentTotalBonus = instance.getModifiers().stream()
-                .filter(modifier -> modifier.id().getNamespace().equals(MagicRealms.MODID))
-                .filter(modifier -> modifier.id().getPath().startsWith(expectedPrefix))
-                .mapToDouble(AttributeModifier::amount)
-                .sum();
+        AttributeModifier mod = instance.getModifier(modifierId);
+        double currentTotalBonusPercentage = (mod != null ? mod.amount() : 0.0) * 100.0;
 
-        double currentTotalBonusPercentage = currentTotalBonus * 100.0;
-
-        boolean hasReachedLimit = currentTotalBonusPercentage >= maxBonusPercentage;
-
-        if (hasReachedLimit) {
-            /*
-            MagicRealms.LOGGER.debug("Entity {} has reached {}% bonus limit for {} {} (current: {}%)",
-                    entity.getEntityName(), maxBonusPercentage, school.getId().getPath(), type, currentTotalBonusPercentage);
-
-             */
-        }
-
-        return hasReachedLimit;
+        return currentTotalBonusPercentage >= maxBonusPercentage;
     }
 
     private static double calculateSpellPowerBonus(EntityClass entityClass, int starLevel) {

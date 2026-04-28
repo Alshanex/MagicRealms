@@ -9,7 +9,8 @@
     "EntityMixin"
   ],
   "client": [
-    "ChatComponentMixin"
+    "ChatComponentMixin",
+    "HumanoidRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

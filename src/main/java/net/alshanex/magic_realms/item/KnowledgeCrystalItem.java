@@ -28,9 +28,6 @@ public class KnowledgeCrystalItem extends Item {
 
     @Override
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity interactionTarget, InteractionHand usedHand) {
-        if (player.level().isClientSide) {
-            return InteractionResult.FAIL;
-        }
         if(interactionTarget instanceof AbstractMercenaryEntity mercenary){
             KillTrackerData killData = mercenary.getData(MRDataAttachments.KILL_TRACKER);
             int level = killData.getCurrentLevel();

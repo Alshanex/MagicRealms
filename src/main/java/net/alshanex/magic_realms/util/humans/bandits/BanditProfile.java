@@ -12,7 +12,9 @@ import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -21,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.storage.loot.LootTable;
 
 import java.util.*;
 
@@ -81,6 +84,9 @@ public record BanditProfile(
         // Flat attribute modifiers applied at the end of init
         List<AttributeBoost> attributeBoosts,
 
+        // Override loot table (resolved against Registries.LOOT_TABLE)
+        Optional<ResourceLocation> lootTable,
+
         // Flags
         boolean isMiniBoss,
         boolean immortal,
@@ -97,6 +103,7 @@ public record BanditProfile(
             List.of(), Optional.empty(), Optional.empty(),
             Map.of(),
             List.of(),
+            Optional.empty(),
             false, false, Optional.empty(), true
     );
 
@@ -114,7 +121,7 @@ public record BanditProfile(
         ).apply(instance, AttributeBoost::new));
     }
 
-    // Codec for EntityClass — string ↔ enum, with safe parsing.
+    // Codec for EntityClass
     private static final Codec<EntityClass> ENTITY_CLASS_CODEC = Codec.STRING.comapFlatMap(
             s -> {
                 try {
@@ -126,7 +133,7 @@ public record BanditProfile(
             EntityClass::getName
     );
 
-    // Codec for Gender — string ↔ enum, with safe parsing.
+    // Codec for Gender
     private static final Codec<Gender> GENDER_CODEC = Codec.STRING.comapFlatMap(
             s -> {
                 try {
@@ -167,6 +174,7 @@ public record BanditProfile(
             Optional<Integer> spellsTagPickCount,
             Map<String, ResourceLocation> equipment,
             List<AttributeBoost> attributeBoosts,
+            Optional<ResourceLocation> lootTable,
             boolean isMiniBoss,
             boolean immortal,
             Optional<String> fixedPersonalityId,
@@ -198,6 +206,7 @@ public record BanditProfile(
             Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC)
                     .optionalFieldOf("equipment", Map.of()).forGetter(Half2::equipment),
             AttributeBoost.CODEC.listOf().optionalFieldOf("attribute_boosts", List.of()).forGetter(Half2::attributeBoosts),
+            ResourceLocation.CODEC.optionalFieldOf("loot_table").forGetter(Half2::lootTable),
             Codec.BOOL.optionalFieldOf("is_mini_boss", false).forGetter(Half2::isMiniBoss),
             Codec.BOOL.optionalFieldOf("immortal", false).forGetter(Half2::immortal),
             Codec.STRING.optionalFieldOf("fixed_personality_id").forGetter(Half2::fixedPersonalityId),
@@ -224,6 +233,7 @@ public record BanditProfile(
                 h2.explicitSpells(), h2.spellsTagId(), h2.spellsTagPickCount(),
                 h2.equipment(),
                 h2.attributeBoosts(),
+                h2.lootTable(),
                 h2.isMiniBoss(), h2.immortal(), h2.fixedPersonalityId(), h2.inRandomPool());
     }
 
@@ -239,6 +249,7 @@ public record BanditProfile(
                 explicitSpells, spellsTagId, spellsTagPickCount,
                 equipment,
                 attributeBoosts,
+                lootTable,
                 isMiniBoss, immortal, fixedPersonalityId, inRandomPool);
     }
 
@@ -251,6 +262,7 @@ public record BanditProfile(
                 explicitSpells, spellsTagId, spellsTagPickCount,
                 equipment,
                 attributeBoosts,
+                lootTable,
                 isMiniBoss, immortal, fixedPersonalityId, inRandomPool);
     }
 
@@ -331,6 +343,8 @@ public record BanditProfile(
             buf.writeEnum(ab.modifier().operation());
         }
 
+        writeOptResLoc(buf, p.lootTable);
+
         buf.writeBoolean(p.isMiniBoss);
         buf.writeBoolean(p.immortal);
         writeOptString(buf, p.fixedPersonalityId);
@@ -375,6 +389,8 @@ public record BanditProfile(
             boosts.add(new AttributeBoost(attrId, new AttributeModifier(modId, amount, op)));
         }
 
+        Optional<ResourceLocation> lootTable = readOptResLoc(buf);
+
         boolean miniBoss = buf.readBoolean();
         boolean immortal = buf.readBoolean();
         Optional<String> fpId = readOptString(buf);
@@ -387,6 +403,7 @@ public record BanditProfile(
                 spells, spellsTag, spellsCount,
                 equip,
                 boosts,
+                lootTable,
                 miniBoss, immortal, fpId, inPool);
     }
 
@@ -435,5 +452,9 @@ public record BanditProfile(
 
     private static Optional<ResourceLocation> readOptResLoc(FriendlyByteBuf buf) {
         return buf.readBoolean() ? Optional.of(buf.readResourceLocation()) : Optional.empty();
+    }
+
+    public Optional<ResourceKey<LootTable>> lootTableKey() {
+        return lootTable.map(loc -> ResourceKey.create(Registries.LOOT_TABLE, loc));
     }
 }

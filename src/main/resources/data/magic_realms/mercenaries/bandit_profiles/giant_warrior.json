@@ -44,8 +44,9 @@
       "operation": "add_value"
     }
   ],
+  "loot_table": "magic_realms:entities/chuchu",
   "is_mini_boss": true,
-  "immortal": true,
+  "immortal": false,
   "fixed_personality_id": "magic_realms:marcus",
   "in_random_pool": false
 }

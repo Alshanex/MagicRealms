@@ -1,5 +1,11 @@
 package net.alshanex.magic_realms.entity.flying_arrow;
 
+import io.redspace.ironsspellbooks.api.config.SpellConfigManager;
+import io.redspace.ironsspellbooks.api.config.SpellConfigParameter;
+import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
+import io.redspace.ironsspellbooks.damage.DamageSources;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -54,8 +60,6 @@ public class FloatingArrowEntity extends Entity {
     private static final double FOLLOW_LERP = 0.1;
     /** How quickly the arrow returns to the idle position. */
     private static final double IDLE_LERP = 0.1;
-    /** Damage per hit. */
-    private static final float DAMAGE = 4.0f;
     /** Ticks an entity is immune after being hit by this arrow (so we don't damage every tick). */
     private static final int HIT_COOLDOWN_TICKS = 10;
     /** Sweep radius for hit detection. */
@@ -169,14 +173,13 @@ public class FloatingArrowEntity extends Entity {
             }
             case MODE_BACKWARD -> {
                 Vec3 playerPos = new Vec3(owner.getX(), owner.getEyeY(), owner.getZ());
-                // If the arrow is essentially on top of the player, treat it like idle to prevent jitter.
-                if (currentPos.distanceToSqr(playerPos) < 1.0) {
-                    targetPos = computeIdlePos(owner);
-                } else {
-                    targetPos = playerPos;
-                }
-                Vec3 toPlayer = playerPos.subtract(currentPos);
-                movementDir = toPlayer.lengthSqr() > 1.0E-6 ? toPlayer.normalize() : look.scale(-1);
+                double distFromPlayer = currentPos.distanceTo(playerPos);
+                Vec3 crosshairPoint = playerPos.add(look.scale(distFromPlayer));
+
+                double drift = 0.4;
+                targetPos = playerPos.scale(1.0 - drift).add(crosshairPoint.scale(drift));
+
+                movementDir = playerPos.subtract(currentPos).normalize();
             }
             case MODE_IDLE -> {
                 // Recall: hover above head.
@@ -245,12 +248,10 @@ public class FloatingArrowEntity extends Entity {
 
         if (candidates.isEmpty()) return;
 
-        DamageSource source = damageSources().source(DamageTypes.MAGIC, this, owner);
-
         for (LivingEntity victim : candidates) {
             UUID id = victim.getUUID();
             if (hitCooldowns.containsKey(id)) continue; // recently hit, skip
-            victim.hurt(source, DAMAGE);
+            DamageSources.applyDamage(victim, getDamage(), SpellRegistry.MAGIC_ARROW_SPELL.get().getDamageSource(this, getOwnerPlayer()));
             hitCooldowns.put(id, HIT_COOLDOWN_TICKS);
         }
     }
@@ -299,6 +300,20 @@ public class FloatingArrowEntity extends Entity {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         return false;
+    }
+
+    private float getDamage(){
+        double entitySpellPowerModifier = 1;
+        double entitySchoolPowerModifier = 1;
+
+        float configPowerModifier = SpellConfigManager.getSpellConfigValue(SpellRegistry.MAGIC_ARROW_SPELL.get(), SpellConfigParameter.POWER_MULTIPLIER).floatValue();
+
+        if (getOwnerPlayer() != null && getOwnerPlayer() instanceof LivingEntity livingEntity) {
+            entitySpellPowerModifier = (float) livingEntity.getAttributeValue(AttributeRegistry.SPELL_POWER);
+            entitySchoolPowerModifier = SchoolRegistry.ENDER.get().getPowerFor(livingEntity);
+        }
+
+        return (float) (5 * entitySpellPowerModifier * entitySchoolPowerModifier * configPowerModifier);
     }
 
     @Override

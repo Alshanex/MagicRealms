@@ -42,6 +42,7 @@
   "item.magic_realms.knowledge_crystal": "Knowledge Crystal",
   "item.magic_realms.skin_customizer.creative": "Creative Mode only",
   "item.magic_realms.skin_customizer.preset_not_editable": "Doesn't work on preset texture mercenaries or custom mercenaries",
+  "item.magic_realms.knowledge_crystal.tooltip": "Used to level up a mercenary",
 
   "itemGroup.magic_realms.main_tab": "Magic Realms",
 

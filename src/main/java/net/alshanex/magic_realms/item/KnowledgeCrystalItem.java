@@ -11,6 +11,7 @@ import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -18,8 +19,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.List;
 
 public class KnowledgeCrystalItem extends Item {
     public KnowledgeCrystalItem() {
@@ -64,5 +68,11 @@ public class KnowledgeCrystalItem extends Item {
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to spawn level up effects: {}", e.getMessage());
         }
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        tooltipComponents.add(Component.translatable("item.magic_realms.knowledge_crystal.tooltip"));
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 }

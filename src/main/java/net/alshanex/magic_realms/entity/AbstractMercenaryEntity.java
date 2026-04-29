@@ -18,9 +18,11 @@ import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.*;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
+import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.events.TavernInteractionHandler;
 import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
+import net.alshanex.magic_realms.network.SyncMercenaryDrinkPacket;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.MRUtils;
 import net.alshanex.magic_realms.util.ModTags;
@@ -34,6 +36,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.
 import net.alshanex.magic_realms.util.humans.stats.HumanStatsManager;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -493,6 +496,29 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     }
 
     public void clearInventory() { this.getInventory().clearContent(); }
+
+    @Override
+    public void startDrinkingPotion() {
+        super.startDrinkingPotion();
+
+        if (this.level().isClientSide() || this instanceof LilacEntity) return;
+
+        SimpleContainer inv = this.getInventory();
+        List<ItemStack> foods = new ArrayList<>();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.has(DataComponents.FOOD)) {
+                foods.add(stack);
+            }
+        }
+        if (foods.isEmpty()) return;
+
+        ItemStack chosen = foods.get(this.getRandom().nextInt(foods.size())).copy();
+        PacketDistributor.sendToPlayersTrackingEntity(
+                this, new SyncMercenaryDrinkPacket(this.getUUID(), chosen));
+    }
+
+
 
 
     // Ranged attack

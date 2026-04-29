@@ -2,7 +2,9 @@ package net.alshanex.magic_realms.mixin;
 
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobRenderer;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
+import net.alshanex.magic_realms.util.humans.mercenaries.MercenaryDrinkClientCache;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
@@ -14,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(targets = "io.redspace.ironsspellbooks.entity.mobs.HumanoidRenderer$2")
 public class HumanoidRendererMixin {
+
     @Redirect(
             method = "getStackForBone",
             at = @At(
@@ -29,6 +32,14 @@ public class HumanoidRendererMixin {
             stew.set(DataComponents.SUSPICIOUS_STEW_EFFECTS, effects);
             return stew;
         }
+
+        if (mob instanceof AbstractMercenaryEntity mercenary && mercenary.isDrinkingPotion()) {
+            ItemStack cached = MercenaryDrinkClientCache.get(mercenary.getUUID());
+            if (!cached.isEmpty()) {
+                return cached;
+            }
+        }
+
         return AbstractSpellCastingMobRenderer.makePotion(mob);
     }
 }

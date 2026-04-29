@@ -30,5 +30,6 @@ public class PayloadHandler {
         payloadRegistrar.playToClient(SyncArchetypeCatalogPacket.TYPE, SyncArchetypeCatalogPacket.STREAM_CODEC, SyncArchetypeCatalogPacket::handle);
         payloadRegistrar.playToClient(SyncArchetypeInteractionCatalogPacket.TYPE, SyncArchetypeInteractionCatalogPacket.STREAM_CODEC, SyncArchetypeInteractionCatalogPacket::handle);
         payloadRegistrar.playToClient(SyncBanditProfileCatalogPacket.TYPE, SyncBanditProfileCatalogPacket.STREAM_CODEC, SyncBanditProfileCatalogPacket::handle);
+        payloadRegistrar.playToClient(SyncMercenaryDrinkPacket.TYPE, SyncMercenaryDrinkPacket.STREAM_CODEC, SyncMercenaryDrinkPacket::handle);
     }
 }

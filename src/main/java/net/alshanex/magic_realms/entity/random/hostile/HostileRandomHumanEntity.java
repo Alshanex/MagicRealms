@@ -18,18 +18,22 @@ import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
 import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenarySpeechHelper;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityDef;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinPreset;
 import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -125,11 +129,19 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         if (heldItem.is(MRItems.HELL_PASS.get())) {
             return InteractionResult.FAIL;
         }
+        if (heldItem.is(MRItems.SKIN_CUSTOMIZER.get())) {
+            return InteractionResult.FAIL;
+        }
         if (heldItem.getItem() instanceof TieredContractItem || heldItem.getItem() instanceof PermanentContractItem) {
             return InteractionResult.FAIL;
         }
 
-        return super.mobInteract(player, hand);
+        if (player instanceof ServerPlayer serverPlayer) {
+            MercenarySpeechHelper.trySpeak(this, serverPlayer);
+            return InteractionResult.SUCCESS;
+        }
+
+        return InteractionResult.FAIL;
     }
 
     @Override

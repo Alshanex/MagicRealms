@@ -15,6 +15,7 @@
   "entity.magic_realms.endermage": "Endermage",
   "entity.magic_realms.summoned_chuchu": "Summoned Chuchu",
   "entity.magic_realms.tavernkeep.name": "Tavernkeeper Lv.??",
+  "entity.magic_realms.floating_arrow": "Yaka Arrow",
 
   "gui.magic_realms.human_info.armor": "Armor",
   "gui.magic_realms.human_info.class": "Class",
@@ -40,6 +41,7 @@
   "item.magic_realms.skin_customizer": "Skin Customizer",
   "item.magic_realms.sleeping_pass": "Sleeping Pass",
   "item.magic_realms.knowledge_crystal": "Knowledge Crystal",
+  "item.magic_realms.floating_arrow_weapon": "Yaka Arrow",
   "item.magic_realms.skin_customizer.creative": "Creative Mode only",
   "item.magic_realms.skin_customizer.preset_not_editable": "Doesn't work on preset texture mercenaries or custom mercenaries",
   "item.magic_realms.knowledge_crystal.tooltip": "Used to level up a mercenary",

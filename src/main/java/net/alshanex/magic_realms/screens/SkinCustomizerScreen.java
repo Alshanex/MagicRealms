@@ -155,10 +155,6 @@ public class SkinCustomizerScreen extends Screen {
         } catch (Exception e) {
             MagicRealms.LOGGER.error("Failed to apply pending textures to virtual entity", e);
         }
-        // Clear composite cache so new combination renders
-        if (virtualEntity.getTextureComponents() != null && !virtualEntity.getTextureComponents().isPresetTexture()) {
-            RandomHumanEntityRenderer.clearCompositeCacheFor(virtualEntity.getTextureComponents());
-        }
     }
 
     @Override

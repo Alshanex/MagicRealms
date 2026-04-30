@@ -37,6 +37,7 @@ import org.joml.Vector3f;
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -82,7 +83,7 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
 
     private final EntitySnapshot snapshot;
     private final AbstractMercenaryEntity entity;
-    private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new HashMap<>();
+    private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new LinkedHashMap<>(8, 0.75f, true);
 
     private Button patrolToggleButton;
 
@@ -674,6 +675,10 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
         if (minecraft.level.isClientSide()) {
             PacketDistributor.sendToServer(new SwitchAttributesMenuPacket(newTab));
         }
+    }
+
+    public static void clearVirtualEntityCache() {
+        virtualEntityCache.clear();
     }
 
     @Override

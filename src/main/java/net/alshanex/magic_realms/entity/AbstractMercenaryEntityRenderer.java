@@ -221,12 +221,12 @@ public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCasti
             if (stack == AbstractMercenaryEntityRenderer.this.mainHandItem) {
                 poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
                 if (stack.getItem() instanceof ShieldItem) {
-                    poseStack.translate(0, 0.125, -0.25);
+                    poseStack.translate(0, 0.06, -0.25);
                 }
             } else if (stack == AbstractMercenaryEntityRenderer.this.offhandItem) {
                 poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
                 if (stack.getItem() instanceof ShieldItem) {
-                    poseStack.translate(0, 0.125, 0.25);
+                    poseStack.translate(0, 0.06, 0.25);
                     poseStack.mulPose(Axis.YP.rotationDegrees(180));
                 }
             }

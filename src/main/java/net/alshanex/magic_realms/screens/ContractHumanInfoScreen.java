@@ -45,10 +45,7 @@ import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @OnlyIn(Dist.CLIENT)
 public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHumanInfoMenu> {
@@ -122,8 +119,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private static final int ICON_SIZE = 9;
     private static final int ICON_SPACING = 2;
 
-    // Virtual entity cache - now uses base class
-    private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new HashMap<>();
+    private static final Map<String, AbstractMercenaryEntity> virtualEntityCache = new LinkedHashMap<>(8, 0.75f, true);
 
     private Button patrolToggleButton;
 
@@ -1339,6 +1335,10 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             return schoolId;
         }
+    }
+
+    public static void clearVirtualEntityCache() {
+        virtualEntityCache.clear();
     }
 
     @Override

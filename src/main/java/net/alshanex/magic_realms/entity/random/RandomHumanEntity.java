@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.network.SyncPresetNamePacket;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.Config;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatFaceCompositeCache;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
@@ -206,7 +207,7 @@ public class RandomHumanEntity extends AbstractMercenaryEntity implements IChatF
     @OnlyIn(Dist.CLIENT)
     private void onTextureMetadataUpdatedClient() {
         if (this.textureComponents != null && !this.textureComponents.isPresetTexture()) {
-            RandomHumanEntityRenderer.clearCompositeCacheFor(this.textureComponents);
+            ChatFaceCompositeCache.clearFor(this.textureComponents);
         }
         this.clientTexturesGenerated = false;
         Minecraft.getInstance().execute(this::generateTexturesFromMetadata);
@@ -253,11 +254,46 @@ public class RandomHumanEntity extends AbstractMercenaryEntity implements IChatF
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     public ResourceLocation getChatFaceTextureCS() {
-        if (this.level().isClientSide()) {
-            return RandomHumanEntityRenderer.getOrBuildTextureFor(getTextureComponents());
+        if (!this.level().isClientSide()) return null;
+        TextureComponents tc = getTextureComponents();
+        if (tc == null) return null;
+
+        // Preset textures: use the preset PNG directly with default 64x64 UV slices.
+        if (tc.isPresetTexture()) {
+            String tex = tc.getSkinTexture();
+            if (tex == null) return null;
+            try {
+                ResourceLocation parsed = ResourceLocation.parse(tex);
+                return ResourceLocation.fromNamespaceAndPath(
+                        parsed.getNamespace(), "textures/" + parsed.getPath() + ".png");
+            } catch (Exception e) {
+                return null;
+            }
         }
-        return null;
+
+        return ChatFaceCompositeCache.getOrBuild(tc);
+    }
+
+    @Override
+    public IChatFaceProvider.UVSlice getChatFaceUV() {
+        TextureComponents tc = getTextureComponents();
+        if (tc != null && !tc.isPresetTexture()) {
+            // Mini-atlas layout: face at (0,0) 8x8 within 16x8 atlas
+            return new IChatFaceProvider.UVSlice(0, 0, 8, 8, 16, 8);
+        }
+        return IChatFaceProvider.DEFAULT_FACE_SLICE;
+    }
+
+    @Override
+    public IChatFaceProvider.UVSlice getChatFaceHatUV() {
+        TextureComponents tc = getTextureComponents();
+        if (tc != null && !tc.isPresetTexture()) {
+            // Mini-atlas layout: hat at (8,0) 8x8 within 16x8 atlas
+            return new IChatFaceProvider.UVSlice(8, 0, 8, 8, 16, 8);
+        }
+        return IChatFaceProvider.DEFAULT_HAT_SLICE;
     }
 
     @Override

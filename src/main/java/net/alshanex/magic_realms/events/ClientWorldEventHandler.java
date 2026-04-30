@@ -1,9 +1,9 @@
 package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.exclusive.AbstractFixedTextureRenderer;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
-import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.DynamicTextureManager;
+import net.alshanex.magic_realms.screens.ContractHumanInfoScreen;
+import net.alshanex.magic_realms.screens.ContractInventoryScreen;
+import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatFaceCompositeCache;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatFaceRenderer;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.ChatLineFaceTable;
 import net.neoforged.api.distmarker.Dist;
@@ -14,19 +14,19 @@ import net.neoforged.neoforge.event.level.LevelEvent;
 
 @EventBusSubscriber(modid = MagicRealms.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class ClientWorldEventHandler {
+
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onClientWorldUnload(LevelEvent.Unload event) {
         if (event.getLevel().isClientSide()) {
-            // Clear texture caches when world unloads on client
-            DynamicTextureManager.clearAllTextures();
-            RandomHumanEntityRenderer.clearCompositeCache();
-            AbstractFixedTextureRenderer.clearTextureCache();
-
-            ChatLineFaceTable.clear();
+            ChatFaceCompositeCache.clear();
             ChatFaceRenderer.clearCache();
+            ChatLineFaceTable.clear();
 
-            MagicRealms.LOGGER.debug("Cleared client texture caches on world unload");
+            ContractInventoryScreen.clearVirtualEntityCache();
+            ContractHumanInfoScreen.clearVirtualEntityCache();
+
+            MagicRealms.LOGGER.debug("Cleared mod caches on world unload");
         }
     }
 }

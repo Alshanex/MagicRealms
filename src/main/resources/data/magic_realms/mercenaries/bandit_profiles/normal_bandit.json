@@ -1,0 +1,8 @@
+{
+  "weight": 5,
+  "min_level_absolute": 1,
+  "max_level_absolute": 20,
+  "loot_table": "minecraft:entities/vindicator",
+  "immortal": false,
+  "in_random_pool": false
+}

@@ -301,6 +301,16 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
     }
 
     @Override
+    public @Nullable Component getCustomName() {
+        Component prevName = super.getCustomName();
+        if(prevName != null){
+            Component newName = super.getCustomName().copy().withStyle(ChatFormatting.RED);
+            return newName;
+        }
+        return super.getCustomName();
+    }
+
+    @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         String profileId = getProfileId();

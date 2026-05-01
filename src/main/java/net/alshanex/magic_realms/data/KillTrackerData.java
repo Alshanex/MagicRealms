@@ -4,6 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.util.ModTags;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -273,4 +275,29 @@ public class KillTrackerData {
         return String.format("KillTrackerData{level=%d, exp=%d, totalKills=%d, bossKills=%d, expToNext=%d, hasRegen=%s, initialized=%s}",
                 currentLevel, experiencePoints, totalKills, bossKills, getExperienceToNextLevel(), hasNaturalRegen, isInitialized);
     }
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, KillTrackerData> STREAM_CODEC =
+            new StreamCodec<>() {
+                @Override
+                public KillTrackerData decode(RegistryFriendlyByteBuf buf) {
+                    int totalKills = buf.readVarInt();
+                    int currentLevel = buf.readVarInt();
+                    int experiencePoints = buf.readVarInt();
+                    int bossKills = buf.readVarInt();
+                    boolean hasNaturalRegen = buf.readBoolean();
+                    boolean isInitialized = buf.readBoolean();
+                    return new KillTrackerData(totalKills, currentLevel, experiencePoints,
+                            bossKills, hasNaturalRegen, isInitialized);
+                }
+
+                @Override
+                public void encode(RegistryFriendlyByteBuf buf, KillTrackerData data) {
+                    buf.writeVarInt(data.totalKills);
+                    buf.writeVarInt(data.currentLevel);
+                    buf.writeVarInt(data.experiencePoints);
+                    buf.writeVarInt(data.bossKills);
+                    buf.writeBoolean(data.hasNaturalRegen);
+                    buf.writeBoolean(data.isInitialized);
+                }
+            };
 }

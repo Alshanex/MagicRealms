@@ -17,6 +17,7 @@ public class MRDataAttachments {
             "kill_tracker",
             () -> AttachmentType.builder(KillTrackerData::new)
                     .serialize(KillTrackerData.CODEC)
+                    .sync(KillTrackerData.STREAM_CODEC)
                     .build()
     );
 

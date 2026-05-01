@@ -223,7 +223,7 @@ public class KillTrackingHandler {
         KillTrackerData killData = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
 
         int previousLevel = killData.getCurrentLevel();
-        killData.addKill(victim);
+        humanEntity.mutateKillTracker(d -> d.addKill(victim));
         int newLevel = killData.getCurrentLevel();
 /*
         MagicRealms.LOGGER.debug("Entity {} killed {} | Total kills: {} | Current EXP: {} | EXP to next: {}",
@@ -364,7 +364,7 @@ public class KillTrackingHandler {
         int previousLevel = killTracker.getCurrentLevel();
 
         // Add the shared experience (using the existing method but with our calculated XP)
-        killTracker.addExperience(sharedXp);
+        companion.mutateKillTracker(d -> d.addExperience(sharedXp));
 
         // Check if leveled up and apply attribute bonuses
         int newLevel = killTracker.getCurrentLevel();

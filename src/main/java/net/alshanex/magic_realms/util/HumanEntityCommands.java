@@ -59,16 +59,11 @@ public class HumanEntityCommands {
                 return 0;
             }
 
-            // Add levels one by one to trigger proper level-up effects
-            for (int i = 0; i < actualLevelsToAdd; i++) {
-                int newLevel = currentLevel + i + 1;
-
-                // Set the level (this sets experience to the required amount for that level)
-                killData.setLevel(newLevel);
-
-                // Apply level-based attribute bonuses
-                LevelingStatsManager.applyLevelBasedAttributes(humanEntity, newLevel);
-            }
+            final int targetLevel = currentLevel + actualLevelsToAdd;
+            humanEntity.mutateKillTracker(d -> d.setLevel(targetLevel));
+            LevelingStatsManager.applyLevelBasedAttributes(humanEntity, targetLevel);
+            spawnLevelUpEffects(humanEntity);
+            humanEntity.updateCustomNameWithStars();
 
             spawnLevelUpEffects(humanEntity);
 

@@ -21,7 +21,6 @@ import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.events.TavernInteractionHandler;
-import net.alshanex.magic_realms.network.SyncEntityLevelPacket;
 import net.alshanex.magic_realms.network.SyncMercenaryDrinkPacket;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.MRUtils;
@@ -78,6 +77,7 @@ import software.bernie.geckolib.animation.AnimationState;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 
 public abstract class AbstractMercenaryEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, InventoryCarrier {
 
@@ -425,6 +425,12 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
+    public void mutateKillTracker(Consumer<KillTrackerData> mutator) {
+        KillTrackerData data = this.getData(MRDataAttachments.KILL_TRACKER);
+        mutator.accept(data);
+        this.setData(MRDataAttachments.KILL_TRACKER, data);
+    }
+
 
     // Spell / spellbook lifecycle
 
@@ -517,8 +523,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         PacketDistributor.sendToPlayersTrackingEntity(
                 this, new SyncMercenaryDrinkPacket(this.getUUID(), chosen));
     }
-
-
 
 
     // Ranged attack
@@ -622,12 +626,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             }
         }
 
-        if (!this.level().isClientSide) {
-            this.level().getServer().execute(() -> {
-                if (this.isAlive() && !this.isRemoved()) requestNameSyncFromClient();
-            });
-        }
-
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData);
     }
 
@@ -638,17 +636,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     protected void initializeHumanLevel(RandomSource randomSource, KillTrackerData killTrackerData) {
         killTrackerData.initializeRandomSpawnLevel(randomSource);
-    }
-
-    protected void requestNameSyncFromClient() {
-        if (!this.level().isClientSide && this.isInitialized()) {
-            String currentName = this.getEntityName();
-            if (currentName == null || currentName.isEmpty()) {
-                PacketDistributor.sendToPlayersTrackingEntity(this,
-                        new SyncEntityLevelPacket(this.getId(), this.getUUID(),
-                                this.getData(MRDataAttachments.KILL_TRACKER).getCurrentLevel()));
-            }
-        }
     }
 
     protected void initializeClassSpells() {

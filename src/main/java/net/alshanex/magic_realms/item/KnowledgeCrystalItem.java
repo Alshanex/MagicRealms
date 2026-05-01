@@ -32,13 +32,13 @@ public class KnowledgeCrystalItem extends Item {
 
     @Override
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity interactionTarget, InteractionHand usedHand) {
-        if(interactionTarget instanceof AbstractMercenaryEntity mercenary){
+        if(interactionTarget instanceof AbstractMercenaryEntity mercenary && !player.level().isClientSide){
             KillTrackerData killData = mercenary.getData(MRDataAttachments.KILL_TRACKER);
             int level = killData.getCurrentLevel();
 
             if(level < Config.maxLevel){
                 int newLevel = level + 1;
-                killData.setLevel(newLevel);
+                mercenary.mutateKillTracker(d -> d.setLevel(newLevel));
 
                 spawnLevelUpEffects(mercenary);
                 mercenary.updateCustomNameWithStars();

@@ -136,12 +136,7 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
             return InteractionResult.FAIL;
         }
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            MercenarySpeechHelper.trySpeak(this, serverPlayer);
-            return InteractionResult.SUCCESS;
-        }
-
-        return InteractionResult.FAIL;
+        return super.mobInteract(player, hand);
     }
 
     @Override

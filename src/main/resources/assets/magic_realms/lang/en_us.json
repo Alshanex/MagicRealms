@@ -102,7 +102,7 @@
   "tooltip.magic_realms.contract.level_range": "Entity Level Range:",
   "tooltip.magic_realms.contract.usage": "Usage:",
   "tooltip.magic_realms.contract.usage_desc": "Right-click on Mercenaries to hire them",
-  "tooltip.magic_realms.hell_pass": "Give to any human to allow him survive fatal hits",
+  "tooltip.magic_realms.hell_pass": "Give to any mercenary to allow them survive fatal hits",
   "tooltip.magic_realms.permanent_contract.duration": "Duration:",
   "tooltip.magic_realms.permanent_contract.duration_desc": "Permanent - Never expires!",
   "tooltip.magic_realms.permanent_contract.level_range": "Level Range:",

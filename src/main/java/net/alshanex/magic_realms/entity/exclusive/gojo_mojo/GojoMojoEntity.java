@@ -89,7 +89,7 @@ public class GojoMojoEntity extends AbstractMercenaryEntity implements IExclusiv
             this.setImmortal(true);
             setFearedEntityTag(ModTags.GOJO_MOJO_FEARS);
             ItemStack maceStack = new ItemStack(Items.MACE);
-            maceStack.setDamageValue(maceStack.getMaxDamage() - 1);
+            maceStack.set(DataComponents.MAX_DAMAGE, 1);
             this.setItemSlot(EquipmentSlot.MAINHAND, maceStack);
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {

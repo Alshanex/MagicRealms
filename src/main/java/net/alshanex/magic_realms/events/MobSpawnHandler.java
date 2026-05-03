@@ -5,66 +5,88 @@ import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.tim.TimEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.animal.horse.ZombieHorse;
 import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 
 @EventBusSubscriber(modid = MagicRealms.MODID)
 public class MobSpawnHandler {
     @SubscribeEvent
-    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide()) {
-            return;
-        }
+    public static void onZombieSpawn(FinalizeSpawnEvent event) {
+        if (!(event.getEntity() instanceof Zombie zombie)) return;
+        if (zombie instanceof ZombifiedPiglin) return;
+        if (zombie instanceof ZombieVillager) return;
 
-        if(event.getEntity() instanceof Zombie zombie && !(event.getEntity() instanceof ZombifiedPiglin) && !(event.getEntity() instanceof ZombieVillager)
-                && !(event.getEntity() instanceof ZombieHorse)){
-            BlockPos pos = zombie.blockPosition();
+        if (event.getSpawnType() != MobSpawnType.NATURAL) return;
 
-            // Check cave conditions
-            if (pos.getY() > 50) return;
-            if (event.getLevel().canSeeSky(pos)) return;
-            if (event.getLevel().getBrightness(LightLayer.BLOCK, pos) > 0) return;
+        ServerLevelAccessor levelAccessor = event.getLevel();
+        ServerLevel serverLevel = levelAccessor.getLevel();
 
-            // 2% chance
-            if (zombie.getRandom().nextFloat() >= 0.02f) return;
+        BlockPos pos = zombie.blockPosition();
 
-            // Spawn Tim in place of the zombie
-            TimEntity tim = MREntityRegistry.TIM.get().create(event.getLevel());
-            if (tim != null) {
-                tim.moveTo(zombie.getX(), zombie.getY(), zombie.getZ(), zombie.getYRot(), zombie.getXRot());
-                tim.finalizeSpawn((ServerLevelAccessor) event.getLevel(), event.getLevel().getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
-                event.getLevel().addFreshEntity(tim);
+        // Cave conditions
+        if (pos.getY() > 50) return;
+        if (serverLevel.canSeeSky(pos)) return;
+        if (serverLevel.getBrightness(LightLayer.BLOCK, pos) > 0) return;
 
-                // Cancel the original zombie spawn
-                event.setCanceled(true);
-            }
+        // 2% chance
+        if (zombie.getRandom().nextFloat() >= 0.02f) return;
+
+        TimEntity tim = MREntityRegistry.TIM.get().create(serverLevel);
+        if (tim == null) return;
+
+        tim.moveTo(zombie.getX(), zombie.getY(), zombie.getZ(),
+                zombie.getYRot(), zombie.getXRot());
+        tim.finalizeSpawn(levelAccessor,
+                serverLevel.getCurrentDifficultyAt(pos),
+                MobSpawnType.NATURAL, null);
+
+        if (serverLevel.addFreshEntity(tim)) {
+            event.setSpawnCancelled(true);
         }
     }
 
     @SubscribeEvent
-    public static void onPillagerSpawn(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide()) return;
-        if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+    public static void onPillagerSpawn(FinalizeSpawnEvent event) {
         if (!(event.getEntity() instanceof Pillager pillager)) return;
 
+        // Only swap on natural/structure spawns. This excludes EVENT (raids), PATROL (patrol leaders), SPAWNER, MOB_SUMMONED, COMMAND, etc.
+        MobSpawnType type = event.getSpawnType();
+        if (type != MobSpawnType.NATURAL && type != MobSpawnType.STRUCTURE) return;
+
+        ServerLevelAccessor levelAccessor = event.getLevel();
+        if (!(levelAccessor.getLevel() instanceof ServerLevel serverLevel)) return;
+
         BlockPos pos = pillager.blockPosition();
+
+        // Confirm we're actually inside a Pillager Outpost.
+        Structure outpost = serverLevel.registryAccess()
+                .registryOrThrow(Registries.STRUCTURE)
+                .get(BuiltinStructures.PILLAGER_OUTPOST);
+        if (outpost == null) return;
+
+        StructureStart outpostStart = serverLevel.structureManager()
+                .getStructureWithPieceAt(pos, outpost);
+        if (!outpostStart.isValid()) return;
 
         // 10% roll
         if (pillager.getRandom().nextFloat() >= 0.10f) return;
 
-        HostileRandomHumanEntity bandit = new HostileRandomHumanEntity(event.getLevel(), "magic_realms:normal_bandit");
+        HostileRandomHumanEntity bandit = new HostileRandomHumanEntity(serverLevel.getLevel(), "magic_realms:normal_bandit");
         bandit.moveTo(pillager.getX(), pillager.getY(), pillager.getZ(), pillager.getYRot(), pillager.getXRot());
-        bandit.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
+        bandit.finalizeSpawn(levelAccessor, serverLevel.getCurrentDifficultyAt(pos), MobSpawnType.STRUCTURE, null);
 
-        if (event.getLevel().addFreshEntity(bandit)) {
-            event.setCanceled(true);
+        if (serverLevel.addFreshEntity(bandit)) {
+            event.setSpawnCancelled(true);
         }
     }
 }

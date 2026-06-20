@@ -214,8 +214,8 @@ public class TavernInteractionHandler {
 
                         // If successfully consumed, grant the buffs
                         if (consumed) {
-                            player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 6000, 0));
-                            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 6000, 5));
+                            player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 6000, 5));
+                            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 6000, 0));
                         }
                     }
                 }

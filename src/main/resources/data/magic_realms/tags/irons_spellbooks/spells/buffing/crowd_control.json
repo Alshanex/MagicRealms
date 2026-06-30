@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:arcane_shackle",
     "irons_spellbooks:root",
     "irons_spellbooks:slow",
     {"id": "cataclysm_spellbooks:desert_winds","required": false},

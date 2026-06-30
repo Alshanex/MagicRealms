@@ -1,7 +1,9 @@
 {
   "replace": false,
   "values": [
+    "irons_spellbooks:blizzard",
     "irons_spellbooks:earthquake",
+    "irons_spellbooks:fang_swirl",
     "irons_spellbooks:magma_bomb",
     "irons_spellbooks:poison_arrow",
     "irons_spellbooks:poison_splash",

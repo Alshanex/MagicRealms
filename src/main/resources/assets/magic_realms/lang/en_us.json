@@ -44,6 +44,13 @@
   "item.magic_realms.skin_customizer.creative": "Creative Mode only",
   "item.magic_realms.skin_customizer.preset_not_editable": "Doesn't work on preset texture mercenaries or custom mercenaries",
   "item.magic_realms.knowledge_crystal.tooltip": "Used to level up a mercenary",
+  "item.magic_realms.mage_enderman_spawn_egg": "Endermage Spawn Egg",
+  "item.magic_realms.magic_creeper_spawn_egg": "Fizzle Spawn Egg",
+  "item.magic_realms.human_mercenary_spawn_egg": "Mercenary Spawn Egg",
+  "item.magic_realms.tavernkeeper_spawn_egg": "Tavernkeeper Spawn Egg",
+  "item.magic_realms.bandit_spawn_egg": "Bandit Spawn Egg",
+  "item.magic_realms.zombie_mage_spawn_egg": "Tim Spawn Egg",
+  "item.magic_realms.magic_slime_spawn_egg": "Chuchu Spawn Egg",
 
   "itemGroup.magic_realms.main_tab": "Magic Realms",
 

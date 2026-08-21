@@ -37,6 +37,13 @@ public class MRCreativeTab {
                 entries.accept(MRItems.SKIN_CUSTOMIZER.get());
                 entries.accept(MRItems.FLOATING_ARROW_WEAPON.get());
                 entries.accept(MRItems.KNOWLEDGE_CRYSTAL.get());
+                entries.accept(MRItems.MAGE_ENDERMAN_SPAWN_EGG.get());
+                entries.accept(MRItems.MAGIC_CREEPER_SPAWN_EGG.get());
+                entries.accept(MRItems.MAGIC_SLIME_SPAWN_EGG.get());
+                entries.accept(MRItems.HUMAN_MERCENARY_SPAWN_EGG.get());
+                entries.accept(MRItems.BANDIT_SPAWN_EGG.get());
+                entries.accept(MRItems.TAVERNKEEPER_SPAWN_EGG.get());
+                entries.accept(MRItems.ZOMBIE_MAGE_SPAWN_EGG.get());
             })
             .withTabsBefore(CreativeTabRegistry.EQUIPMENT_TAB.getId())
             .build());

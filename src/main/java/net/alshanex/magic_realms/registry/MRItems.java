@@ -8,7 +8,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.List;
@@ -118,4 +120,81 @@ public class MRItems {
 
     public static final DeferredHolder<Item, Item> KNOWLEDGE_CRYSTAL =
             ITEMS.register("knowledge_crystal", KnowledgeCrystalItem::new);
+
+    public static final DeferredHolder<Item, Item> MAGE_ENDERMAN_SPAWN_EGG =
+            ITEMS.register(
+                    "mage_enderman_spawn_egg",
+                    properties -> new DeferredSpawnEggItem(
+                            MREntityRegistry.WIZARD_ENDERMAN,
+                            0x5A5A62,
+                            0xA8A8B0,
+                            new Item.Properties().stacksTo(64)
+                    )
+            );
+
+    public static final DeferredHolder<Item, Item> MAGIC_CREEPER_SPAWN_EGG =
+            ITEMS.register(
+                    "magic_creeper_spawn_egg",
+                    properties -> new DeferredSpawnEggItem(
+                            MREntityRegistry.MAGIC_CREEPER,
+                            0x4F9E5A,
+                            0xB84DFF,
+                            new Item.Properties().stacksTo(64)
+                    )
+            );
+
+    public static final DeferredHolder<Item, Item> MAGIC_SLIME_SPAWN_EGG =
+            ITEMS.register(
+                    "magic_slime_spawn_egg",
+                    properties -> new DeferredSpawnEggItem(
+                            MREntityRegistry.MAGIC_SLIME,
+                            0x4CBE9B,
+                            0x9B5CFF,
+                            new Item.Properties().stacksTo(64)
+                    )
+            );
+
+    public static final DeferredHolder<Item, Item> HUMAN_MERCENARY_SPAWN_EGG =
+            ITEMS.register(
+                    "human_mercenary_spawn_egg",
+                    properties -> new DeferredSpawnEggItem(
+                            MREntityRegistry.HUMAN,
+                            0x7A5A42,
+                            0xB0B0B0,
+                            new Item.Properties().stacksTo(64)
+                    )
+            );
+
+    public static final DeferredHolder<Item, Item> TAVERNKEEPER_SPAWN_EGG =
+            ITEMS.register(
+                    "tavernkeeper_spawn_egg",
+                    properties -> new DeferredSpawnEggItem(
+                            MREntityRegistry.TAVERNKEEP,
+                            0x8B5A2B,
+                            0xE6B85C,
+                            new Item.Properties().stacksTo(64)
+                    )
+            );
+
+    public static final DeferredHolder<Item, Item> BANDIT_SPAWN_EGG =
+            ITEMS.register(
+                    "bandit_spawn_egg",
+                    properties -> new DeferredSpawnEggItem(
+                            MREntityRegistry.HOSTILE_HUMAN,
+                            0x303035,
+                            0x7A3030,
+                            new Item.Properties().stacksTo(64)
+                    )
+            );
+
+    public static final DeferredHolder<Item, Item> ZOMBIE_MAGE_SPAWN_EGG =
+            ITEMS.register(
+                    "zombie_mage_spawn_egg",
+                    properties -> new DeferredSpawnEggItem(
+                            MREntityRegistry.TIM,
+                            0x54785A,
+                            0x8B4DCC,
+                            new Item.Properties().stacksTo(64)
+                    )
+            );
 }

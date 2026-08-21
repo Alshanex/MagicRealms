@@ -235,7 +235,7 @@ public class MagicSlimeEntity extends Slime {
     }
 
     @Override
-    public boolean hurt(DamageSource pSource, float pAmount) {
+    public boolean hurt(@NotNull DamageSource pSource, float pAmount) {
         float hurtAmount = pAmount;
 
         if(!this.level().isClientSide) {

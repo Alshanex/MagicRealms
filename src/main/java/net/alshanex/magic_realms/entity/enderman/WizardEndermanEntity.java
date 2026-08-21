@@ -73,7 +73,7 @@ public class WizardEndermanEntity extends AbstractSpellCastingMob {
                         List.of(SpellRegistry.MAGIC_MISSILE_SPELL.get(), SpellRegistry.STARFALL_SPELL.get()),
                         List.of(),
                         List.of(),
-                        List.of(SpellRegistry.EVASION_SPELL.get())
+                        List.of()
                 )
                 .setIsFlying()
                 .setAllowFleeing(true)
@@ -417,8 +417,11 @@ public class WizardEndermanEntity extends AbstractSpellCastingMob {
     }
 
     public static class WizardEndermanEvadeGazeGoal extends Goal {
+        private static final int COOLDOWN_TICKS = 100;
+
         private final WizardEndermanEntity enderman;
         private Player gazer;
+        private int nextUseTick;
 
         public WizardEndermanEvadeGazeGoal(WizardEndermanEntity enderman) {
             this.enderman = enderman;
@@ -427,6 +430,10 @@ public class WizardEndermanEntity extends AbstractSpellCastingMob {
 
         @Override
         public boolean canUse() {
+            if (enderman.tickCount < nextUseTick) {
+                return false;
+            }
+
             List<Player> players = enderman.level().getEntitiesOfClass(
                     Player.class,
                     enderman.getBoundingBox().inflate(64),
@@ -449,9 +456,10 @@ public class WizardEndermanEntity extends AbstractSpellCastingMob {
 
         @Override
         public void start() {
-            if (gazer != null) {
-                teleportToBlindSpot(gazer);
+            if (gazer != null && teleportToBlindSpot(gazer)) {
+                nextUseTick = enderman.tickCount + COOLDOWN_TICKS;
             }
+            gazer = null;
         }
 
         /**
@@ -477,7 +485,7 @@ public class WizardEndermanEntity extends AbstractSpellCastingMob {
          * Teleports far from the player, specifically to a position that is
          * behind or to the side of the player — outside their field of view.
          */
-        private void teleportToBlindSpot(Player player) {
+        private boolean teleportToBlindSpot(Player player) {
             Vec3 lookDir = player.getViewVector(1.0F).normalize().multiply(1, 0, 1).normalize();
             Level level = enderman.level();
 
@@ -559,8 +567,9 @@ public class WizardEndermanEntity extends AbstractSpellCastingMob {
                     enderman.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0F, 1.0F);
                 }
                 level.gameEvent(GameEvent.TELEPORT, enderman.position(), GameEvent.Context.of(enderman));
-                return;
+                return true;
             }
+            return false;
         }
     }
 

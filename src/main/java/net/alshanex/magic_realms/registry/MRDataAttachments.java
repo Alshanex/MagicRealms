@@ -13,14 +13,6 @@ public class MRDataAttachments {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES =
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MagicRealms.MODID);
 
-    public static final Supplier<AttachmentType<KillTrackerData>> KILL_TRACKER = ATTACHMENT_TYPES.register(
-            "kill_tracker",
-            () -> AttachmentType.builder(KillTrackerData::new)
-                    .serialize(KillTrackerData.CODEC)
-                    .sync(KillTrackerData.STREAM_CODEC)
-                    .build()
-    );
-
     public static final Supplier<AttachmentType<ContractData>> CONTRACT_DATA = ATTACHMENT_TYPES.register(
             "contract_data", () -> AttachmentType.builder(() -> new ContractData()).serialize(new ContractData.Serializer()).build()
     );
@@ -75,6 +67,14 @@ public class MRDataAttachments {
                     () -> AttachmentType.builder(FloatingArrowData::new)
                             .build()
             );
+
+    public static final Supplier<AttachmentType<TitleProgressData>> TITLE_PROGRESS = ATTACHMENT_TYPES.register(
+            "title_progress",
+            () -> AttachmentType.builder(TitleProgressData::new)
+                    .serialize(new TitleProgressData.Serializer())
+                    .sync(TitleProgressData.STREAM_CODEC)
+                    .build()
+    );
 
     public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);

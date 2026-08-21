@@ -4,10 +4,9 @@ import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.item.PermanentContractItem;
-import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.item.TemporaryContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.registry.MRItems;
@@ -15,16 +14,13 @@ import net.alshanex.magic_realms.util.humans.bandits.BanditProfile;
 import net.alshanex.magic_realms.util.humans.bandits.BanditProfileApplier;
 import net.alshanex.magic_realms.util.humans.bandits.BanditProfileCatalogHolder;
 import net.alshanex.magic_realms.util.humans.goals.HumanGoals;
-import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
-import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenarySpeechHelper;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.FixedPersonalityDef;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinPreset;
-import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -33,7 +29,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -136,7 +131,7 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         if (heldItem.is(MRItems.SKIN_CUSTOMIZER.get())) {
             return InteractionResult.FAIL;
         }
-        if (heldItem.getItem() instanceof TieredContractItem || heldItem.getItem() instanceof PermanentContractItem) {
+        if (heldItem.getItem() instanceof TemporaryContractItem || heldItem.getItem() instanceof PermanentContractItem) {
             return InteractionResult.FAIL;
         }
 
@@ -212,19 +207,6 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         if (profile != null) {
             BanditProfileApplier.applyEquipment(this, profile);
         }
-    }
-
-    @Override
-    protected void initializeHumanLevel(RandomSource randomSource, KillTrackerData killTrackerData) {
-        BanditProfile profile = resolveProfile();
-        if (profile != null) {
-            boolean handled = BanditProfileApplier.applyLevelRoll(this, profile, killTrackerData, randomSource);
-            if (handled) {
-                LevelingStatsManager.applyLevelBasedAttributes(this, killTrackerData.getCurrentLevel());
-                return;
-            }
-        }
-        super.initializeHumanLevel(randomSource, killTrackerData);
     }
 
     @Override

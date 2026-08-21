@@ -4,12 +4,12 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
-import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
+import net.alshanex.magic_realms.util.humans.titles.TitleCatalogHolder;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -77,38 +77,6 @@ public final class BanditProfileApplier {
         }
     }
 
-    public static boolean applyLevelRoll(HostileRandomHumanEntity entity, BanditProfile profile,
-                                         KillTrackerData killData, RandomSource random) {
-        if (profile == null) return false;
-        if (killData.isInitialized()) return true;
-
-        int maxLevel = Config.maxLevel;
-
-        Integer min = profile.minLevelAbsolute().orElse(null);
-        Integer max = profile.maxLevelAbsolute().orElse(null);
-
-        if (min == null || max == null) {
-            Float minPct = profile.minLevelPercent().orElse(null);
-            Float maxPct = profile.maxLevelPercent().orElse(null);
-            if (minPct != null || maxPct != null) {
-                float lo = minPct != null ? minPct : 0.0f;
-                float hi = maxPct != null ? maxPct : 1.0f;
-                if (hi < lo) hi = lo;
-                min = Math.max(1, Math.round(lo * maxLevel));
-                max = Math.max(min, Math.round(hi * maxLevel));
-            }
-        }
-
-        if (min == null || max == null) return false;
-
-        min = clamp(min, 1, maxLevel);
-        max = clamp(max, min, maxLevel);
-
-        int rolled = (max == min) ? min : (random.nextInt(max - min + 1) + min);
-        killData.setLevel(rolled);
-        return true;
-    }
-
     public static List<AbstractSpell> resolveSpells(HostileRandomHumanEntity entity, BanditProfile profile,
                                                     RandomSource random) {
         if (profile == null) return null;
@@ -160,11 +128,55 @@ public final class BanditProfileApplier {
             applyBoost(entity, profile, i, boost);
         }
 
+        // Titles come after the attribute boosts so their own modifiers layer on top. The actual attribute
+        // application is handled by TitleEffectTickHandler on the next tick, not here.
+        applyTitles(entity, profile);
+
         if (profile.immortal()) {
             entity.setImmortal(true);
         }
 
         entity.heal(entity.getMaxHealth());
+    }
+
+    /**
+     * Grant the profile's titles outright, bypassing their normal requirements, and pin the displayed one.
+     *
+     * <p>Uses {@link TitleManager#grantSilently} rather than the usual grant path: a bandit spawning shouldn't
+     * fire the level-up chime and particle burst that a mercenary earning a title through deeds does.
+     *
+     * <p>Unknown ids are dropped with a warning rather than granted, so a typo in a datapack doesn't leave the
+     * entity holding a title id nothing can resolve.
+     */
+    public static void applyTitles(HostileRandomHumanEntity entity, BanditProfile profile) {
+        if (profile == null || !profile.hasTitles()) return;
+        if (entity.level().isClientSide()) return;
+
+        var catalog = TitleCatalogHolder.server();
+        List<ResourceLocation> valid = new ArrayList<>(profile.titles().size());
+
+        for (ResourceLocation titleId : profile.titles()) {
+            if (catalog.contains(titleId)) {
+                valid.add(titleId);
+            } else {
+                MagicRealms.LOGGER.warn("Bandit profile {} references unknown title {}", profile.id(), titleId);
+            }
+        }
+
+        if (valid.isEmpty()) return;
+
+        TitleManager.grantSilently(entity, valid);
+
+        // Only pin a displayed title that was actually granted; setDisplayedTitle rejects unearned ids anyway,
+        // but warning here makes the datapack mistake visible instead of silently falling back.
+        profile.displayedTitle().ifPresent(displayId -> {
+            if (valid.contains(displayId)) {
+                TitleManager.setDisplayedTitle(entity, displayId);
+            } else {
+                MagicRealms.LOGGER.warn("Bandit profile {} sets displayed_title {} which is not in its titles list",
+                        profile.id(), displayId);
+            }
+        });
     }
 
     // Helpers
@@ -217,10 +229,6 @@ public final class BanditProfileApplier {
 
         instance.addPermanentModifier(new AttributeModifier(
                 modifierId, boost.modifier().amount(), boost.modifier().operation()));
-    }
-
-    private static int clamp(int v, int min, int max) {
-        return Math.max(min, Math.min(max, v));
     }
 
     private static String sanitizeId(String id) {

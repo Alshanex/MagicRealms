@@ -1,0 +1,27 @@
+{
+  "display_key": "title.magic_realms.dragonslayer",
+  "description_key": "title.magic_realms.dragonslayer.desc",
+  "color": "#D45CFF",
+  "priority": 100,
+  "requirement_mode": "all",
+  "requirements": [
+    { "type": "kill_entity", "target": "minecraft:ender_dragon", "amount": 1 }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.attack_damage",
+        "id": "magic_realms:dragonslayer_damage",
+        "amount": 3.0,
+        "operation": "add_value"
+      },
+      {
+        "attribute": "minecraft:generic.max_health",
+        "id": "magic_realms:dragonslayer_health",
+        "amount": 0.2,
+        "operation": "add_multiplied_base"
+      }
+    ],
+    "natural_regen": true
+  }
+}

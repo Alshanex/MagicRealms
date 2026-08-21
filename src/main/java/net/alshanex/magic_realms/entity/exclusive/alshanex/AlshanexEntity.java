@@ -6,7 +6,6 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
@@ -80,9 +79,7 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
-                    KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
-                    int currentLevel = killData.getCurrentLevel();
-                    this.updateCustomNameWithLevel(currentLevel);
+                    this.refreshDisplayName();
                 }
             });
         }

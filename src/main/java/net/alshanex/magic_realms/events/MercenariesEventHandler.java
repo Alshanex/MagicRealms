@@ -1,31 +1,16 @@
 package net.alshanex.magic_realms.events;
 
-import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
-import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.FireBossEntity;
-import io.redspace.ironsspellbooks.entity.spells.devour_jaw.DevourJaw;
-import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
-import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
-import io.redspace.ironsspellbooks.registries.ParticleRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
 import net.alshanex.magic_realms.entity.exclusive.gojo_mojo.GojoMojoEntity;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
-import net.alshanex.magic_realms.registry.MRDataAttachments;
-import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
-import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
@@ -33,14 +18,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 

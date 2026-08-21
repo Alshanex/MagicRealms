@@ -19,6 +19,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.ArchetypeCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.HobbyCatalogHolder;
+import net.alshanex.magic_realms.util.humans.titles.TitleSelectorWidget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -151,6 +152,13 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                 b -> onPatrolButtonClicked()
         ).bounds(buttonX, buttonY, buttonW, buttonH).build();
         this.addRenderableWidget(this.patrolToggleButton);
+
+        TitleSelectorWidget titleSelector = TitleSelectorWidget.create(
+                leftPos + 12, topPos + 117, 96, 12,
+                this.menu.getSnapshot(), this.menu.getEntity());
+        if (titleSelector != null) {
+            this.addRenderableWidget(titleSelector);
+        }
     }
 
     private Component getPatrolButtonLabel() {
@@ -685,9 +693,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         CompoundTag attributes = snapshot.attributes;
 
-        // Render experience bar and level
-        renderExperienceBar(guiGraphics);
-
         int startX = leftPos + ATTRIBUTES_START_X;
         int endX = leftPos + ATTRIBUTES_END_X;
         int firstLineY = topPos + ATTRIBUTES_START_Y;
@@ -729,56 +734,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
                 null,
                 ResourceLocation.withDefaultNamespace("hud/armor_full"),
                 armorText, 0xAAAAAA);
-    }
-
-    private void renderExperienceBar(GuiGraphics guiGraphics) {
-        if (snapshot == null) return;
-
-        int barX = leftPos + EXP_BAR_X;
-        int barY = topPos + EXP_BAR_Y;
-
-        // Get level data
-        int currentLevel = snapshot.currentLevel;
-        int currentExp = snapshot.experiencePoints;
-
-        // Calculate experience for next level (same formula as in KillTrackerData)
-        int expForCurrentLevel = (int) (200 * currentLevel * (net.alshanex.magic_realms.Config.xpNeededMultiplier / 100));
-        int expForNextLevel = (int) (200 * (currentLevel + 1) * (net.alshanex.magic_realms.Config.xpNeededMultiplier / 100));
-
-        int expIntoLevel = currentExp - expForCurrentLevel;
-        int expNeeded = expForNextLevel - expForCurrentLevel;
-
-        // Calculate progress (0.0 to 1.0)
-        float progress = expNeeded > 0 ? (float) expIntoLevel / expNeeded : 0.0f;
-        progress = Math.max(0.0f, Math.min(1.0f, progress));
-
-        // Render experience bar background (dark)
-        guiGraphics.fill(barX, barY, barX + EXP_BAR_WIDTH, barY + EXP_BAR_HEIGHT, 0xFF000000);
-
-        // Render experience bar fill (green)
-        int fillWidth = (int) (EXP_BAR_WIDTH * progress);
-        if (fillWidth > 0) {
-            guiGraphics.fill(barX, barY, barX + fillWidth, barY + EXP_BAR_HEIGHT, 0xFF00FF00);
-        }
-
-        // Render border
-        // Top border
-        guiGraphics.fill(barX, barY - 1, barX + EXP_BAR_WIDTH, barY, 0xFF555555);
-        // Bottom border
-        guiGraphics.fill(barX, barY + EXP_BAR_HEIGHT, barX + EXP_BAR_WIDTH, barY + EXP_BAR_HEIGHT + 1, 0xFF555555);
-        // Left border
-        guiGraphics.fill(barX - 1, barY, barX, barY + EXP_BAR_HEIGHT, 0xFF555555);
-        // Right border
-        guiGraphics.fill(barX + EXP_BAR_WIDTH, barY, barX + EXP_BAR_WIDTH + 1, barY + EXP_BAR_HEIGHT, 0xFF555555);
-
-        // Render level number centered below the bar (vanilla style)
-        String levelText = String.valueOf(currentLevel);
-        int textWidth = font.width(levelText);
-        int textX = barX + (EXP_BAR_WIDTH / 2) - (textWidth / 2);
-        int textY = barY + EXP_BAR_HEIGHT + 2;
-
-        // Render level text with shadow (green like vanilla)
-        guiGraphics.drawString(font, levelText, textX, textY, 0x80FF20, true);
     }
 
     private int renderAttributeWithIcon(GuiGraphics guiGraphics, int x, int y,

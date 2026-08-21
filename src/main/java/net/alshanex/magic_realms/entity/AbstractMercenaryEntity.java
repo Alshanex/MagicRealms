@@ -33,7 +33,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
 import net.alshanex.magic_realms.util.humans.stats.HumanStatsManager;
-import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -425,12 +425,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
-    public void mutateKillTracker(Consumer<KillTrackerData> mutator) {
-        KillTrackerData data = this.getData(MRDataAttachments.KILL_TRACKER);
-        mutator.accept(data);
-        this.setData(MRDataAttachments.KILL_TRACKER, data);
-    }
-
 
     // Spell / spellbook lifecycle
 
@@ -543,23 +537,20 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
     // Name display
 
+    @Deprecated
     public void updateCustomNameWithStars() {
-        String entityName = this.entityData.get(ENTITY_NAME);
-        if (entityName.isEmpty()) return;
-
-        KillTrackerData data = this.getData(MRDataAttachments.KILL_TRACKER);
-        int currentLevel = data.getCurrentLevel();
-        this.setCustomName(Component.literal(entityName + " Lv. " + currentLevel));
-        this.setCustomNameVisible(true);
+        refreshDisplayName();
     }
 
-    public void updateCustomNameWithLevel(int level) {
-        String entityName = this.entityData.get(ENTITY_NAME);
-        if (entityName.isEmpty()) return;
-        this.setCustomName(Component.literal(entityName + " Lv. " + level));
-        this.setCustomNameVisible(true);
+    public void refreshDisplayName() {
+        TitleManager.refreshDisplayName(this);
     }
 
+    public void mutateTitleProgress(Consumer<TitleProgressData> mutator) {
+        TitleProgressData data = this.getData(MRDataAttachments.TITLE_PROGRESS);
+        mutator.accept(data);
+        this.setData(MRDataAttachments.TITLE_PROGRESS, data);
+    }
 
     // Interaction
 
@@ -599,13 +590,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
             HumanStatsManager.applyClassAttributes(this);
 
-            KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
-            initializeHumanLevel(randomsource, killData);
-
-            int spawnLevel = killData.getCurrentLevel();
-            LevelingStatsManager.applyLevelBasedAttributes(this, spawnLevel);
-
             this.setInitialized(true);
+
+            refreshDisplayName();
 
             initializeClassSpells();
 
@@ -632,10 +619,6 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     protected void initializePersonality(RandomSource randomSource) {
         RandomSource deterministic = getDeterministicRandom();
         PersonalityInitializer.initializeFor(this, deterministic);
-    }
-
-    protected void initializeHumanLevel(RandomSource randomSource, KillTrackerData killTrackerData) {
-        killTrackerData.initializeRandomSpawnLevel(randomSource);
     }
 
     protected void initializeClassSpells() {

@@ -1,0 +1,26 @@
+{
+  "display_key": "title.magic_realms.living_legend",
+  "description_key": "title.magic_realms.living_legend.desc",
+  "color": "#FFE066",
+  "priority": 200,
+  "requirement_mode": "all",
+  "requirements": [
+    { "type": "has_title", "target": "magic_realms:veteran" },
+    { "type": "has_title", "target": "magic_realms:sworn_sword" },
+    { "type": "boss_kills", "amount": 10 }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.attack_damage",
+        "id": "magic_realms:legend_damage",
+        "amount": 0.15,
+        "operation": "add_multiplied_total"
+      }
+    ],
+    "passive_effects": [
+      { "effect": "minecraft:hero_of_the_village", "amplifier": 0, "show_particles": false }
+    ],
+    "natural_regen": true
+  }
+}

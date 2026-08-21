@@ -3,12 +3,15 @@
   "entity_class": "warrior",
   "gender": "male",
   "has_shield": false,
-  "min_level_percent": 0.5,
-  "max_level_percent": 0.8,
   "entity_scale": 2.0,
   "star_level": 3,
   "override_name": "Corn",
   "skin_preset": "magic_realms:leon",
+  "titles": [
+    "magic_realms:veteran",
+    "magic_realms:unbroken"
+  ],
+  "displayed_title": "magic_realms:unbroken",
   "magic_schools": [
     "irons_spellbooks:fire",
     "irons_spellbooks:evocation"

@@ -676,10 +676,6 @@ public class MRUtils {
             // cap length to avoid abuse
             if (trimmed.length() > 32) trimmed = trimmed.substring(0, 32);
             human.setEntityName(trimmed);
-
-            // Refresh the visible nameplate with the current level
-            var killData = human.getData(MRDataAttachments.KILL_TRACKER);
-            human.updateCustomNameWithLevel(killData.getCurrentLevel());
         }
     }
 

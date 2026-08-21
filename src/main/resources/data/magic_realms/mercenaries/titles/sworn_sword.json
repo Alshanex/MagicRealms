@@ -1,0 +1,25 @@
+{
+  "display_key": "title.magic_realms.sworn_sword",
+  "description_key": "title.magic_realms.sworn_sword.desc",
+  "color": "#8FB8FF",
+  "priority": 50,
+  "requirements": [
+    { "type": "contract_minutes", "amount": 600 }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "id": "magic_realms:sworn_sword_health",
+        "amount": 4.0,
+        "operation": "add_value"
+      },
+      {
+        "attribute": "minecraft:generic.movement_speed",
+        "id": "magic_realms:sworn_sword_speed",
+        "amount": 0.08,
+        "operation": "add_multiplied_base"
+      }
+    ]
+  }
+}

@@ -1,25 +1,22 @@
 package net.alshanex.magic_realms.util.humans.mercenaries;
 
 import io.redspace.ironsspellbooks.api.magic.MagicData;
-import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
-import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.ChairSittingData;
 import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.events.ArchetypeInteractionTickHandler;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.events.QuirkEffectHandler;
+import net.alshanex.magic_realms.events.TitleEffectTickHandler;
 import net.alshanex.magic_realms.particles.StunParticleEffect;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.player.Player;
@@ -54,6 +51,10 @@ public final class MercenaryTickHandler {
             ArchetypeInteractionTickHandler.tick(entity);
         }
 
+        if (serverSide && entity.tickCount % TitleEffectTickHandler.CHECK_INTERVAL_TICKS == 0) {
+            TitleEffectTickHandler.tick(entity);
+        }
+
         QuirkEffectHandler.tickQuirks(entity);
 
         if (serverSide) {
@@ -80,8 +81,7 @@ public final class MercenaryTickHandler {
         }
 
         if (serverSide) {
-            KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
-            if (killData.hasNaturalRegen() && entity.getHealth() < entity.getMaxHealth()) {
+            if (entity.getHealth() < entity.getMaxHealth() && TitleManager.hasNaturalRegen(entity)) {
                 handleNaturalRegeneration(entity);
             }
             if (entity.isStunned()) {

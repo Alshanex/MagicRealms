@@ -19,24 +19,18 @@ public class MRCreativeTab {
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MAIN_TAB = TABS.register("magic_realms_main", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup." + MagicRealms.MODID + ".main_tab"))
-            .icon(() -> new ItemStack(MRItems.CONTRACT_NOVICE))
+            .icon(() -> new ItemStack(MRItems.CONTRACT_TEMPORARY))
             .displayItems((enabledFeatures, entries) -> {
                 entries.accept(MRItems.CONTRACT_PERMANENT.get());
-                entries.accept(MRItems.CONTRACT_NOVICE.get());
-                entries.accept(MRItems.CONTRACT_EXPERT.get());
-                entries.accept(MRItems.CONTRACT_MASTER.get());
-                entries.accept(MRItems.CONTRACT_APPRENTICE.get());
-                entries.accept(MRItems.CONTRACT_JOURNEYMAN.get());
+                entries.accept(MRItems.CONTRACT_TEMPORARY.get());
                 entries.accept(MRItems.SLEEPING_PASS.get());
                 entries.accept(MRItems.HELL_PASS.get());
                 entries.accept(MRItems.BLOOD_PACT.get());
                 entries.accept(MRItems.PERMANENT_BLOOD_PACT.get());
-                //entries.accept(MRItems.MIDAS_COIN.get());
                 entries.accept(MRItems.WOODEN_CHAIR.get());
                 entries.accept(MRItems.WOODEN_CHAIR_SIMPLE.get());
                 entries.accept(MRItems.SKIN_CUSTOMIZER.get());
                 entries.accept(MRItems.FLOATING_ARROW_WEAPON.get());
-                entries.accept(MRItems.KNOWLEDGE_CRYSTAL.get());
                 entries.accept(MRItems.MAGE_ENDERMAN_SPAWN_EGG.get());
                 entries.accept(MRItems.MAGIC_CREEPER_SPAWN_EGG.get());
                 entries.accept(MRItems.MAGIC_SLIME_SPAWN_EGG.get());

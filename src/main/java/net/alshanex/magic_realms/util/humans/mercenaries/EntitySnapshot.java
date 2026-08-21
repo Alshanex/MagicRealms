@@ -4,7 +4,6 @@ import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.data.PersonalityData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
@@ -12,6 +11,9 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.TextureComponents;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
+import net.alshanex.magic_realms.util.humans.titles.Title;
+import net.alshanex.magic_realms.util.humans.titles.TitleCatalogHolder;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -37,9 +39,10 @@ public class EntitySnapshot {
     public final Gender gender;
     public final EntityClass entityClass;
     public final int starLevel;
-    public final int currentLevel;
-    public final int totalKills;
-    public final int experiencePoints;
+    /** Ids of every title the mercenary has earned, in catalog (priority) order. */
+    public final List<String> earnedTitles;
+    /** Id of the title currently shown on the nameplate, or null when none is shown. */
+    public final String displayedTitle;
     public final boolean hasShield;
     public final boolean isArcher;
     public final List<String> magicSchools;
@@ -53,20 +56,19 @@ public class EntitySnapshot {
     public final List<String> quirkIds;
 
     public EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
-                         int starLevel, int currentLevel, int totalKills, int experiencePoints,
-                         boolean hasShield, boolean isArcher, List<String> magicSchools,
-                         CompoundTag attributes, CompoundTag equipment, List<String> entitySpells,
-                         String archetypeId, String hobbyId, List<String> quirkIds,
-                         EntityType<? extends AbstractMercenaryEntity> entityType,
-                         CompoundTag textureComponents) {
+                          int starLevel, List<String> earnedTitles, String displayedTitle,
+                          boolean hasShield, boolean isArcher, List<String> magicSchools,
+                          CompoundTag attributes, CompoundTag equipment, List<String> entitySpells,
+                          String archetypeId, String hobbyId, List<String> quirkIds,
+                          EntityType<? extends AbstractMercenaryEntity> entityType,
+                          CompoundTag textureComponents) {
         this.entityUUID = entityUUID;
         this.entityName = entityName;
         this.gender = gender;
         this.entityClass = entityClass;
         this.starLevel = starLevel;
-        this.currentLevel = currentLevel;
-        this.totalKills = totalKills;
-        this.experiencePoints = experiencePoints;
+        this.earnedTitles = earnedTitles != null ? new ArrayList<>(earnedTitles) : new ArrayList<>();
+        this.displayedTitle = displayedTitle;
         this.hasShield = hasShield;
         this.isArcher = isArcher;
         this.magicSchools = magicSchools;
@@ -80,9 +82,28 @@ public class EntitySnapshot {
         this.textureComponents = textureComponents;
     }
 
-    public static EntitySnapshot fromEntity(AbstractMercenaryEntity entity) {
-        KillTrackerData killData = entity.getData(MRDataAttachments.KILL_TRACKER);
+    public List<Title> resolveTitles(boolean clientSide) {
+        if (earnedTitles.isEmpty()) return List.of();
 
+        List<ResourceLocation> ids = new ArrayList<>(earnedTitles.size());
+        for (String raw : earnedTitles) {
+            ResourceLocation id = ResourceLocation.tryParse(raw);
+            if (id != null) ids.add(id);
+        }
+        return TitleCatalogHolder.get(clientSide).resolve(ids);
+    }
+
+    public Title resolveDisplayedTitle(boolean clientSide) {
+        if (displayedTitle == null || displayedTitle.isEmpty()) return null;
+        ResourceLocation id = ResourceLocation.tryParse(displayedTitle);
+        return id == null ? null : TitleCatalogHolder.get(clientSide).byId(id);
+    }
+
+    public boolean hasTitles() {
+        return !earnedTitles.isEmpty();
+    }
+
+    public static EntitySnapshot fromEntity(AbstractMercenaryEntity entity) {
         List<String> schools = entity.getMagicSchools().stream()
                 .map(school -> school.getId().toString())
                 .toList();
@@ -112,6 +133,19 @@ public class EntitySnapshot {
             }
         }
 
+        // Capture titles (catalog may be empty on a fresh world — snapshot whatever is there)
+        List<String> earnedTitles = new ArrayList<>();
+        String displayedTitle = null;
+        try {
+            for (Title title : TitleManager.earnedTitles(entity)) {
+                earnedTitles.add(title.id().toString());
+            }
+            Title shown = TitleManager.displayedTitle(entity);
+            if (shown != null) displayedTitle = shown.id().toString();
+        } catch (Exception e) {
+            MagicRealms.LOGGER.debug("Could not capture title data for snapshot: {}", e.getMessage());
+        }
+
         // Capture personality (may be null/uninitialized — we still snapshot what's there)
         String archetypeId = null;
         String hobbyId = null;
@@ -137,9 +171,8 @@ public class EntitySnapshot {
                 entity.getGender(),
                 entity.getEntityClass(),
                 entity.getStarLevel(),
-                killData.getCurrentLevel(),
-                killData.getTotalKills(),
-                killData.getExperiencePoints(),
+                earnedTitles,
+                displayedTitle,
                 entity.hasShield(),
                 entity.isArcher(),
                 schools,
@@ -316,11 +349,19 @@ public class EntitySnapshot {
         tag.putString("gender", gender.getName());
         tag.putString("entity_class", entityClass.getName());
         tag.putInt("star_level", starLevel);
-        tag.putInt("current_level", currentLevel);
-        tag.putInt("total_kills", totalKills);
-        tag.putInt("experience_points", experiencePoints);
         tag.putBoolean("has_shield", hasShield);
         tag.putBoolean("is_archer", isArcher);
+
+        if (!earnedTitles.isEmpty()) {
+            ListTag titlesTag = new ListTag();
+            for (String title : earnedTitles) {
+                titlesTag.add(StringTag.valueOf(title));
+            }
+            tag.put("earned_titles", titlesTag);
+        }
+        if (displayedTitle != null && !displayedTitle.isEmpty()) {
+            tag.putString("displayed_title", displayedTitle);
+        }
 
         ListTag schoolsTag = new ListTag();
         for (String school : magicSchools) {
@@ -366,11 +407,19 @@ public class EntitySnapshot {
             Gender gender = Gender.valueOf(tag.getString("gender").toUpperCase());
             EntityClass entityClass = EntityClass.valueOf(tag.getString("entity_class").toUpperCase());
             int starLevel = tag.getInt("star_level");
-            int currentLevel = tag.getInt("current_level");
-            int totalKills = tag.getInt("total_kills");
-            int experiencePoints = tag.getInt("experience_points");
             boolean hasShield = tag.getBoolean("has_shield");
             boolean isArcher = tag.getBoolean("is_archer");
+
+            List<String> earnedTitles = new java.util.ArrayList<>();
+            if (tag.contains("earned_titles")) {
+                ListTag titlesTag = tag.getList("earned_titles", 8);
+                for (int i = 0; i < titlesTag.size(); i++) {
+                    String t = titlesTag.getString(i);
+                    if (!t.isEmpty()) earnedTitles.add(t);
+                }
+            }
+            String displayedTitle = tag.contains("displayed_title") ? tag.getString("displayed_title") : null;
+            if (displayedTitle != null && displayedTitle.isEmpty()) displayedTitle = null;
 
             List<String> schools = new java.util.ArrayList<>();
             ListTag schoolsTag = tag.getList("magic_schools", 8);
@@ -422,7 +471,7 @@ public class EntitySnapshot {
                     tag.getCompound("texture_components") : null;
 
             return new EntitySnapshot(entityUUID, entityName, gender, entityClass, starLevel,
-                    currentLevel, totalKills, experiencePoints, hasShield, isArcher,
+                    earnedTitles, displayedTitle, hasShield, isArcher,
                     schools, attributes, equipment, spells,
                     archetypeId, hobbyId, quirkIds,
                     entityType, textureComponents);

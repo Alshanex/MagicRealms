@@ -1,0 +1,20 @@
+{
+  "display_key": "title.magic_realms.veteran",
+  "description_key": "title.magic_realms.veteran.desc",
+  "color": "gold",
+  "priority": 40,
+  "requirements": [
+    { "type": "total_kills", "amount": 1000 }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.armor",
+        "id": "magic_realms:veteran_armor",
+        "amount": 3.0,
+        "operation": "add_value"
+      }
+    ],
+    "incoming_damage_multiplier": 0.95
+  }
+}

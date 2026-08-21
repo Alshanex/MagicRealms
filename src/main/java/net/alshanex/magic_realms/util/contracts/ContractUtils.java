@@ -2,10 +2,8 @@ package net.alshanex.magic_realms.util.contracts;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
-import net.alshanex.magic_realms.item.TieredContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
@@ -86,7 +84,7 @@ public class ContractUtils {
             humanEntity.setSummoner(player);
         }
 
-        humanEntity.updateCustomNameWithStars();
+        humanEntity.refreshDisplayName();
 
         if (player instanceof ServerPlayer serverPlayer) {
             MutableComponent message;
@@ -100,55 +98,42 @@ public class ContractUtils {
         }
     }
 
-    public static void handleTieredContractCreation(Player player,
-                                                    AbstractMercenaryEntity humanEntity,
-                                                    ContractData contractData,
-                                                    ItemStack heldItem,
-                                                    TieredContractItem tieredContract) {
+    public static void handleTemporaryContractCreation(Player player,
+                                                       AbstractMercenaryEntity humanEntity,
+                                                       ContractData contractData,
+                                                       ItemStack heldItem) {
 
         Level level = humanEntity.level();
 
+        // Someone else already holds this mercenary's contract.
         if (contractData.hasActiveContract(level) && !contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message;
-                message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.already_have_contract");
+                MutableComponent message = MercenaryMessageFormatter.buildFor(
+                        humanEntity, "ui.magic_realms.already_have_contract");
                 serverPlayer.sendSystemMessage(message);
             }
             return;
         }
 
+        // Already permanently bound to this player — a temporary contract would be a downgrade.
         if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
-                        "ui.magic_realms.contract_already_permanent");
+                MutableComponent message = MercenaryMessageFormatter.buildFor(
+                        humanEntity, "ui.magic_realms.contract_already_permanent");
                 serverPlayer.sendSystemMessage(message);
             }
             return;
         }
 
-        ContractTier requiredTier = ContractTier.getRequiredTierForLevel(
-                humanEntity.getData(MRDataAttachments.KILL_TRACKER).getCurrentLevel());
-
-        if (tieredContract.getTier().ordinal() < requiredTier.ordinal()) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message;
-                message = MercenaryMessageFormatter.buildFor(humanEntity,
-                        "ui.magic_realms.entity_level_too_low");
-
-                serverPlayer.sendSystemMessage(message);
-            }
-            return;
-        }
-
-        int starLevel = humanEntity.getStarLevel();
-        int additionalMinutes = contractData.getAdditionalMinutesForStarLevel(starLevel);
+        // No level gate any more: if the mercenary is free, anyone can hire them.
+        int contractMinutes = contractData.getContractMinutes();
         boolean isRenewal = contractData.isContractor(player.getUUID(), level);
 
         boolean success;
         if (isRenewal) {
-            success = contractData.renewContract(player.getUUID(), starLevel, level);
+            success = contractData.renewContract(player.getUUID(), level);
         } else {
-            success = contractData.trySetTemporaryContract(player.getUUID(), starLevel, level);
+            success = contractData.trySetTemporaryContract(player.getUUID(), level);
             if (success) {
                 humanEntity.setSummoner(player);
             }
@@ -156,23 +141,21 @@ public class ContractUtils {
 
         if (!success) {
             if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = Component.translatable("ui.magic_realms.contract_failed");
-                message = message.withStyle(ChatFormatting.RED);
+                MutableComponent message = Component.translatable("ui.magic_realms.contract_failed")
+                        .withStyle(ChatFormatting.RED);
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
             }
             return;
         }
 
+        humanEntity.refreshDisplayName();
+
         if (player instanceof ServerPlayer serverPlayer) {
-            MutableComponent message;
-            if (isRenewal) {
-                message = MercenaryMessageFormatter.buildFor(humanEntity,
-                        "ui.magic_realms.contract_extended", additionalMinutes);
-            } else {
-                message = MercenaryMessageFormatter.buildFor(humanEntity,
-                        "ui.magic_realms.contract_established", additionalMinutes);
-            }
-            serverPlayer.sendSystemMessage(message);
+            String key = isRenewal
+                    ? "ui.magic_realms.contract_extended"
+                    : "ui.magic_realms.contract_established";
+            serverPlayer.sendSystemMessage(
+                    MercenaryMessageFormatter.buildFor(humanEntity, key, contractMinutes));
         }
 
         if (!player.getAbilities().instabuild) {
@@ -205,7 +188,7 @@ public class ContractUtils {
                 }
             } else {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    sendIntroductionMessage(serverPlayer, humanEntity, contractData);
+                    sendIntroductionMessage(serverPlayer, humanEntity, humanEntity.getEntityClass());
                 }
             }
             return;
@@ -288,45 +271,30 @@ public class ContractUtils {
         });
     }
 
-    public static void sendIntroductionMessage(ServerPlayer serverPlayer, AbstractMercenaryEntity humanEntity, ContractData contractData) {
-        String entityName = humanEntity.getEntityName();
-        EntityClass entityClass = humanEntity.getEntityClass();
+    private static void sendIntroductionMessage(ServerPlayer serverPlayer,
+                                                AbstractMercenaryEntity humanEntity,
+                                                EntityClass entityClass) {
 
-        KillTrackerData killTracker = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
-        int entityLevel = killTracker.getCurrentLevel();
-        ContractTier requiredTier = ContractTier.getRequiredTierForLevel(entityLevel);
-        int contractMinutes = contractData.getAdditionalMinutesForStarLevel(humanEntity.getStarLevel());
+        int contractMinutes = humanEntity.getData(MRDataAttachments.CONTRACT_DATA).getContractMinutes();
 
         String messageKey;
         switch (entityClass) {
-            case WARRIOR -> {
-                if(humanEntity.hasShield()){
-                    messageKey = "ui.magic_realms.introduction.warrior";
-                } else {
-                    messageKey = "ui.magic_realms.introduction.warrior_no_shield";
-                }
-            }
-            case ROGUE -> {
-                if (humanEntity.isArcher()) {
-                    messageKey = "ui.magic_realms.introduction.archer";
-                } else {
-                    messageKey = "ui.magic_realms.introduction.assassin";
-                }
-            }
+            case WARRIOR -> messageKey = humanEntity.hasShield()
+                    ? "ui.magic_realms.introduction.warrior"
+                    : "ui.magic_realms.introduction.warrior_no_shield";
+            case ROGUE -> messageKey = humanEntity.isArcher()
+                    ? "ui.magic_realms.introduction.archer"
+                    : "ui.magic_realms.introduction.assassin";
             case MAGE -> messageKey = "ui.magic_realms.introduction.mage";
             default -> messageKey = "ui.magic_realms.introduction.default";
         }
 
-        if(humanEntity instanceof IExclusiveMercenary exclusiveMercenary){
+        if (humanEntity instanceof IExclusiveMercenary exclusiveMercenary) {
             messageKey = exclusiveMercenary.getExclusiveMercenaryPresentationMessage();
         }
 
-        MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
-                messageKey,
-                requiredTier.getDisplayName().getString(),
-                contractMinutes);
-
-        serverPlayer.sendSystemMessage(message);
+        serverPlayer.sendSystemMessage(
+                MercenaryMessageFormatter.buildFor(humanEntity, messageKey, contractMinutes));
     }
 
     private static class ContractMenuProvider implements MenuProvider {

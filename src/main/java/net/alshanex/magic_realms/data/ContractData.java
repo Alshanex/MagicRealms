@@ -25,10 +25,6 @@ public class ContractData implements INBTSerializable<CompoundTag> {
     // Last time update (in game ticks)
     private long lastTimeUpdate = 0;
 
-    // Convert config minutes to ticks (20 ticks per second, 60 seconds per minute)
-    private static final long PERMANENT_CONTRACT_REQUIREMENT = Config.minutesUntilPermanent * 60 * 20L; // In ticks
-    private static final long ONE_STAR_DURATION = (long) Config.minutesPerContract * 60 * 20L; // In ticks
-
     public ContractData() {
         this.contractorUUID = null;
         this.contractStartTime = 0;
@@ -57,8 +53,16 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.lastTimeUpdate = this.contractStartTime;
     }
 
-    public static long getBaseDurationForStarLevel(int starLevel) {
-        return ONE_STAR_DURATION;
+    public static long getContractDuration() {
+        return contractDuration();
+    }
+
+    private static long permanentContractRequirement() {
+        return (long) Config.minutesUntilPermanent * 60 * 20L;
+    }
+
+    private static long contractDuration() {
+        return (long) Config.minutesPerContract * 60 * 20L;
     }
 
     public boolean hasActiveContract(Level level) {
@@ -74,13 +78,13 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         return hasActiveContract(level) && contractorUUID != null && contractorUUID.equals(playerUUID);
     }
 
-    public void setContract(UUID playerUUID, int starLevel, Level level) {
-        // Update time of previous contract if exists
+    public void setContract(UUID playerUUID, Level level) {
+        // Update time of previous contract if one exists
         updateTotalContractTime(level);
 
         this.contractorUUID = playerUUID;
         this.contractStartTime = level.getGameTime();
-        this.totalContractDuration = getBaseDurationForStarLevel(starLevel);
+        this.totalContractDuration = contractDuration();
         this.isPermanent = false;
         this.lastTimeUpdate = this.contractStartTime;
     }
@@ -96,17 +100,14 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.lastTimeUpdate = this.contractStartTime;
     }
 
-    public void extendContract(int starLevel) {
+    public void extendContract() {
         if (!hasActiveContract(null)) {
             throw new IllegalStateException("Cannot extend a contract that is not active");
         }
-
         if (isPermanent) {
             throw new IllegalStateException("Cannot extend a permanent contract");
         }
-
-        long additionalDuration = getBaseDurationForStarLevel(starLevel);
-        this.totalContractDuration += additionalDuration;
+        this.totalContractDuration += contractDuration();
     }
 
     public boolean canEstablishTemporaryContract(UUID playerUUID, Level level) {
@@ -137,12 +138,11 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         return contractorUUID != null && contractorUUID.equals(playerUUID);
     }
 
-    public boolean trySetTemporaryContract(UUID playerUUID, int starLevel, Level level) {
+    public boolean trySetTemporaryContract(UUID playerUUID, Level level) {
         if (!canEstablishTemporaryContract(playerUUID, level)) {
             return false;
         }
-
-        setContract(playerUUID, starLevel, level);
+        setContract(playerUUID, level);
         return true;
     }
 
@@ -191,19 +191,18 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         return info.toString();
     }
 
-    public boolean renewContract(UUID playerUUID, int starLevel, Level level) {
+    public boolean renewContract(UUID playerUUID, Level level) {
         if (contractorUUID == null || !contractorUUID.equals(playerUUID)) {
             return false;
         }
-
         if (isPermanent) {
             return true;
         }
 
         if (hasActiveContract(level)) {
-            extendContract(starLevel);
+            extendContract();
         } else {
-            setContract(playerUUID, starLevel, level);
+            setContract(playerUUID, level);
         }
         return true;
     }
@@ -281,7 +280,7 @@ public class ContractData implements INBTSerializable<CompoundTag> {
             totalTime += currentContractTime;
         }
 
-        return totalTime >= PERMANENT_CONTRACT_REQUIREMENT;
+        return totalTime >= permanentContractRequirement();
     }
 
     public int getTotalContractTimeMinutes(UUID playerUUID, Level level) {
@@ -321,7 +320,7 @@ public class ContractData implements INBTSerializable<CompoundTag> {
             totalTime += currentContractTime;
         }
 
-        long remainingTime = PERMANENT_CONTRACT_REQUIREMENT - totalTime;
+        long remainingTime = permanentContractRequirement() - totalTime;
         return (int) (remainingTime / (60 * 20));
     }
 
@@ -329,7 +328,7 @@ public class ContractData implements INBTSerializable<CompoundTag> {
      * Gets minimum required minutes for permanent contracts
      */
     public static int getMinimumRequiredMinutes() {
-        return (int) (PERMANENT_CONTRACT_REQUIREMENT / (60 * 20));
+        return (int) (permanentContractRequirement() / (60 * 20));
     }
 
     public UUID getContractorUUID() {
@@ -371,9 +370,8 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         return level.getGameTime() - contractStartTime;
     }
 
-    public int getAdditionalMinutesForStarLevel(int starLevel) {
-        long additionalDuration = getBaseDurationForStarLevel(starLevel);
-        return (int) (additionalDuration / (60 * 20));
+    public int getContractMinutes() {
+        return (int) (contractDuration() / (60 * 20));
     }
 
     public boolean isPermanent() {
@@ -428,7 +426,7 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         this.lastTimeUpdate = tag.getLong("last_time_update");
 
         if (this.totalContractDuration == 0 && this.contractorUUID != null && !this.isPermanent) {
-            this.totalContractDuration = ONE_STAR_DURATION;
+            this.totalContractDuration = contractDuration();
         }
 
         if (this.lastTimeUpdate == 0 && this.contractStartTime != 0) {

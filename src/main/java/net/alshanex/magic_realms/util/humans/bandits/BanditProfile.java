@@ -10,7 +10,6 @@ import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,7 +17,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -34,8 +32,15 @@ import java.util.*;
  * <p>A profile is a "stamp" applied to a {@code HostileRandomHumanEntity} during initialization. Each
  * field is optional: if omitted, the entity falls back to the random roll used by an unprofiled bandit.
  *
- * <p>Level can be specified as either an absolute range or a percentage of {@link net.alshanex.magic_realms.Config#maxLevel}.
- * Absolute ranges take precedence when both are set. If neither is set, the vanilla random spawn-level roll is used.
+ * <p>Difficulty is expressed through {@code star_level}, {@code attribute_boosts}, {@code equipment} and
+ * {@code titles} rather than through a level range. The old {@code min_level_*} / {@code max_level_*} fields are
+ * gone along with the leveling system - a profile that wants a tougher bandit should grant it titles whose rewards
+ * do the work, which also means the buff is visible to the player rather than an invisible stat multiplier.
+ *
+ * <p>{@code titles} is a list of title ids (from {@code mercenaries/titles/}) granted outright at spawn, bypassing
+ * their normal requirements. All of their rewards - attributes, passive effects, on-hit procs, damage scaling -
+ * apply exactly as they would for an earned title. {@code displayed_title} optionally pins which one shows above
+ * the bandit's name; if omitted, the highest-priority non-hidden granted title is used automatically.
  *
  * <p>For mages, three spell-selection modes are available, in priority order:
  * <ol>
@@ -44,7 +49,7 @@ import java.util.*;
  *     <li>Fall through to the regular {@code SpellListGenerator}.</li>
  * </ol>
  *
- * <p>{@code attribute_boosts} are flat modifiers applied <em>after</em> all class/level attribute math runs, so they
+ * <p>{@code attribute_boosts} are flat modifiers applied <em>after</em> all class attribute math runs, so they
  * stack cleanly on top of regular stats — useful for "boss" profiles that double health or buff damage.
  */
 public record BanditProfile(
@@ -58,11 +63,9 @@ public record BanditProfile(
         Optional<Boolean> isArcher,
         Optional<Integer> starLevel,
 
-        // Level configuration
-        Optional<Float> minLevelPercent,
-        Optional<Float> maxLevelPercent,
-        Optional<Integer> minLevelAbsolute,
-        Optional<Integer> maxLevelAbsolute,
+        // Titles granted at spawn (replaces the old level configuration)
+        List<ResourceLocation> titles,
+        Optional<ResourceLocation> displayedTitle,
 
         // Visuals
         Optional<Float> entityScale,
@@ -97,7 +100,7 @@ public record BanditProfile(
     public static final BanditProfile EMPTY = new BanditProfile(
             "", 1,
             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+            List.of(), Optional.empty(),
             Optional.empty(), Optional.empty(), Optional.empty(),
             List.of(), Optional.empty(),
             List.of(), Optional.empty(), Optional.empty(),
@@ -148,7 +151,7 @@ public record BanditProfile(
     // Codec for the JSON body. Mojang's RecordCodecBuilder.group has a hard arity limit (~16), so we split the codec into two halves as MapCodecs and combine them
     // with MapCodec.pair so both halves read from the same flat JSON object. The id is filled in by the reload listener after parsing.
 
-    /** First half: identity, build, level, visuals. */
+    /** First half: identity, build, titles, visuals. */
     private record Half1(
             int weight,
             Optional<EntityClass> entityClass,
@@ -156,10 +159,8 @@ public record BanditProfile(
             Optional<Boolean> hasShield,
             Optional<Boolean> isArcher,
             Optional<Integer> starLevel,
-            Optional<Float> minLevelPercent,
-            Optional<Float> maxLevelPercent,
-            Optional<Integer> minLevelAbsolute,
-            Optional<Integer> maxLevelAbsolute,
+            List<ResourceLocation> titles,
+            Optional<ResourceLocation> displayedTitle,
             Optional<Float> entityScale,
             Optional<String> overrideName,
             Optional<ResourceLocation> skinPreset
@@ -188,10 +189,8 @@ public record BanditProfile(
             Codec.BOOL.optionalFieldOf("has_shield").forGetter(Half1::hasShield),
             Codec.BOOL.optionalFieldOf("is_archer").forGetter(Half1::isArcher),
             Codec.intRange(1, 3).optionalFieldOf("star_level").forGetter(Half1::starLevel),
-            Codec.FLOAT.optionalFieldOf("min_level_percent").forGetter(Half1::minLevelPercent),
-            Codec.FLOAT.optionalFieldOf("max_level_percent").forGetter(Half1::maxLevelPercent),
-            Codec.INT.optionalFieldOf("min_level_absolute").forGetter(Half1::minLevelAbsolute),
-            Codec.INT.optionalFieldOf("max_level_absolute").forGetter(Half1::maxLevelAbsolute),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("titles", List.of()).forGetter(Half1::titles),
+            ResourceLocation.CODEC.optionalFieldOf("displayed_title").forGetter(Half1::displayedTitle),
             Codec.FLOAT.optionalFieldOf("entity_scale").forGetter(Half1::entityScale),
             Codec.STRING.optionalFieldOf("override_name").forGetter(Half1::overrideName),
             ResourceLocation.CODEC.optionalFieldOf("skin_preset").forGetter(Half1::skinPreset)
@@ -227,7 +226,7 @@ public record BanditProfile(
         return new BanditProfile("",
                 Math.max(1, h1.weight()),
                 h1.entityClass(), h1.gender(), h1.hasShield(), h1.isArcher(), h1.starLevel(),
-                h1.minLevelPercent(), h1.maxLevelPercent(), h1.minLevelAbsolute(), h1.maxLevelAbsolute(),
+                h1.titles(), h1.displayedTitle(),
                 h1.entityScale(), h1.overrideName(), h1.skinPreset(),
                 h2.magicSchools(), h2.magicSchoolsTagId(),
                 h2.explicitSpells(), h2.spellsTagId(), h2.spellsTagPickCount(),
@@ -240,7 +239,7 @@ public record BanditProfile(
     private Half1 splitHalf1() {
         return new Half1(weight,
                 entityClass, gender, hasShield, isArcher, starLevel,
-                minLevelPercent, maxLevelPercent, minLevelAbsolute, maxLevelAbsolute,
+                titles, displayedTitle,
                 entityScale, overrideName, skinPreset);
     }
 
@@ -256,7 +255,7 @@ public record BanditProfile(
     /** Returns a copy of this profile with the id filled in (used by the reload listener). */
     public BanditProfile withId(String newId) {
         return new BanditProfile(newId, weight, entityClass, gender, hasShield, isArcher, starLevel,
-                minLevelPercent, maxLevelPercent, minLevelAbsolute, maxLevelAbsolute,
+                titles, displayedTitle,
                 entityScale, overrideName, skinPreset,
                 magicSchools, magicSchoolsTagId,
                 explicitSpells, spellsTagId, spellsTagPickCount,
@@ -264,6 +263,11 @@ public record BanditProfile(
                 attributeBoosts,
                 lootTable,
                 isMiniBoss, immortal, fixedPersonalityId, inRandomPool);
+    }
+
+    /** True if this profile grants any titles at spawn. */
+    public boolean hasTitles() {
+        return !titles.isEmpty();
     }
 
     // Helper: resolve the magic schools tag key.
@@ -317,10 +321,8 @@ public record BanditProfile(
         writeOptBool(buf, p.isArcher);
         writeOptInt(buf, p.starLevel);
 
-        writeOptFloat(buf, p.minLevelPercent);
-        writeOptFloat(buf, p.maxLevelPercent);
-        writeOptInt(buf, p.minLevelAbsolute);
-        writeOptInt(buf, p.maxLevelAbsolute);
+        buf.writeCollection(p.titles, FriendlyByteBuf::writeResourceLocation);
+        writeOptResLoc(buf, p.displayedTitle);
 
         writeOptFloat(buf, p.entityScale);
         writeOptString(buf, p.overrideName);
@@ -361,10 +363,8 @@ public record BanditProfile(
         Optional<Boolean> ia = readOptBool(buf);
         Optional<Integer> sl = readOptInt(buf);
 
-        Optional<Float> minP = readOptFloat(buf);
-        Optional<Float> maxP = readOptFloat(buf);
-        Optional<Integer> minA = readOptInt(buf);
-        Optional<Integer> maxA = readOptInt(buf);
+        List<ResourceLocation> titles = new ArrayList<>(buf.readList(FriendlyByteBuf::readResourceLocation));
+        Optional<ResourceLocation> displayedTitle = readOptResLoc(buf);
 
         Optional<Float> scale = readOptFloat(buf);
         Optional<String> name = readOptString(buf);
@@ -397,7 +397,7 @@ public record BanditProfile(
         boolean inPool = buf.readBoolean();
 
         return new BanditProfile(id, weight, ec, g, hs, ia, sl,
-                minP, maxP, minA, maxA,
+                titles, displayedTitle,
                 scale, name, skinPreset,
                 schools, schoolsTag,
                 spells, spellsTag, spellsCount,

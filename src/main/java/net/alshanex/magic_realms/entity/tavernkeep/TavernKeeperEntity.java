@@ -441,9 +441,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 }
             }
 
-            this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_NOVICE.get(), 1), 7, 10).getOffer(this, this.random));
-
-            this.offers.addAll(createRandomOffers(1, 2));
+            this.offers.add(new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_TEMPORARY.get(), 1), 7, 10).getOffer(this, this.random));
 
             this.offers.add(
                     new MerchantOffer(
@@ -580,26 +578,6 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
         // Get first random item
         Item firstItem = itemsInTag.get(random.nextInt(itemsInTag.size()));
         return new ItemStack(firstItem);
-    }
-
-    private static final List<VillagerTrades.ItemListing> fillerOffers = List.of(
-            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_APPRENTICE.get(), 1), 15, 20),
-            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_JOURNEYMAN.get(), 1), 25, 35),
-            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_EXPERT.get(), 1), 45, 55),
-            new AdditionalWanderingTrades.SimpleSell(16, new ItemStack(MRItems.CONTRACT_MASTER.get(), 1), 60, 64)
-    );
-
-    private Collection<MerchantOffer> createRandomOffers(int min, int max) {
-        Set<Integer> set = Sets.newHashSet();
-        int fillerTrades = random.nextIntBetweenInclusive(min, max);
-        for (int i = 0; i < 10 && set.size() < fillerTrades; i++) {
-            set.add(random.nextInt(fillerOffers.size()));
-        }
-        Collection<MerchantOffer> offers = new ArrayList<>();
-        for (Integer integer : set) {
-            offers.add(fillerOffers.get(integer).getOffer(this, this.random));
-        }
-        return offers;
     }
 
     @Override

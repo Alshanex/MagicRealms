@@ -3,7 +3,7 @@ package net.alshanex.magic_realms.util.humans.mercenaries;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.item.PermanentContractItem;
-import net.alshanex.magic_realms.item.TieredContractItem;
+import net.alshanex.magic_realms.item.TemporaryContractItem;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
@@ -30,6 +30,10 @@ import net.minecraft.world.item.ItemStack;
  *     <li>Holding food the mercenary considers a gift: gift accepted.</li>
  *     <li>Holding the Hell Pass: immortality grant.</li>
  * </ul>
+ *
+ * <p>There are exactly two contract items: {@link TemporaryContractItem}, which starts or extends a fixed-length
+ * contract, and {@link PermanentContractItem}, which upgrades an existing relationship to permanent once enough
+ * cumulative service time has been accrued.
  *
  * <p>Patrol/follow toggling has been moved out of shift+right-click and into a button inside the contract screen.
  */
@@ -68,7 +72,7 @@ public final class MercenaryInteractionHandler {
                 && contractData.getContractorUUID() != null
                 && contractData.getContractorUUID().equals(player.getUUID());
         boolean isContractItem = heldItem.getItem() instanceof PermanentContractItem
-                || heldItem.getItem() instanceof TieredContractItem;
+                || heldItem.getItem() instanceof TemporaryContractItem;
 
         // Contractor interacting with a non-contract item mid-combat gets a flavor refusal line rather than opening the menu.
         if (isContractor && !isContractItem && entity.isInCombat()) {
@@ -128,8 +132,8 @@ public final class MercenaryInteractionHandler {
             } else {
                 ContractUtils.handlePermanentContractCreation(player, entity, contractData, heldItem);
             }
-        } else if (heldItem.getItem() instanceof TieredContractItem tieredContract) {
-            ContractUtils.handleTieredContractCreation(player, entity, contractData, heldItem, tieredContract);
+        } else if (heldItem.getItem() instanceof TemporaryContractItem) {
+            ContractUtils.handleTemporaryContractCreation(player, entity, contractData, heldItem);
         } else {
             ContractUtils.handleContractInteraction(player, entity, contractData);
         }

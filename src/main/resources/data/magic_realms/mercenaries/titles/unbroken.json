@@ -1,0 +1,23 @@
+{
+  "display_key": "title.magic_realms.unbroken",
+  "description_key": "title.magic_realms.unbroken.desc",
+  "color": "#C0C0C0",
+  "priority": 55,
+  "requirement_mode": "any",
+  "requirements": [
+    { "type": "counter", "target": "close_calls", "amount": 25 },
+    { "type": "damage_taken", "amount": 5000 }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.knockback_resistance",
+        "id": "magic_realms:unbroken_knockback",
+        "amount": 0.4,
+        "operation": "add_value"
+      }
+    ],
+    "incoming_damage_multiplier": 0.9,
+    "natural_regen": true
+  }
+}

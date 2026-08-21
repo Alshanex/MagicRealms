@@ -1,0 +1,17 @@
+{
+  "display_key": "title.magic_realms.bane_of_the_dead",
+  "description_key": "title.magic_realms.bane_of_the_dead.desc",
+  "color": "#7FFFB0",
+  "priority": 60,
+  "requirements": [
+    { "type": "kill_entity_tag", "target": "minecraft:undead", "amount": 250 }
+  ],
+  "rewards": {
+    "damage_bonus_vs": [
+      { "entity_tag": "minecraft:undead", "multiplier": 1.5 }
+    ],
+    "on_hit_effects": [
+      { "effect": "minecraft:glowing", "duration": 40, "amplifier": 0, "chance": 0.2 }
+    ]
+  }
+}

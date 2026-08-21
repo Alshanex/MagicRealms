@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobModel;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMobRenderer;
+import net.alshanex.magic_realms.util.humans.titles.TitleNameplateRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -13,6 +14,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -240,6 +242,18 @@ public abstract class AbstractMercenaryEntityRenderer extends AbstractSpellCasti
         private boolean shouldRenderCustom(ItemStack stack) {
             if (stack.isEmpty()) return false;
             return stack.getItem() instanceof ShieldItem;
+        }
+    }
+
+    @Override
+    public void renderNameTag(AbstractSpellCastingMob animatable, Component displayName, PoseStack poseStack,
+                              MultiBufferSource bufferSource, int packedLight, float partialTick) {
+        super.renderNameTag(animatable, displayName, poseStack, bufferSource, packedLight, partialTick);
+
+        if (animatable instanceof AbstractMercenaryEntity mercenary) {
+            TitleNameplateRenderer.renderTitleAbove(
+                    this.entityRenderDispatcher, this.getFont(), mercenary,
+                    poseStack, bufferSource, packedLight, partialTick);
         }
     }
 }

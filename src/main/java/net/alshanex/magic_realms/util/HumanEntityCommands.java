@@ -1,112 +1,207 @@
 package net.alshanex.magic_realms.util;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
-import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
-import io.redspace.ironsspellbooks.network.particles.ShockwaveParticlesPacket;
-import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
-import io.redspace.ironsspellbooks.registries.ParticleRegistry;
-import net.alshanex.magic_realms.Config;
-import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.KillTrackerData;
+import net.alshanex.magic_realms.data.TitleProgressData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.registry.MRDataAttachments;
-import net.alshanex.magic_realms.util.humans.stats.LevelingStatsManager;
+import net.alshanex.magic_realms.util.humans.titles.Title;
+import net.alshanex.magic_realms.util.humans.titles.TitleCatalogHolder;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
+import net.alshanex.magic_realms.util.humans.titles.TitleRequirement;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.List;
+
+/**
+ * Admin/debug commands for the titles system. Replaces the old {@code /human addlevels}.
+ *
+ * <pre>
+ * /human title grant    &lt;target&gt; &lt;title&gt;
+ * /human title revoke   &lt;target&gt; &lt;title&gt;
+ * /human title display  &lt;target&gt; &lt;title&gt;
+ * /human title clear    &lt;target&gt;
+ * /human title list     &lt;target&gt;
+ * /human title progress &lt;target&gt;
+ * </pre>
+ */
 public class HumanEntityCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("human")
                 .requires(source -> source.hasPermission(2))
-                .then(Commands.literal("addlevels")
-                        .then(Commands.argument("target", EntityArgument.entity())
-                                .then(Commands.argument("levels", IntegerArgumentType.integer(1, 100))
-                                        .executes(HumanEntityCommands::addLevels)))));
+                .then(Commands.literal("title")
+                        .then(Commands.literal("grant")
+                                .then(Commands.argument("target", EntityArgument.entity())
+                                        .then(Commands.argument("title", ResourceLocationArgument.id())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                                        TitleCatalogHolder.server().ids(), builder))
+                                                .executes(HumanEntityCommands::grantTitle))))
+                        .then(Commands.literal("revoke")
+                                .then(Commands.argument("target", EntityArgument.entity())
+                                        .then(Commands.argument("title", ResourceLocationArgument.id())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                                        TitleCatalogHolder.server().ids(), builder))
+                                                .executes(HumanEntityCommands::revokeTitle))))
+                        .then(Commands.literal("display")
+                                .then(Commands.argument("target", EntityArgument.entity())
+                                        .then(Commands.argument("title", ResourceLocationArgument.id())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                                        TitleCatalogHolder.server().ids(), builder))
+                                                .executes(HumanEntityCommands::displayTitle))))
+                        .then(Commands.literal("clear")
+                                .then(Commands.argument("target", EntityArgument.entity())
+                                        .executes(HumanEntityCommands::clearDisplayedTitle)))
+                        .then(Commands.literal("list")
+                                .then(Commands.argument("target", EntityArgument.entity())
+                                        .executes(HumanEntityCommands::listTitles)))
+                        .then(Commands.literal("progress")
+                                .then(Commands.argument("target", EntityArgument.entity())
+                                        .executes(HumanEntityCommands::showProgress)))));
     }
 
-    private static int addLevels(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static AbstractMercenaryEntity resolve(CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
         Entity target = EntityArgument.getEntity(context, "target");
-        int levelsToAdd = IntegerArgumentType.getInteger(context, "levels");
-        CommandSourceStack source = context.getSource();
-
-        if (!(target instanceof AbstractMercenaryEntity humanEntity)) {
-            source.sendFailure(Component.literal("Target must be a AbstractMercenaryEntity!"));
-            return 0;
+        if (!(target instanceof AbstractMercenaryEntity mercenary)) {
+            context.getSource().sendFailure(Component.literal("Target must be a mercenary."));
+            return null;
         }
-
-        try {
-            KillTrackerData killData = humanEntity.getData(MRDataAttachments.KILL_TRACKER);
-            int currentLevel = killData.getCurrentLevel();
-            int maxLevel = Config.maxLevel;
-
-            // Calculate how many levels we can actually add
-            int actualLevelsToAdd = Math.min(levelsToAdd, maxLevel - currentLevel);
-
-            if (actualLevelsToAdd <= 0) {
-                source.sendFailure(Component.literal(
-                        String.format("%s is already at maximum level (%d)!",
-                                humanEntity.getEntityName(), currentLevel)));
-                return 0;
-            }
-
-            final int targetLevel = currentLevel + actualLevelsToAdd;
-            humanEntity.mutateKillTracker(d -> d.setLevel(targetLevel));
-            LevelingStatsManager.applyLevelBasedAttributes(humanEntity, targetLevel);
-            spawnLevelUpEffects(humanEntity);
-            humanEntity.updateCustomNameWithStars();
-
-            spawnLevelUpEffects(humanEntity);
-
-            // Update the entity's name to reflect the new level
-            humanEntity.updateCustomNameWithStars();
-
-            String message = String.format("Added %d level%s to %s (Level %d -> %d)",
-                    actualLevelsToAdd,
-                    actualLevelsToAdd == 1 ? "" : "s",
-                    humanEntity.getEntityName(),
-                    currentLevel,
-                    killData.getCurrentLevel());
-
-            source.sendSuccess(() -> Component.literal(message), true);
-
-            if (actualLevelsToAdd < levelsToAdd) {
-                source.sendSuccess(() -> Component.literal(
-                        String.format("Note: Only %d level%s could be added (reached maximum level)",
-                                actualLevelsToAdd, actualLevelsToAdd == 1 ? "" : "s")), false);
-            }
-
-            return 1;
-
-        } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to add levels: " + e.getMessage()));
-            return 0;
-        }
+        return mercenary;
     }
 
-    private static void spawnLevelUpEffects(AbstractMercenaryEntity entity) {
-        if (entity.level().isClientSide) return;
+    private static int grantTitle(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        AbstractMercenaryEntity mercenary = resolve(context);
+        if (mercenary == null) return 0;
 
-        try {
-            MagicManager.spawnParticles(entity.level(), new BlastwaveParticleOptions(SchoolRegistry.HOLY.get().getTargetingColor(), 4), entity.getX(), entity.getY() + .165f, entity.getZ(), 1, 0, 0, 0, 0, true);
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new ShockwaveParticlesPacket(new Vec3(entity.getX(), entity.getY() + .165f, entity.getZ()), 4, ParticleRegistry.CLEANSE_PARTICLE.get()));
-
-            entity.playSound(
-                    net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP,
-                    0.8F,
-                    1.2F
-            );
-        } catch (Exception e) {
-            MagicRealms.LOGGER.error("Failed to spawn level up effects: {}", e.getMessage());
+        ResourceLocation id = ResourceLocationArgument.getId(context, "title");
+        if (!TitleCatalogHolder.server().contains(id)) {
+            context.getSource().sendFailure(Component.literal("Unknown title: " + id));
+            return 0;
         }
+
+        if (!TitleManager.grant(mercenary, id, true)) {
+            context.getSource().sendFailure(Component.literal(
+                    mercenary.getEntityName() + " already holds " + id));
+            return 0;
+        }
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Granted " + id + " to " + mercenary.getEntityName()), true);
+        return 1;
+    }
+
+    private static int revokeTitle(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        AbstractMercenaryEntity mercenary = resolve(context);
+        if (mercenary == null) return 0;
+
+        ResourceLocation id = ResourceLocationArgument.getId(context, "title");
+        if (!TitleManager.revoke(mercenary, id)) {
+            context.getSource().sendFailure(Component.literal(
+                    mercenary.getEntityName() + " does not hold " + id));
+            return 0;
+        }
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Revoked " + id + " from " + mercenary.getEntityName()), true);
+        return 1;
+    }
+
+    private static int displayTitle(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        AbstractMercenaryEntity mercenary = resolve(context);
+        if (mercenary == null) return 0;
+
+        ResourceLocation id = ResourceLocationArgument.getId(context, "title");
+        if (!TitleManager.progress(mercenary).hasTitle(id)) {
+            context.getSource().sendFailure(Component.literal(
+                    mercenary.getEntityName() + " has not earned " + id));
+            return 0;
+        }
+
+        TitleManager.setDisplayedTitle(mercenary, id);
+        context.getSource().sendSuccess(() -> Component.literal(
+                mercenary.getEntityName() + " is now displaying " + id), true);
+        return 1;
+    }
+
+    private static int clearDisplayedTitle(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        AbstractMercenaryEntity mercenary = resolve(context);
+        if (mercenary == null) return 0;
+
+        TitleManager.setDisplayedTitle(mercenary, null);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Cleared the displayed title for " + mercenary.getEntityName()), true);
+        return 1;
+    }
+
+    private static int listTitles(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        AbstractMercenaryEntity mercenary = resolve(context);
+        if (mercenary == null) return 0;
+
+        List<Title> earned = TitleManager.earnedTitles(mercenary);
+        if (earned.isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    mercenary.getEntityName() + " has no titles yet."), false);
+            return 1;
+        }
+
+        Title displayed = TitleManager.displayedTitle(mercenary);
+        context.getSource().sendSuccess(() -> Component.literal(
+                        mercenary.getEntityName() + " holds " + earned.size() + " title(s):")
+                .withStyle(ChatFormatting.GOLD), false);
+
+        for (Title title : earned) {
+            boolean shown = displayed != null && displayed.id().equals(title.id());
+            context.getSource().sendSuccess(() -> Component.literal(shown ? " > " : "   ")
+                    .append(title.displayComponent())
+                    .append(Component.literal(" (" + title.id() + ")").withStyle(ChatFormatting.DARK_GRAY)), false);
+        }
+        return 1;
+    }
+
+    private static int showProgress(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        AbstractMercenaryEntity mercenary = resolve(context);
+        if (mercenary == null) return 0;
+
+        TitleProgressData data = TitleManager.progress(mercenary);
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                        "Unearned title progress for " + mercenary.getEntityName() + ":")
+                .withStyle(ChatFormatting.GOLD), false);
+
+        boolean any = false;
+        for (Title title : TitleCatalogHolder.server().all()) {
+            if (data.hasTitle(title.id()) || title.hidden()) continue;
+            any = true;
+
+            int percent = Math.round(title.progressFor(mercenary, data) * 100.0f);
+            context.getSource().sendSuccess(() -> Component.literal("   ")
+                    .append(title.displayComponent())
+                    .append(Component.literal(" - " + percent + "%").withStyle(ChatFormatting.GRAY)), false);
+
+            for (TitleRequirement req : title.requirements()) {
+                long current = req.currentValue(mercenary, data);
+                long goal = Math.max(1L, req.amount());
+                context.getSource().sendSuccess(() -> Component.literal(
+                                "      " + req.type().name().toLowerCase()
+                                        + (req.target().isEmpty() ? "" : " " + req.target())
+                                        + ": " + current + "/" + goal)
+                        .withStyle(ChatFormatting.DARK_GRAY), false);
+            }
+        }
+
+        if (!any) {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "   (nothing left to earn)").withStyle(ChatFormatting.DARK_GRAY), false);
+        }
+        return 1;
     }
 }

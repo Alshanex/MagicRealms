@@ -7,7 +7,6 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.data.KillTrackerData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.IExclusiveMercenary;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
@@ -20,7 +19,6 @@ import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
@@ -28,16 +26,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
-import net.neoforged.fml.ModList;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 
 public class GojoMojoEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "GojoMojo";
@@ -94,9 +89,7 @@ public class GojoMojoEntity extends AbstractMercenaryEntity implements IExclusiv
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
-                    KillTrackerData killData = this.getData(MRDataAttachments.KILL_TRACKER);
-                    int currentLevel = killData.getCurrentLevel();
-                    this.updateCustomNameWithLevel(currentLevel);
+                    this.refreshDisplayName();
                 }
             });
         }

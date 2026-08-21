@@ -7,6 +7,8 @@ import net.alshanex.magic_realms.util.humans.bandits.BanditProfileCatalogReloadL
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalogReloadListener;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.*;
+import net.alshanex.magic_realms.util.humans.titles.TitleCatalogHolder;
+import net.alshanex.magic_realms.util.humans.titles.TitleCatalogReloadListener;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -26,6 +28,7 @@ public class ServerReloadEvents {
         event.addListener(new ArchetypeCatalogReloadListener());
         event.addListener(new ArchetypeInteractionCatalogReloadListener());
         event.addListener(new BanditProfileCatalogReloadListener());
+        event.addListener(new TitleCatalogReloadListener());
     }
 
     @SubscribeEvent
@@ -82,6 +85,15 @@ public class ServerReloadEvents {
         } else {
             for (ServerPlayer p : event.getPlayerList().getPlayers()) {
                 PacketDistributor.sendToPlayer(p, banditPacket);
+            }
+        }
+
+        SyncTitleCatalogPacket titlePacket = new SyncTitleCatalogPacket(TitleCatalogHolder.server());
+        if (target != null) {
+            PacketDistributor.sendToPlayer(target, titlePacket);
+        } else {
+            for (ServerPlayer p : event.getPlayerList().getPlayers()) {
+                PacketDistributor.sendToPlayer(p, titlePacket);
             }
         }
     }

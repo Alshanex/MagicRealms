@@ -1,6 +1,5 @@
 package net.alshanex.magic_realms.util.humans.mercenaries;
 
-import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
@@ -188,32 +187,6 @@ public class EntitySnapshot {
 
             } catch (Exception e) {
                 MagicRealms.LOGGER.debug("Could not capture Iron's Spells attributes: {}", e.getMessage());
-            }
-
-            try {
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_PIERCE, "armor_pierce", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARMOR_SHRED, "armor_shred", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_DAMAGE, "arrow_damage", 1.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.ARROW_VELOCITY, "arrow_velocity", 1.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.COLD_DAMAGE, "cold_damage", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_CHANCE, "crit_chance", 0.05);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.CRIT_DAMAGE, "crit_damage", 1.5);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.CURRENT_HP_DAMAGE, "current_hp_damage", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.DODGE_CHANCE, "dodge_chance", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.DRAW_SPEED, "draw_speed", 1.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.EXPERIENCE_GAINED, "experience_gained", 1.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.FIRE_DAMAGE, "fire_damage", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.GHOST_HEALTH, "ghost_health", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.HEALING_RECEIVED, "healing_received", 1.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.LIFE_STEAL, "life_steal", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.MINING_SPEED, "mining_speed", 1.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.OVERHEAL, "overheal", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.PROJECTILE_DAMAGE, "projectile_damage", 1.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_PIERCE, "prot_pierce", 0.0);
-                captureAttributeValue(entity, attributes, ALObjects.Attributes.PROT_SHRED, "prot_shred", 0.0);
-
-            } catch (Exception e) {
-                MagicRealms.LOGGER.debug("Could not capture Apothic attributes: {}", e.getMessage());
             }
 
             captureAllAttributeModifiers(entity, attributes);

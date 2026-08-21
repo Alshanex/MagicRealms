@@ -1,6 +1,5 @@
 package net.alshanex.magic_realms.util.humans.stats;
 
-import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
@@ -31,13 +30,7 @@ public class LevelingStatsManager {
         switch (entityClass) {
             case MAGE -> applyMageAttributes(entity, level);
             case WARRIOR -> applyWarriorAttributes(entity, level, starLevel);
-            case ROGUE -> {
-                if (entity.isArcher()) {
-                    applyArcherAttributes(entity, level);
-                } else {
-                    applyAssassinAttributes(entity, level);
-                }
-            }
+            case ROGUE -> applyAssassinAttributes(entity, level);
         }
     }
 
@@ -110,45 +103,7 @@ public class LevelingStatsManager {
                 AttributeModifier.Operation.ADD_VALUE);
     }
 
-    private static void applyArcherAttributes(AbstractMercenaryEntity entity, int level) {
-        double progressPercentage = Math.min(1.0, (double) level / Config.maxLevel);
-
-        double currentArrowVelocityBonusPercentage = Config.maxArrowVelocityPercentage * progressPercentage;
-        try {
-            applyOrUpdateAttribute(entity, ALObjects.Attributes.ARROW_VELOCITY,
-                    "archer_level_arrow_velocity",
-                    currentArrowVelocityBonusPercentage / 100.0,
-                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Apothic Attributes not available for arrow velocity bonus: {}", e.getMessage());
-        }
-
-        double currentDrawSpeedBonusPercentage = Config.maxDrawSpeedPercentage * progressPercentage;
-        try {
-            applyOrUpdateAttribute(entity, ALObjects.Attributes.DRAW_SPEED,
-                    "archer_level_draw_speed",
-                    currentDrawSpeedBonusPercentage / 100.0,
-                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Apothic Attributes not available for draw speed bonus: {}", e.getMessage());
-        }
-    }
-
     private static void applyAssassinAttributes(AbstractMercenaryEntity entity, int level) {
-        double currentCritChance = entity.getAttribute(ALObjects.Attributes.CRIT_CHANCE).getBaseValue();
-        double maxCritChanceGain = 100.0 - currentCritChance;
-        double progressPercentage = Math.min(1.0, (double) level / (Config.maxLevel / 2.0));
-        double currentCritBonusPercentage = maxCritChanceGain * progressPercentage;
-
-        try {
-            applyOrUpdateAttribute(entity, ALObjects.Attributes.CRIT_CHANCE,
-                    "assassin_level_crit_chance",
-                    currentCritBonusPercentage / 100,
-                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-        } catch (Exception e) {
-            MagicRealms.LOGGER.debug("Apothic Attributes not available for crit chance bonus");
-        }
-
         double progressPercentageSpeed = Math.min(1.0, (double) level / (Config.maxLevel / 2.0));
         double currentSpeedBonusPercentage = Config.maxSpeedPercentage * progressPercentageSpeed;
 

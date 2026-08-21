@@ -916,7 +916,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     private int getTotalAttributeLines() {
         switch (currentTab) {
             case IRON_SPELLS -> {
-                return getIronSpellsAttributeLines() + getApothicAttributeLines();
+                return getIronSpellsAttributeLines();
             }
             default -> {
                 return 0;
@@ -961,16 +961,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         if (snapshot != null) {
             lines += Math.max(1, snapshot.entitySpells.size());
         }
-        return lines;
-    }
-
-    private int getApothicAttributeLines() {
-        int lines = 2;
-        lines += 3;
-        lines += 2;
-        lines += 4;
-        lines += 2;
-        lines += 4;
         return lines;
     }
 
@@ -1102,37 +1092,6 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
-
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Combat Stats", x, y, ChatFormatting.RED);
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        y = renderAttributeWithTruncation(guiGraphics, "Attack Damage", attributes, "attack_damage", 1.0, "%.1f", x, y, ChatFormatting.RED, false);
-        y = renderAttributeWithTruncation(guiGraphics, "Crit Chance", attributes, "crit_chance", 0.05, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Crit Damage", attributes, "crit_damage", 1.5, "%.0f%%", x, y, ChatFormatting.RED, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Dodge", attributes, "dodge_chance", 0.0, "%.1f%%", x, y, ChatFormatting.AQUA, true);
-
-        y = renderAttributeWithTruncation(guiGraphics, "Armor Pierce", attributes, "armor_pierce", 0.0, "%.1f", x, y, ChatFormatting.GOLD);
-        y = renderAttributeWithTruncation(guiGraphics, "Armor Shred", attributes, "armor_shred", 0.0, "%.1f%%", x, y, ChatFormatting.GOLD, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Prot Pierce", attributes, "prot_pierce", 0.0, "%.1f", x, y, ChatFormatting.GOLD);
-        y = renderAttributeWithTruncation(guiGraphics, "Prot Shred", attributes, "prot_shred", 0.0, "%.1f%%", x, y, ChatFormatting.GOLD, true);
-
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Survivability", x, y, ChatFormatting.GREEN);
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        y = renderAttributeWithTruncation(guiGraphics, "Life Steal", attributes, "life_steal", 0.0, "%.1f%%", x, y, ChatFormatting.RED, true);
-        y = renderAttributeWithTruncation(guiGraphics, "Ghost Health", attributes, "ghost_health", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
-        y = renderAttributeWithTruncation(guiGraphics, "Overheal", attributes, "overheal", 0.0, "%.1f%%", x, y, ChatFormatting.YELLOW, true);
-
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-        y = renderSectionHeader(guiGraphics, "Ranged Combat", x, y, ChatFormatting.GOLD);
-        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
-
-        y = renderAttributeWithTruncation(guiGraphics, "Arrow Damage", attributes, "arrow_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Arrow Velocity", attributes, "arrow_velocity", 1.0, "%.0f%%", x, y, ChatFormatting.YELLOW, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Draw Speed", attributes, "draw_speed", 1.0, "%.0f%%", x, y, ChatFormatting.GREEN, true, 1.0);
-        y = renderAttributeWithTruncation(guiGraphics, "Projectile Dmg", attributes, "projectile_damage", 1.0, "%.0f%%", x, y, ChatFormatting.RED, true, 1.0);
     }
 
     private int renderPersonalitySectionScrollable(GuiGraphics guiGraphics, int x, int y) {

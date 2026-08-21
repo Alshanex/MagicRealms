@@ -54,10 +54,6 @@ repositories {
             includeGroup("software.bernie.geckolib")
         }
     }
-    maven {
-        // Shadows_of_Fire's Maven
-        url "https://maven.shadowsoffire.dev/releases"
-    }
     maven { url = "https://maven.theillusivec4.top" }
     maven { url = "https://cursemaven.com" }
     maven { url = "https://maven.blamejared.com" }
@@ -193,12 +189,6 @@ dependencies {
     // Dummy
     //runtimeOnly("curse.maven:mmmmmmmmmmmm-225738:7206981")
     //runtimeOnly("curse.maven:selene-499980:7918153")
-
-    //Apothic Attributes
-    dependencies {
-        implementation "dev.shadowsoffire:Placebo:${minecraft_version}-${placeboVersion}"
-        implementation "dev.shadowsoffire:ApothicAttributes:${minecraft_version}-${attributesLibVersion}"
-    }
 
     // Armor testing
     //runtimeOnly("curse.maven:hazen-n-stuff-1231627:7938453")

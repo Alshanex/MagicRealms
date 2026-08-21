@@ -101,6 +101,10 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
         return BanditProfileApplier.resolve(getProfileId(), this.level().isClientSide());
     }
 
+    public void setPendingProfileId(@Nullable String profileId) {
+        this.pendingProfileId = profileId;
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));

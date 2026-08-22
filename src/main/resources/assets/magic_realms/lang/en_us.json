@@ -69,7 +69,7 @@
   "message.magic_realms.catas.pumpkin_pie.thanks": "%s YIPPEE! Thank you! I love pumpkin pie!",
   "message.magic_realms.custom_raid.start": "People saw your coin and will try to snatch it. Survive and get your fortune!",
   "message.magic_realms.granted_immortality": "%s Oh, i've been searching for this pass for a long time, thank you so much!",
-  "message.magic_realms.tavernkeep_tip.1": "%s I've heard rumours about a book called Necronomicon that has information regarding blood magic, it might have information about blood pacts.",
+  "message.magic_realms.tavernkeep_tip.1": "%s I've heard rumours about a book called Necronomicon that has information regarding blood magic, things like blood pacts and other kind of cursed rituals.",
   "message.magic_realms.tavernkeep_tip.2": "%s Some of the mercenaries that visit this tavern have very weird quirks. The other day a mercenary with a bookworm quirk arrived carrying some books with him, and he seemed unusually fast.",
   "message.magic_realms.tavernkeep_tip.3": "%s Did you know that contracted mercenaries can perform better or worse depending on their personalities? For example, i once saw two arrogant contracted mercenaries fighting together and they seemed weaker and slower than usual.",
   "message.magic_realms.tavernkeep_tip.4": "%s Someone once dropped hundreds of TnT carts at the tavern, it was such a mess and the tavern got completely destroyed, so I couldn't offer the tavern services anymore.",
@@ -353,5 +353,7 @@
   "title.magic_realms.axemaster": "Axemaster",
   "title.magic_realms.axemaster.desc": "Four hundred kills, and the axe never dulled.",
   "title.magic_realms.bowyer": "Bowyer",
-  "title.magic_realms.bowyer.desc": "Death arrives before the sound does."
+  "title.magic_realms.bowyer.desc": "Death arrives before the sound does.",
+  "title.magic_realms.mace_lord": "Mace Lord",
+  "title.magic_realms.mace_lord.desc": "The mace answers to no one else."
 }

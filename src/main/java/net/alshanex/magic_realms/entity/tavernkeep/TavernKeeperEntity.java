@@ -17,6 +17,7 @@ import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.events.TavernInteractionHandler;
 import net.alshanex.magic_realms.registry.MRItems;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.goals.WalkToSpawnGoal;
@@ -46,6 +47,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -204,24 +206,31 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
 
     private final ResourceLocation holySpellPowerModifierId = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_holy_power");
     private final ResourceLocation spellResistanceModifierId = ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "tavernkeep_spell_res");
+    private static final double TAVERN_HOLY_POWER = 95.0;
+    private static final int TAVERN_POWER_CHECK_INTERVAL = 20;
 
-    @Override
     public void onAddedToLevel() {
-        if(!this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).hasModifier(holySpellPowerModifierId)){
-            this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).addPermanentModifier(new AttributeModifier(holySpellPowerModifierId, 95.0, AttributeModifier.Operation.ADD_VALUE));
+        AttributeInstance holyPower = this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER);
+        if (holyPower != null) {
+            AttributeModifier stale = holyPower.getModifier(holySpellPowerModifierId);
+            if (stale != null) holyPower.removeModifier(stale);
         }
-        if(!this.getAttribute(AttributeRegistry.SPELL_RESIST).hasModifier(spellResistanceModifierId)){
-            this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(spellResistanceModifierId, 0.3, AttributeModifier.Operation.ADD_VALUE));
+
+        if (!this.getAttribute(AttributeRegistry.SPELL_RESIST).hasModifier(spellResistanceModifierId)) {
+            this.getAttribute(AttributeRegistry.SPELL_RESIST).addPermanentModifier(new AttributeModifier(
+                    spellResistanceModifierId, 0.3, AttributeModifier.Operation.ADD_VALUE));
         }
         super.onAddedToLevel();
     }
 
     @Override
     public void onRemovedFromLevel() {
-        if(this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).hasModifier(holySpellPowerModifierId)){
-            this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER).removeModifier(holySpellPowerModifierId);
+        AttributeInstance holyPower = this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER);
+        if (holyPower != null) {
+            AttributeModifier existing = holyPower.getModifier(holySpellPowerModifierId);
+            if (existing != null) holyPower.removeModifier(existing);
         }
-        if(this.getAttribute(AttributeRegistry.SPELL_RESIST).hasModifier(spellResistanceModifierId)){
+        if (this.getAttribute(AttributeRegistry.SPELL_RESIST).hasModifier(spellResistanceModifierId)) {
             this.getAttribute(AttributeRegistry.SPELL_RESIST).removeModifier(spellResistanceModifierId);
         }
         super.onRemovedFromLevel();
@@ -285,9 +294,33 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
                 }
             }
 
+            if (this.tickCount % TAVERN_POWER_CHECK_INTERVAL == 0) {
+                updateTavernPower();
+            }
+
             if(getTarget() != null && getTarget().hasEffect(MobEffectRegistry.ABYSSAL_SHROUD)){
                 getTarget().removeEffect(MobEffectRegistry.ABYSSAL_SHROUD);
             }
+        }
+    }
+
+    private void updateTavernPower() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+
+        AttributeInstance holyPower = this.getAttribute(AttributeRegistry.HOLY_SPELL_POWER);
+        if (holyPower == null) return;
+
+        boolean shouldBeBuffed = TavernInteractionHandler.isInsideTavernStructure(serverLevel, this.blockPosition());
+        boolean isBuffed = holyPower.getModifier(holySpellPowerModifierId) != null;
+
+        if (shouldBeBuffed == isBuffed) return;
+
+        if (shouldBeBuffed) {
+            holyPower.addTransientModifier(new AttributeModifier(
+                    holySpellPowerModifierId, TAVERN_HOLY_POWER, AttributeModifier.Operation.ADD_VALUE));
+        } else {
+            AttributeModifier existing = holyPower.getModifier(holySpellPowerModifierId);
+            if (existing != null) holyPower.removeModifier(existing);
         }
     }
 

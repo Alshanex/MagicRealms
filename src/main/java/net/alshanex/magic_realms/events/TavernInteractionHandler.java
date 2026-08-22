@@ -157,6 +157,10 @@ public class TavernInteractionHandler {
         return start != null && getValidKeeper(level, start.getBoundingBox()) != null;
     }
 
+    public static boolean isInsideTavernStructure(ServerLevel level, BlockPos pos) {
+        return getTavernAt(level, pos) != null;
+    }
+
     @SubscribeEvent
     public static void onPlayerSleep(CanPlayerSleepEvent event) {
         Player player = event.getEntity();

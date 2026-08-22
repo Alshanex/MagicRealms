@@ -1080,7 +1080,22 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
                 .add(Attributes.MAX_HEALTH, 1.0)
                 .add(Attributes.FOLLOW_RANGE, 24.0)
                 .add(Attributes.ENTITY_INTERACTION_RANGE, 3)
-                .add(Attributes.MOVEMENT_SPEED, .25);
+                .add(Attributes.MOVEMENT_SPEED, .25)
+                .add(Attributes.ARMOR, 0.0)
+                .add(Attributes.ARMOR_TOUGHNESS, 0.0)
+                .add(Attributes.ATTACK_SPEED, 4.0)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.0)
+                .add(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE, 0.0)
+                .add(Attributes.MAX_ABSORPTION, 0.0)
+                .add(Attributes.SAFE_FALL_DISTANCE, 3.0)
+                .add(Attributes.FALL_DAMAGE_MULTIPLIER, 1.0)
+                .add(Attributes.BURNING_TIME, 1.0)
+                .add(Attributes.OXYGEN_BONUS, 0.0)
+                .add(Attributes.WATER_MOVEMENT_EFFICIENCY, 0.0)
+                .add(Attributes.MOVEMENT_EFFICIENCY, 0.0)
+                .add(Attributes.STEP_HEIGHT, 0.6)
+                .add(Attributes.SCALE, 1.0)
+                .add(Attributes.GRAVITY, 0.08);
     }
 
     @Override public boolean requiresCustomPersistence() { return true; }

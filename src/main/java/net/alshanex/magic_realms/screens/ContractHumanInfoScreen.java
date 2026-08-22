@@ -563,6 +563,30 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private int getValueColor(double value, boolean isPercentage, String attributeKey) {
+        switch (attributeKey) {
+            // Non-zero neutral baselines
+            case "attack_speed" -> { return value > 4.0 ? POSITIVE_COLOR : (value < 4.0 ? NEUTRAL_COLOR : VALUE_COLOR); }
+            case "movement_speed" -> { return value > 0.25 ? POSITIVE_COLOR : VALUE_COLOR; }
+            case "safe_fall_distance" -> { return value > 3.0 ? POSITIVE_COLOR : VALUE_COLOR; }
+            case "follow_range" -> { return value > 32.0 ? POSITIVE_COLOR : VALUE_COLOR; }
+            case "step_height" -> { return value > 0.6 ? POSITIVE_COLOR : VALUE_COLOR; }
+            case "scale" -> { return value != 1.0 ? POSITIVE_COLOR : VALUE_COLOR; }
+
+            // Lower is better (isPercentage means these arrive already x100)
+            case "burning_time", "fall_damage_multiplier" -> {
+                double neutral = isPercentage ? 100.0 : 1.0;
+                return value < neutral ? POSITIVE_COLOR : (value > neutral ? NEUTRAL_COLOR : VALUE_COLOR);
+            }
+
+            // Plain "any amount is a bonus"
+            case "max_absorption", "attack_knockback", "armor_toughness",
+                 "oxygen_bonus", "water_movement_efficiency", "movement_efficiency" -> {
+                return value > 0 ? POSITIVE_COLOR : VALUE_COLOR;
+            }
+
+            default -> { /* fall through to the substring rules */ }
+        }
+
         if (attributeKey.contains("resist") || attributeKey.contains("armor") || attributeKey.contains("health")) {
             return value > 0 ? POSITIVE_COLOR : NEUTRAL_COLOR;
         } else if (attributeKey.contains("damage") || attributeKey.contains("power")) {
@@ -916,6 +940,8 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         if (snapshot != null) {
             lines += Math.max(1, snapshot.entitySpells.size());
         }
+        lines += 6;
+        lines += 16;
         return lines;
     }
 
@@ -1047,6 +1073,50 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             MagicRealms.LOGGER.debug("Error rendering school resistances: {}", e.getMessage());
         }
+
+        y = renderVanillaAttributesScrollable(guiGraphics, x, y);
+    }
+
+    private int renderVanillaAttributesScrollable(GuiGraphics guiGraphics, int x, int y) {
+        CompoundTag attributes = snapshot.attributes;
+
+        // Combat
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Combat", x, y, ChatFormatting.RED);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        y = renderAttributeWithTruncation(guiGraphics, "Attack Dmg", attributes, "attack_damage", 1.0, "%.1f", x, y, ChatFormatting.RED);
+        y = renderAttributeWithTruncation(guiGraphics, "Attack Speed", attributes, "attack_speed", 4.0, "%.2f", x, y, ChatFormatting.GOLD);
+        y = renderAttributeWithTruncation(guiGraphics, "Attack KB", attributes, "attack_knockback", 0.0, "%.2f", x, y, ChatFormatting.GOLD);
+        y = renderAttributeWithTruncation(guiGraphics, "Move Speed", attributes, "movement_speed", 0.25, "%.3f", x, y, ChatFormatting.WHITE);
+
+        // Defense
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Defense", x, y, ChatFormatting.BLUE);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        y = renderAttributeWithTruncation(guiGraphics, "Max Health", attributes, "max_health", 20.0, "%.1f", x, y, ChatFormatting.GREEN);
+        y = renderAttributeWithTruncation(guiGraphics, "Armor", attributes, "armor", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
+        y = renderAttributeWithTruncation(guiGraphics, "Toughness", attributes, "armor_toughness", 0.0, "%.1f", x, y, ChatFormatting.GRAY);
+        y = renderAttributeWithTruncation(guiGraphics, "Knockback Res", attributes, "knockback_resistance", 0.0, "%.0f%%", x, y, ChatFormatting.AQUA, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Blast Res", attributes, "explosion_knockback_resistance", 0.0, "%.0f%%", x, y, ChatFormatting.AQUA, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Absorption", attributes, "max_absorption", 0.0, "%.1f", x, y, ChatFormatting.YELLOW);
+        y = renderAttributeWithTruncation(guiGraphics, "Safe Fall", attributes, "safe_fall_distance", 3.0, "%.1f", x, y, ChatFormatting.WHITE);
+        y = renderAttributeWithTruncation(guiGraphics, "Fall Dmg", attributes, "fall_damage_multiplier", 1.0, "%.0f%%", x, y, ChatFormatting.WHITE, true);
+
+        // Other
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+        y = renderSectionHeader(guiGraphics, "Other", x, y, ChatFormatting.DARK_GRAY);
+        y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
+
+        y = renderAttributeWithTruncation(guiGraphics, "Burn Time", attributes, "burning_time", 1.0, "%.0f%%", x, y, ChatFormatting.GOLD, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Oxygen", attributes, "oxygen_bonus", 0.0, "%.1f", x, y, ChatFormatting.AQUA);
+        y = renderAttributeWithTruncation(guiGraphics, "Swim Speed", attributes, "water_movement_efficiency", 0.0, "%.0f%%", x, y, ChatFormatting.AQUA, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Footing", attributes, "movement_efficiency", 0.0, "%.0f%%", x, y, ChatFormatting.WHITE, true);
+        y = renderAttributeWithTruncation(guiGraphics, "Size", attributes, "scale", 1.0, "%.2f", x, y, ChatFormatting.WHITE);
+        y = renderAttributeWithTruncation(guiGraphics, "Follow Range", attributes, "follow_range", 32.0, "%.0f", x, y, ChatFormatting.WHITE);
+
+        return y;
     }
 
     private int renderPersonalitySectionScrollable(GuiGraphics guiGraphics, int x, int y) {

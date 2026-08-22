@@ -192,6 +192,20 @@ public class EntitySnapshot {
             attributes.putDouble("attack_damage", entity.getAttributeValue(Attributes.ATTACK_DAMAGE));
             attributes.putDouble("movement_speed", entity.getAttributeValue(Attributes.MOVEMENT_SPEED));
             attributes.putDouble("knockback_resistance", entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+            captureAttributeValue(entity, attributes, Attributes.ARMOR_TOUGHNESS, "armor_toughness", 0.0);
+            captureAttributeValue(entity, attributes, Attributes.ATTACK_SPEED, "attack_speed", 4.0);
+            captureAttributeValue(entity, attributes, Attributes.ATTACK_KNOCKBACK, "attack_knockback", 0.0);
+            captureAttributeValue(entity, attributes, Attributes.EXPLOSION_KNOCKBACK_RESISTANCE, "explosion_knockback_resistance", 0.0);
+            captureAttributeValue(entity, attributes, Attributes.MAX_ABSORPTION, "max_absorption", 0.0);
+            captureAttributeValue(entity, attributes, Attributes.SAFE_FALL_DISTANCE, "safe_fall_distance", 3.0);
+            captureAttributeValue(entity, attributes, Attributes.FALL_DAMAGE_MULTIPLIER, "fall_damage_multiplier", 1.0);
+            captureAttributeValue(entity, attributes, Attributes.BURNING_TIME, "burning_time", 1.0);
+            captureAttributeValue(entity, attributes, Attributes.OXYGEN_BONUS, "oxygen_bonus", 0.0);
+            captureAttributeValue(entity, attributes, Attributes.WATER_MOVEMENT_EFFICIENCY, "water_movement_efficiency", 0.0);
+            captureAttributeValue(entity, attributes, Attributes.MOVEMENT_EFFICIENCY, "movement_efficiency", 0.0);
+            captureAttributeValue(entity, attributes, Attributes.STEP_HEIGHT, "step_height", 0.6);
+            captureAttributeValue(entity, attributes, Attributes.SCALE, "scale", 1.0);
+            captureAttributeValue(entity, attributes, Attributes.FOLLOW_RANGE, "follow_range", 32.0);
 
             try {
                 captureAttributeValue(entity, attributes, AttributeRegistry.MAX_MANA, "max_mana", 100.0);

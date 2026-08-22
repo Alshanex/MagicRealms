@@ -1,0 +1,30 @@
+{
+  "display_key": "title.magic_realms.tomb_robber",
+  "description_key": "title.magic_realms.tomb_robber.desc",
+  "color": "#D9B36C",
+  "priority": 50,
+  "requirement_mode": "any",
+  "requirements": [
+    { "type": "visit_structure", "target": "minecraft:desert_pyramid" },
+    { "type": "visit_structure", "target": "minecraft:jungle_pyramid" }
+  ],
+  "rewards": {
+    "passive_effects": [
+      { "effect": "minecraft:night_vision", "show_particles": false }
+    ],
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.safe_fall_distance",
+        "id": "magic_realms:tomb_robber_fall",
+        "amount": 4.0,
+        "operation": "add_value"
+      },
+      {
+        "attribute": "minecraft:generic.explosion_knockback_resistance",
+        "id": "magic_realms:tomb_robber_blast",
+        "amount": 0.5,
+        "operation": "add_value"
+      }
+    ]
+  }
+}

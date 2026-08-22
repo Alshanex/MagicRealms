@@ -407,5 +407,9 @@
   "title.magic_realms.giantslayer": "Giantslayer",
   "title.magic_realms.giantslayer.desc": "Three of the great ones, felled.",
   "title.magic_realms.paragon": "Paragon",
-  "title.magic_realms.paragon.desc": "There is nothing left to prove."
+  "title.magic_realms.paragon.desc": "There is nothing left to prove.",
+  "title.magic_realms.sapper": "Sapper",
+  "title.magic_realms.sapper.desc": "Learned to stand still when the hissing starts.",
+  "title.magic_realms.tomb_robber": "Tomb-Robber",
+  "title.magic_realms.tomb_robber.desc": "The old vaults gave up what they were hiding."
 }

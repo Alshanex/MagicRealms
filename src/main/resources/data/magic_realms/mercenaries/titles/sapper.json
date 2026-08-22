@@ -1,0 +1,25 @@
+{
+  "display_key": "title.magic_realms.sapper",
+  "description_key": "title.magic_realms.sapper.desc",
+  "color": "#5FA86A",
+  "priority": 50,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "kill_entity",
+      "target": "minecraft:creeper",
+      "amount": 80
+    }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.explosion_knockback_resistance",
+        "id": "magic_realms:sapper_blast",
+        "amount": 0.8,
+        "operation": "add_value"
+      }
+    ],
+    "incoming_damage_multiplier": 0.95
+  }
+}

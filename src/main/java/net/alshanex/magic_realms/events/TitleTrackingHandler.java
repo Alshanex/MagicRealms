@@ -18,6 +18,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -130,12 +131,22 @@ public final class TitleTrackingHandler {
         double flatBonus = 0.0;
         double multiplier = 1.0;
 
+        // Resolved once rather than per title — weapon bonuses key off what's in hand, not what's being hit.
+        ItemStack weapon = mercenary.getMainHandItem();
+
         for (Title title : titles) {
             TitleRewards rewards = title.rewards();
             flatBonus += rewards.bonusDamage();
 
             for (TitleRewards.DamageBonus bonus : rewards.damageBonusVs()) {
                 if (matchesTag(victim, bonus.normalizedTag())) {
+                    multiplier *= bonus.multiplier();
+                }
+            }
+
+            for (TitleRewards.WeaponBonus bonus : rewards.weaponBonuses()) {
+                if (bonus.matches(weapon)) {
+                    flatBonus += bonus.bonus();
                     multiplier *= bonus.multiplier();
                 }
             }

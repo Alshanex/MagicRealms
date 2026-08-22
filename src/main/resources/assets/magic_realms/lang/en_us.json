@@ -349,5 +349,9 @@
   "title.magic_realms.archmage": "Archmage",
   "title.magic_realms.archmage.desc": "Mastery of the arcane, proven against the mighty.",
   "title.magic_realms.living_legend": "Living Legend",
-  "title.magic_realms.living_legend.desc": "Songs will be sung."
+  "title.magic_realms.living_legend.desc": "Songs will be sung.",
+  "title.magic_realms.axemaster": "Axemaster",
+  "title.magic_realms.axemaster.desc": "Four hundred kills, and the axe never dulled.",
+  "title.magic_realms.bowyer": "Bowyer",
+  "title.magic_realms.bowyer.desc": "Death arrives before the sound does."
 }

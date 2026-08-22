@@ -1,0 +1,17 @@
+{
+  "display_key": "title.magic_realms.axemaster",
+  "description_key": "title.magic_realms.axemaster.desc",
+  "color": "#C97B4A",
+  "priority": 65,
+  "requirement_mode": "all",
+  "requirements": [
+    { "type": "entity_class", "target": "warrior" },
+    { "type": "total_kills", "amount": 400 }
+  ],
+  "rewards": {
+    "weapon_bonus": [
+      { "item_tag": "c:tools/axe", "multiplier": 1.3, "bonus": 1.0 },
+      { "item": "minecraft:netherite_axe", "bonus": 2.0 }
+    ]
+  }
+}

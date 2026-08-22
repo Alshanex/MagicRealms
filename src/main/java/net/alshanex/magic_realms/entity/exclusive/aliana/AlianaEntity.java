@@ -19,6 +19,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -38,6 +39,9 @@ import java.util.List;
 
 public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Aliana";
+
+    private static final ResourceLocation NATURE_LOVER =
+            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "nature_lover");
 
     public AlianaEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -118,6 +122,8 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
+                    TitleManager.grantSilently(this, List.of(NATURE_LOVER));
+                    TitleManager.setDisplayedTitle(this, NATURE_LOVER);
                     this.refreshDisplayName();
                 }
             });

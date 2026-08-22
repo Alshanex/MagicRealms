@@ -17,6 +17,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -44,6 +45,9 @@ import java.util.Optional;
 
 public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Jara The Shardling";
+
+    private static final ResourceLocation HOLY_KNIGHT =
+            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "holy_knight");
 
     public JaraEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -88,6 +92,8 @@ public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMer
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
+                    TitleManager.grantSilently(this, List.of(HOLY_KNIGHT));
+                    TitleManager.setDisplayedTitle(this, HOLY_KNIGHT);
                     this.refreshDisplayName();
                 }
             });

@@ -1,0 +1,23 @@
+{
+  "display_key": "title.magic_realms.retainer",
+  "description_key": "title.magic_realms.retainer.desc",
+  "color": "#A8C0E0",
+  "priority": 20,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "contract_minutes",
+      "amount": 120
+    }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "id": "magic_realms:retainer_hp",
+        "amount": 2.0,
+        "operation": "add_value"
+      }
+    ]
+  }
+}

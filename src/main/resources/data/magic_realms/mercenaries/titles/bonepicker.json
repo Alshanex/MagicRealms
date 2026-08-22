@@ -1,0 +1,30 @@
+{
+  "display_key": "title.magic_realms.bonepicker",
+  "description_key": "title.magic_realms.bonepicker.desc",
+  "color": "#E4E0D0",
+  "priority": 45,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "kill_entity_tag",
+      "target": "minecraft:skeletons",
+      "amount": 150
+    }
+  ],
+  "rewards": {
+    "damage_bonus_vs": [
+      {
+        "entity_tag": "minecraft:skeletons",
+        "multiplier": 1.5
+      }
+    ],
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.armor",
+        "id": "magic_realms:bonepicker_armor",
+        "amount": 2.0,
+        "operation": "add_value"
+      }
+    ]
+  }
+}

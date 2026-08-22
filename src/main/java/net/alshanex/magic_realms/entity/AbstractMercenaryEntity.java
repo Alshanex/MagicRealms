@@ -844,6 +844,9 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
     @Override
     public boolean canBeAffected(MobEffectInstance pPotioneffect) {
         if (isStunned()) return false;
+        if (TitleManager.isImmuneTo(this, pPotioneffect.getEffect())) {
+            return false;
+        }
         return super.canBeAffected(pPotioneffect);
     }
 

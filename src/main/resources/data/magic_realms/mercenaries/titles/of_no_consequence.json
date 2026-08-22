@@ -1,0 +1,36 @@
+{
+  "display_key": "title.magic_realms.of_no_consequence",
+  "description_key": "title.magic_realms.of_no_consequence.desc",
+  "color": "#8A8A8A",
+  "priority": 500,
+  "announce": false,
+  "hidden": false,
+  "requirements": [],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.knockback_resistance",
+        "id": "magic_realms:no_consequence_immovable",
+        "amount": 1.0,
+        "operation": "add_value"
+      },
+      {
+        "attribute": "minecraft:generic.attack_damage",
+        "id": "magic_realms:no_consequence_strike",
+        "amount": 1.0,
+        "operation": "add_value"
+      }
+    ],
+    "passive_effects": [
+      { "effect": "minecraft:fire_resistance", "amplifier": 0, "show_particles": false }
+    ],
+    "on_hit_effects": [
+      { "effect": "minecraft:levitation", "duration": 25, "amplifier": 1, "chance": 0.08 }
+    ],
+    "damage_bonus_vs": [
+      { "entity_tag": "minecraft:undead", "multiplier": 3.0 }
+    ],
+    "incoming_damage_multiplier": 0.45,
+    "natural_regen": true
+  }
+}

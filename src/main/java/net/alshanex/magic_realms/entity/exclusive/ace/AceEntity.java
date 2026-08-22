@@ -17,6 +17,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -36,6 +37,9 @@ import java.util.Optional;
 
 public class AceEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Eden";
+
+    private static final ResourceLocation GODBANE =
+            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "godbane");
 
     public AceEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -79,6 +83,8 @@ public class AceEntity extends AbstractMercenaryEntity implements IExclusiveMerc
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
+                    TitleManager.grantSilently(this, List.of(GODBANE));
+                    TitleManager.setDisplayedTitle(this, GODBANE);
                     this.refreshDisplayName();
                 }
             });

@@ -16,6 +16,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -33,6 +34,9 @@ import java.util.List;
 
 public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Amadeus Voidwalker";
+
+    private static final ResourceLocation SON_OF_THE_VOID =
+            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "son_of_the_void");
 
     public AmadeusEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -76,6 +80,8 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
+                    TitleManager.grantSilently(this, List.of(SON_OF_THE_VOID));
+                    TitleManager.setDisplayedTitle(this, SON_OF_THE_VOID);
                     this.refreshDisplayName();
                 }
             });

@@ -1,0 +1,18 @@
+{
+  "display_key": "title.magic_realms.holy_knight",
+  "description_key": "title.magic_realms.holy_knight.desc",
+  "color": "#F7F357",
+  "priority": 150,
+  "requirement_mode": "all",
+  "requirements": [],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "irons_spellbooks:holy_spell_power",
+        "id": "magic_realms:holy_knight_power",
+        "amount": 0.5,
+        "operation": "add_multiplied_base"
+      }
+    ]
+  }
+}

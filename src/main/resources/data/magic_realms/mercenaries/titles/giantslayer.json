@@ -1,0 +1,24 @@
+{
+  "display_key": "title.magic_realms.giantslayer",
+  "description_key": "title.magic_realms.giantslayer.desc",
+  "color": "#FF8C42",
+  "priority": 95,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "boss_kills",
+      "amount": 3
+    }
+  ],
+  "rewards": {
+    "bonus_damage": 2.0,
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "id": "magic_realms:giantslayer_hp",
+        "amount": 0.1,
+        "operation": "add_multiplied_base"
+      }
+    ]
+  }
+}

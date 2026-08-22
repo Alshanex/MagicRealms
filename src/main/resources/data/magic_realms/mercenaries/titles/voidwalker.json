@@ -1,0 +1,30 @@
+{
+  "display_key": "title.magic_realms.voidwalker",
+  "description_key": "title.magic_realms.voidwalker.desc",
+  "color": "#7B5FC4",
+  "priority": 60,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "kill_entity",
+      "target": "minecraft:enderman",
+      "amount": 60
+    }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.movement_speed",
+        "id": "magic_realms:voidwalker_speed",
+        "amount": 0.1,
+        "operation": "add_multiplied_base"
+      },
+      {
+        "attribute": "minecraft:generic.safe_fall_distance",
+        "id": "magic_realms:voidwalker_fall",
+        "amount": 6.0,
+        "operation": "add_value"
+      }
+    ]
+  }
+}

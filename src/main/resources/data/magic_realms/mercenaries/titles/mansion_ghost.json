@@ -1,0 +1,21 @@
+{
+  "display_key": "title.magic_realms.mansion_ghost",
+  "description_key": "title.magic_realms.mansion_ghost.desc",
+  "color": "#8B6B4A",
+  "priority": 65,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "visit_structure",
+      "target": "minecraft:woodland_mansion"
+    }
+  ],
+  "rewards": {
+    "damage_bonus_vs": [
+      {
+        "entity_tag": "minecraft:illager",
+        "multiplier": 1.8
+      }
+    ]
+  }
+}

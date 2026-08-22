@@ -1,0 +1,18 @@
+{
+  "display_key": "title.magic_realms.godbane",
+  "description_key": "title.magic_realms.godbane.desc",
+  "color": "#B08D57",
+  "priority": 150,
+  "requirements": [],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "irons_spellbooks:spell_power",
+        "id": "magic_realms:godbane_power",
+        "amount": 0.5,
+        "operation": "add_multiplied_base"
+      }
+    ],
+    "incoming_damage_multiplier": 0.5
+  }
+}

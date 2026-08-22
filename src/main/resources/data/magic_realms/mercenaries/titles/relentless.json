@@ -1,0 +1,24 @@
+{
+  "display_key": "title.magic_realms.relentless",
+  "description_key": "title.magic_realms.relentless.desc",
+  "color": "#D46A4A",
+  "priority": 80,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "damage_dealt",
+      "amount": 10000
+    }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.attack_speed",
+        "id": "magic_realms:relentless_speed",
+        "amount": 0.2,
+        "operation": "add_multiplied_base"
+      }
+    ],
+    "bonus_damage": 1.0
+  }
+}

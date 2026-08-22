@@ -1,0 +1,22 @@
+{
+  "display_key": "title.magic_realms.vermin_culler",
+  "description_key": "title.magic_realms.vermin_culler.desc",
+  "color": "#7E9B4F",
+  "priority": 45,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "kill_entity_tag",
+      "target": "minecraft:arthropod",
+      "amount": 150
+    }
+  ],
+  "rewards": {
+    "damage_bonus_vs": [
+      {
+        "entity_tag": "minecraft:arthropod",
+        "multiplier": 1.6
+      }
+    ]
+  }
+}

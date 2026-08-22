@@ -1,0 +1,18 @@
+{
+  "display_key": "title.magic_realms.nature_lover",
+  "description_key": "title.magic_realms.nature_lover.desc",
+  "color": "#9BC46A",
+  "priority": 150,
+  "requirement_mode": "all",
+  "requirements": [],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "irons_spellbooks:nature_spell_power",
+        "id": "magic_realms:nature_lover_power",
+        "amount": 0.5,
+        "operation": "add_multiplied_base"
+      }
+    ]
+  }
+}

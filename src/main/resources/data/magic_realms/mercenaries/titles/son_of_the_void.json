@@ -1,0 +1,20 @@
+{
+  "display_key": "title.magic_realms.son_of_the_void",
+  "description_key": "title.magic_realms.son_of_the_void.desc",
+  "color": "#D38BE8",
+  "priority": 150,
+  "requirement_mode": "all",
+  "requirements": [
+    { "type": "kill_entity", "target": "minecraft:ender_dragon", "amount": 1 }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "id": "magic_realms:son_of_the_void_power",
+        "amount": 0.5,
+        "operation": "add_multiplied_base"
+      }
+    ]
+  }
+}

@@ -18,6 +18,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.PersonalityInitializer;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -40,6 +41,9 @@ import java.util.List;
 
 public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Catas";
+
+    private static final ResourceLocation MOTH_QUEEN =
+            ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "moth_queen");
 
     public CatasEntity(EntityType<? extends AbstractSpellCastingMob> entityType, Level level) {
         super(entityType, level);
@@ -83,6 +87,8 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
             // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
+                    TitleManager.grantSilently(this, List.of(MOTH_QUEEN));
+                    TitleManager.setDisplayedTitle(this, MOTH_QUEEN);
                     this.refreshDisplayName();
                 }
             });

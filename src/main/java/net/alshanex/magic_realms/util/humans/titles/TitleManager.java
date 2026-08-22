@@ -11,10 +11,12 @@ import net.alshanex.magic_realms.data.TitleProgressData;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -209,6 +211,24 @@ public final class TitleManager {
         entity.mutateTitleProgress(d -> changed[0] = d.setDisplayedTitle(titleId));
         if (changed[0]) refreshDisplayName(entity);
         return changed[0];
+    }
+
+    /**
+     * True when any held title grants immunity to this effect.
+     *
+     * <p>Consumed by {@code AbstractMercenaryEntity.canBeAffected}, which is vanilla's own gate on
+     * {@link net.minecraft.world.entity.LivingEntity#addEffect} - so this blocks every source of the effect
+     * (potions, tipped arrows, mob attacks, commands) without needing to intercept each one.
+     */
+    public static boolean isImmuneTo(AbstractMercenaryEntity entity, Holder<MobEffect> effect) {
+        if (entity == null || effect == null) return false;
+
+        for (Title t : earnedTitles(entity)) {
+            for (Holder<MobEffect> immune : t.rewards().immuneEffects()) {
+                if (immune.value() == effect.value()) return true;
+            }
+        }
+        return false;
     }
 
     /** True when any held title grants out-of-combat regeneration. Replaces the old boss-kill regen unlock. */

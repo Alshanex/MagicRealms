@@ -1,0 +1,30 @@
+{
+  "display_key": "title.magic_realms.raidbreaker",
+  "description_key": "title.magic_realms.raidbreaker.desc",
+  "color": "#C05A5A",
+  "priority": 55,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "kill_entity_tag",
+      "target": "minecraft:raiders",
+      "amount": 120
+    }
+  ],
+  "rewards": {
+    "damage_bonus_vs": [
+      {
+        "entity_tag": "minecraft:raiders",
+        "multiplier": 1.6
+      }
+    ],
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.knockback_resistance",
+        "id": "magic_realms:raidbreaker_kb",
+        "amount": 0.2,
+        "operation": "add_value"
+      }
+    ]
+  }
+}

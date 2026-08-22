@@ -1,0 +1,26 @@
+{
+  "display_key": "title.magic_realms.swordmaster",
+  "description_key": "title.magic_realms.swordmaster.desc",
+  "color": "#B8C4D4",
+  "priority": 65,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "entity_class",
+      "target": "warrior"
+    },
+    {
+      "type": "total_kills",
+      "amount": 400
+    }
+  ],
+  "rewards": {
+    "weapon_bonus": [
+      {
+        "item_tag": "c:tools/sword",
+        "multiplier": 1.25,
+        "bonus": 1.0
+      }
+    ]
+  }
+}

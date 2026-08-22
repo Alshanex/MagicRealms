@@ -28,6 +28,7 @@ import java.util.List;
  *     { "attribute": "minecraft:generic.max_health",    "id": "magic_realms:dragonslayer_hp", "amount": 0.15, "operation": "add_multiplied_base" }
  *   ],
  *   "passive_effects": [ { "effect": "minecraft:fire_resistance" } ],
+ *   "immune_effects":  [ "minecraft:poison", "minecraft:wither" ],
  *   "on_hit_effects":  [ { "effect": "minecraft:wither", "duration": 60, "amplifier": 1, "chance": 0.25 } ],
  *   "bonus_damage": 1.5,
  *   "damage_bonus_vs": [ { "entity_tag": "minecraft:undead", "multiplier": 1.5 } ],
@@ -40,6 +41,7 @@ import java.util.List;
 public record TitleRewards(
         List<AttributeEntry> attributeModifiers,
         List<EffectSpec> passiveEffects,
+        List<Holder<MobEffect>> immuneEffects,
         List<OnHitEffect> onHitEffects,
         double bonusDamage,
         List<DamageBonus> damageBonusVs,
@@ -49,11 +51,12 @@ public record TitleRewards(
 ) {
 
     public static final TitleRewards NONE =
-            new TitleRewards(List.of(), List.of(), List.of(), 0.0, List.of(), List.of(), 1.0, false);
+            new TitleRewards(List.of(), List.of(), List.of(), List.of(), 0.0, List.of(), List.of(), 1.0, false);
 
     public static final Codec<TitleRewards> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             AttributeEntry.CODEC.listOf().optionalFieldOf("attribute_modifiers", List.of()).forGetter(TitleRewards::attributeModifiers),
             EffectSpec.CODEC.listOf().optionalFieldOf("passive_effects", List.of()).forGetter(TitleRewards::passiveEffects),
+            BuiltInRegistries.MOB_EFFECT.holderByNameCodec().listOf().optionalFieldOf("immune_effects", List.of()).forGetter(TitleRewards::immuneEffects),
             OnHitEffect.CODEC.listOf().optionalFieldOf("on_hit_effects", List.of()).forGetter(TitleRewards::onHitEffects),
             Codec.DOUBLE.optionalFieldOf("bonus_damage", 0.0).forGetter(TitleRewards::bonusDamage),
             DamageBonus.CODEC.listOf().optionalFieldOf("damage_bonus_vs", List.of()).forGetter(TitleRewards::damageBonusVs),
@@ -65,6 +68,7 @@ public record TitleRewards(
     public boolean isEmpty() {
         return attributeModifiers.isEmpty()
                 && passiveEffects.isEmpty()
+                && immuneEffects.isEmpty()
                 && onHitEffects.isEmpty()
                 && bonusDamage == 0.0
                 && damageBonusVs.isEmpty()
@@ -123,7 +127,7 @@ public record TitleRewards(
      * Damage scaling tied to what the mercenary is <em>holding</em>, rather than to what they're hitting.
      * Lets a title reward a fighting style - an "Axemaster" hits harder with axes, a "Bowyer" with bows.
      *
-     * <p>Set {@code item} for a single item, {@code item_tag} for items in a tag, or both (matching either is enough).
+     * <p>Set {@code item} for a single item, {@code item_tag} for a family, or both (matching either is enough).
      * A leading {@code '#'} on the tag is accepted and ignored, for consistency with {@code damage_bonus_vs}.
      * If neither field is set the bonus never applies, which is the safe failure mode for a typo.
      *
@@ -180,6 +184,11 @@ public record TitleRewards(
             buf.writeBoolean(e.showParticles());
         }
 
+        buf.writeVarInt(r.immuneEffects.size());
+        for (Holder<MobEffect> e : r.immuneEffects) {
+            buf.writeResourceLocation(BuiltInRegistries.MOB_EFFECT.getKey(e.value()));
+        }
+
         buf.writeVarInt(r.onHitEffects.size());
         for (OnHitEffect e : r.onHitEffects) {
             buf.writeResourceLocation(BuiltInRegistries.MOB_EFFECT.getKey(e.effect().value()));
@@ -231,6 +240,13 @@ public record TitleRewards(
             if (holder != null) passives.add(new EffectSpec(holder, amplifier, particles));
         }
 
+        int immuneCount = buf.readVarInt();
+        List<Holder<MobEffect>> immunities = new ArrayList<>(immuneCount);
+        for (int i = 0; i < immuneCount; i++) {
+            ResourceLocation effId = buf.readResourceLocation();
+            BuiltInRegistries.MOB_EFFECT.getHolder(effId).ifPresent(immunities::add);
+        }
+
         int onHitCount = buf.readVarInt();
         List<OnHitEffect> onHits = new ArrayList<>(onHitCount);
         for (int i = 0; i < onHitCount; i++) {
@@ -263,6 +279,6 @@ public record TitleRewards(
         double incoming = buf.readDouble();
         boolean regen = buf.readBoolean();
 
-        return new TitleRewards(attrs, passives, onHits, bonusDamage, bonuses, weapons, incoming, regen);
+        return new TitleRewards(attrs, passives, immunities, onHits, bonusDamage, bonuses, weapons, incoming, regen);
     }
 }

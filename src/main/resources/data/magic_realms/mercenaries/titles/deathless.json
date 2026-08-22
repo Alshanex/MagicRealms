@@ -1,0 +1,26 @@
+{
+  "display_key": "title.magic_realms.deathless",
+  "description_key": "title.magic_realms.deathless.desc",
+  "color": "#E0D080",
+  "priority": 85,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "counter",
+      "target": "close_calls",
+      "amount": 15
+    }
+  ],
+  "rewards": {
+    "natural_regen": true,
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.max_absorption",
+        "id": "magic_realms:deathless_absorb",
+        "amount": 4.0,
+        "operation": "add_value"
+      }
+    ],
+    "incoming_damage_multiplier": 0.92
+  }
+}

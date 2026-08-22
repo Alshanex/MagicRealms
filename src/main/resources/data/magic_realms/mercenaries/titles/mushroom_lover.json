@@ -1,0 +1,14 @@
+{
+  "display_key": "title.magic_realms.mushroom_lover",
+  "description_key": "title.magic_realms.mushroom_lover.desc",
+  "color": "#C22E2B",
+  "priority": 150,
+  "requirements": [],
+  "rewards": {
+    "immune_effects": ["minecraft:poison", "minecraft:wither", "minecraft:hunger"],
+    "on_hit_effects": [
+      { "effect": "minecraft:poison", "duration": 100, "amplifier": 1, "chance": 0.8 }
+    ],
+    "natural_regen": true
+  }
+}

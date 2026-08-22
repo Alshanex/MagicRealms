@@ -1,0 +1,39 @@
+{
+  "display_key": "title.magic_realms.paragon",
+  "description_key": "title.magic_realms.paragon.desc",
+  "color": "#FFD24A",
+  "priority": 110,
+  "requirement_mode": "all",
+  "requirements": [
+    {
+      "type": "star_level",
+      "amount": 3
+    },
+    {
+      "type": "total_kills",
+      "amount": 600
+    },
+    {
+      "type": "contract_minutes",
+      "amount": 300
+    }
+  ],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.attack_damage",
+        "id": "magic_realms:paragon_dmg",
+        "amount": 0.1,
+        "operation": "add_multiplied_total"
+      },
+      {
+        "attribute": "minecraft:generic.armor",
+        "id": "magic_realms:paragon_armor",
+        "amount": 4.0,
+        "operation": "add_value"
+      }
+    ],
+    "incoming_damage_multiplier": 0.9,
+    "natural_regen": true
+  }
+}

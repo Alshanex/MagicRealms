@@ -60,6 +60,7 @@ public final class TitleEffectTickHandler {
         if (entity.level().isClientSide) return;
 
         applyAttributeModifiers(entity);
+        stripImmuneEffects(entity);
         applyPassiveEffects(entity);
 
         int cycle = entity.tickCount / CHECK_INTERVAL_TICKS;
@@ -165,6 +166,10 @@ public final class TitleEffectTickHandler {
         for (Title title : TitleManager.earnedTitles(entity)) {
             for (TitleRewards.EffectSpec spec : title.rewards().passiveEffects()) {
                 Holder<MobEffect> effect = spec.effect();
+
+                // Immunity wins over a passive grant, so a pack that both grants and immunises doesn't flicker.
+                if (TitleManager.isImmuneTo(entity, effect)) continue;
+
                 MobEffectInstance existing = entity.getEffect(effect);
 
                 // Only refresh when it's about to lapse, or when a weaker instance is present.
@@ -177,6 +182,29 @@ public final class TitleEffectTickHandler {
                 entity.addEffect(new MobEffectInstance(
                         effect, PASSIVE_EFFECT_DURATION, spec.amplifier(), true, spec.showParticles()));
             }
+        }
+    }
+
+    /**
+     * Clears effects the mercenary is now immune to.
+     */
+    private static void stripImmuneEffects(AbstractMercenaryEntity entity) {
+        List<Title> titles = TitleManager.earnedTitles(entity);
+        if (titles.isEmpty()) return;
+
+        List<Holder<MobEffect>> toRemove = null;
+        for (Title title : titles) {
+            for (Holder<MobEffect> immune : title.rewards().immuneEffects()) {
+                if (entity.getEffect(immune) == null) continue;
+                if (toRemove == null) toRemove = new ArrayList<>(2);
+                toRemove.add(immune);
+            }
+        }
+
+        if (toRemove == null) return;
+        // Collected first so we're not mutating the active-effects map while iterating it.
+        for (Holder<MobEffect> effect : toRemove) {
+            entity.removeEffect(effect);
         }
     }
 

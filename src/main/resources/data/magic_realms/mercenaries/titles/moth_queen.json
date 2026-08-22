@@ -1,0 +1,18 @@
+{
+  "display_key": "title.magic_realms.moth_queen",
+  "description_key": "title.magic_realms.moth_queen.desc",
+  "color": "gold",
+  "priority": 150,
+  "requirements": [],
+  "rewards": {
+    "attribute_modifiers": [
+      {
+        "attribute": "minecraft:generic.armor",
+        "id": "magic_realms:veteran_armor",
+        "amount": 3.0,
+        "operation": "add_value"
+      }
+    ],
+    "incoming_damage_multiplier": 0.75
+  }
+}

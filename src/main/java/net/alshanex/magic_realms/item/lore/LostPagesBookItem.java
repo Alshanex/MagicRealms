@@ -170,7 +170,5 @@ public class LostPagesBookItem extends Item {
         tooltipComponents.add(Component.translatable("item.magic_realms.book.tooltip")
                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         tooltipComponents.add(Component.empty());
-        tooltipComponents.add(Component.translatable("item.magic_realms.book.hint")
-                .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
     }
 }

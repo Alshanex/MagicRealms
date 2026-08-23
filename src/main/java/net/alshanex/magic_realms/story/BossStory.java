@@ -4,6 +4,10 @@ import net.alshanex.magic_realms.data.PageIdentifier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -21,7 +25,22 @@ public class BossStory {
     public enum ContentType { TEXT, IMAGE }
 
     public record Chapter(@Nullable ResourceLocation coverImage, List<ContentEntry> contents,
-                          boolean unlockedByDefault, boolean isSubstory, List<PageIdentifier> prerequisites) {
+                          boolean unlockedByDefault, boolean isSubstory, List<PageIdentifier> prerequisites,
+                          List<ResourceLocation> unlockStructures, List<TagKey<Structure>> unlockStructureTags) {
+
+        public boolean hasStructureUnlocks() {
+            return !unlockStructures.isEmpty() || !unlockStructureTags.isEmpty();
+        }
+
+        public boolean matchesStructure(Holder<Structure> holder) {
+            ResourceLocation id = holder.unwrapKey().map(ResourceKey::location).orElse(null);
+            if (id != null && unlockStructures.contains(id)) return true;
+            for (TagKey<Structure> tag : unlockStructureTags) {
+                if (holder.is(tag)) return true;
+            }
+            return false;
+        }
+
         public int contentCount() { return contents.size(); }
 
         public ContentEntry getContent(int index) { return contents.get(index); }
@@ -126,6 +145,8 @@ public class BossStory {
         private boolean unlockedByDefault = false;
         private boolean isSubstory = false;
         private int textIndex = 0;
+        private final List<ResourceLocation> unlockStructures = new ArrayList<>();
+        private final List<TagKey<Structure>> unlockStructureTags = new ArrayList<>();
 
         private ChapterBuilder(Builder parent, @Nullable ResourceLocation coverImage) {
             this.parent = parent;
@@ -158,9 +179,22 @@ public class BossStory {
             return this;
         }
 
+        /** Visiting this structure unlocks the chapter, if its prerequisites are already met. */
+        public ChapterBuilder unlockedByVisiting(ResourceLocation structureId) {
+            this.unlockStructures.add(structureId);
+            return this;
+        }
+
+        /** Visiting any structure in this tag unlocks the chapter. */
+        public ChapterBuilder unlockedByVisiting(TagKey<Structure> structureTag) {
+            this.unlockStructureTags.add(structureTag);
+            return this;
+        }
+
         public Builder endChapter() {
             if (contents.isEmpty()) throw new IllegalStateException("Chapter must have at least one content entry");
-            parent.addChapter(new Chapter(coverImage, List.copyOf(contents), unlockedByDefault, isSubstory, List.copyOf(prerequisites)));
+            parent.addChapter(new Chapter(coverImage, List.copyOf(contents), unlockedByDefault, isSubstory,
+                    List.copyOf(prerequisites), List.copyOf(unlockStructures), List.copyOf(unlockStructureTags)));
             return parent;
         }
     }

@@ -33,6 +33,8 @@ public class MRBossStoryRegistry {
                             .endChapter()
                             // Chapter 1: "The Ruined Village"
                             .chapter(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_1.png"))
+                            .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 0) // Requires Chapter 0 to be unlocked
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_snowy"))
                             .page()
                             .page()
                             .image(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_1/image_1.png"))
@@ -43,6 +45,7 @@ public class MRBossStoryRegistry {
                             // Chapter 2: "Frozen Graves"
                             .chapter(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_2.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 1) // Requires Chapter 1 to be unlocked
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "ice_spider_den"))
                             .page()
                             .page()
                             .page()
@@ -53,6 +56,7 @@ public class MRBossStoryRegistry {
                             // Chapter 3: "The Throne of Death"
                             .chapter(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_3.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 2) // Requires Chapter 2 to be unlocked
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "catacombs"))
                             .page()
                             .page()
                             .image(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_3/image_1.png"))
@@ -63,6 +67,7 @@ public class MRBossStoryRegistry {
                             // Chapter 4: "Ilisiitsoq"
                             .chapter(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_4.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 3) // Requires Chapter 3 to be unlocked
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_snowy"))
                             .page()
                             .page()
                             .image(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_4/page_1.png"))
@@ -71,6 +76,8 @@ public class MRBossStoryRegistry {
                             .endChapter()
                             // Substory 1: Lila's secret diary
                             .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_2.png"))
+                            .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 0) // Requires Chapter 0 to be unlocked
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_snowy"))
                             .page()
                             .page()
                             .page()
@@ -93,6 +100,8 @@ public class MRBossStoryRegistry {
                             .endChapter()
                             // Substory 4: The priest note
                             .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_4.png"))
+                            .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 3) // Requires Chapter 3 to be unlocked
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_snowy"))
                             .page()
                             .page()
                             .endChapter()

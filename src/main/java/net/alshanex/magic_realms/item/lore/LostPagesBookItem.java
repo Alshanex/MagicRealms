@@ -6,6 +6,7 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRDataComponentRegistry;
 import net.alshanex.magic_realms.registry.MRRegistries;
 import net.alshanex.magic_realms.story.BossStory;
+import net.alshanex.magic_realms.story.ChapterUnlocker;
 import net.alshanex.magic_realms.story.LoreProgression;
 import net.alshanex.magic_realms.util.MRClientUtils;
 import net.minecraft.ChatFormatting;
@@ -96,49 +97,51 @@ public class LostPagesBookItem extends Item {
     private InteractionResultHolder<ItemStack> tryInsertPage(Level level, Player player,
                                                              ItemStack bookStack, ItemStack pageStack,
                                                              PageIdentifier pageId) {
-        PlayerLoreProgress progress = player.getData(MRDataAttachments.PLAYER_LORE);
+        ChapterUnlocker.Result check = ChapterUnlocker.canUnlock(player, pageId.storyId(), pageId.chapter());
 
-        if (progress.hasPage(pageId.storyId(), pageId.chapter())) {
+        // Unknown story or a chapter index the page shouldn't be pointing at: fail quietly.
+        if (check == ChapterUnlocker.Result.INVALID_CHAPTER || check == ChapterUnlocker.Result.BOOK_SEALED) {
+            return InteractionResultHolder.fail(bookStack);
+        }
+
+        if (check == ChapterUnlocker.Result.ALREADY_OWNED) {
             if (!level.isClientSide) {
-                player.displayClientMessage(Component.translatable("item.magic_realms.book.page_already_collected").withStyle(ChatFormatting.RED), true);
+                player.displayClientMessage(
+                        Component.translatable("item.magic_realms.book.page_already_collected")
+                                .withStyle(ChatFormatting.RED), true);
             }
             return InteractionResultHolder.fail(bookStack);
         }
 
-        BossStory story = MRRegistries.BOSS_STORIES.get(pageId.storyId());
-        if (story == null || !story.isValidChapter(pageId.chapter())) {
+        if (check == ChapterUnlocker.Result.MISSING_PREREQUISITES) {
+            if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                        Component.translatable("ui.magic_realms.chapter_page_locked")
+                                .withStyle(ChatFormatting.RED)));
+            }
             return InteractionResultHolder.fail(bookStack);
         }
 
-        BossStory.Chapter targetChapter = story.getChapter(pageId.chapter());
-        for (PageIdentifier prereq : targetChapter.prerequisites()) {
-            if (!progress.hasPage(prereq.storyId(), prereq.chapter())) {
-                if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-                    serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(Component.translatable("ui.magic_realms.chapter_page_locked").withStyle(ChatFormatting.RED)));
-                }
+        // Requirements met. The client stops here and plays the swing; the server does the real work.
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+            ChapterUnlocker.Result result = ChapterUnlocker.tryUnlock(serverPlayer,
+                    pageId.storyId(), pageId.chapter(),
+                    null, SoundEvents.BOOK_PAGE_TURN);
+
+            // Re-checked server-side, so a desynced client can't consume the page for nothing.
+            if (!result.isUnlocked()) {
                 return InteractionResultHolder.fail(bookStack);
             }
-        }
-
-        if (!level.isClientSide) {
-            // Update the player's data directly
-            PlayerLoreProgress newProgress = progress.withPage(pageId.storyId(), pageId.chapter());
-            player.setData(MRDataAttachments.PLAYER_LORE, newProgress);
 
             pageStack.shrink(1);
 
             player.displayClientMessage(
                     Component.translatable("item.magic_realms.book.page_added",
-                                    BossStory.chapterTitleComponent(pageId.storyId(), pageId.chapter()).withStyle(ChatFormatting.GOLD),
-                                    BossStory.titleComponent(pageId.storyId()).withStyle(ChatFormatting.GOLD))
+                                    BossStory.chapterTitleComponent(pageId.storyId(), pageId.chapter())
+                                            .withStyle(ChatFormatting.GOLD),
+                                    BossStory.titleComponent(pageId.storyId())
+                                            .withStyle(ChatFormatting.GOLD))
                             .withStyle(ChatFormatting.GREEN), true);
-
-            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 1.0F, 1.0F);
-
-            if (!(progress.isStoryComplete(pageId.storyId())) && newProgress.isStoryComplete(pageId.storyId())) {
-                handleStoryCompletion(level, player, story, pageId.storyId());
-            }
         }
 
         return InteractionResultHolder.sidedSuccess(bookStack, level.isClientSide);

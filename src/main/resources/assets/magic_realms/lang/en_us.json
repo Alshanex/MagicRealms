@@ -56,7 +56,7 @@
   "story.magic_realms.marcus_thorpan.chapter_2.title": "Frozen Graves",
   "story.magic_realms.marcus_thorpan.chapter_2.page_0.text": "When I breached the nest, my staff was raised, ready to slaughter the beasts that took my people. Instead, I found a silence thicker than the winter night.\nThe cavern was a slaughterhouse, but not by my hand. The massive ice spiders lay butchered across the frost alongside the remains of my villagers. The cavern floor was a lake of deep, frozen blood. My rage instantly turned into a suffocating, icy dread.",
   "story.magic_realms.marcus_thorpan.chapter_2.page_1.text": "As I walked through the carnage, a chilling realization froze the breath in my lungs. Every single corpse - villager and monster alike - had been meticulously beheaded. There was not a single skull left in the den. This was not a feeding; it was a systematic harvest by something far more calculated than a mindless beast.",
-  "story.magic_realms.marcus_thorpan.chapter_2.page_2.text": "In the center of the gore sat an empty altar of frozen blood. Whatever rested there had been taken, but carved directly into the ice of the pedestal was a mark: a jagged, broken circle with frost-slicked spikes pointing toward an empty, hollow center. I do not know what this mark represents, nor do I know what kind of horror could slaughter a nest of spiders so effortlessly. I cannot let this profane site be lost to the snow. I will build my shelter directly above this den to study the symbol. I must know what is hunting us.",
+  "story.magic_realms.marcus_thorpan.chapter_2.page_2.text": "In the center of the gore sat an empty altar of frozen blood. Whatever rested there had been taken, but carved directly into the ice of the pedestal was a mark: a jagged, broken circle with spikes pointing toward an empty, hollow center. I do not know what this mark represents, nor do I know what kind of horror could slaughter a nest of spiders so effortlessly. I cannot let this profane site be lost to the snow. I will build my shelter directly above this den to study the symbol.",
   "story.magic_realms.marcus_thorpan.chapter_2.page_3.text": "I buried my friends in headless tombs of ice, paid my final respects, and prepared for a journey. Years ago, from the hushed whispers of mercenaries, I heard tales of a profane tome - the Necronomicon - said to hold the absolute secrets of blood magic. I had long dismissed the book as a cursed relic belonging to the Dead King of the Catacombs, a place beneath my scholarly interest.",
   "story.magic_realms.marcus_thorpan.chapter_2.page_4.text": "Now, it is my only lead. I will tear that book from the Catacombs if I must, for it may be the only key to understanding this cursed mark and stopping the slaughter to come.",
 
@@ -144,7 +144,7 @@
   "item.magic_realms.catalyst.tooltip.configured": "Blueprint configured",
   "item.magic_realms.catalyst.tooltip.empty": "No blueprint configured",
   "item.magic_realms.catalyst.tooltip.keybind_hint": "Press [%s] to configure",
-  "item.magic_realms.lost_pages_book": "Stories of the Fallen",
+  "item.magic_realms.lost_pages_book": "Book of Remembrance",
   "item.magic_realms.lost_page": "Lost Page",
   "item.magic_realms.lost_page.named": "Lost Page: %s",
   "item.magic_realms.lost_page.story": "Story: %s",
@@ -213,6 +213,7 @@
   "message.magic_realms.jara.special_phrase.2": "%s Eden you are a waste of resonance. You should jump into the void NOW. Maybe if you took your time caring for people instead of murdering people's loved ones you'd have someone who LOVED YOU. YOU ARE A WASTE OF SPACE. YOU SHOULD TURN INTO EXPERIENCE NOW.",
   "message.magic_realms.gojo_mojo.special_phrase.1": "%s Hey bud, If you so happen to have a spare Mace lying around, I could use it & deal heavy damage to our foes.",
   "message.magic_realms.gojo_mojo.special_phrase.2": "%s I don't know about you but after a tough fight.. I'm starving for a classic sundae!",
+  "message.magic_realms.structure_memory_unlocked": "Memories from this place entered the Book of Remembrance: %s",
 
   "tooltip.magic_realms.wisewood_chair": "Seats visiting Mercenaries",
   "tooltip.magic_realms.wisewood_chair_inert": "Safe for building",

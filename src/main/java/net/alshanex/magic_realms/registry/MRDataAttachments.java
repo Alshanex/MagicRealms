@@ -76,6 +76,13 @@ public class MRDataAttachments {
                     .build()
     );
 
+    public static final Supplier<AttachmentType<PlayerLoreProgress>> PLAYER_LORE =
+            ATTACHMENT_TYPES.register("player_lore", () -> AttachmentType.builder(() -> PlayerLoreProgress.EMPTY)
+                    .serialize(PlayerLoreProgress.CODEC)
+                    .copyOnDeath()
+                    .sync(PlayerLoreProgress.STREAM_CODEC)
+                    .build());
+
     public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);
     }

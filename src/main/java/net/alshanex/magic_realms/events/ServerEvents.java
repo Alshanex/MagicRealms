@@ -1,15 +1,21 @@
 package net.alshanex.magic_realms.events;
 
+import io.redspace.ironsspellbooks.api.events.SpellPreCastEvent;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.chimera.ChimeraEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.util.BanditCommands;
+import net.alshanex.magic_realms.util.GivePageCommand;
 import net.alshanex.magic_realms.util.HumanEntityCommands;
+import net.alshanex.magic_realms.util.chimera.BloodSiphonManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
@@ -21,6 +27,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.ArrayList;
@@ -52,6 +59,8 @@ public class ServerEvents {
                 currentTick = 0;
             }
         }
+
+        BloodSiphonManager.tick();
     }
 
     private static void scheduleDelayedResponse(Runnable responseAction, int tickDelay) {
@@ -63,7 +72,7 @@ public class ServerEvents {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         HumanEntityCommands.register(event.getDispatcher());
         BanditCommands.register(event.getDispatcher());
-        MagicRealms.LOGGER.info("Registered Magic Realms commands");
+        GivePageCommand.register(event.getDispatcher());
     }
 
     @SubscribeEvent
@@ -137,5 +146,32 @@ public class ServerEvents {
         );
 
         return !nearbyAliana.isEmpty();
+    }
+
+    @SubscribeEvent
+    public static void onSpellPreCasted(SpellPreCastEvent event){
+        if(event.getEntity() instanceof ServerPlayer player && !player.level().isClientSide){
+            if(event.getSchoolType() == SchoolRegistry.BLOOD.get()){
+                var radius = 5;
+                var radiusSqr = radius * radius;
+                List<ChimeraEntity> nearbyChimeras = player.level().getEntitiesOfClass(ChimeraEntity.class, new AABB(player.position().subtract(radius, radius, radius), player.position().add(radius, radius, radius)),
+                        chimeraEntity -> chimeraEntity.distanceTo(player) <= radiusSqr);
+
+                if(!nearbyChimeras.isEmpty()){
+                    for(ChimeraEntity chimera : nearbyChimeras){
+                        if (chimera.isDowned()) {
+                            event.setCanceled(true);
+                            chimera.reassemble();
+                            BloodSiphonManager.startSiphon(player, chimera);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerStarting(ServerStartingEvent event) {
+        BloodSiphonManager.clear();
     }
 }

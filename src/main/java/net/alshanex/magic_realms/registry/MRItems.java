@@ -2,6 +2,9 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.item.*;
+import net.alshanex.magic_realms.item.lore.LoreArtifactItem;
+import net.alshanex.magic_realms.item.lore.LostPageItem;
+import net.alshanex.magic_realms.item.lore.LostPagesBookItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -156,4 +159,25 @@ public class MRItems {
                             new Item.Properties().stacksTo(64)
                     )
             );
+
+    public static final DeferredHolder<Item, ChimeraCatalystItem> CHIMERA_CATALYST =
+            ITEMS.register("chimera_catalyst", () ->
+                    new ChimeraCatalystItem(new Item.Properties())
+            );
+
+    public static final DeferredHolder<Item, LostPagesBookItem> LOST_PAGES_BOOK =
+            ITEMS.register("lost_pages_book", () ->
+                    new LostPagesBookItem(new Item.Properties().stacksTo(1))
+            );
+
+    public static final DeferredHolder<Item, LostPageItem> LOST_PAGE =
+            ITEMS.register("lost_page", () ->
+                    new LostPageItem(new Item.Properties().stacksTo(16))
+            );
+
+    public static final DeferredHolder<Item, LoreArtifactItem> ANCIENT_TABLET = ITEMS.register("ancient_tablet",
+            () -> new LoreArtifactItem(new Item.Properties(), LoreArtifactItem.ArtifactType.WORLD_TABLET));
+
+    public static final DeferredHolder<Item, LoreArtifactItem> RESONANCE_CRYSTAL = ITEMS.register("resonance_crystal",
+            () -> new LoreArtifactItem(new Item.Properties(), LoreArtifactItem.ArtifactType.ORDER_CRYSTAL));
 }

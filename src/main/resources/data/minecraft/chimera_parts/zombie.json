@@ -1,0 +1,32 @@
+{
+  "entity": "minecraft:zombie",
+  "parts": {
+    "head": {
+      "bones": [
+        "head"
+      ]
+    },
+    "torso": {
+      "bones": [
+        "body"
+      ]
+    },
+    "left_arm": {
+      "bones": [
+        "left_arm"
+      ]
+    },
+    "right_arm": {
+      "bones": [
+        "right_arm"
+      ]
+    },
+    "left_leg": {
+      "bones": ["left_leg"]
+    },
+    "right_leg": {
+      "bones": ["right_leg"]
+    }
+  },
+  "texture": "minecraft:textures/entity/zombie/zombie.png"
+}

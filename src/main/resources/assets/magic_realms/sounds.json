@@ -16,5 +16,32 @@
         "stream": true
       }
     ]
+  },
+  "order_lore_1": {
+    "subtitle": "subtitles.magic_realms.order_lore_1",
+    "sounds": [
+      {
+        "name": "magic_realms:log1_order_lore",
+        "stream": true
+      }
+    ]
+  },
+  "order_lore_2": {
+    "subtitle": "subtitles.magic_realms.order_lore_2",
+    "sounds": [
+      {
+        "name": "magic_realms:log2_order_lore",
+        "stream": true
+      }
+    ]
+  },
+  "order_lore_3": {
+    "subtitle": "subtitles.magic_realms.order_lore_3",
+    "sounds": [
+      {
+        "name": "magic_realms:log3_order_lore",
+        "stream": true
+      }
+    ]
   }
 }

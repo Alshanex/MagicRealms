@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.chimera.ChimeraEntity;
 import net.alshanex.magic_realms.entity.enderman.WizardEndermanEntity;
 import net.alshanex.magic_realms.entity.exclusive.ace.AceEntity;
 import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
@@ -42,5 +43,6 @@ public class CommonSetup {
         event.put(MREntityRegistry.MAGIC_CREEPER.get(), Creeper.createAttributes().build());
         event.put(MREntityRegistry.TIM.get(), TimEntity.createAttributes().build());
         event.put(MREntityRegistry.WIZARD_ENDERMAN.get(), WizardEndermanEntity.createAttributes().build());
+        event.put(MREntityRegistry.CHIMERA_ENTITY.get(), ChimeraEntity.createAttributes().build());
     }
 }

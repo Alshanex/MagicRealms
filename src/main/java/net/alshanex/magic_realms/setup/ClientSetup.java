@@ -1,6 +1,7 @@
 package net.alshanex.magic_realms.setup;
 
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.entity.chimera.ChimeraGeoRenderer;
 import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntityRenderer;
 import net.alshanex.magic_realms.entity.enderman.WizardEndermanRenderer;
 import net.alshanex.magic_realms.entity.exclusive.ace.AceEntityRenderer;
@@ -52,6 +53,8 @@ public class ClientSetup {
         event.registerEntityRenderer(MREntityRegistry.MAGIC_CREEPER.get(), MagicCreeperEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.TIM.get(), TimEntityRenderer::new);
         event.registerEntityRenderer(MREntityRegistry.WIZARD_ENDERMAN.get(), WizardEndermanRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.CHIMERA_ENTITY.get(), ChimeraGeoRenderer::new);
+        event.registerEntityRenderer(MREntityRegistry.HOMING_ICE_SPIKE_RUNNER.get(), NoopRenderer::new);
 
         event.registerEntityRenderer(MREntityRegistry.SEAT.get(), NoopRenderer::new);
 

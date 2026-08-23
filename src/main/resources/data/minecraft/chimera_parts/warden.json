@@ -1,0 +1,33 @@
+{
+  "entity": "minecraft:warden",
+  "parts": {
+    "head": {
+      "bones": ["bone.body.head"],
+      "scale": 0.625,
+      "offset": [0.0, 13.0, 0.0]
+    },
+    "left_arm": {
+      "bones": ["bone.body.left_arm"],
+      "scale": 0.625,
+      "offset": [-3.0, 13.0, 0.0]
+    },
+    "right_arm": {
+      "bones": ["bone.body.right_arm"],
+      "scale": 0.625,
+      "offset": [3.0, 13.0, 0.0]
+    },
+    "left_leg": {
+      "bones": ["bone.left_leg"],
+      "scale": 0.625,
+      "offset": [-3.0, 32.0, 0.0],
+      "leg_height": 13.0
+    },
+    "right_leg": {
+      "bones": ["bone.right_leg"],
+      "scale": 0.625,
+      "offset": [3.0, 32.0, 0.0],
+      "leg_height": 13.0
+    }
+  },
+  "texture": "minecraft:textures/entity/warden/warden.png"
+}

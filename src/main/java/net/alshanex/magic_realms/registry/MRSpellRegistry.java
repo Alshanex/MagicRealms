@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.spells.IceSnakeSpell;
 import net.alshanex.magic_realms.spells.SlimeRainSpell;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -21,4 +22,5 @@ public class MRSpellRegistry {
     }
 
     public static final Supplier<AbstractSpell> SLIME_RAIN = registerSpell(new SlimeRainSpell());
+    public static final Supplier<AbstractSpell> ICE_SNAKE = registerSpell(new IceSnakeSpell());
 }

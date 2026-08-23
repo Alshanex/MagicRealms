@@ -1,0 +1,39 @@
+{
+  "entity": "irons_spellbooks:dead_king",
+  "geo_model": "irons_spellbooks:geo/dead_king.geo.json",
+  "parts": {
+    "head": {
+      "bones": ["head"],
+      "scale": 0.75,
+      "offset": [0.0, -2.0, 0.0]
+    },
+    "torso": {
+      "bones": ["torso"],
+      "scale": 0.75,
+      "offset": [0.0, -17.0, 0.0]
+    },
+    "left_arm": {
+      "bones": ["left_arm"],
+      "scale": 0.75,
+      "offset": [0.0, 0.0, 0.0]
+    },
+    "right_arm": {
+      "bones": ["right_arm"],
+      "scale": 0.75,
+      "offset": [0.0, 0.0, 0.0]
+    },
+    "left_leg": {
+      "bones": ["left_leg"],
+      "scale": 0.75,
+      "offset": [0.0, 0.0, 0.0],
+      "leg_height": 19.0
+    },
+    "right_leg": {
+      "bones": ["right_leg"],
+      "scale": 0.75,
+      "offset": [0.0, 0.0, 0.0],
+      "leg_height": 19.0
+    }
+  },
+  "texture": "irons_spellbooks:textures/entity/dead_king/dead_king.png"
+}

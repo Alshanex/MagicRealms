@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.registry;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.SeatEntity;
+import net.alshanex.magic_realms.entity.chimera.ChimeraEntity;
 import net.alshanex.magic_realms.entity.creeper.MagicCreeperEntity;
 import net.alshanex.magic_realms.entity.enderman.WizardEndermanEntity;
 import net.alshanex.magic_realms.entity.exclusive.ace.AceEntity;
@@ -17,6 +18,7 @@ import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
 import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.slime.SummonedMagicSlimeEntity;
+import net.alshanex.magic_realms.entity.spells.HomingIceSpikeRunnerEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.entity.tim.TimEntity;
 import net.minecraft.core.registries.Registries;
@@ -144,4 +146,22 @@ public class MREntityRegistry {
                     .updateInterval(1) // sync every tick
                     .noSummon() // can't be /summon-ed, must be spawned via the item
                     .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "floating_arrow").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ChimeraEntity>> CHIMERA_ENTITY =
+            ENTITIES.register("chimera", () ->
+                    EntityType.Builder.<ChimeraEntity>of(ChimeraEntity::new, MobCategory.MONSTER)
+                            .sized(ChimeraEntity.BASE_WIDTH, ChimeraEntity.BASE_HEIGHT)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "chimera").toString())
+            );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<HomingIceSpikeRunnerEntity>> HOMING_ICE_SPIKE_RUNNER =
+            ENTITIES.register("homing_ice_spike_runner", () ->
+                    EntityType.Builder.<HomingIceSpikeRunnerEntity>of(HomingIceSpikeRunnerEntity::new, MobCategory.MISC)
+                            .sized(0.1f, 0.1f)
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "homing_ice_spike_runner").toString())
+            );
 }

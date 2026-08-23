@@ -1,6 +1,8 @@
 {
   "replace": false,
   "entries": [
-    "magic_realms:entity_loot/hell_pass_from_bosses"
+    "magic_realms:entity_loot/hell_pass_from_bosses",
+    "magic_realms:chest_loot/stone_tablets_additions",
+    "magic_realms:chest_loot/resonance_crystal_additions"
   ]
 }

@@ -11,12 +11,16 @@ import net.alshanex.magic_realms.data.*;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.flying_arrow.FloatingArrowEntity;
 import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.item.ChimeraCatalystItem;
 import net.alshanex.magic_realms.item.FloatingArrowItem;
 import net.alshanex.magic_realms.network.*;
+import net.alshanex.magic_realms.registry.ChimeraPartRegistry;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.registry.MRDataComponentRegistry;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.screens.SkinCustomizerScreen;
+import net.alshanex.magic_realms.util.chimera.ChimeraAssembly;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalog;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinPart;
@@ -42,6 +46,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -59,6 +64,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class MRUtils {
@@ -793,5 +799,57 @@ public class MRUtils {
             mode = FloatingArrowEntity.MODE_IDLE;
         }
         FloatingArrowItem.setModeForPlayer(serverPlayer, mode);
+    }
+
+    public static void handleAssemblyBlueprintPacket(Player player, boolean isMainHand, CompoundTag assemblyData, String customName) {
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+
+        InteractionHand hand = isMainHand ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+        ItemStack stack = serverPlayer.getItemInHand(hand);
+
+        if (!(stack.getItem() instanceof ChimeraCatalystItem)) return;
+
+        try {
+            ChimeraAssembly assembly = ChimeraAssembly.fromNbt(assemblyData);
+
+            if (!assembly.isComplete()) return;
+
+            // Validate all slot assignments against the part registry
+            ChimeraPartRegistry registry = ChimeraPartRegistry.getInstance();
+            if (registry == null) return;
+
+            for (Map.Entry<ChimeraSlot, ResourceLocation> entry : assembly.getAllAssignments().entrySet()) {
+                ResourceLocation entityId = entry.getValue();
+                ChimeraSlot slot = entry.getKey();
+
+                // Reject if entity is not registered in chimera parts
+                if (!registry.hasDefinition(entityId)) {
+                    MagicRealms.LOGGER.warn(
+                            "Player {} tried to assign unregistered entity {} to slot {}",
+                            player.getName().getString(), entityId, slot.getSerializedName());
+                    return;
+                }
+
+                // Reject if the registered definition doesn't actually provide this slot
+                boolean slotValid = registry.getDefinition(entityId)
+                        .map(def -> def.hasSlot(slot))
+                        .orElse(false);
+
+                if (!slotValid) {
+                    MagicRealms.LOGGER.warn(
+                            "Player {} tried to assign entity {} to slot {} but that entity doesn't provide that slot",
+                            player.getName().getString(), entityId, slot.getSerializedName());
+                    return;
+                }
+            }
+
+            // All validations passed - save the blueprint
+            stack.set(MRDataComponentRegistry.CHIMERA_BLUEPRINT.get(),
+                    ChimeraBlueprint.of(assembly, customName));
+
+        } catch (Exception e) {
+            MagicRealms.LOGGER
+                    .warn("Invalid chimera blueprint data from {}: {}", player.getName().getString(), e.getMessage());
+        }
     }
 }

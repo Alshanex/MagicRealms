@@ -38,6 +38,11 @@ public class MRCreativeTab {
                 entries.accept(MRItems.BANDIT_SPAWN_EGG.get());
                 entries.accept(MRItems.TAVERNKEEPER_SPAWN_EGG.get());
                 entries.accept(MRItems.ZOMBIE_MAGE_SPAWN_EGG.get());
+                entries.accept(MRItems.CHIMERA_CATALYST.get());
+                entries.accept(MRItems.LOST_PAGES_BOOK.get());
+                entries.accept(MRItems.LOST_PAGE.get());
+                entries.accept(MRItems.ANCIENT_TABLET.get());
+                entries.accept(MRItems.RESONANCE_CRYSTAL.get());
             })
             .withTabsBefore(CreativeTabRegistry.EQUIPMENT_TAB.getId())
             .build());

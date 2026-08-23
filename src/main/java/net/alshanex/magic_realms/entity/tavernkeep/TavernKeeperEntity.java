@@ -18,7 +18,9 @@ import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.events.TavernInteractionHandler;
+import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.registry.MRItems;
+import net.alshanex.magic_realms.story.LoreProgression;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.goals.WalkToSpawnGoal;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.IChatFaceProvider;
@@ -398,6 +400,7 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     }
 
     private void startTrading(Player pPlayer) {
+        syncConditionalOffers(pPlayer);
         this.setTradingPlayer(pPlayer);
         this.lookControl.setLookAt(pPlayer);
         this.openTradingScreen(pPlayer, this.getDisplayName(), 0);
@@ -491,6 +494,74 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
             numberOfRestocksToday++;
         }
         return this.offers;
+    }
+
+    /**
+     * Players this keeper has already hinted to, so the line lands once rather than on every
+     * interaction. Deliberately not serialized - a keeper "forgetting" across a reload is harmless.
+     */
+    private final Set<UUID> loreHintedPlayers = new HashSet<>();
+
+    private static boolean isLoreBookOffer(MerchantOffer offer) {
+        return offer != null && offer.getResult().is(MRItems.LOST_PAGES_BOOK.get());
+    }
+
+    private MerchantOffer createLoreBookOffer() {
+        return new MerchantOffer(
+                new ItemCost(Items.EMERALD, 40),
+                Optional.of(new ItemCost(Items.BOOK, 1)),
+                new ItemStack(MRItems.LOST_PAGES_BOOK.get(), 1),
+                1,
+                0,
+                0.05f
+        );
+    }
+
+    /**
+     * The book is only offered to someone who has deciphered all four world tablets - the same gate that stops the book from opening - and who isn't already carrying one.
+     */
+    private boolean qualifiesForLoreBook(Player player) {
+        if (!LoreProgression.canOpenBook(player.getData(MRDataAttachments.PLAYER_LORE))) {
+            return false;
+        }
+        return !player.getInventory().hasAnyOf(Set.of(MRItems.LOST_PAGES_BOOK.get()));
+    }
+
+    /**
+     * Brings the conditional stock in line with the player about to open the screen.
+     * <p>
+     * Offers are cached and serialized, so the removal branch matters as much as the addition: without
+     * it, a keeper who served a qualified player would keep showing the book to everyone afterwards.
+     */
+    private void syncConditionalOffers(Player player) {
+        if (this.level().isClientSide) return;
+
+        MerchantOffers current = this.getOffers();
+        boolean qualifies = qualifiesForLoreBook(player);
+        boolean present = current.stream().anyMatch(TavernKeeperEntity::isLoreBookOffer);
+
+        if (qualifies && !present) {
+            current.add(createLoreBookOffer());
+        } else if (!qualifies && present) {
+            current.removeIf(TavernKeeperEntity::isLoreBookOffer);
+        }
+    }
+
+    /**
+     * Speaks the hint about the book, if this player has earned it and hasn't heard it from this keeper yet.
+     * Called from the tavern welcome, so it lands as a follow-up to the greeting.
+     *
+     * @return true if the line was spoken
+     */
+    public boolean tryHintLoreBook(Player player) {
+        if (this.level().isClientSide || !(player instanceof ServerPlayer)) return false;
+        if (!qualifiesForLoreBook(player)) return false;
+        if (!loreHintedPlayers.add(player.getUUID())) return false;
+
+        player.sendSystemMessage(MercenaryMessageFormatter.buildFor(
+                this, "message.magic_realms.tavernkeep_lore_book"));
+        this.playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.5F, 0.9F);
+        return true;
     }
 
     private List<ItemStack> getRandomFurledMaps(ServerLevel level, TagKey<Structure> structureTag, RandomSource random){

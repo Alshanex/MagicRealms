@@ -121,6 +121,9 @@ public class TavernInteractionHandler {
                                 keeper,
                                 "message.magic_realms.tavernkeep_welcome" + randomMessageIndex));
 
+                        // Follows the greeting only for players who've read all four world tablets.
+                        keeper.tryHintLoreBook(player);
+
                         // ONLY log them into the tracker AFTER they have been seen
                         PLAYERS_IN_TAVERNS.put(playerId, currentTavernId);
                     }

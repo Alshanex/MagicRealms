@@ -3,7 +3,9 @@ package net.alshanex.magic_realms.registry;
 import io.redspace.ironsspellbooks.IronsSpellbooks;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.story.BossStory;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -46,6 +48,7 @@ public class MRBossStoryRegistry {
                             .chapter(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_2.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 1) // Requires Chapter 1 to be unlocked
                             .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "ice_spider_den"))
+                            .inPiece("irons_spellbooks:ice_spider_den/cavern/cavern_opening")
                             .page()
                             .page()
                             .page()
@@ -57,6 +60,7 @@ public class MRBossStoryRegistry {
                             .chapter(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_3.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 2) // Requires Chapter 2 to be unlocked
                             .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "catacombs"))
+                            .inPiece("irons_spellbooks:catacombs/catacombs_origin")
                             .page()
                             .page()
                             .image(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_3/image_1.png"))
@@ -67,7 +71,8 @@ public class MRBossStoryRegistry {
                             // Chapter 4: "Ilisiitsoq"
                             .chapter(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_4.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 3) // Requires Chapter 3 to be unlocked
-                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_snowy"))
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_taiga"))
+                            .containingPiece("irons_spellbooks:priest_house_taiga")
                             .page()
                             .page()
                             .image(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/chapter_4/page_1.png"))
@@ -75,7 +80,7 @@ public class MRBossStoryRegistry {
                             .page()
                             .endChapter()
                             // Substory 1: Lila's secret diary
-                            .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_2.png"))
+                            .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_1.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 0) // Requires Chapter 0 to be unlocked
                             .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_snowy"))
                             .page()
@@ -88,20 +93,24 @@ public class MRBossStoryRegistry {
                             .page()
                             .endChapter()
                             // Substory 2: Note from marcus at the tombs
-                            .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_1.png"))
+                            .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_2.png"))
                             .page()
                             .page()
                             .page()
                             .endChapter()
-                            //Substory 3: The hunter's note
+                            //Substory 3: The deserter's note
                             .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_3.png"))
+                            .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 0) // Requires Chapter 0 to be unlocked
+                            .unlockedByVisiting(ResourceLocation.parse("minecraft:pillager_outpost"))
+                            .inBiome(TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("c", "is_forest")))
                             .page()
                             .page()
                             .endChapter()
                             // Substory 4: The priest note
                             .substory(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "textures/gui/stories/marcus_thorpan/substory_4.png"))
                             .requires(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "marcus_thorpan"), 3) // Requires Chapter 3 to be unlocked
-                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_snowy"))
+                            .unlockedByVisiting(ResourceLocation.fromNamespaceAndPath("minecraft", "village_taiga"))
+                            .inPiece("irons_spellbooks:priest_house_taiga")
                             .page()
                             .page()
                             .endChapter()

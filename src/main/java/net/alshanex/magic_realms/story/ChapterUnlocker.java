@@ -94,7 +94,6 @@ public final class ChapterUnlocker {
      */
     public static Result tryUnlock(ServerPlayer player, ResourceLocation storyId, int chapter,
                                    @Nullable Component message, @Nullable SoundEvent sound) {
-        // Seed defaults first so prerequisites resolve correctly for players who never opened the book.
         ensureDefaultUnlocks(player);
 
         Result check = canUnlock(player, storyId, chapter);
@@ -102,6 +101,34 @@ public final class ChapterUnlocker {
             return check;
         }
 
+        return apply(player, storyId, chapter, message, sound);
+    }
+
+    /**
+     * Grants a chapter with no requirement checks: no book seal, no prerequisites.
+     * <p>
+     * Intended for commands and debugging, not for gameplay routes. It still refuses to grant a chapter the player already owns and still fires story completion,
+     * so the attachment cannot be pushed into a state the normal path could not have produced - only reached sooner than intended.
+     */
+    public static Result grantUnchecked(ServerPlayer player, ResourceLocation storyId, int chapter,
+                                        @Nullable Component message, @Nullable SoundEvent sound) {
+        ensureDefaultUnlocks(player);
+
+        BossStory story = MRRegistries.BOSS_STORIES.get(storyId);
+        if (story == null || !story.isValidChapter(chapter)) {
+            return Result.INVALID_CHAPTER;
+        }
+
+        if (player.getData(MRDataAttachments.PLAYER_LORE).hasPage(storyId, chapter)) {
+            return Result.ALREADY_OWNED;
+        }
+
+        return apply(player, storyId, chapter, message, sound);
+    }
+
+    /** The actual grant. Both entry points funnel here so completion handling can never diverge. */
+    private static Result apply(ServerPlayer player, ResourceLocation storyId, int chapter,
+                                @Nullable Component message, @Nullable SoundEvent sound) {
         PlayerLoreProgress before = player.getData(MRDataAttachments.PLAYER_LORE);
         PlayerLoreProgress after = before.withPage(storyId, chapter);
         player.setData(MRDataAttachments.PLAYER_LORE, after);
@@ -115,7 +142,6 @@ public final class ChapterUnlocker {
                     sound, SoundSource.PLAYERS, 1.0F, 1.0F);
         }
 
-        // Fire the completion payload only on the transition into "complete".
         if (!before.isStoryComplete(storyId) && after.isStoryComplete(storyId)) {
             handleStoryCompletion(player, storyId);
         }

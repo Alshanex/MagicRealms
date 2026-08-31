@@ -182,6 +182,9 @@ dependencies {
     // Player Animator
     implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animator_version}"
 
+    // RPG Dialogues
+    implementation "curse.maven:rpg-dialogue-1636309:8692096"
+
     // JEI
     compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
     runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")

@@ -341,55 +341,16 @@ public class TavernKeeperEntity extends NeutralWizard implements IAnimatedAttack
     //Not Serialized
     private long lastRestockCheckDayTime;
 
-    @Override
-    protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+    public void tryToTrade(Player pPlayer){
         boolean preventTrade = (!this.level().isClientSide && this.getOffers().isEmpty()) || this.getTarget() != null || isAngryAt(pPlayer);
-        if (pHand == InteractionHand.MAIN_HAND) {
-            if (preventTrade && !this.level().isClientSide) {
-                //this.setUnhappy();
-            }
-        }
         if (!preventTrade) {
             if (!this.level().isClientSide && !this.getOffers().isEmpty()) {
                 if (shouldRestock()) {
                     restock();
                 }
-
-                ItemStack itemstack = pPlayer.getItemInHand(pHand);
-
-                // Tips
-                if (pHand == InteractionHand.MAIN_HAND && pPlayer instanceof ServerPlayer serverPlayer && itemstack.is(Items.EMERALD)) {
-                    List<String> tips = Config.tavernTips;
-
-                    if (tips != null && !tips.isEmpty()) {
-                        // Consume the emerald
-                        if (!pPlayer.getAbilities().instabuild) {
-                            itemstack.shrink(1);
-                        }
-
-                        // Dynamically pick a random tip from the config list
-                        String randomTipKey = tips.get(this.random.nextInt(tips.size()));
-
-                        this.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, 0.5F, this.random.nextFloat() * 0.1F + 0.9F);
-
-                        pPlayer.sendSystemMessage(MercenaryMessageFormatter.buildFor(
-                                this,
-                                randomTipKey
-                        ));
-                    } else {
-                        pPlayer.sendSystemMessage(MercenaryMessageFormatter.buildFor(
-                                this,
-                                "message.magic_realms.tavernkeep_no_tips"
-                        ));
-                    }
-                    return InteractionResult.sidedSuccess(this.level().isClientSide);
-                }
-
                 this.startTrading(pPlayer);
             }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
-        return super.mobInteract(pPlayer, pHand);
     }
 
     @Override

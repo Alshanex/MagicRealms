@@ -2,6 +2,10 @@ package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.registry.*;
+import net.alshanex.magic_realms.util.rpgdialogues.actions.TavernkeeperTrading;
+import net.alshanex.magic_realms.util.rpgdialogues.conditions.TavernkeeperTipConditionFalse;
+import net.alshanex.magic_realms.util.rpgdialogues.conditions.TavernkeeperTipConditionTrue;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -17,6 +21,8 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueAction;
+import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueCondition;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
@@ -96,7 +102,14 @@ public class MagicRealms
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
-
+        event.enqueueWork(()->{
+            DialogueAction.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_trade"),
+                    TavernkeeperTrading.CODEC);
+            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_tip_true"),
+                    TavernkeeperTipConditionTrue.CODEC);
+            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_tip_false"),
+                    TavernkeeperTipConditionFalse.CODEC);
+        });
     }
 
     // Add the example block item to the building blocks tab

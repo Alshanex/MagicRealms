@@ -1,0 +1,21 @@
+{
+  "speaker": { "text": "Tavernkeeper" },
+  "pages": [
+    { "translate": "message.magic_realms.tavernkeep_introduction" }
+  ],
+  "choices": [
+    {
+      "label": { "translate": "message.magic_realms.tavernkeep_choice.trade" },
+      "actions": [
+        { "type": "magic_realms:tavernkeeper_trade"}
+      ]
+    },
+    { "label": { "translate": "message.magic_realms.tavernkeep_choice.info" },
+      "requires": [ { "condition": "has_items", "item": "minecraft:emerald", "count": 1 } ],
+      "actions": [
+        { "type": "take_item", "item": "minecraft:emerald", "count": 1 },
+        { "type": "open_dialogue", "dialogue": "magic_realms:tavernkeeper_tips" }
+      ]
+    }
+  ]
+}

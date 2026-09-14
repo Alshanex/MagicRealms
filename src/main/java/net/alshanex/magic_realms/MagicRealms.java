@@ -7,6 +7,7 @@ import net.alshanex.magic_realms.util.rpgdialogues.conditions.EnityTypeCondition
 import net.alshanex.magic_realms.util.rpgdialogues.conditions.MercenaryClassCondition;
 import net.alshanex.magic_realms.util.rpgdialogues.conditions.MercenaryCombatCondition;
 import net.alshanex.magic_realms.util.rpgdialogues.conditions.TavernkeeperTipCondition;
+import net.alshanex.magic_realms.util.rpgdialogues.values.MercenarySpeech;
 import net.alshanex.magic_realms.util.rpgdialogues.values.TimeUntilPermanentContract;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -121,6 +122,8 @@ public class MagicRealms
 
             DialogueValue.register(ResourceLocation.fromNamespaceAndPath(MODID, "time_until_permanent"),
                     TimeUntilPermanentContract.CODEC);
+            DialogueValue.register(ResourceLocation.fromNamespaceAndPath(MODID, "speech_line"),
+                    MercenarySpeech.CODEC);
         });
     }
 

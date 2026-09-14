@@ -1,0 +1,6 @@
+{
+  "pages": [
+    { "translate": "message.magic_realms.generic" }
+  ],
+  "with": [ { "value": "magic_realms:speech_line", "possibleResponsesAmount": 3 } ]
+}

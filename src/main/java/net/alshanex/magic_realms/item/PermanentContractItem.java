@@ -20,12 +20,6 @@ public class PermanentContractItem extends Item {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
         tooltipComponents.add(Component.empty());
-        tooltipComponents.add(Component.translatable("tooltip.magic_realms.permanent_contract.level_range")
-                .withStyle(ChatFormatting.GRAY));
-        tooltipComponents.add(Component.literal("  Any Level")
-                .withStyle(ChatFormatting.GOLD));
-
-        tooltipComponents.add(Component.empty());
         tooltipComponents.add(Component.translatable("tooltip.magic_realms.permanent_contract.duration")
                 .withStyle(ChatFormatting.YELLOW));
         tooltipComponents.add(Component.translatable("tooltip.magic_realms.permanent_contract.duration_desc")

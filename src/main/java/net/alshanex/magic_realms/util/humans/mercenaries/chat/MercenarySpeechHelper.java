@@ -11,9 +11,11 @@ import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Archetype;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,12 +59,7 @@ public final class MercenarySpeechHelper {
             return false;
         }
 
-        List<String> pool = buildSpeechPool(mercenary);
-        if (pool.isEmpty()) return false;
-
-        String translationKey = pool.get(mercenary.getRandom().nextInt(pool.size()));
-        MutableComponent component = MercenaryMessageFormatter.buildFor(mercenary, translationKey);
-        player.sendSystemMessage(component);
+        DialogueManager.open(player, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_speech"), mercenary);
 
         lastSpeechTick.put(mercenary.getUUID(), now);
 
@@ -73,86 +70,5 @@ public final class MercenarySpeechHelper {
         }
 
         return true;
-    }
-
-    /**
-     * Assemble all available translation keys for this mercenary's right-click speech.
-     */
-    private static List<String> buildSpeechPool(AbstractMercenaryEntity mercenary) {
-        List<String> result = new ArrayList<>();
-
-        PersonalityData personality = mercenary.getData(MRDataAttachments.PERSONALITY);
-        if (personality != null && personality.isInitialized()) {
-            Hobby hobby = personality.getHobby(false);
-            Archetype archetype = personality.getArchetype(false);
-
-            if (hobby != null && archetype != null) {
-                String archetypeId = personality.getArchetypeId();
-                String hobbyId = personality.getHobbyId();
-                for(int i = 0; i < 3; i++){
-                    String key = "message.magic_realms.hobby." + hobbyId + "." + archetypeId + "." + i;
-                    result.add(key);
-                }
-            }
-        }
-
-        if (mercenary instanceof IExclusiveMercenary exclusive) {
-            List<String> extra = exclusive.getExclusiveSpeechTranslationKeys();
-            if (extra != null && !extra.isEmpty()) {
-                if(mercenary instanceof LilacEntity lilac && !lilac.level().isClientSide() && lilac.getSummoner() != null){
-                    if(hasContractedAlianaNearby(lilac, lilac.level())){
-                        result.addAll(extra);
-                    }
-                } else if (mercenary instanceof JaraEntity jara && !jara.level().isClientSide() && jara.getSummoner() != null) {
-                    if(hasContractedEdenNearby(jara, jara.level())){
-                        result.addAll(extra);
-                    }
-                } else {
-                    result.addAll(extra);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static boolean hasContractedAlianaNearby(LilacEntity entity, Level level) {
-        double SEARCH_RADIUS = 20.0;
-        AABB searchArea = new AABB(
-                entity.getX() - SEARCH_RADIUS,
-                entity.getY() - SEARCH_RADIUS,
-                entity.getZ() - SEARCH_RADIUS,
-                entity.getX() + SEARCH_RADIUS,
-                entity.getY() + SEARCH_RADIUS,
-                entity.getZ() + SEARCH_RADIUS
-        );
-
-        List<AlianaEntity> nearbyAliana = level.getEntitiesOfClass(
-                AlianaEntity.class,
-                searchArea,
-                alianaEntity -> alianaEntity.getSummoner() != null && alianaEntity.getSummoner().is(entity.getSummoner())
-        );
-
-        return !nearbyAliana.isEmpty();
-    }
-
-    private static boolean hasContractedEdenNearby(JaraEntity entity, Level level) {
-        double SEARCH_RADIUS = 20.0;
-        AABB searchArea = new AABB(
-                entity.getX() - SEARCH_RADIUS,
-                entity.getY() - SEARCH_RADIUS,
-                entity.getZ() - SEARCH_RADIUS,
-                entity.getX() + SEARCH_RADIUS,
-                entity.getY() + SEARCH_RADIUS,
-                entity.getZ() + SEARCH_RADIUS
-        );
-
-        List<AceEntity> nearbyEden = level.getEntitiesOfClass(
-                AceEntity.class,
-                searchArea,
-                aceEntity -> aceEntity.getSummoner() != null && aceEntity.getSummoner().is(entity.getSummoner())
-        );
-
-        return !nearbyEden.isEmpty();
     }
 }

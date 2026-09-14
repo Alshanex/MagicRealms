@@ -28,6 +28,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.pixeldreamstudios.rpgdialogue.murmur.MurmurManager;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -137,32 +138,11 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
 
     @Override
     public void initiateCastSpell(AbstractSpell spell, int spellLevel) {
-        if (!this.level().isClientSide && this.getSummoner() != null && this.random.nextFloat() < 0.2f) {
-            if(hasContractorNearby(this.getSummoner(), this.level())) {
-                getSummoner().sendSystemMessage(Component.translatable("message.magic_realms.amadeus.combat.entering", getExclusiveMercenaryName()).withStyle(ChatFormatting.GOLD));
-            }
+        if (!this.level().isClientSide && this.random.nextFloat() < 0.2f) {
+            Component line = Component.translatable("message.magic_realms.amadeus.combat.entering");
+            MurmurManager.speak(this, line, MurmurManager.EARSHOT);
         }
         super.initiateCastSpell(spell, spellLevel);
-    }
-
-    private boolean hasContractorNearby(LivingEntity entity, Level level) {
-        double SEARCH_RADIUS = 20.0;
-        AABB searchArea = new AABB(
-                this.getX() - SEARCH_RADIUS,
-                this.getY() - SEARCH_RADIUS,
-                this.getZ() - SEARCH_RADIUS,
-                this.getX() + SEARCH_RADIUS,
-                this.getY() + SEARCH_RADIUS,
-                this.getZ() + SEARCH_RADIUS
-        );
-
-        List<Player> nearbyContractor = level.getEntitiesOfClass(
-                Player.class,
-                searchArea,
-                player1 -> player1.is(entity)
-        );
-
-        return !nearbyContractor.isEmpty();
     }
 
     @Override

@@ -19,6 +19,10 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueManager;
+import net.pixeldreamstudios.rpgdialogue.murmur.MurmurManager;
+
+import java.util.List;
+import java.util.Random;
 
 /**
  * Handles the cascading {@code mobInteract} logic for mercenaries: sitting / stunned shortcuts, hell pass immortality grants, contract creation, and
@@ -54,6 +58,23 @@ public final class MercenaryInteractionHandler {
 
         // Stunned mercs ignore interactions entirely.
         if (entity.isStunned()) {
+            return InteractionResult.FAIL;
+        }
+
+        if(entity.isInCombat()){
+            List<String> keys = List.of(
+                    "message.magic_realms.mercenary.busy_fighting.0",
+                    "message.magic_realms.mercenary.busy_fighting.1",
+                    "message.magic_realms.mercenary.busy_fighting.2",
+                    "message.magic_realms.mercenary.busy_fighting.3"
+            );
+
+            Random random = new Random();
+            String chosenKey = keys.get(random.nextInt(keys.size()));
+
+            Component line = Component.translatable(chosenKey);
+            MurmurManager.speak(entity, line, MurmurManager.EARSHOT);
+
             return InteractionResult.FAIL;
         }
 

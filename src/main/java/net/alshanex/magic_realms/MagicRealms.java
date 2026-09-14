@@ -1,7 +1,9 @@
 package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
+import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.*;
+import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.alshanex.magic_realms.util.rpgdialogues.actions.TavernkeeperTrading;
 import net.alshanex.magic_realms.util.rpgdialogues.conditions.EnityTypeCondition;
 import net.alshanex.magic_realms.util.rpgdialogues.conditions.MercenaryClassCondition;
@@ -25,6 +27,7 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.pixeldreamstudios.rpgdialogue.client.WorldText;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueAction;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueCondition;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueValue;
@@ -147,7 +150,14 @@ public class MagicRealms
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
         {
-
+            WorldText.CROWDING.register(entity -> {
+                if (entity instanceof AbstractMercenaryEntity mercenary) {
+                    if (TitleManager.displayedTitle(mercenary) != null) {
+                        return 0.25F;
+                    }
+                }
+                return 0.0F;
+            });
         }
     }
 }

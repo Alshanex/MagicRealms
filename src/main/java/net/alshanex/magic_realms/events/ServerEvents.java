@@ -29,6 +29,7 @@ import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.pixeldreamstudios.rpgdialogue.murmur.MurmurManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,11 +64,6 @@ public class ServerEvents {
         BloodSiphonManager.tick();
     }
 
-    private static void scheduleDelayedResponse(Runnable responseAction, int tickDelay) {
-        int executionTick = currentTick + tickDelay;
-        delayedResponses.computeIfAbsent(executionTick, k -> new ArrayList<>()).add(responseAction);
-    }
-
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         HumanEntityCommands.register(event.getDispatcher());
@@ -89,26 +85,26 @@ public class ServerEvents {
     public static void onFoodEaten(LivingEntityUseItemEvent.Start event){
         if (event.getEntity() instanceof Player player && !player.level().isClientSide && event.getItem().is(Items.PUMPKIN_PIE)) {
             Level level = player.level();
-            if (isMothNearby(player, level)) {
-                sendPlayerResponse(player, Component.translatable("message.magic_realms.catas.pumpkin_pie.response", "Catas"));
+            CatasEntity catas = isMothNearby(player, level);
+            if (catas != null) {
+                Component line = Component.translatable("message.magic_realms.catas.pumpkin_pie.response");
+                MurmurManager.speak(catas, line, MurmurManager.EARSHOT);
             }
         }
 
         if (event.getEntity() instanceof Player player && !player.level().isClientSide && event.getItem().is(Items.POISONOUS_POTATO)) {
             Level level = player.level();
-            if (isAlianaNearby(player, level)) {
-                sendPlayerResponse(player, Component.translatable("message.magic_realms.aliana.eat.poison_potatoes", "Aliana"));
+            AlianaEntity aliana = isAlianaNearby(player, level);
+            if (aliana != null) {
+                Component line = Component.translatable("message.magic_realms.aliana.eat.poison_potatoes");
+                MurmurManager.speak(aliana, line, MurmurManager.EARSHOT);
             }
         }
     }
 
     private static final double SEARCH_RADIUS = 8.0;
 
-    private static void sendPlayerResponse(Player player, Component message) {
-        player.sendSystemMessage(message);
-    }
-
-    private static boolean isMothNearby(Player player, Level level) {
+    private static CatasEntity isMothNearby(Player player, Level level) {
         // Create a bounding box around the player
         AABB searchArea = new AABB(
                 player.getX() - SEARCH_RADIUS,
@@ -125,10 +121,14 @@ public class ServerEvents {
                 searchArea
         );
 
-        return !nearbyCatas.isEmpty();
+        if(!nearbyCatas.isEmpty()){
+            return nearbyCatas.getFirst();
+        }
+
+        return null;
     }
 
-    private static boolean isAlianaNearby(Player player, Level level) {
+    private static AlianaEntity isAlianaNearby(Player player, Level level) {
         // Create a bounding box around the player
         AABB searchArea = new AABB(
                 player.getX() - SEARCH_RADIUS,
@@ -145,7 +145,11 @@ public class ServerEvents {
                 searchArea
         );
 
-        return !nearbyAliana.isEmpty();
+        if(!nearbyAliana.isEmpty()){
+            return nearbyAliana.getFirst();
+        }
+
+        return null;
     }
 
     @SubscribeEvent

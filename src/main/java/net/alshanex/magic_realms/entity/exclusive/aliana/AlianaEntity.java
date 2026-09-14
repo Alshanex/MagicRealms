@@ -22,6 +22,7 @@ import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.
 import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -33,6 +34,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.pixeldreamstudios.rpgdialogue.murmur.MurmurManager;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -85,33 +87,11 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
 
     @Override
     public void initiateCastSpell(AbstractSpell spell, int spellLevel) {
-        if (!this.level().isClientSide && this.getSummoner() != null && spell == SpellRegistry.ROOT_SPELL.get()) {
-            if(hasContractorNearby(this.getSummoner(), this.level())) {
-                getSummoner().sendSystemMessage(
-                        MercenaryMessageFormatter.buildFor(this, "message.magic_realms.aliana.combat.root"));
-            }
+        if (!this.level().isClientSide && spell == SpellRegistry.ROOT_SPELL.get()) {
+            Component line = Component.translatable("message.magic_realms.aliana.combat.root");
+            MurmurManager.speak(this, line, MurmurManager.EARSHOT);
         }
         super.initiateCastSpell(spell, spellLevel);
-    }
-
-    private boolean hasContractorNearby(LivingEntity entity, Level level) {
-        double SEARCH_RADIUS = 20.0;
-        AABB searchArea = new AABB(
-                this.getX() - SEARCH_RADIUS,
-                this.getY() - SEARCH_RADIUS,
-                this.getZ() - SEARCH_RADIUS,
-                this.getX() + SEARCH_RADIUS,
-                this.getY() + SEARCH_RADIUS,
-                this.getZ() + SEARCH_RADIUS
-        );
-
-        List<Player> nearbyContractor = level.getEntitiesOfClass(
-                Player.class,
-                searchArea,
-                player1 -> player1.is(entity)
-        );
-
-        return !nearbyContractor.isEmpty();
     }
 
     @Override

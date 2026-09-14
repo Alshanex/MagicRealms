@@ -22,6 +22,7 @@ import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -35,6 +36,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.pixeldreamstudios.rpgdialogue.murmur.MurmurManager;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -100,8 +102,8 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
         ItemStack heldItem = player.getItemInHand(hand);
         if(heldItem.is(Items.PUMPKIN_PIE)){
             if(!this.level().isClientSide) {
-                player.sendSystemMessage(
-                        MercenaryMessageFormatter.buildFor(this, "message.magic_realms.catas.pumpkin_pie.thanks"));
+                Component line = Component.translatable("message.magic_realms.catas.pumpkin_pie.thanks");
+                MurmurManager.speak(this, line, MurmurManager.EARSHOT);
                 heldItem.shrink(1);
                 playSound(SoundEvents.GENERIC_EAT, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             } else {

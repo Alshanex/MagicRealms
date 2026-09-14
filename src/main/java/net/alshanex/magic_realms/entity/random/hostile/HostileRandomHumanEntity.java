@@ -228,7 +228,7 @@ public class HostileRandomHumanEntity extends RandomHumanEntity {
             if (def != null) {
                 PersonalityInitializer.FixedPersonality fixed = def.toRuntime();
                 this.getData(MRDataAttachments.PERSONALITY).initialize(
-                        fixed.archetypeId(), fixed.hobbyId(), fixed.hometown(), fixed.quirks());
+                        fixed.archetypeId(), fixed.hobbyId(), fixed.quirks());
                 if (def.overrideEntityName().isPresent() && !def.overrideEntityName().get().isEmpty()) {
                     this.setEntityName(def.overrideEntityName().get());
                 }

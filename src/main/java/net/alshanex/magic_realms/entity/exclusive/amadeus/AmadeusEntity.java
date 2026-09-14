@@ -130,7 +130,6 @@ public class AmadeusEntity extends AbstractMercenaryEntity implements IExclusive
                 () -> new PersonalityInitializer.FixedPersonality(
                         "loyal",
                         "history",
-                        "The Voidwalker Estate",
                         EnumSet.of(Quirk.BOOKWORM, Quirk.NIGHT_OWL)
                 )
         );

@@ -26,19 +26,16 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
     private boolean initialized = false;
     private String archetypeId;
     private String hobbyId;
-    private String hometown;
     private Set<Quirk> quirks = EnumSet.noneOf(Quirk.class);
 
     public PersonalityData() {}
 
     public void initialize(String archetypeId,
                            String hobbyId,
-                           String hometown,
                            Set<Quirk> quirks) {
         if (initialized) return;
         this.archetypeId = archetypeId;
         this.hobbyId = hobbyId;
-        this.hometown = hometown;
         this.quirks = quirks != null ? EnumSet.copyOf(quirks) : EnumSet.noneOf(Quirk.class);
         this.initialized = true;
     }
@@ -81,11 +78,6 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
         return hobbyId;
     }
 
-    @Nullable
-    public String getHometown() {
-        return hometown;
-    }
-
     public Set<Quirk> getQuirks() {
         return EnumSet.copyOf(quirks);
     }
@@ -103,7 +95,6 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
 
         if (archetypeId != null) tag.putString("archetype", archetypeId);
         if (hobbyId != null) tag.putString("hobby", hobbyId);
-        if (hometown != null) tag.putString("hometown", hometown);
 
         ListTag quirksTag = new ListTag();
         for (Quirk q : quirks) quirksTag.add(StringTag.valueOf(q.getId()));
@@ -119,7 +110,6 @@ public class PersonalityData implements INBTSerializable<CompoundTag> {
         this.archetypeId = tag.contains("archetype") ? tag.getString("archetype") : null;
         if (archetypeId != null && archetypeId.isEmpty()) archetypeId = null;
         this.hobbyId = tag.contains("hobby") ? tag.getString("hobby") : null;
-        this.hometown = tag.contains("hometown") ? tag.getString("hometown") : null;
 
         this.quirks = EnumSet.noneOf(Quirk.class);
         if (tag.contains("quirks", Tag.TAG_LIST)) {

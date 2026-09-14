@@ -11,12 +11,14 @@ import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFo
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueManager;
 
 /**
  * Handles the cascading {@code mobInteract} logic for mercenaries: sitting / stunned shortcuts, hell pass immortality grants, contract creation, and
@@ -68,25 +70,6 @@ public final class MercenaryInteractionHandler {
             return handleHellPass(entity, player, heldItem);
         }
 
-        boolean isContractor = contractData != null
-                && contractData.getContractorUUID() != null
-                && contractData.getContractorUUID().equals(player.getUUID());
-        boolean isContractItem = heldItem.getItem() instanceof PermanentContractItem
-                || heldItem.getItem() instanceof TemporaryContractItem;
-
-        // Contractor interacting with a non-contract item mid-combat gets a flavor refusal line rather than opening the menu.
-        if (isContractor && !isContractItem && entity.isInCombat()) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                Component message = Component.translatable(
-                        "message.magic_realms.mercenary.speech",
-                        entity.getEntityName(),
-                        pickCombatRefusalLine(entity)
-                ).withStyle(ChatFormatting.RED);
-                serverPlayer.sendSystemMessage(message);
-            }
-            return InteractionResult.SUCCESS;
-        }
-
         // Contract-related interactions (introduction for non-contractor, contract creation for held contract items, menu/speech for current contractor).
         handleContractInteraction(entity, player, contractData, heldItem);
 
@@ -98,7 +81,10 @@ public final class MercenaryInteractionHandler {
             AbstractMercenaryEntity entity, Player player, ItemStack heldItem) {
 
         if (entity.isImmortal()) {
-            player.sendSystemMessage(MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.already_immortal"));
+            if(player instanceof ServerPlayer serverPlayer){
+                DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_already_immortal"), entity);
+            }
+            //player.sendSystemMessage(MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.already_immortal"));
             return InteractionResult.FAIL;
         }
 
@@ -109,7 +95,8 @@ public final class MercenaryInteractionHandler {
 
         player.playSound(SoundEvents.TOTEM_USE, 1.0F, 1.0F);
         if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.sendSystemMessage(MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.granted_immortality"));
+            DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_granted_immortal"), entity);
+            //serverPlayer.sendSystemMessage(MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.granted_immortality"));
         }
         return InteractionResult.SUCCESS;
     }
@@ -125,9 +112,9 @@ public final class MercenaryInteractionHandler {
         if (heldItem.getItem() instanceof PermanentContractItem) {
             if (entity.isExclusiveMercenary()) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    MutableComponent message = MercenaryMessageFormatter.buildFor(entity,
-                            "ui.magic_realms.contract_reject_permanent");
-                    serverPlayer.sendSystemMessage(message);
+                    DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_reject_permanent"), entity);
+                    //MutableComponent message = MercenaryMessageFormatter.buildFor(entity, "ui.magic_realms.contract_reject_permanent");
+                    //serverPlayer.sendSystemMessage(message);
                 }
             } else {
                 ContractUtils.handlePermanentContractCreation(player, entity, contractData, heldItem);
@@ -137,11 +124,5 @@ public final class MercenaryInteractionHandler {
         } else {
             ContractUtils.handleContractInteraction(player, entity, contractData);
         }
-    }
-
-    /** Picks one of four flavor-text refusal lines for a contractor's mid-combat interaction. */
-    private static Component pickCombatRefusalLine(AbstractMercenaryEntity entity) {
-        int variant = entity.getRandom().nextInt(4);
-        return MercenaryMessageFormatter.buildFor(entity, "message.magic_realms.mercenary.busy_fighting." + variant);
     }
 }

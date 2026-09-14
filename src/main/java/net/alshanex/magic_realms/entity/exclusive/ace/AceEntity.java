@@ -128,7 +128,6 @@ public class AceEntity extends AbstractMercenaryEntity implements IExclusiveMerc
                 () -> new PersonalityInitializer.FixedPersonality(
                         "stoic",
                         "stargazing",
-                        "Eldritch Dome",
                         EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.NIGHT_OWL)
                 )
         );

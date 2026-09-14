@@ -167,7 +167,6 @@ public class AlianaEntity extends AbstractMercenaryEntity implements IExclusiveM
                 () -> new PersonalityInitializer.FixedPersonality(
                         "cheerful",
                         "gardening",
-                        "Brackenfield",
                         EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON)
                 )
         );

@@ -49,14 +49,6 @@ public class Config
             .comment("List of female names for human entities")
             .defineList("femaleNames", getDefaultFemaleNames(), obj -> obj instanceof String);
 
-    private static final ModConfigSpec.ConfigValue<List<? extends String>> HOMETOWNS = BUILDER
-            .comment("List of hometown names for mercenary backstory flavor")
-            .defineList("hometowns", getDefaultHometowns(), obj -> obj instanceof String);
-
-    private static final ModConfigSpec.ConfigValue<List<? extends String>> TAVERN_TIPS = BUILDER
-            .comment("List of translation keys for the Tavernkeeper's tips.")
-            .defineList("tavernTips", getDefaultTavernTips(), obj -> obj instanceof String);
-
     static final ModConfigSpec SPEC = BUILDER.build();
 
     public static int immortalStunDuration;
@@ -69,7 +61,6 @@ public class Config
     // Name lists
     public static List<String> maleNames;
     public static List<String> femaleNames;
-    public static List<String> hometowns;
     public static List<String> tavernTips;
 
     @SubscribeEvent
@@ -84,8 +75,6 @@ public class Config
 
         maleNames = MALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
         femaleNames = FEMALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
-        hometowns = HOMETOWNS.get().stream().map(String::valueOf).collect(Collectors.toList());
-        tavernTips = TAVERN_TIPS.get().stream().map(String::valueOf).collect(Collectors.toList());
     }
 
     private static List<String> getDefaultMaleNames() {
@@ -123,29 +112,6 @@ public class Config
                 "Leah", "Linda", "Lisa", "Luna", "Madison", "Maria", "Michelle", "Natalie", "Nicole", "Olivia",
                 "Patricia", "Rachel", "Rebecca", "Rose", "Ruth", "Samantha", "Sarah", "Sofia", "Sophia", "Stephanie",
                 "Susan", "Taylor", "Teresa", "Victoria", "Zoe"
-        );
-    }
-
-    private static List<String> getDefaultHometowns() {
-        return Arrays.asList(
-                "Westhollow", "Ironwatch", "Greyhaven", "Silverbrook", "Redgate",
-                "Blackfen", "Stormkeep", "Oakmere", "Ashford", "Thornvale",
-                "Highpine", "Brackenfield", "Coldwater", "Driftmarch", "Emberdale",
-                "Foxford", "Glimmerwood", "Hartrest", "Kingsreach", "Lowmere",
-                "Marshend", "Nightvale", "Oldbridge", "Pebblestone", "Ravenhold",
-                "Swiftbrook", "Tallgrass", "Undermoor", "Willowdeep", "Yewcross",
-                "Stonewick", "Grimsby", "Fairhaven", "Mistmoor", "Saltcove"
-        );
-    }
-
-    private static List<String> getDefaultTavernTips() {
-        return Arrays.asList(
-                "message.magic_realms.tavernkeep_tip.1",
-                "message.magic_realms.tavernkeep_tip.2",
-                "message.magic_realms.tavernkeep_tip.3",
-                "message.magic_realms.tavernkeep_tip.4",
-                "message.magic_realms.tavernkeep_tip.5",
-                "message.magic_realms.tavernkeep_tip.6"
         );
     }
 }

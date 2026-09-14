@@ -1,0 +1,36 @@
+{
+  "variants": [
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.gojo_mojo" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:gojo_mojo_mercenary" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.aliana" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:aliana_mercenary" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.alshanex" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:alshanex_mercenary" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.amadeus" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:amadeus_mercenary" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.eden" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:eden_mercenary" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.jara" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:jara_mercenary" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.lilac" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:lilac_mercenary" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.catas" } ],
+      "requires": [ { "condition": "magic_realms:entity_type", "entityId": "magic_realms:catas_mercenary" } ]
+    }
+  ]
+}

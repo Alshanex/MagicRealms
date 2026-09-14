@@ -148,7 +148,6 @@ public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMer
                 () -> new PersonalityInitializer.FixedPersonality(
                         "superstitious",
                         "stargazing",
-                        "Furryland",
                         EnumSet.of(Quirk.HATES_RAIN, Quirk.CANT_SWIM)
                 )
         );

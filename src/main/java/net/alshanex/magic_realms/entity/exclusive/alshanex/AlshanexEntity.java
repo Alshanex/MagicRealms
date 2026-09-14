@@ -128,7 +128,6 @@ public class AlshanexEntity extends AbstractMercenaryEntity implements IExclusiv
                 () -> new PersonalityInitializer.FixedPersonality(
                         "jovial",
                         "music",
-                        "Somewhere only we know",
                         EnumSet.of(Quirk.AFRAID_OF_THE_DARK)
                 )
         );

@@ -3,8 +3,11 @@ package net.alshanex.magic_realms;
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.registry.*;
 import net.alshanex.magic_realms.util.rpgdialogues.actions.TavernkeeperTrading;
-import net.alshanex.magic_realms.util.rpgdialogues.conditions.TavernkeeperTipConditionFalse;
-import net.alshanex.magic_realms.util.rpgdialogues.conditions.TavernkeeperTipConditionTrue;
+import net.alshanex.magic_realms.util.rpgdialogues.conditions.EnityTypeCondition;
+import net.alshanex.magic_realms.util.rpgdialogues.conditions.MercenaryClassCondition;
+import net.alshanex.magic_realms.util.rpgdialogues.conditions.MercenaryCombatCondition;
+import net.alshanex.magic_realms.util.rpgdialogues.conditions.TavernkeeperTipCondition;
+import net.alshanex.magic_realms.util.rpgdialogues.values.TimeUntilPermanentContract;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.api.distmarker.Dist;
@@ -23,6 +26,7 @@ import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueAction;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueCondition;
+import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueValue;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
@@ -105,10 +109,18 @@ public class MagicRealms
         event.enqueueWork(()->{
             DialogueAction.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_trade"),
                     TavernkeeperTrading.CODEC);
-            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_tip_true"),
-                    TavernkeeperTipConditionTrue.CODEC);
-            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_tip_false"),
-                    TavernkeeperTipConditionFalse.CODEC);
+
+            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_tip"),
+                    TavernkeeperTipCondition.CODEC);
+            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "mercenary_in_combat"),
+                    MercenaryCombatCondition.CODEC);
+            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "mercenary_class"),
+                    MercenaryClassCondition.CODEC);
+            DialogueCondition.register(ResourceLocation.fromNamespaceAndPath(MODID, "entity_type"),
+                    EnityTypeCondition.CODEC);
+
+            DialogueValue.register(ResourceLocation.fromNamespaceAndPath(MODID, "time_until_permanent"),
+                    TimeUntilPermanentContract.CODEC);
         });
     }
 

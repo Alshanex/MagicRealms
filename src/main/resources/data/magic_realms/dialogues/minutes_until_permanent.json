@@ -1,0 +1,6 @@
+{
+  "pages": [
+    { "translate": "ui.magic_realms.permanent_contract_insufficient_time" }
+  ],
+  "with": [ { "value": "magic_realms:time_until_permanent", "digits": true } ]
+}

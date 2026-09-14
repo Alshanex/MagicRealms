@@ -38,7 +38,6 @@ public record FixedPersonalityDef(
         String id,
         String archetypeId,
         String hobbyId,
-        String hometown,
         Set<Quirk> quirks,
         Optional<String> overrideEntityName,
         boolean inRandomPool,
@@ -61,17 +60,15 @@ public record FixedPersonalityDef(
     public static final Codec<FixedPersonalityDef> BODY_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("archetype").forGetter(FixedPersonalityDef::archetypeId),
             Codec.STRING.optionalFieldOf("hobby", "").forGetter(d -> d.hobbyId == null ? "" : d.hobbyId),
-            Codec.STRING.optionalFieldOf("hometown", "").forGetter(d -> d.hometown == null ? "" : d.hometown),
             QUIRK_CODEC.listOf().optionalFieldOf("quirks", List.of()).forGetter(d -> new ArrayList<>(d.quirks)),
             Codec.STRING.optionalFieldOf("override_entity_name").forGetter(FixedPersonalityDef::overrideEntityName),
             Codec.BOOL.optionalFieldOf("in_random_pool", true).forGetter(FixedPersonalityDef::inRandomPool),
             Codec.INT.optionalFieldOf("weight", 1).forGetter(FixedPersonalityDef::weight),
             Codec.BOOL.optionalFieldOf("unique", true).forGetter(FixedPersonalityDef::unique)
-    ).apply(instance, (arch, hob, home, quirksList, overrideName, inPool, w, uniq) -> new FixedPersonalityDef(
+    ).apply(instance, (arch, hob, quirksList, overrideName, inPool, w, uniq) -> new FixedPersonalityDef(
             "", // id is filled in by the reload listener from the filename
             arch,
             hob.isEmpty() ? null : hob,
-            home.isEmpty() ? null : home,
             quirksList.isEmpty() ? EnumSet.noneOf(Quirk.class) : EnumSet.copyOf(quirksList),
             overrideName,
             inPool,
@@ -83,7 +80,7 @@ public record FixedPersonalityDef(
     public FixedPersonalityDef withId(String newId) {
         return new FixedPersonalityDef(
                 newId, archetypeId, hobbyId,
-                hometown, quirks, overrideEntityName,
+                quirks, overrideEntityName,
                 inRandomPool, weight, unique
         );
     }
@@ -92,7 +89,7 @@ public record FixedPersonalityDef(
     public PersonalityInitializer.FixedPersonality toRuntime() {
         return new PersonalityInitializer.FixedPersonality(
                 archetypeId, hobbyId,
-                hometown, quirks
+                quirks
         );
     }
 
@@ -102,7 +99,6 @@ public record FixedPersonalityDef(
         buf.writeUtf(def.id);
         buf.writeUtf(def.archetypeId == null ? "" : def.archetypeId);
         buf.writeUtf(def.hobbyId == null ? "" : def.hobbyId);
-        buf.writeUtf(def.hometown == null ? "" : def.hometown);
 
         buf.writeVarInt(def.quirks.size());
         for (Quirk q : def.quirks) buf.writeUtf(q.getId());
@@ -120,7 +116,6 @@ public record FixedPersonalityDef(
         String arch = buf.readUtf();
         if (arch.isEmpty()) arch = null;
         String hob = buf.readUtf(); if (hob.isEmpty()) hob = null;
-        String home = buf.readUtf(); if (home.isEmpty()) home = null;
 
         int quirkCount = buf.readVarInt();
         Set<Quirk> quirks = EnumSet.noneOf(Quirk.class);
@@ -134,7 +129,7 @@ public record FixedPersonalityDef(
         int weight = buf.readVarInt();
         boolean unique = buf.readBoolean();
 
-        return new FixedPersonalityDef(id, arch, hob, home,
+        return new FixedPersonalityDef(id, arch, hob,
                 quirks, overrideName, inPool, weight, unique);
     }
 }

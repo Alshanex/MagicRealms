@@ -137,7 +137,6 @@ public class LilacEntity extends AbstractMercenaryEntity implements IExclusiveMe
                 () -> new PersonalityInitializer.FixedPersonality(
                         "loyal",
                         "fishing",
-                        "Mushroom",
                         EnumSet.of(Quirk.ANIMAL_FRIEND, Quirk.GLUTTON)
                 )
         );

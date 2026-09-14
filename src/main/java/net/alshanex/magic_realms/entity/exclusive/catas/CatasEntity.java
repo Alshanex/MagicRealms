@@ -161,7 +161,6 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
                 () -> new PersonalityInitializer.FixedPersonality(
                         "scholarly",
                         "history",
-                        "Stonewick",
                         EnumSet.of(Quirk.BOOKWORM, Quirk.ANIMAL_FRIEND)
                 )
         );

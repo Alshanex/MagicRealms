@@ -1,0 +1,24 @@
+{
+  "variants": [
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.tank" } ],
+      "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "tank" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.warrior" } ],
+      "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "warrior" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.archer" } ],
+      "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "archer" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.assassin" } ],
+      "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "rogue" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.mage" } ],
+      "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "mage" } ]
+    }
+  ]
+}

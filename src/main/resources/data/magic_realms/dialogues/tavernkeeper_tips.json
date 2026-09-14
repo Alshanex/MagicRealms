@@ -9,22 +9,22 @@
     {
       "pages": [ { "translate": "message.magic_realms.tavernkeep_tip.marcus.1" } ],
       "requires": [
-        { "condition": "magic_realms:tavernkeeper_tip_true", "story": "magic_realms:marcus_thorpan", "chapter": 0 },
-        { "condition": "magic_realms:tavernkeeper_tip_false", "story": "magic_realms:marcus_thorpan", "chapter": 1 }
+        { "condition": "magic_realms:tavernkeeper_tip", "story": "magic_realms:marcus_thorpan", "chapter": 0 },
+        { "condition": "inverted", "of": { "condition": "magic_realms:tavernkeeper_tip", "story": "magic_realms:marcus_thorpan", "chapter": 1 } }
       ]
     },
     {
       "pages": [ { "translate": "message.magic_realms.tavernkeep_tip.marcus.2" } ],
       "requires": [
-        { "condition": "magic_realms:tavernkeeper_tip_true", "story": "magic_realms:marcus_thorpan", "chapter": 1 },
-        { "condition": "magic_realms:tavernkeeper_tip_false", "story": "magic_realms:marcus_thorpan", "chapter": 3 }
+        { "condition": "magic_realms:tavernkeeper_tip", "story": "magic_realms:marcus_thorpan", "chapter": 1 },
+        { "condition": "inverted", "of": { "condition": "magic_realms:tavernkeeper_tip", "story": "magic_realms:marcus_thorpan", "chapter": 3 } }
       ]
     },
     {
       "pages": [ { "translate": "message.magic_realms.tavernkeep_tip.marcus.4" } ],
       "requires": [
-        { "condition": "magic_realms:tavernkeeper_tip_true", "story": "magic_realms:marcus_thorpan", "chapter": 3 },
-        { "condition": "magic_realms:tavernkeeper_tip_false", "story": "magic_realms:marcus_thorpan", "chapter": 4 }
+        { "condition": "magic_realms:tavernkeeper_tip", "story": "magic_realms:marcus_thorpan", "chapter": 3 },
+        { "condition": "inverted", "of": { "condition": "magic_realms:tavernkeeper_tip", "story": "magic_realms:marcus_thorpan", "chapter": 4 } }
       ]
     }
   ]

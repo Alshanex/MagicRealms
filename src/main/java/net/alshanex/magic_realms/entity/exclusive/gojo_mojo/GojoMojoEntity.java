@@ -138,7 +138,6 @@ public class GojoMojoEntity extends AbstractMercenaryEntity implements IExclusiv
                 () -> new PersonalityInitializer.FixedPersonality(
                         "pious",
                         "gambling",
-                        "My House",
                         EnumSet.of(Quirk.CLAUSTROPHOBIC, Quirk.HEAT_INTOLERANT)
                 )
         );

@@ -8,6 +8,7 @@ import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
 import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Archetype;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -83,11 +84,14 @@ public final class MercenarySpeechHelper {
         PersonalityData personality = mercenary.getData(MRDataAttachments.PERSONALITY);
         if (personality != null && personality.isInitialized()) {
             Hobby hobby = personality.getHobby(false);
-            if (hobby != null) {
+            Archetype archetype = personality.getArchetype(false);
+
+            if (hobby != null && archetype != null) {
                 String archetypeId = personality.getArchetypeId();
-                List<String> hobbyPool = hobby.getResponsePool(archetypeId);
-                if (hobbyPool != null && !hobbyPool.isEmpty()) {
-                    result.addAll(hobbyPool);
+                String hobbyId = personality.getHobbyId();
+                for(int i = 0; i < 3; i++){
+                    String key = "message.magic_realms.hobby." + hobbyId + "." + archetypeId + "." + i;
+                    result.add(key);
                 }
             }
         }

@@ -103,7 +103,6 @@ public final class PersonalityInitializer {
         data.initialize(
                 fixed.archetypeId(),
                 fixed.hobbyId(),
-                fixed.hometown(),
                 fixed.quirks()
         );
     }
@@ -111,10 +110,9 @@ public final class PersonalityInitializer {
     private static void applyRandomRoll(AbstractMercenaryEntity entity, PersonalityData data, RandomSource random) {
         String archetypeId = rollArchetypeId(entity, random);
         String hobbyId = rollHobbyId(random);
-        String hometown = HometownRoller.roll(random);
         Set<Quirk> quirks = Quirk.rollSet(random);
 
-        data.initialize(archetypeId, hobbyId, hometown, quirks);
+        data.initialize(archetypeId, hobbyId, quirks);
     }
 
     private static String rollArchetypeId(AbstractMercenaryEntity entity, RandomSource random) {
@@ -197,7 +195,6 @@ public final class PersonalityInitializer {
     public record FixedPersonality(
             String archetypeId,
             String hobbyId,
-            String hometown,
             Set<Quirk> quirks
     ) {
         /**

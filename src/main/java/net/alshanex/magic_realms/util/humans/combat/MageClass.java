@@ -28,7 +28,10 @@ import java.util.List;
 
 public class MageClass extends AbstractCombatClass {
 
-    public MageClass() { super("mage"); }
+    public MageClass() { this("mage"); }
+
+    /** For subclasses reusing mage behaviour under a different id (e.g. support_mage). */
+    protected MageClass(String path) { super(path); }
 
     @Override public int spawnWeight() { return 10; }
 
@@ -68,7 +71,7 @@ public class MageClass extends AbstractCombatClass {
         e.setMagicSchools(generateMagicSchools(rng));
     }
 
-    private List<SchoolType> generateMagicSchools(RandomSource random) {
+    protected List<SchoolType> generateMagicSchools(RandomSource random) {
         double roll = random.nextDouble();
         int schoolCount = roll < 0.65 ? 1 : roll < 0.85 ? 2 : roll < 0.95 ? 3 : 4;
 
@@ -108,20 +111,27 @@ public class MageClass extends AbstractCombatClass {
                 summonDamage, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     }
 
-    private void applySchoolBonuses(AbstractMercenaryEntity e, RandomSource rng) {
+    protected void applySchoolBonuses(AbstractMercenaryEntity e, RandomSource rng) {
         for (SchoolType school : e.getMagicSchools()) {
-            double bonus = Math.round((5.0 + rng.nextDouble() * 5.0) * 100.0) / 100.0;
-
-            ResourceLocation powerAttrId = ResourceLocation.fromNamespaceAndPath(
-                    school.getId().getNamespace(), school.getId().getPath() + "_spell_power");
-
-            var holder = BuiltInRegistries.ATTRIBUTE.getHolder(powerAttrId).orElse(null);
-            if (holder != null) {
-                addModifier(e, holder, "initial_" + school.getId().getPath() + "_power",
-                        bonus / 100.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-            }
+            applySchoolBonus(e, school, rng);
         }
     }
+
+    /**
+     * Initial spell-power bonus for one school. Split out so subclasses that add a school after {@link #applyAttributes} has run can grant its bonus too.
+     *
+     * <p>Idempotent — the modifier id is derived from the class path and school, and {@code addModifier} removes before adding.
+     */
+        protected void applySchoolBonus(AbstractMercenaryEntity e, SchoolType school, RandomSource rng) {
+            double bonus = Math.round((5.0 + rng.nextDouble() * 5.0) * 100.0) / 100.0;
+                ResourceLocation powerAttrId = ResourceLocation.fromNamespaceAndPath(
+                        school.getId().getNamespace(), school.getId().getPath() + "_spell_power");
+                var holder = BuiltInRegistries.ATTRIBUTE.getHolder(powerAttrId).orElse(null);
+        if (holder != null) {
+            addModifier(e, holder, "initial_" + school.getId().getPath() + "_power",
+                    +                    bonus / 100.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        }
+        }
 
     @Override
     public double spellPowerBonus(int stars, RandomSource rng) {

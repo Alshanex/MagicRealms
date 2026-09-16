@@ -6,6 +6,7 @@ import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.entity.mobs.IAnimatedAttacker;
 import io.redspace.ironsspellbooks.entity.mobs.IMagicSummon;
+import io.redspace.ironsspellbooks.entity.mobs.SupportMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
 import io.redspace.ironsspellbooks.entity.mobs.goals.*;
@@ -81,7 +82,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-public abstract class AbstractMercenaryEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, InventoryCarrier {
+public abstract class AbstractMercenaryEntity extends NeutralWizard implements IAnimatedAttacker, RangedAttackMob, InventoryCarrier, SupportMob {
 
     private static final EntityDataAccessor<Byte> DATA_FLAGS_ID =
             SynchedEntityData.defineId(AbstractMercenaryEntity.class, EntityDataSerializers.BYTE);
@@ -714,6 +715,13 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
         }
     }
 
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (auxTargetSelector != null && tickCount % 4 == 0 && tickCount > 1) {
+            auxTargetSelector.tick();
+        }
+    }
 
     // Contract utilities
 
@@ -933,6 +941,36 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             }
         }
         super.onAddedToLevel();
+    }
+
+    // SupportMob
+
+    @Nullable private LivingEntity supportTarget;
+
+    @Nullable
+    @Override
+    public LivingEntity getSupportTarget() { return supportTarget; }
+
+    @Override
+    public void setSupportTarget(LivingEntity target) { this.supportTarget = target; }
+
+    // Auxiliary goal selector
+
+    /**
+     * Secondary selector for goals that must run outside the main goal/target selectors — currently only the support-target acquisition goal.
+     * Created lazily, so classes that don't use it never allocate one and the tick below is skipped entirely.
+     */
+    @Nullable private GoalSelector auxTargetSelector;
+
+    public GoalSelector getAuxTargetSelector() {
+        if (auxTargetSelector == null) {
+            auxTargetSelector = new GoalSelector(level().getProfilerSupplier());
+        }
+        return auxTargetSelector;
+    }
+
+    public void clearAuxGoals() {
+        if (auxTargetSelector != null) auxTargetSelector.removeAllGoals(g -> true);
     }
 
 

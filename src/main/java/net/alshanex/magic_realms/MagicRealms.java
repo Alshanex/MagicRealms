@@ -3,10 +3,7 @@ package net.alshanex.magic_realms;
 import com.mojang.logging.LogUtils;
 import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.*;
-import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
-import net.alshanex.magic_realms.util.humans.combat.MageClass;
-import net.alshanex.magic_realms.util.humans.combat.RogueClass;
-import net.alshanex.magic_realms.util.humans.combat.WarriorClass;
+import net.alshanex.magic_realms.util.humans.combat.*;
 import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.alshanex.magic_realms.util.rpgdialogues.actions.TavernkeeperTrading;
 import net.alshanex.magic_realms.util.rpgdialogues.conditions.EnityTypeCondition;
@@ -137,6 +134,7 @@ public class MagicRealms
             CombatClasses.register(new MageClass());
             CombatClasses.register(new WarriorClass());
             CombatClasses.register(new RogueClass());
+            CombatClasses.register(new SupportMageClass());
         });
     }
 

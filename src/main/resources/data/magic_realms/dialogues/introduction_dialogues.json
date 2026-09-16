@@ -19,6 +19,10 @@
     {
       "pages": [ { "translate": "ui.magic_realms.introduction.mage" } ],
       "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "mage" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.support_mage" } ],
+      "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "support_mage" } ]
     }
   ]
 }

@@ -57,6 +57,7 @@ public abstract class AbstractCombatClass implements CombatClass {
     /** Delegates to the single canonical predicate so class implementations can't drift apart. */
     protected void clearOwnGoals(AbstractMercenaryEntity e) {
         MercenaryGoalManager.clearAttackGoals(e);
+        e.clearAuxGoals();
     }
 
     protected List<AbstractSpell> withEquipmentSpells(AbstractMercenaryEntity e,

@@ -259,6 +259,7 @@
   "ui.magic_realms.introduction.catas": "I don’t know why I’m here, I don’t drink and I don’t really know anyone.",
   "ui.magic_realms.introduction.default": "Hello, i'm a mercenary ready to serve.",
   "ui.magic_realms.introduction.mage": "Hello, i'm a mercenary specialized in fighting with magic.",
+  "ui.magic_realms.introduction.support_mage": "Hello, i'm a mercenary specialized in fighting with magic and supporting my allies with buffs and heals.",
   "ui.magic_realms.introduction.tank": "Hello, i'm a mercenary specialized in close range combat and my position is usually tank.",
   "ui.magic_realms.introduction.warrior": "Hello, i'm a mercenary specialized in close range combat and my position is usually at the frontline.",
   "ui.magic_realms.no_items_to_trade": "%s Sorry, I have nothing I can give you for that emerald",
@@ -275,6 +276,7 @@
   "gui.magic_realms.human_info.class.warrior_shield": "Tank",
   "gui.magic_realms.human_info.class.archer": "Archer",
   "gui.magic_realms.human_info.class.assassin": "Assassin",
+  "gui.magic_realms.human_info.class.support_mage": "Support Mage",
   "gui.magic_realms.human_info.class.unknown": "Unknown",
 
   "spell.magic_realms.slime_rain": "Slime Rain",

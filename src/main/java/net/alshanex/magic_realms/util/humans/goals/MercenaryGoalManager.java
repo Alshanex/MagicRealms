@@ -2,6 +2,7 @@ package net.alshanex.magic_realms.util.humans.goals;
 
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
+import io.redspace.ironsspellbooks.entity.mobs.goals.WizardSupportGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.melee.AttackAnimationData;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.GenericAnimatedWarlockAttackGoal;
 import net.alshanex.magic_realms.Config;
@@ -128,7 +129,8 @@ public final class MercenaryGoalManager {
                         goal instanceof ChargeArrowAttackGoal ||
                         goal instanceof GenericAnimatedWarlockAttackGoal ||
                         goal instanceof SniperArcherCombatGoal ||
-                        goal instanceof ShieldBashGoal
+                        goal instanceof ShieldBashGoal ||
+                        goal instanceof WizardSupportGoal
         );
     }
 

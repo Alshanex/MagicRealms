@@ -37,8 +37,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.pixeldreamstudios.rpgdialogue.murmur.MurmurManager;
 
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Catas";
@@ -187,6 +189,19 @@ public class CatasEntity extends AbstractMercenaryEntity implements IExclusiveMe
             return new ItemStack(ItemRegistry.PRIEST_BOOTS);
         }
         return ItemStack.EMPTY;
+    }
+
+    private final Map<EquipmentSlot, Boolean> visualArmorStateCache = new EnumMap<>(EquipmentSlot.class);
+
+    @Override
+    public Map<EquipmentSlot, Boolean> getVisualArmorStateCache() {
+        return this.visualArmorStateCache;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.tickVisualArmor();
     }
 
     @Override

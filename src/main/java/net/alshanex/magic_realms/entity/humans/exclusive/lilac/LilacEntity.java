@@ -31,8 +31,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
 import net.minecraft.world.level.Level;
 
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 public class LilacEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Lilac";
@@ -151,6 +153,19 @@ public class LilacEntity extends AbstractMercenaryEntity implements IExclusiveMe
             return new ItemStack(Items.NETHERITE_BOOTS);
         }
         return ItemStack.EMPTY;
+    }
+
+    private final Map<EquipmentSlot, Boolean> visualArmorStateCache = new EnumMap<>(EquipmentSlot.class);
+
+    @Override
+    public Map<EquipmentSlot, Boolean> getVisualArmorStateCache() {
+        return this.visualArmorStateCache;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.tickVisualArmor();
     }
 
     @Override

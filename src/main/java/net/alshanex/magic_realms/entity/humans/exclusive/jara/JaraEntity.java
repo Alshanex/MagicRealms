@@ -39,9 +39,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.ModList;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Jara The Shardling";
@@ -200,6 +198,19 @@ public class JaraEntity extends AbstractMercenaryEntity implements IExclusiveMer
             return new ItemStack(ItemRegistry.PRIEST_BOOTS);
         }
         return ItemStack.EMPTY;
+    }
+
+    private final Map<EquipmentSlot, Boolean> visualArmorStateCache = new EnumMap<>(EquipmentSlot.class);
+
+    @Override
+    public Map<EquipmentSlot, Boolean> getVisualArmorStateCache() {
+        return this.visualArmorStateCache;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.tickVisualArmor();
     }
 
     @Override

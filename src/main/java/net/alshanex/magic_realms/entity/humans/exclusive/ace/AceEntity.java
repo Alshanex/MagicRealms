@@ -31,9 +31,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.ModList;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class AceEntity extends AbstractMercenaryEntity implements IExclusiveMercenary, IChatFaceProvider {
     private final String name = "Eden";
@@ -207,6 +205,19 @@ public class AceEntity extends AbstractMercenaryEntity implements IExclusiveMerc
             return new ItemStack(ItemRegistry.NETHERITE_MAGE_BOOTS);
         }
         return ItemStack.EMPTY;
+    }
+
+    private final Map<EquipmentSlot, Boolean> visualArmorStateCache = new EnumMap<>(EquipmentSlot.class);
+
+    @Override
+    public Map<EquipmentSlot, Boolean> getVisualArmorStateCache() {
+        return this.visualArmorStateCache;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.tickVisualArmor();
     }
 
     @Override

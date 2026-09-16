@@ -1,7 +1,6 @@
 package net.alshanex.magic_realms.particles;
 
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.minecraft.client.multiplayer.ClientLevel;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;

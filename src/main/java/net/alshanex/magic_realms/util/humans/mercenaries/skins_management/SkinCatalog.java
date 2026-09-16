@@ -1,10 +1,12 @@
 package net.alshanex.magic_realms.util.humans.mercenaries.skins_management;
 
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -38,12 +40,12 @@ public final class SkinCatalog {
     }
 
     /** Parts matching category + gender + class, honoring ANY filters. */
-    public List<SkinPart> partsFor(SkinCategory category, Gender gender, EntityClass entityClass) {
+    public List<SkinPart> partsFor(SkinCategory category, Gender gender, @Nullable CombatClass combatClass) {
         List<SkinPart> out = new ArrayList<>();
         for (SkinPart p : allParts) {
             if (p.category() != category) continue;
             if (!p.gender().matches(gender)) continue;
-            if (!p.entityClass().matches(entityClass)) continue;
+            if (!p.entityClass().matches(combatClass)) continue;
             out.add(p);
         }
         return out;
@@ -64,8 +66,8 @@ public final class SkinCatalog {
 
     // ---- weighted pickers ----
 
-    public SkinPart pickPart(SkinCategory category, Gender gender, EntityClass entityClass, RandomSource rng) {
-        List<SkinPart> pool = partsFor(category, gender, entityClass);
+    public SkinPart pickPart(SkinCategory category, Gender gender, @Nullable CombatClass combatClass, RandomSource rng) {
+        List<SkinPart> pool = partsFor(category, gender, combatClass);
         return pickWeighted(pool, SkinPart::weight, rng);
     }
 

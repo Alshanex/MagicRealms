@@ -5,9 +5,11 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.PersonalityData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.RandomHumanEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.TextureComponents;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Quirk;
@@ -37,7 +39,7 @@ public class EntitySnapshot {
     public final UUID entityUUID;
     public final String entityName;
     public final Gender gender;
-    public final EntityClass entityClass;
+    public final ResourceLocation combatClassId;
     public final int starLevel;
     /** Ids of every title the mercenary has earned, in catalog (priority) order. */
     public final List<String> earnedTitles;
@@ -55,7 +57,7 @@ public class EntitySnapshot {
     public final String hobbyId;
     public final List<String> quirkIds;
 
-    public EntitySnapshot(UUID entityUUID, String entityName, Gender gender, EntityClass entityClass,
+    public EntitySnapshot(UUID entityUUID, String entityName, Gender gender, ResourceLocation combatClassId,
                           int starLevel, List<String> earnedTitles, String displayedTitle,
                           boolean hasShield, boolean isArcher, List<String> magicSchools,
                           CompoundTag attributes, CompoundTag equipment, List<String> entitySpells,
@@ -65,7 +67,7 @@ public class EntitySnapshot {
         this.entityUUID = entityUUID;
         this.entityName = entityName;
         this.gender = gender;
-        this.entityClass = entityClass;
+        this.combatClassId = combatClassId;
         this.starLevel = starLevel;
         this.earnedTitles = earnedTitles != null ? new ArrayList<>(earnedTitles) : new ArrayList<>();
         this.displayedTitle = displayedTitle;
@@ -169,7 +171,7 @@ public class EntitySnapshot {
                 entity.getUUID(),
                 entity.getEntityName(),
                 entity.getGender(),
-                entity.getEntityClass(),
+                entity.getCombatClass().id(),
                 entity.getStarLevel(),
                 earnedTitles,
                 displayedTitle,
@@ -361,7 +363,7 @@ public class EntitySnapshot {
         tag.putString("entity_uuid", entityUUID.toString());
         tag.putString("entity_name", entityName);
         tag.putString("gender", gender.getName());
-        tag.putString("entity_class", entityClass.getName());
+        tag.putString("combat_class_id", combatClassId.toString());
         tag.putInt("star_level", starLevel);
         tag.putBoolean("has_shield", hasShield);
         tag.putBoolean("is_archer", isArcher);
@@ -419,7 +421,15 @@ public class EntitySnapshot {
             UUID entityUUID = UUID.fromString(tag.getString("entity_uuid"));
             String entityName = tag.getString("entity_name");
             Gender gender = Gender.valueOf(tag.getString("gender").toUpperCase());
-            EntityClass entityClass = EntityClass.valueOf(tag.getString("entity_class").toUpperCase());
+
+            ResourceLocation combatClassId;
+            if (tag.contains("combat_class_id")) {
+                combatClassId = ResourceLocation.tryParse(tag.getString("combat_class_id"));
+            } else {
+                CombatClass legacy = CombatClasses.resolve(tag.getString("entity_class"));
+                combatClassId = legacy != null ? legacy.id() : CombatClasses.FALLBACK;
+            }
+
             int starLevel = tag.getInt("star_level");
             boolean hasShield = tag.getBoolean("has_shield");
             boolean isArcher = tag.getBoolean("is_archer");
@@ -484,7 +494,7 @@ public class EntitySnapshot {
             CompoundTag textureComponents = tag.contains("texture_components") ?
                     tag.getCompound("texture_components") : null;
 
-            return new EntitySnapshot(entityUUID, entityName, gender, entityClass, starLevel,
+            return new EntitySnapshot(entityUUID, entityName, gender, combatClassId, starLevel,
                     earnedTitles, displayedTitle, hasShield, isArcher,
                     schools, attributes, equipment, spells,
                     archetypeId, hobbyId, quirkIds,

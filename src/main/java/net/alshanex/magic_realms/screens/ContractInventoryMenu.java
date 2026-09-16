@@ -4,9 +4,11 @@ import com.mojang.datafixers.util.Pair;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRMenus;
 import net.alshanex.magic_realms.util.ModTags;
+import net.alshanex.magic_realms.util.humans.combat.ClassLoadout;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -426,28 +428,8 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
         public boolean mayPlace(ItemStack stack) {
             if (stack.isEmpty()) return true;
 
-            Item item = stack.getItem();
-            boolean isMage = (snapshot != null && snapshot.entityClass.name().equals("MAGE"));
-            if(isMage){
-                return item instanceof StaffItem;
-            }
-
-            boolean isWeapon = item instanceof SwordItem;
-            boolean isWarriorWeapon = isWeapon || item instanceof AxeItem || item instanceof TridentItem || item instanceof MaceItem;
-            String itemName = item.toString().toLowerCase();
-            boolean isModdedWeapon = itemName.contains("sword") ||
-                    itemName.contains("blade") || itemName.contains("dagger");
-
-            if (snapshot != null && snapshot.entityClass.name().equals("ROGUE") && snapshot.isArcher) {
-                return item instanceof BowItem || stack.is(ModTags.BOWS);
-            }
-
-            boolean isWarrior = (snapshot != null && snapshot.entityClass.name().equals("WARRIOR"));
-            if(isWarrior){
-                return isWeapon || isModdedWeapon || isWarriorWeapon;
-            }
-
-            return isWeapon || isModdedWeapon;
+            if (snapshot == null) return false;
+            return CombatClasses.getOrFallback(snapshot.combatClassId).acceptsMainHand(stack, ClassLoadout.of(snapshot));
         }
 
         @Override
@@ -476,19 +458,8 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
         public boolean mayPlace(ItemStack stack) {
             if (stack.isEmpty()) return true;
 
-            if (snapshot != null) {
-                if (snapshot.entityClass.name().equals("WARRIOR") && snapshot.hasShield) {
-                    return stack.getItem() instanceof ShieldItem;
-                } else if (snapshot.entityClass.name().equals("MAGE")) {
-                    try {
-                        return stack.getItem() instanceof SpellBook;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                }
-            }
-
-            return false;
+            if (snapshot == null) return false;
+            return CombatClasses.getOrFallback(snapshot.combatClassId).acceptsOffHand(stack, ClassLoadout.of(snapshot));
         }
 
         @Override
@@ -498,10 +469,10 @@ public class ContractInventoryMenu extends AbstractContainerMenu {
 
         @Override
         public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-            if(snapshot.entityClass.name().equals("MAGE")){
-                return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_SLOT_SPELLBOOK);
-            }
-            return Pair.of(InventoryMenu.BLOCK_ATLAS, InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD);
+            ResourceLocation icon = snapshot == null ? null
+                    : CombatClasses.getOrFallback(snapshot.combatClassId)
+                    .emptyOffHandIcon(ClassLoadout.of(snapshot));
+            return Pair.of(InventoryMenu.BLOCK_ATLAS, icon != null ? icon : InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD);
         }
     }
 }

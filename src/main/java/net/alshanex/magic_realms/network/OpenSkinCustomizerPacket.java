@@ -20,15 +20,15 @@ public class OpenSkinCustomizerPacket implements CustomPacketPayload {
 
     public final UUID entityUUID;
     public final String gender;
-    public final String entityClass;
+    public final String combatClassId;
     public final String currentSkin, currentClothes, currentEyes, currentHair;
     public final String currentName;
 
-    public OpenSkinCustomizerPacket(UUID entityUUID, String gender, String entityClass, String currentName,
+    public OpenSkinCustomizerPacket(UUID entityUUID, String gender, String combatClassId, String currentName,
                                     String currentSkin, String currentClothes, String currentEyes, String currentHair) {
         this.entityUUID = entityUUID;
         this.gender = gender;
-        this.entityClass = entityClass;
+        this.combatClassId = combatClassId;
         this.currentName = currentName;
         this.currentSkin = currentSkin;
         this.currentClothes = currentClothes;
@@ -44,7 +44,7 @@ public class OpenSkinCustomizerPacket implements CustomPacketPayload {
     public void write(FriendlyByteBuf buf) {
         buf.writeUUID(entityUUID);
         buf.writeUtf(gender);
-        buf.writeUtf(entityClass);
+        buf.writeUtf(combatClassId);
         buf.writeUtf(currentName);
         buf.writeUtf(currentSkin);
         buf.writeUtf(currentClothes);

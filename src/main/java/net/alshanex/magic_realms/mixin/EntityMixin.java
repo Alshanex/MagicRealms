@@ -1,6 +1,6 @@
 package net.alshanex.magic_realms.mixin;
 
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -4,11 +4,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntityRenderer;
+import net.alshanex.magic_realms.entity.humans.RandomHumanEntity;
 import net.alshanex.magic_realms.network.OpenSkinCustomizerPacket;
 import net.alshanex.magic_realms.network.SaveSkinPartsPacket;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.*;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
@@ -39,7 +40,7 @@ public class SkinCustomizerScreen extends Screen {
 
     private final UUID entityUUID;
     private final Gender gender;
-    private final EntityClass entityClass;
+    private final CombatClass combatClass;
 
     // pending selections
     private String pendingSkin, pendingClothes, pendingEyes, pendingHair;
@@ -63,7 +64,7 @@ public class SkinCustomizerScreen extends Screen {
         super(Component.translatable("screen.magic_realms.skin_customizer"));
         this.entityUUID = pkt.entityUUID;
         this.gender = Gender.valueOf(pkt.gender.toUpperCase());
-        this.entityClass = EntityClass.valueOf(pkt.entityClass.toUpperCase());
+        this.combatClass = CombatClasses.getOrFallback(ResourceLocation.tryParse(pkt.combatClassId));
         this.initialName = pkt.currentName;
         this.pendingSkin = pkt.currentSkin;
         this.pendingClothes = pkt.currentClothes;
@@ -123,7 +124,7 @@ public class SkinCustomizerScreen extends Screen {
             virtualEntity = MREntityRegistry.HUMAN.get().create(this.minecraft.level);
             if (virtualEntity == null) return;
             virtualEntity.setGender(gender);
-            virtualEntity.setEntityClass(entityClass);
+            virtualEntity.setCombatClass(combatClass);
             virtualEntity.setInitialized(true);
             applyPendingToVirtual();
         } catch (Exception e) {
@@ -135,7 +136,7 @@ public class SkinCustomizerScreen extends Screen {
         if (virtualEntity == null) return;
         CompoundTag md = new CompoundTag();
         md.putString("gender", gender.getName());
-        md.putString("entityClass", entityClass.getName());
+        md.putString("entityClass", combatClass.skinCategory());
         md.putBoolean("usePreset", false);
         if (!pendingSkin.isEmpty()) md.putString("skinTexture", pendingSkin);
         if (!pendingClothes.isEmpty()) md.putString("clothesTexture", pendingClothes);

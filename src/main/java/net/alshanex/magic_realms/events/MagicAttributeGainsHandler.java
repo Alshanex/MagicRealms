@@ -3,8 +3,7 @@ package net.alshanex.magic_realms.events;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -53,28 +52,17 @@ public class MagicAttributeGainsHandler {
     }
 
     private static void applySpellPowerBonus(AbstractMercenaryEntity entity, SchoolType school) {
-        EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
 
-        if (!canGainSpellPower(entityClass)) {
-            /*
-            MagicRealms.LOGGER.debug("Entity {} (class: {}) cannot gain spell power bonuses",
-                    entity.getEntityName(), entityClass.getName());
-
-             */
+        if (!canGainSpellPower(entity)) {
             return;
         }
 
         if (hasReachedAttributeLimit(entity, school, "spell_power")) {
-            /*
-            MagicRealms.LOGGER.debug("Entity {} has reached maximum spell power bonus for {} school",
-                    entity.getEntityName(), school.getId());
-
-             */
             return;
         }
 
-        double bonusPercentage = calculateSpellPowerBonus(entityClass, starLevel);
+        double bonusPercentage = calculateSpellPowerBonus(entity, starLevel);
         Holder<Attribute> powerAttribute = getPowerAttributeForSchool(school);
 
         if (powerAttribute == null) {
@@ -83,36 +71,20 @@ public class MagicAttributeGainsHandler {
         }
 
         applyAttributeBonus(entity, powerAttribute, school, bonusPercentage, "spell_power");
-/*
-        MagicRealms.LOGGER.info("Applied {}% spell power bonus for {} school to entity {} ({}★ {})",
-                bonusPercentage, school.getId(), entity.getEntityName(), starLevel, entityClass.getName());
-
- */
     }
 
     private static void applySpellResistanceBonus(AbstractMercenaryEntity entity, SchoolType school) {
-        EntityClass entityClass = entity.getEntityClass();
         int starLevel = entity.getStarLevel();
 
-        if (!canGainSpellResistance(entityClass)) {
-            /*
-            MagicRealms.LOGGER.debug("Entity {} (class: {}) cannot gain spell resistance bonuses",
-                    entity.getEntityName(), entityClass.getName());
-
-             */
+        if (!canGainSpellResistance(entity)) {
             return;
         }
 
         if (hasReachedAttributeLimit(entity, school, "spell_resistance")) {
-            /*
-            MagicRealms.LOGGER.debug("Entity {} has reached maximum spell resistance bonus for {} school",
-                    entity.getEntityName(), school.getId());
-
-             */
             return;
         }
 
-        double bonusPercentage = calculateSpellResistanceBonus(entityClass, starLevel);
+        double bonusPercentage = calculateSpellResistanceBonus(entity, starLevel);
         Holder<Attribute> resistAttribute = getResistanceAttributeForSchool(school);
 
         if (resistAttribute == null) {
@@ -121,11 +93,6 @@ public class MagicAttributeGainsHandler {
         }
 
         applyAttributeBonus(entity, resistAttribute, school, bonusPercentage, "spell_resistance");
-/*
-        MagicRealms.LOGGER.info("Applied {}% spell resistance bonus for {} school to entity {} ({}★ {})",
-                bonusPercentage, school.getId(), entity.getEntityName(), starLevel, entityClass.getName());
-                
- */
     }
 
     private static void applyAttributeBonus(AbstractMercenaryEntity entity, Holder<Attribute> attributeHolder,
@@ -149,15 +116,9 @@ public class MagicAttributeGainsHandler {
 
         if (existing != null) instance.removeModifier(existing);
         instance.addPermanentModifier(new AttributeModifier(modifierId, newValue, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
-/*
-        MagicRealms.LOGGER.debug("Added attribute modifier {} with value {} to entity {}",
-                modifierId, bonusValue, entity.getEntityName());
-
- */
     }
 
     private static boolean hasReachedAttributeLimit(AbstractMercenaryEntity entity, SchoolType school, String type) {
-        // Calcular el límite máximo: 50% + (10% * estrellas)
         int starLevel = entity.getStarLevel();
         double maxBonusPercentage = 50.0 + (10.0 * starLevel);
 
@@ -185,53 +146,23 @@ public class MagicAttributeGainsHandler {
         return currentTotalBonusPercentage >= maxBonusPercentage;
     }
 
-    private static double calculateSpellPowerBonus(EntityClass entityClass, int starLevel) {
-        return switch (entityClass) {
-            case MAGE -> switch (starLevel) {
-                case 1 -> RANDOM.nextBoolean() ? 2.0 : 3.0;
-                case 2 -> RANDOM.nextBoolean() ? 3.0 : 4.0;
-                case 3 -> RANDOM.nextBoolean() ? 4.0 : 5.0;
-                default -> 2.0;
-            };
-            case ROGUE -> switch (starLevel) {
-                case 1 -> RANDOM.nextBoolean() ? 2.0 : 3.0;
-                case 2 -> RANDOM.nextBoolean() ? 3.0 : 4.0;
-                case 3 -> RANDOM.nextBoolean() ? 4.0 : 5.0;
-                default -> 2.0;
-            };
-            default -> 0.0; // Warriors no ganan spell power
-        };
+    private static double calculateSpellPowerBonus(AbstractMercenaryEntity entity, int starLevel) {
+        return entity.getCombatClass().spellPowerBonus(starLevel, entity.level().getRandom());
     }
 
-    private static double calculateSpellResistanceBonus(EntityClass entityClass, int starLevel) {
-        return switch (entityClass) {
-            case MAGE -> switch (starLevel) {
-                case 1 -> RANDOM.nextBoolean() ? 2.0 : 3.0;
-                case 2 -> RANDOM.nextBoolean() ? 3.0 : 4.0;
-                case 3 -> RANDOM.nextBoolean() ? 4.0 : 5.0;
-                default -> 2.0;
-            };
-            case WARRIOR -> switch (starLevel) {
-                case 1 -> RANDOM.nextBoolean() ? 2.0 : 3.0;
-                case 2 -> RANDOM.nextBoolean() ? 3.0 : 4.0;
-                case 3 -> RANDOM.nextBoolean() ? 4.0 : 5.0;
-                default -> 2.0;
-            };
-            default -> 0.0; // Rogues no ganan spell resistance
-        };
+    private static double calculateSpellResistanceBonus(AbstractMercenaryEntity entity, int starLevel) {
+        return entity.getCombatClass().spellResistanceBonus(starLevel, entity.level().getRandom());
     }
 
-    private static boolean canGainSpellPower(EntityClass entityClass) {
-        return entityClass == EntityClass.MAGE || entityClass == EntityClass.ROGUE;
+    private static boolean canGainSpellPower(AbstractMercenaryEntity entity) {
+        return entity.getCombatClass().canGainSpellPower();
     }
 
-    private static boolean canGainSpellResistance(EntityClass entityClass) {
-        return entityClass == EntityClass.MAGE || entityClass == EntityClass.WARRIOR;
+    private static boolean canGainSpellResistance(AbstractMercenaryEntity entityClass) {
+        return entityClass.getCombatClass().canGainSpellResist();
     }
 
     private static Holder<Attribute> getPowerAttributeForSchool(SchoolType school) {
-        // Construir el ResourceLocation del atributo de poder
-        // Formato: "modid:schoolname_spell_power"
         ResourceLocation powerAttributeId = ResourceLocation.fromNamespaceAndPath(
                 school.getId().getNamespace(),
                 school.getId().getPath() + "_spell_power"
@@ -251,8 +182,6 @@ public class MagicAttributeGainsHandler {
     }
 
     private static Holder<Attribute> getResistanceAttributeForSchool(SchoolType school) {
-        // Construir el ResourceLocation del atributo de resistencia
-        // Formato: "modid:schoolname_magic_resist"
         ResourceLocation resistAttributeId = ResourceLocation.fromNamespaceAndPath(
                 school.getId().getNamespace(),
                 school.getId().getPath() + "_magic_resist"

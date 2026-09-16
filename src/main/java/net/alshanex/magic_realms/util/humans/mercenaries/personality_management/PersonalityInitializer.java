@@ -3,7 +3,7 @@ package net.alshanex.magic_realms.util.humans.mercenaries.personality_management
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.AssignedFixedPersonalitiesData;
 import net.alshanex.magic_realms.data.PersonalityData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -121,7 +121,7 @@ public final class PersonalityInitializer {
             MagicRealms.LOGGER.warn("Archetype catalog empty during personality init - falling back to '{}'", FALLBACK_ARCHETYPE_ID);
             return FALLBACK_ARCHETYPE_ID;
         }
-        Archetype pick = catalog.pickWeighted(entity.getEntityClass(), random);
+        Archetype pick = catalog.pickWeighted(entity.getCombatClass(), random);
         if (pick == null) {
             MagicRealms.LOGGER.warn("Archetype catalog has no rollable entries - falling back to '{}'", FALLBACK_ARCHETYPE_ID);
             return FALLBACK_ARCHETYPE_ID;
@@ -147,7 +147,7 @@ public final class PersonalityInitializer {
      */
     @Nullable
     private static String extractPresetLockedFixedPersonalityId(AbstractMercenaryEntity entity) {
-        if (!(entity instanceof net.alshanex.magic_realms.entity.random.RandomHumanEntity random)) return null;
+        if (!(entity instanceof net.alshanex.magic_realms.entity.humans.RandomHumanEntity random)) return null;
 
         net.minecraft.nbt.CompoundTag metadata = random.getTextureMetadata();
         if (metadata == null || metadata.isEmpty()) return null;

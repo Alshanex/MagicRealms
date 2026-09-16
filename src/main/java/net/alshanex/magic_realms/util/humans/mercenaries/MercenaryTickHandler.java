@@ -4,7 +4,7 @@ import io.redspace.ironsspellbooks.api.magic.MagicData;
 import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.ChairSittingData;
 import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.events.ArchetypeInteractionTickHandler;
 import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
 import net.alshanex.magic_realms.events.QuirkEffectHandler;

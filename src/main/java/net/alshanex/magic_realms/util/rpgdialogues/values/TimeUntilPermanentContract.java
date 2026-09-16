@@ -2,7 +2,7 @@ package net.alshanex.magic_realms.util.rpgdialogues.values;
 
 import com.mojang.serialization.MapCodec;
 import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.minecraft.network.chat.Component;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueContext;

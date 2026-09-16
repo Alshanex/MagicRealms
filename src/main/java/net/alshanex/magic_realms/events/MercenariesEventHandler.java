@@ -2,11 +2,11 @@ package net.alshanex.magic_realms.events;
 
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.FireBossEntity;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
-import net.alshanex.magic_realms.entity.exclusive.amadeus.AmadeusEntity;
-import net.alshanex.magic_realms.entity.exclusive.gojo_mojo.GojoMojoEntity;
-import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.exclusive.aliana.AlianaEntity;
+import net.alshanex.magic_realms.entity.humans.exclusive.amadeus.AmadeusEntity;
+import net.alshanex.magic_realms.entity.humans.exclusive.gojo_mojo.GojoMojoEntity;
+import net.alshanex.magic_realms.entity.humans.exclusive.jara.JaraEntity;
 import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;

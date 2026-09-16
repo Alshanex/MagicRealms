@@ -1,7 +1,7 @@
 package net.alshanex.magic_realms.events;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.entity.tim.TimEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;
 import net.alshanex.magic_realms.util.humans.bandits.BanditProfileCatalogHolder;

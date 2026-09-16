@@ -4,11 +4,11 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.RandomHumanEntity;
 import net.alshanex.magic_realms.network.SwitchAttributesMenuPacket;
 import net.alshanex.magic_realms.network.TogglePatrolModePacket;
-import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.TextureComponents;
 import net.alshanex.magic_realms.util.humans.titles.TitleSelectorWidget;
@@ -37,7 +37,6 @@ import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -320,7 +319,7 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
 
             // Configure basic properties
             virtualEntity.setGender(snapshot.gender);
-            virtualEntity.setEntityClass(snapshot.entityClass);
+            virtualEntity.setCombatClass(CombatClasses.getOrFallback(snapshot.combatClassId));
             virtualEntity.setEntityName(snapshot.entityName);
             virtualEntity.setStarLevel(snapshot.starLevel);
             virtualEntity.setHasShield(snapshot.hasShield);
@@ -383,7 +382,7 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
         }
 
         keyBuilder.append("_").append(snapshot.gender.name());
-        keyBuilder.append("_").append(snapshot.entityClass.name());
+        keyBuilder.append("_").append(snapshot.combatClassId);
         keyBuilder.append("_").append(snapshot.starLevel);
         keyBuilder.append("_").append(snapshot.hasShield);
         keyBuilder.append("_").append(snapshot.isArcher);
@@ -568,40 +567,9 @@ public class ContractInventoryScreen extends AbstractContainerScreen<ContractInv
     }
 
     private ItemStack getSymbolItemForClass() {
-        EntityClass entityClass = snapshot.entityClass;
-
-        switch (entityClass) {
-            case MAGE -> {
-                try {
-                    return new ItemStack(ItemRegistry.GOLD_SPELL_BOOK.get());
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Could not find gold_spell_book item: {}", e.getMessage());
-                    return new ItemStack(Items.BOOK);
-                }
-            }
-            case WARRIOR -> {
-                if (snapshot.hasShield) {
-                    return new ItemStack(Items.SHIELD);
-                } else {
-                    return new ItemStack(Items.IRON_AXE);
-                }
-            }
-            case ROGUE -> {
-                if (snapshot.isArcher) {
-                    return new ItemStack(Items.ARROW);
-                } else {
-                    try {
-                        return new ItemStack(ItemRegistry.WEAPON_PARTS.get());
-                    } catch (Exception e) {
-                        MagicRealms.LOGGER.warn("Could not find weapon_parts item: {}", e.getMessage());
-                        return new ItemStack(Items.GOLDEN_SWORD);
-                    }
-                }
-            }
-            default -> {
-                return ItemStack.EMPTY;
-            }
-        }
+        AbstractMercenaryEntity virtual = getOrCreateVirtualEntity();
+        return virtual == null ? ItemStack.EMPTY
+                : virtual.getCombatClass().symbolItem(virtual);
     }
 
     @Override

@@ -1,8 +1,10 @@
 package net.alshanex.magic_realms.util.humans.mercenaries.personality_management;
 
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.util.RandomSource;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -47,13 +49,13 @@ public final class ArchetypeCatalog {
      * each archetype contributes its effective weight (base + class bonus). Returns null only if the catalog is empty
      * or no archetype has positive weight.
      */
-    public Archetype pickWeighted(EntityClass entityClass, RandomSource random) {
+    public Archetype pickWeighted(@Nullable CombatClass combatClass, RandomSource random) {
         if (all.isEmpty()) return null;
 
         int total = 0;
         for (Archetype a : all) {
             if (!a.inRandomPool()) continue;
-            total += a.effectiveWeightFor(entityClass);
+            total += a.effectiveWeightFor(combatClass);
         }
         if (total <= 0) return null;
 
@@ -61,7 +63,7 @@ public final class ArchetypeCatalog {
         int acc = 0;
         for (Archetype a : all) {
             if (!a.inRandomPool()) continue;
-            acc += a.effectiveWeightFor(entityClass);
+            acc += a.effectiveWeightFor(combatClass);
             if (roll < acc) return a;
         }
         // Fallback: first rollable archetype.

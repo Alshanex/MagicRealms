@@ -1,7 +1,7 @@
 package net.alshanex.magic_realms.util.humans.titles;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;

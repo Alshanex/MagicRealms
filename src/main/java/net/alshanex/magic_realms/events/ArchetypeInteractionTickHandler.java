@@ -3,7 +3,7 @@ package net.alshanex.magic_realms.events;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.PersonalityData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.ArchetypeInteraction;
 import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.ArchetypeInteractionCatalog;

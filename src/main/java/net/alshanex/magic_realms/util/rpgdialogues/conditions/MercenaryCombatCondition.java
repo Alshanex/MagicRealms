@@ -1,7 +1,7 @@
 package net.alshanex.magic_realms.util.rpgdialogues.conditions;
 
 import com.mojang.serialization.MapCodec;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueCondition;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueContext;
 

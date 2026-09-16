@@ -7,7 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.util.humans.bandits.BanditProfile;
 import net.alshanex.magic_realms.util.humans.bandits.BanditProfileCatalogHolder;
 import net.minecraft.ChatFormatting;

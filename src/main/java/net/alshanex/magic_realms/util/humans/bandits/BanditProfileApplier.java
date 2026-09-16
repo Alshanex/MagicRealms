@@ -5,7 +5,7 @@ import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.HostileRandomHumanEntity;
 import net.alshanex.magic_realms.util.ModTags;
 import net.alshanex.magic_realms.util.humans.mercenaries.SpellListGenerator;
 import net.alshanex.magic_realms.util.humans.titles.TitleCatalogHolder;
@@ -25,7 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.*;
 
 /**
- * Centralized helpers that apply a {@link BanditProfile} to a {@link net.alshanex.magic_realms.entity.random.hostile.HostileRandomHumanEntity}.
+ * Centralized helpers that apply a {@link BanditProfile} to a {@link HostileRandomHumanEntity}.
  */
 public final class BanditProfileApplier {
 
@@ -50,7 +50,7 @@ public final class BanditProfileApplier {
         if (profile == null) return;
 
         profile.gender().ifPresent(entity::setGender);
-        profile.entityClass().ifPresent(entity::setEntityClass);
+        profile.combatClass().ifPresent(entity::setCombatClass);
         profile.overrideName().ifPresent(name -> {
             if (!name.isEmpty()) entity.setEntityName(name);
         });

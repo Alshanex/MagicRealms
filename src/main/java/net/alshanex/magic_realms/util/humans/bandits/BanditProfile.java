@@ -8,6 +8,9 @@ import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
+import net.alshanex.magic_realms.MagicRealms;
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.Gender;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -51,13 +54,19 @@ import java.util.*;
  *
  * <p>{@code attribute_boosts} are flat modifiers applied <em>after</em> all class attribute math runs, so they
  * stack cleanly on top of regular stats — useful for "boss" profiles that double health or buff damage.
+ *
+ * <h3>Combat class</h3>
+ * <p>Bare names are namespaced into {@code magic_realms} automatically, so {@code "mage"}, {@code "MAGE"} and
+ * {@code "magic_realms:mage"} all resolve to the same class and every pre-existing profile JSON keeps working
+ * unchanged. Addon or datapack-added classes can be referenced with their full id, e.g. {@code "magic_realms:support_mage"} or
+ * {@code "othermod:necromancer"}.
  */
 public record BanditProfile(
         String id,
         int weight,
 
         // Class & build
-        Optional<EntityClass> entityClass,
+        Optional<ResourceLocation> combatClassId,
         Optional<Gender> gender,
         Optional<Boolean> hasShield,
         Optional<Boolean> isArcher,
@@ -111,10 +120,9 @@ public record BanditProfile(
     );
 
     /**
-     * Attribute boost: a target attribute id plus an {@link AttributeModifier}. The attribute is stored as a
-     * {@link ResourceLocation} rather than a {@code Holder<Attribute>} because vanilla attributes
-     * ({@code minecraft:max_health}, etc.) live in the datapack registry and aren't resolvable through
-     * {@code BuiltInRegistries.ATTRIBUTE} at codec-parse time. The applier resolves the id against the
+     * Attribute boost: a target attribute id plus an {@link AttributeModifier}. The attribute is stored as a {@link ResourceLocation} rather
+     * than a {@code Holder<Attribute>} because vanilla attributes ({@code minecraft:max_health}, etc.) live in the datapack registry and aren't
+     * resolvable through {@code BuiltInRegistries.ATTRIBUTE} at codec-parse time. The applier resolves the id against the
      * entity's registries when applying the boost.
      */
     public record AttributeBoost(ResourceLocation attribute, AttributeModifier modifier) {
@@ -124,16 +132,23 @@ public record BanditProfile(
         ).apply(instance, AttributeBoost::new));
     }
 
-    // Codec for EntityClass
-    private static final Codec<EntityClass> ENTITY_CLASS_CODEC = Codec.STRING.comapFlatMap(
+    /**
+     * Codec for a combat class id.
+     */
+    private static final Codec<ResourceLocation> COMBAT_CLASS_ID_CODEC = Codec.STRING.comapFlatMap(
             s -> {
-                try {
-                    return DataResult.success(EntityClass.valueOf(s.toUpperCase(Locale.ROOT)));
-                } catch (IllegalArgumentException e) {
-                    return DataResult.error(() -> "Unknown entity_class: " + s);
+                String raw = s.trim().toLowerCase(Locale.ROOT);
+                if (raw.isEmpty()) {
+                    return DataResult.error(() -> "Empty entity_class");
                 }
+                ResourceLocation parsed = raw.indexOf(':') >= 0
+                        ? ResourceLocation.tryParse(raw)
+                        : ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, raw);
+                return parsed == null
+                        ? DataResult.error(() -> "Malformed entity_class: " + s)
+                        : DataResult.success(parsed);
             },
-            EntityClass::getName
+            ResourceLocation::toString
     );
 
     // Codec for Gender
@@ -154,7 +169,7 @@ public record BanditProfile(
     /** First half: identity, build, titles, visuals. */
     private record Half1(
             int weight,
-            Optional<EntityClass> entityClass,
+            Optional<ResourceLocation> combatClassId,
             Optional<Gender> gender,
             Optional<Boolean> hasShield,
             Optional<Boolean> isArcher,
@@ -184,7 +199,7 @@ public record BanditProfile(
 
     private static final MapCodec<Half1> HALF1_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.INT.optionalFieldOf("weight", 1).forGetter(Half1::weight),
-            ENTITY_CLASS_CODEC.optionalFieldOf("entity_class").forGetter(Half1::entityClass),
+            COMBAT_CLASS_ID_CODEC.optionalFieldOf("entity_class").forGetter(Half1::combatClassId),
             GENDER_CODEC.optionalFieldOf("gender").forGetter(Half1::gender),
             Codec.BOOL.optionalFieldOf("has_shield").forGetter(Half1::hasShield),
             Codec.BOOL.optionalFieldOf("is_archer").forGetter(Half1::isArcher),
@@ -213,8 +228,8 @@ public record BanditProfile(
     ).apply(instance, Half2::new));
 
     /**
-     * Combine the two MapCodec halves into a single MapCodec that reads from the same flat JSON object,
-     * then promote it to a regular Codec via .codec(). Both halves see the full field set; each picks up the keys it knows about.
+     * Combine the two MapCodec halves into a single MapCodec that reads from the same flat JSON object, then promote it to a regular Codec via .codec().
+     * Both halves see the full field set; each picks up the keys it knows about.
      */
     public static final Codec<BanditProfile> BODY_CODEC = RecordCodecBuilder
             .<BanditProfile>create(instance -> instance.group(
@@ -225,7 +240,7 @@ public record BanditProfile(
     private static BanditProfile assemble(Half1 h1, Half2 h2) {
         return new BanditProfile("",
                 Math.max(1, h1.weight()),
-                h1.entityClass(), h1.gender(), h1.hasShield(), h1.isArcher(), h1.starLevel(),
+                h1.combatClassId(), h1.gender(), h1.hasShield(), h1.isArcher(), h1.starLevel(),
                 h1.titles(), h1.displayedTitle(),
                 h1.entityScale(), h1.overrideName(), h1.skinPreset(),
                 h2.magicSchools(), h2.magicSchoolsTagId(),
@@ -238,7 +253,7 @@ public record BanditProfile(
 
     private Half1 splitHalf1() {
         return new Half1(weight,
-                entityClass, gender, hasShield, isArcher, starLevel,
+                combatClassId, gender, hasShield, isArcher, starLevel,
                 titles, displayedTitle,
                 entityScale, overrideName, skinPreset);
     }
@@ -254,7 +269,7 @@ public record BanditProfile(
 
     /** Returns a copy of this profile with the id filled in (used by the reload listener). */
     public BanditProfile withId(String newId) {
-        return new BanditProfile(newId, weight, entityClass, gender, hasShield, isArcher, starLevel,
+        return new BanditProfile(newId, weight, combatClassId, gender, hasShield, isArcher, starLevel,
                 titles, displayedTitle,
                 entityScale, overrideName, skinPreset,
                 magicSchools, magicSchoolsTagId,
@@ -263,6 +278,30 @@ public record BanditProfile(
                 attributeBoosts,
                 lootTable,
                 isMiniBoss, immortal, fixedPersonalityId, inRandomPool);
+    }
+
+    // Combat class resolution
+
+    /**
+     * Resolve this profile's combat class against the {@link CombatClasses} registry.
+     */
+    public Optional<CombatClass> combatClass() {
+        if (combatClassId.isEmpty()) return Optional.empty();
+
+        ResourceLocation classId = combatClassId.get();
+        CombatClass resolved = CombatClasses.get(classId);
+        if (resolved == null) {
+            MagicRealms.LOGGER.warn(
+                    "Bandit profile '{}' references unknown combat class '{}'; falling back to a random class",
+                    id, classId);
+            return Optional.empty();
+        }
+        return Optional.of(resolved);
+    }
+
+    /** True if this profile pins a combat class, regardless of whether that class is currently registered. */
+    public boolean hasCombatClass() {
+        return combatClassId.isPresent();
     }
 
     /** True if this profile grants any titles at spawn. */
@@ -281,8 +320,7 @@ public record BanditProfile(
     }
 
     /**
-     * Resolve the equipment map into actual {@link EquipmentSlot}/{@link ItemStack} pairs, dropping any malformed slot
-     * names with a warning.
+     * Resolve the equipment map into actual {@link EquipmentSlot}/{@link ItemStack} pairs, dropping any malformed slot names with a warning.
      */
     public Map<EquipmentSlot, ItemStack> resolveEquipment() {
         Map<EquipmentSlot, ItemStack> resolved = new EnumMap<>(EquipmentSlot.class);
@@ -315,7 +353,7 @@ public record BanditProfile(
         buf.writeUtf(p.id);
         buf.writeVarInt(p.weight);
 
-        writeOptString(buf, p.entityClass.map(EntityClass::getName));
+        writeOptString(buf, p.combatClassId.map(ResourceLocation::toString));
         writeOptString(buf, p.gender.map(Gender::getName));
         writeOptBool(buf, p.hasShield);
         writeOptBool(buf, p.isArcher);
@@ -357,7 +395,10 @@ public record BanditProfile(
         String id = buf.readUtf();
         int weight = buf.readVarInt();
 
-        Optional<EntityClass> ec = readOptString(buf).map(s -> EntityClass.valueOf(s.toUpperCase(Locale.ROOT)));
+        // Written as a full "namespace:path" string by writeToBuf, so a plain tryParse is correct here.
+        // flatMap drops a malformed value instead of propagating null into the Optional.
+        Optional<ResourceLocation> classId = readOptString(buf)
+                .flatMap(s -> Optional.ofNullable(ResourceLocation.tryParse(s)));
         Optional<Gender> g = readOptString(buf).map(s -> Gender.valueOf(s.toUpperCase(Locale.ROOT)));
         Optional<Boolean> hs = readOptBool(buf);
         Optional<Boolean> ia = readOptBool(buf);
@@ -396,7 +437,7 @@ public record BanditProfile(
         Optional<String> fpId = readOptString(buf);
         boolean inPool = buf.readBoolean();
 
-        return new BanditProfile(id, weight, ec, g, hs, ia, sl,
+        return new BanditProfile(id, weight, classId, g, hs, ia, sl,
                 titles, displayedTitle,
                 scale, name, skinPreset,
                 schools, schoolsTag,

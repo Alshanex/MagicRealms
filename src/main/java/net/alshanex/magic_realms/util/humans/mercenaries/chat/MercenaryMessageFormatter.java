@@ -1,6 +1,6 @@
 package net.alshanex.magic_realms.util.humans.mercenaries.chat;
 
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;

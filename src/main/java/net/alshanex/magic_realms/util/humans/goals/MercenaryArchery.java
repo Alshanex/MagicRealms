@@ -1,8 +1,8 @@
 package net.alshanex.magic_realms.util.humans.goals;
 
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.MercenaryBowFakePlayer;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.MercenaryBowFakePlayer;
 import net.alshanex.magic_realms.util.ModTags;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;

@@ -4,7 +4,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.alshanex.magic_realms.data.TitleProgressData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -102,8 +104,8 @@ public record TitleRequirement(Type type, String target, long amount) {
             case DAMAGE_TAKEN -> data.getCounter(TitleKeys.DAMAGE_TAKEN);
             case STAR_LEVEL -> entity.getStarLevel();
             case ENTITY_CLASS -> {
-                String name = entity.getEntityClass().getName();
-                yield name != null && name.equalsIgnoreCase(normalizedTarget()) ? 1L : 0L;
+                CombatClass required = CombatClasses.resolve(normalizedTarget());
+                yield required != null && required.id().equals(entity.getCombatClassId()) ? 1 : 0;
             }
             case HAS_TITLE -> {
                 ResourceLocation id = tryParse(normalizedTarget());

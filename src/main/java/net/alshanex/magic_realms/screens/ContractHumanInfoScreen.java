@@ -8,10 +8,11 @@ import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.RandomHumanEntity;
 import net.alshanex.magic_realms.network.SwitchTabPacket;
 import net.alshanex.magic_realms.network.TogglePatrolModePacket;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.TextureComponents;
@@ -248,19 +249,9 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private Component getClassDisplayName() {
-        EntityClass cls = snapshot.entityClass;
-        if (cls == null) {
-            return Component.translatable("gui.magic_realms.human_info.class.unknown");
-        }
-        return switch (cls) {
-            case MAGE -> Component.translatable("gui.magic_realms.human_info.class.mage");
-            case WARRIOR -> snapshot.hasShield
-                    ? Component.translatable("gui.magic_realms.human_info.class.warrior_shield")
-                    : Component.translatable("gui.magic_realms.human_info.class.warrior");
-            case ROGUE -> snapshot.isArcher
-                    ? Component.translatable("gui.magic_realms.human_info.class.archer")
-                    : Component.translatable("gui.magic_realms.human_info.class.assassin");
-        };
+        AbstractMercenaryEntity virtual = getOrCreateVirtualEntity();
+        if (virtual == null) return Component.translatable("gui.magic_realms.human_info.class.unknown");
+        return virtual.getCombatClass().displayName(virtual);
     }
 
     private AbstractMercenaryEntity getOrCreateVirtualEntity() {
@@ -311,7 +302,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
             // Configure basic properties
             virtualEntity.setGender(snapshot.gender);
-            virtualEntity.setEntityClass(snapshot.entityClass);
+            virtualEntity.setCombatClass(CombatClasses.getOrFallback(snapshot.combatClassId));
             virtualEntity.setEntityName(snapshot.entityName);
             virtualEntity.setStarLevel(snapshot.starLevel);
             virtualEntity.setHasShield(snapshot.hasShield);
@@ -379,7 +370,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         }
 
         keyBuilder.append("_").append(snapshot.gender.name());
-        keyBuilder.append("_").append(snapshot.entityClass.name());
+        keyBuilder.append("_").append(snapshot.combatClassId);
         keyBuilder.append("_").append(snapshot.starLevel);
         keyBuilder.append("_").append(snapshot.hasShield);
         keyBuilder.append("_").append(snapshot.isArcher);
@@ -621,40 +612,9 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
     }
 
     private ItemStack getSymbolItemForClass() {
-        EntityClass entityClass = snapshot.entityClass;
-
-        switch (entityClass) {
-            case MAGE -> {
-                try {
-                    return new ItemStack(ItemRegistry.GOLD_SPELL_BOOK.get());
-                } catch (Exception e) {
-                    MagicRealms.LOGGER.warn("Could not find gold_spell_book item: {}", e.getMessage());
-                    return new ItemStack(Items.BOOK);
-                }
-            }
-            case WARRIOR -> {
-                if (snapshot.hasShield) {
-                    return new ItemStack(Items.SHIELD);
-                } else {
-                    return new ItemStack(Items.IRON_AXE);
-                }
-            }
-            case ROGUE -> {
-                if (snapshot.isArcher) {
-                    return new ItemStack(Items.ARROW);
-                } else {
-                    try {
-                        return new ItemStack(ItemRegistry.WEAPON_PARTS.get());
-                    } catch (Exception e) {
-                        MagicRealms.LOGGER.warn("Could not find weapon_parts item: {}", e.getMessage());
-                        return new ItemStack(Items.GOLDEN_SWORD);
-                    }
-                }
-            }
-            default -> {
-                return ItemStack.EMPTY;
-            }
-        }
+        AbstractMercenaryEntity virtual = getOrCreateVirtualEntity();
+        return virtual == null ? ItemStack.EMPTY
+                : virtual.getCombatClass().symbolItem(virtual);
     }
 
     public static void renderEntityInInventory(
@@ -932,7 +892,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
         } catch (Exception e) {
             lines += 9;
         }
-        if (snapshot != null && snapshot.entityClass == EntityClass.MAGE) {
+        if (snapshot != null && CombatClasses.getOrFallback(snapshot.combatClassId).usesMagicSchools()) {
             lines += 2;
             lines += Math.max(1, snapshot.magicSchools.size());
         }
@@ -971,7 +931,7 @@ public class ContractHumanInfoScreen extends AbstractContainerScreen<ContractHum
 
         y = renderPersonalitySectionScrollable(guiGraphics, x, y);
 
-        if (snapshot.entityClass == EntityClass.MAGE) {
+        if (CombatClasses.getOrFallback(snapshot.combatClassId).usesMagicSchools()) {
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);
             y = renderSectionHeader(guiGraphics, "Schools", x, y, ChatFormatting.GOLD);
             y = renderSectionSeparator(guiGraphics, x, y, ATTRIBUTES_WIDTH);

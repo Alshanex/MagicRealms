@@ -1,6 +1,6 @@
 package net.alshanex.magic_realms.item;
 
-import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.RandomHumanEntity;
 import net.alshanex.magic_realms.network.OpenSkinCustomizerPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -16,7 +15,6 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -55,7 +53,7 @@ public class SkinCustomizerItem extends Item {
                     new OpenSkinCustomizerPacket(
                             human.getUUID(),
                             human.getGender().getName(),
-                            human.getEntityClass().getName(),
+                            human.getCombatClass().id().toString(),
                             human.getEntityName() != null ? human.getEntityName() : "",
                             metadata.contains("skinTexture") ? metadata.getString("skinTexture") : "",
                             metadata.contains("clothesTexture") ? metadata.getString("clothesTexture") : "",

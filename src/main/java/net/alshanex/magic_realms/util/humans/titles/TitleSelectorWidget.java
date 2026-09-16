@@ -1,10 +1,8 @@
 package net.alshanex.magic_realms.util.humans.titles;
 
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.network.SetDisplayedTitlePacket;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
-import net.alshanex.magic_realms.util.humans.titles.Title;
-import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;

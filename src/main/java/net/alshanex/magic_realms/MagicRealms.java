@@ -1,8 +1,12 @@
 package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.registry.*;
+import net.alshanex.magic_realms.util.humans.combat.CombatClasses;
+import net.alshanex.magic_realms.util.humans.combat.MageClass;
+import net.alshanex.magic_realms.util.humans.combat.RogueClass;
+import net.alshanex.magic_realms.util.humans.combat.WarriorClass;
 import net.alshanex.magic_realms.util.humans.titles.TitleManager;
 import net.alshanex.magic_realms.util.rpgdialogues.actions.TavernkeeperTrading;
 import net.alshanex.magic_realms.util.rpgdialogues.conditions.EnityTypeCondition;
@@ -111,6 +115,7 @@ public class MagicRealms
     private void commonSetup(final FMLCommonSetupEvent event)
     {
         event.enqueueWork(()->{
+            // Dialogues
             DialogueAction.register(ResourceLocation.fromNamespaceAndPath(MODID, "tavernkeeper_trade"),
                     TavernkeeperTrading.CODEC);
 
@@ -127,6 +132,11 @@ public class MagicRealms
                     TimeUntilPermanentContract.CODEC);
             DialogueValue.register(ResourceLocation.fromNamespaceAndPath(MODID, "speech_line"),
                     MercenarySpeech.CODEC);
+
+            // Combat classes
+            CombatClasses.register(new MageClass());
+            CombatClasses.register(new WarriorClass());
+            CombatClasses.register(new RogueClass());
         });
     }
 

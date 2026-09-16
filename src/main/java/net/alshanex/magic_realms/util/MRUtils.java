@@ -8,9 +8,9 @@ import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.*;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.flying_arrow.FloatingArrowEntity;
-import net.alshanex.magic_realms.entity.random.RandomHumanEntity;
+import net.alshanex.magic_realms.entity.humans.RandomHumanEntity;
 import net.alshanex.magic_realms.item.ChimeraCatalystItem;
 import net.alshanex.magic_realms.item.FloatingArrowItem;
 import net.alshanex.magic_realms.network.*;
@@ -21,16 +21,17 @@ import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.screens.SkinCustomizerScreen;
 import net.alshanex.magic_realms.util.chimera.ChimeraAssembly;
+import net.alshanex.magic_realms.util.humans.combat.ClassLoadout;
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
+import net.alshanex.magic_realms.util.humans.combat.WeaponPreference;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalog;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinCatalogHolder;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinPart;
 import net.alshanex.magic_realms.util.humans.mercenaries.skins_management.SkinPreset;
 import net.alshanex.magic_realms.util.contracts.ContractUtils;
-import net.alshanex.magic_realms.util.humans.mercenaries.AdvancedNameManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -60,7 +61,6 @@ import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,16 +102,11 @@ public class MRUtils {
             return true;
         }
 
-        EntityClass entityClass = entity.getEntityClass();
-
-        if (entityClass == EntityClass.WARRIOR) {
-            return getWeaponDamage(newWeapon) > getWeaponDamage(currentWeapon);
-        } else if (entityClass == EntityClass.ROGUE && !entity.isArcher()) {
+        if (entity.getCombatClass().weaponPreference(entity.loadout()) == WeaponPreference.DPS) {
             double newDPS = getWeaponDamage(newWeapon) * getWeaponSpeed(newWeapon);
             double currentDPS = getWeaponDamage(currentWeapon) * getWeaponSpeed(currentWeapon);
             return newDPS > currentDPS;
         }
-
         return getWeaponDamage(newWeapon) > getWeaponDamage(currentWeapon);
     }
 
@@ -175,7 +170,7 @@ public class MRUtils {
             };
 
             // Bonus score if the spell matches mage's schools
-            if (entity.getEntityClass() == EntityClass.MAGE) {
+            if (entity.getCombatClass().usesSpellbooks()) {
                 if (entity.hasSchool(spell.getSchoolType())) {
                     score += 20.0; // Significant bonus for matching school
                 }
@@ -448,56 +443,45 @@ public class MRUtils {
     public static boolean shouldAutoEquip(ItemStack stack, AbstractMercenaryEntity entity) {
         if (stack.isEmpty()) return false;
 
-        // Don't equip equipped items
+        // Already worn or held — nothing to do.
         if (isEquipped(stack, entity)) return false;
 
-        EntityClass entityClass = entity.getEntityClass();
+        CombatClass combatClass = entity.getCombatClass();
+        ClassLoadout loadout = entity.loadout();
 
-        // Archers shouldn't sell arrows
-        if (entityClass == EntityClass.ROGUE && entity.isArcher() &&
-                (stack.getItem() instanceof ArrowItem || stack.is(Items.ARROW))) {
-            return false;
-        }
-
-        // Don't sell emeralds (we need them for buying)
-        if (stack.is(Items.EMERALD)) {
-            return false;
-        }
-
-        // Don't sell armor if it's better than what we're wearing AND we need armor
+        // Armour: any class upgrades into a better piece.
         if (stack.getItem() instanceof ArmorItem armorItem) {
             EquipmentSlot slot = getSlotForArmorType(armorItem.getType());
             ItemStack currentArmor = entity.getItemBySlot(slot);
             return currentArmor.isEmpty() || isArmorBetter(armorItem, currentArmor);
         }
 
-        // Don't sell weapons if they're better than what we're using AND we're a melee class
-        if (isWeapon(stack) &&
-                (entityClass == EntityClass.WARRIOR || (entityClass == EntityClass.ROGUE && !entity.isArcher()))) {
+        // Melee weapon: only for classes that fight in melee.
+        if (isWeapon(stack) && combatClass.prefersMelee(loadout)) {
             ItemStack currentWeapon = entity.getMainHandItem();
             return currentWeapon.isEmpty() || isWeaponBetter(stack, currentWeapon, entity);
         }
 
-        // Don't sell staves if they're better than what we're using AND we're a mage
-        if (entityClass == EntityClass.MAGE && isStaff(stack)) {
+        // Staff: main-hand weapon for staff-using classes.
+        if (isStaff(stack) && combatClass.usesStaves(loadout)) {
             ItemStack currentWeapon = entity.getMainHandItem();
             return currentWeapon.isEmpty() || isStaffBetter(stack, currentWeapon);
         }
 
-        // Don't sell ranged weapons if they're better AND we're an archer
-        if (entityClass == EntityClass.ROGUE && entity.isArcher() && isRangedWeapon(stack)) {
+        // Bow / crossbow: main-hand weapon for ranged classes.
+        if (isRangedWeapon(stack) && combatClass.prefersRangedWeapons(loadout)) {
             ItemStack currentWeapon = entity.getMainHandItem();
             return currentWeapon.isEmpty() || isRangedWeaponBetter(stack, currentWeapon);
         }
 
-        // Don't sell shields if we need them and don't have one
-        if (entityClass == EntityClass.WARRIOR && entity.hasShield() && stack.getItem() instanceof ShieldItem) {
+        // Shield: offhand for shield-using classes.
+        if (stack.getItem() instanceof ShieldItem && combatClass.wantsShield(loadout)) {
             ItemStack currentShield = entity.getOffhandItem();
             return currentShield.isEmpty() || !(currentShield.getItem() instanceof ShieldItem);
         }
 
-        // Spellbook handling for mages
-        if (entityClass == EntityClass.MAGE && isSpellbook(stack)) {
+        // Spellbook: offhand for spellbook-using classes.
+        if (isSpellbook(stack) && combatClass.usesSpellbooks()) {
             ItemStack currentOffhand = entity.getOffhandItem();
             return currentOffhand.isEmpty() || isSpellbookBetter(stack, currentOffhand, entity);
         }
@@ -527,7 +511,7 @@ public class MRUtils {
         } else if (newItem.getItem() instanceof ShieldItem) {
             oldItem = entity.getOffhandItem();
             entity.setItemSlot(EquipmentSlot.OFFHAND, newItem.copy());
-        } else if (isSpellbook(newItem) && entity.getEntityClass() == EntityClass.MAGE) {
+        } else if (isSpellbook(newItem) && entity.getCombatClass().usesSpellbooks()) {
             // Equip spellbook in offhand for mages
             oldItem = entity.getOffhandItem();
             entity.setItemSlot(EquipmentSlot.OFFHAND, newItem.copy());

@@ -2,8 +2,8 @@ package net.alshanex.magic_realms.events;
 
 import io.redspace.ironsspellbooks.entity.spells.devour_jaw.DevourJaw;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.MercenaryBowFakePlayer;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.MercenaryBowFakePlayer;
 import net.alshanex.magic_realms.entity.slime.MagicSlimeEntity;
 import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
 import net.alshanex.magic_realms.registry.MREntityRegistry;

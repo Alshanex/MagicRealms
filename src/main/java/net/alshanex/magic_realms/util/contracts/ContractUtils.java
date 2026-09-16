@@ -2,14 +2,12 @@ package net.alshanex.magic_realms.util.contracts;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.IExclusiveMercenary;
-import net.alshanex.magic_realms.registry.MRDataAttachments;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.IExclusiveMercenary;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntitySnapshot;
-import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenaryMessageFormatter;
 import net.alshanex.magic_realms.util.humans.mercenaries.chat.MercenarySpeechHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -35,14 +33,11 @@ public class ContractUtils {
                                                        ContractData contractData,
                                                        ItemStack heldItem) {
 
-        Level level = humanEntity.level();  // Get the level from the entity
+        Level level = humanEntity.level();
 
         if (contractData.hasActiveContract(level) && !contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_already_contract"), humanEntity);
-                //MutableComponent message;
-                //message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.already_have_contract");
-                //serverPlayer.sendSystemMessage(message);
             }
             return;
         }
@@ -50,8 +45,6 @@ public class ContractUtils {
         if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_already_permanent"), humanEntity);
-                //MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.contract_already_permanent");
-                //serverPlayer.sendSystemMessage(message);
             }
             return;
         }
@@ -59,12 +52,6 @@ public class ContractUtils {
         if(!player.getAbilities().instabuild){
             if (!contractData.hasMinimumContractTime(player.getUUID(), level)) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    //int remainingMinutes = contractData.getRemainingMinutesForPermanent(player.getUUID(), level);
-
-                    //MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,"ui.magic_realms.permanent_contract_insufficient_time", remainingMinutes);
-
-                    //serverPlayer.sendSystemMessage(message);
-
                     DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "minutes_until_permanent"), humanEntity);
                 }
                 return;
@@ -91,10 +78,6 @@ public class ContractUtils {
         humanEntity.refreshDisplayName();
 
         if (player instanceof ServerPlayer serverPlayer) {
-            //MutableComponent message;
-            //message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.contract_established_permanent");
-            //serverPlayer.sendSystemMessage(message);
-
             DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "contract_already_permanent"), humanEntity);
         }
 
@@ -113,8 +96,6 @@ public class ContractUtils {
         // Someone else already holds this mercenary's contract.
         if (contractData.hasActiveContract(level) && !contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                //MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.already_have_contract");
-                //serverPlayer.sendSystemMessage(message);
                 DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_already_contract"), humanEntity);
             }
             return;
@@ -123,15 +104,11 @@ public class ContractUtils {
         // Already permanently bound to this player — a temporary contract would be a downgrade.
         if (contractData.isPermanent() && contractData.isContractor(player.getUUID(), level)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                //MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.contract_already_permanent");
-                //serverPlayer.sendSystemMessage(message);
                 DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "contract_already_permanent"), humanEntity);
             }
             return;
         }
 
-        // No level gate any more: if the mercenary is free, anyone can hire them.
-        int contractMinutes = contractData.getContractMinutes();
         boolean isRenewal = contractData.isContractor(player.getUUID(), level);
 
         boolean success;
@@ -156,12 +133,6 @@ public class ContractUtils {
         humanEntity.refreshDisplayName();
 
         if (player instanceof ServerPlayer serverPlayer) {
-            /*
-            String key = isRenewal
-                    ? "ui.magic_realms.contract_extended"
-                    : "ui.magic_realms.contract_established";
-            serverPlayer.sendSystemMessage(MercenaryMessageFormatter.buildFor(humanEntity, key, contractMinutes));
-            */
             ResourceLocation dialogue = isRenewal
                     ? ResourceLocation.fromNamespaceAndPath("magic_realms", "contract_extended")
                     : ResourceLocation.fromNamespaceAndPath("magic_realms", "contract_established");
@@ -189,19 +160,17 @@ public class ContractUtils {
                                                  AbstractMercenaryEntity humanEntity,
                                                  ContractData contractData) {
 
-        Level level = humanEntity.level();  // Get the level from the entity
+        Level level = humanEntity.level();
 
         if (!contractData.isContractor(player.getUUID(), level)) {
             if (contractData.hasActiveContract(level)) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    //MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.already_have_contract");
-                    //serverPlayer.sendSystemMessage(message);
 
                     DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "mercenary_already_contract"), humanEntity);
                 }
             } else {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    sendIntroductionMessage(serverPlayer, humanEntity, humanEntity.getEntityClass());
+                    sendIntroductionMessage(serverPlayer, humanEntity);
                 }
             }
             return;
@@ -216,26 +185,7 @@ public class ContractUtils {
             }
             return;
         }
-/*
-        // Shift + right-click: open the contract menu (and tell the player how much time is left).
-        if (contractData.isPermanent()) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                //MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity, "ui.magic_realms.contract_time_permanent");
-                //serverPlayer.sendSystemMessage(message);
 
-                DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "contract_permanent"), humanEntity);
-            }
-        } else {
-            int minutes = contractData.getRemainingMinutes(level);
-            String seconds = contractData.getRemainingSecondsFormatted(level);
-
-            if (player instanceof ServerPlayer serverPlayer) {
-                MutableComponent message = MercenaryMessageFormatter.buildFor(humanEntity,
-                        "ui.magic_realms.contract_time_remaining_with_extension", minutes, seconds);
-                serverPlayer.sendSystemMessage(message);
-            }
-        }
-*/
         if (humanEntity.isRemoved() || !humanEntity.isAlive()) {
             MagicRealms.LOGGER.warn("Attempted to open menu for removed/dead entity: {}", humanEntity.getEntityName());
             if (player instanceof ServerPlayer serverPlayer) {
@@ -287,30 +237,8 @@ public class ContractUtils {
     }
 
     private static void sendIntroductionMessage(ServerPlayer serverPlayer,
-                                                AbstractMercenaryEntity humanEntity,
-                                                EntityClass entityClass) {
-/*
-        int contractMinutes = humanEntity.getData(MRDataAttachments.CONTRACT_DATA).getContractMinutes();
+                                                AbstractMercenaryEntity humanEntity) {
 
-        String messageKey;
-        switch (entityClass) {
-            case WARRIOR -> messageKey = humanEntity.hasShield()
-                    ? "ui.magic_realms.introduction.warrior"
-                    : "ui.magic_realms.introduction.warrior_no_shield";
-            case ROGUE -> messageKey = humanEntity.isArcher()
-                    ? "ui.magic_realms.introduction.archer"
-                    : "ui.magic_realms.introduction.assassin";
-            case MAGE -> messageKey = "ui.magic_realms.introduction.mage";
-            default -> messageKey = "ui.magic_realms.introduction.default";
-        }
-
-        if (humanEntity instanceof IExclusiveMercenary exclusiveMercenary) {
-            messageKey = exclusiveMercenary.getExclusiveMercenaryPresentationMessage();
-        }
-
-        serverPlayer.sendSystemMessage(
-                MercenaryMessageFormatter.buildFor(humanEntity, messageKey, contractMinutes));
-*/
         boolean isExclusive = humanEntity instanceof IExclusiveMercenary;
 
         ResourceLocation dialogue = isExclusive

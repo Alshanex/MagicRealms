@@ -4,7 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.alshanex.magic_realms.data.TitleProgressData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.util.humans.titles.Title;
 import net.alshanex.magic_realms.util.humans.titles.TitleCatalogHolder;
 import net.alshanex.magic_realms.util.humans.titles.TitleManager;

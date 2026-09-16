@@ -2,9 +2,11 @@ package net.alshanex.magic_realms.util.humans.mercenaries.personality_management
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.alshanex.magic_realms.util.humans.combat.CombatClass;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
 import net.minecraft.network.FriendlyByteBuf;
 
+import javax.annotation.Nullable;
 import java.util.Locale;
 import java.util.Map;
 
@@ -35,11 +37,16 @@ public record Archetype(
             Codec.BOOL.optionalFieldOf("in_random_pool", true).forGetter(Archetype::inRandomPool)
     ).apply(instance, Archetype::new));
 
-    /** Effective weight for a roll biased by entity class. Returns at least 0; callers should treat 0 as "ineligible". */
-    public int effectiveWeightFor(EntityClass entityClass) {
+    /**
+     * Effective weight for a roll biased by combat class. Returns at least 0; callers should treat 0 as "ineligible".
+     */
+    public int effectiveWeightFor(@Nullable CombatClass combatClass) {
         int total = Math.max(0, baseWeight);
-        if (entityClass != null) {
-            Integer bonus = classWeights.get(entityClass.getName().toLowerCase(Locale.ROOT));
+        if (combatClass != null) {
+            Integer bonus = classWeights.get(combatClass.id().getPath());
+            if (bonus == null) {
+                bonus = classWeights.get(combatClass.id().toString());
+            }
             if (bonus != null) total += bonus;
         }
         return Math.max(0, total);

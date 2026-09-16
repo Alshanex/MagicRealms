@@ -2,16 +2,12 @@ package net.alshanex.magic_realms.network;
 
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
-import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.MRUtils;
-import net.alshanex.magic_realms.util.contracts.ContractUtils;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class SwitchAttributesMenuPacket implements CustomPacketPayload {

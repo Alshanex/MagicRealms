@@ -3,17 +3,15 @@ package net.alshanex.magic_realms.events;
 import io.redspace.ironsspellbooks.api.events.SpellPreCastEvent;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import net.alshanex.magic_realms.MagicRealms;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.chimera.ChimeraEntity;
-import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
-import net.alshanex.magic_realms.entity.exclusive.catas.CatasEntity;
-import net.alshanex.magic_realms.entity.tavernkeep.TavernKeeperEntity;
+import net.alshanex.magic_realms.entity.humans.exclusive.aliana.AlianaEntity;
+import net.alshanex.magic_realms.entity.humans.exclusive.catas.CatasEntity;
 import net.alshanex.magic_realms.util.BanditCommands;
 import net.alshanex.magic_realms.util.GivePageCommand;
 import net.alshanex.magic_realms.util.HumanEntityCommands;
 import net.alshanex.magic_realms.util.chimera.BloodSiphonManager;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -24,18 +22,15 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.pixeldreamstudios.rpgdialogue.murmur.MurmurManager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 @EventBusSubscriber(modid = MagicRealms.MODID)
 public class ServerEvents {
@@ -74,7 +69,7 @@ public class ServerEvents {
     @SubscribeEvent
     public static void onEquipmentChangeEvent(LivingEquipmentChangeEvent event){
         if (event.getEntity() instanceof AbstractMercenaryEntity human && !human.level().isClientSide) {
-            if(human.getEntityClass() == EntityClass.MAGE && event.getSlot() == EquipmentSlot.OFFHAND){
+            if (event.getSlot() == EquipmentSlot.OFFHAND) {
                 human.updateSpellbookSpells();
             }
             human.refreshSpellsAfterEquipmentChange();

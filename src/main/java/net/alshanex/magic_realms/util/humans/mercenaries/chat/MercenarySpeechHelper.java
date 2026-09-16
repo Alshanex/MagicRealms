@@ -1,25 +1,12 @@
 package net.alshanex.magic_realms.util.humans.mercenaries.chat;
 
-import net.alshanex.magic_realms.data.PersonalityData;
-import net.alshanex.magic_realms.entity.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.entity.IExclusiveMercenary;
-import net.alshanex.magic_realms.entity.exclusive.ace.AceEntity;
-import net.alshanex.magic_realms.entity.exclusive.aliana.AlianaEntity;
-import net.alshanex.magic_realms.entity.exclusive.jara.JaraEntity;
-import net.alshanex.magic_realms.entity.exclusive.lilac.LilacEntity;
-import net.alshanex.magic_realms.registry.MRDataAttachments;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Archetype;
-import net.alshanex.magic_realms.util.humans.mercenaries.personality_management.Hobby;
-import net.minecraft.network.chat.MutableComponent;
+import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.IExclusiveMercenary;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import net.pixeldreamstudios.rpgdialogue.dialogue.DialogueManager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 

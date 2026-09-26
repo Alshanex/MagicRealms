@@ -74,8 +74,6 @@ public class ServerEvents {
                 human.updateSpellbookSpells();
             }
 
-            if (ItemStack.isSameItem(event.getFrom(), event.getTo())) return;
-
             human.refreshSpellsAfterEquipmentChange();
         }
     }

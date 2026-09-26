@@ -23,6 +23,10 @@
     {
       "pages": [ { "translate": "ui.magic_realms.introduction.support_mage" } ],
       "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "support_mage" } ]
+    },
+    {
+      "pages": [ { "translate": "ui.magic_realms.introduction.gunslinger" } ],
+      "requires": [ { "condition": "magic_realms:mercenary_class", "mercenaryClass": "gunslinger" } ]
     }
   ]
 }

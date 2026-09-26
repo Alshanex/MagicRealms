@@ -48,7 +48,7 @@ public final class MercenaryGoalManager {
      * Called on world load. Uses persisted spells if available, otherwise regenerates a fresh spell list for already-initialized entities that lost theirs.
      */
     public static void reinitializeAfterLoad(AbstractMercenaryEntity entity) {
-        if (entity.areSpellsGenerated() && !entity.getPersistedSpells().isEmpty()) {
+        if (entity.areSpellsGenerated()) {
             clearAttackGoals(entity);
             applyForClass(entity, entity.getPersistedSpells());
         } else if (entity.isInitialized()) {
@@ -74,7 +74,7 @@ public final class MercenaryGoalManager {
      * Re-evaluates the mage's combat goal when the equipped spellbook or spell-containing gear changes.
      */
     public static void refreshAfterEquipmentChange(AbstractMercenaryEntity entity) {
-        if (!entity.areSpellsGenerated() || entity.getPersistedSpells().isEmpty()) return;
+        if (!entity.areSpellsGenerated()) return;
 
         entity.getCombatClass().onEquipmentChanged(entity);
     }

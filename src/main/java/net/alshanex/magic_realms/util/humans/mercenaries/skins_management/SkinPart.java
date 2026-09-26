@@ -24,7 +24,7 @@ public record SkinPart(
         buf.writeResourceLocation(part.texture);
         buf.writeEnum(part.category);
         buf.writeEnum(part.gender);
-        buf.writeEnum(part.entityClass);
+        buf.writeUtf(part.entityClass.name());
         buf.writeVarInt(part.weight);
     }
 
@@ -33,7 +33,7 @@ public record SkinPart(
                 buf.readResourceLocation(),
                 buf.readEnum(SkinCategory.class),
                 buf.readEnum(GenderFilter.class),
-                buf.readEnum(ClassFilter.class),
+                new ClassFilter(buf.readUtf()),
                 buf.readVarInt()
         );
     }

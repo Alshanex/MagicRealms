@@ -18,6 +18,7 @@ public interface CombatClass {
 
     /** Key used by the skin catalog's class_filter. Defaults to the id path. */
     default String skinCategory() { return id().getPath(); }
+    default List<String> skinCategories() { return List.of(skinCategory()); }
 
     /** Handles its own variants, e.g. warrior vs warrior_shield. */
     Component displayName(AbstractMercenaryEntity entity);

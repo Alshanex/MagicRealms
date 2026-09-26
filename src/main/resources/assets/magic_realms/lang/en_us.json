@@ -255,6 +255,7 @@
   "ui.magic_realms.introduction.jara": "Greetings stranger! Isn't the moon beautiful tonight?",
   "ui.magic_realms.introduction.lilac": "Oh hi there, I was a paragon in the peak of power a while back, now I'm here looking for a challenge. I'm always trying to increase my survivability, but I also know how to win fights.",
   "ui.magic_realms.introduction.archer": "Hello, i'm a mercenary specialized in long range combat with my bow.",
+  "ui.magic_realms.introduction.gunslinger": "Hello, i'm a mercenary specialized in blasting enemies with guns.",
   "ui.magic_realms.introduction.assassin": "Hello, i'm a mercenary specialized in close range combat and my specialty is dodging attacks and dealing high damage.",
   "ui.magic_realms.introduction.catas": "I don’t know why I’m here, I don’t drink and I don’t really know anyone.",
   "ui.magic_realms.introduction.default": "Hello, i'm a mercenary ready to serve.",
@@ -277,6 +278,7 @@
   "gui.magic_realms.human_info.class.archer": "Archer",
   "gui.magic_realms.human_info.class.assassin": "Assassin",
   "gui.magic_realms.human_info.class.support_mage": "Support Mage",
+  "gui.magic_realms.human_info.class.gunslinger": "Gunslinger",
   "gui.magic_realms.human_info.class.unknown": "Unknown",
 
   "spell.magic_realms.slime_rain": "Slime Rain",

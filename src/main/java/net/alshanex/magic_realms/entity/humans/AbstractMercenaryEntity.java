@@ -77,6 +77,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.RawAnimation;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -616,7 +617,7 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
             initializeFearGoal();
             setGoalsInitialized(true);
         } else {
-            if (areSpellsGenerated() && !getPersistedSpells().isEmpty()) {
+            if (areSpellsGenerated()) {
                 MercenaryGoalManager.reapplyWithPersistedSpells(this);
                 setGoalsInitialized(true);
             }
@@ -1141,7 +1142,8 @@ public abstract class AbstractMercenaryEntity extends NeutralWizard implements I
 
         // Synched entity data we still own
         compound.putInt("Gender", this.entityData.get(GENDER));
-        compound.putString("CombatClassId", getCombatClass().id().toString());
+        ResourceLocation raw = getCombatClassId();
+        compound.putString("CombatClassId", raw != null ? raw.toString() : CombatClasses.FALLBACK.toString());
         compound.putString("EntityName", this.entityData.get(ENTITY_NAME));
 
         // Transient runtime fields we still persist

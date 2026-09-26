@@ -2,41 +2,37 @@ package net.alshanex.magic_realms.util.humans.mercenaries.skins_management;
 
 import com.mojang.serialization.Codec;
 import net.alshanex.magic_realms.util.humans.combat.CombatClass;
-import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
-import net.minecraft.util.StringRepresentable;
 
 import javax.annotation.Nullable;
+import java.util.Locale;
 
-public enum ClassFilter implements StringRepresentable {
-    ANY("any"),
-    COMMON("common"),
-    MAGE("mage"),
-    ROGUE("rogue"),
-    WARRIOR("warrior");
+public record ClassFilter(String name) {
 
-    public static final Codec<ClassFilter> CODEC = StringRepresentable.fromEnum(ClassFilter::values);
+    public static final ClassFilter ANY = new ClassFilter("any");
+    public static final ClassFilter COMMON = new ClassFilter("common");
 
-    private final String name;
+    public static final Codec<ClassFilter> CODEC = Codec.STRING.xmap(
+            s -> new ClassFilter(s == null ? "any" : s.trim().toLowerCase(Locale.ROOT)),
+            ClassFilter::name);
 
-    ClassFilter(String name) {
-        this.name = name;
+    public ClassFilter {
+        name = name == null ? "any" : name.trim().toLowerCase(Locale.ROOT);
     }
 
-    @Override
-    public String getSerializedName() {
-        return name;
-    }
-
-    /**
-     * Matches either the exact class, the ANY wildcard, or the COMMON fallback (COMMON clothes are eligible for any entity class).
-     */
     public boolean matches(@Nullable CombatClass combatClass) {
-        if (this == ANY) return true;
-        if (this == COMMON) return true;
-        return combatClass != null && this.name.equalsIgnoreCase(combatClass.skinCategory());
+        if (isWildcard()) return true;
+        if (combatClass == null) return false;
+        for (String category : combatClass.skinCategories()) {
+            if (name.equalsIgnoreCase(category)) return true;
+        }
+        return false;
+    }
+
+    public boolean isWildcard() {
+        return name.equals("any") || name.equals("common");
     }
 
     public boolean isCommonFallback() {
-        return this == COMMON;
+        return name.equals("common");
     }
 }

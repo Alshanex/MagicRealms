@@ -1,0 +1,7 @@
+{
+  "texture": "magic_realms:entity/human/clothes/gunslinger/both/gunslinger_2",
+  "category": "clothes",
+  "gender": "any",
+  "entity_class": "gunslinger",
+  "weight": 2
+}

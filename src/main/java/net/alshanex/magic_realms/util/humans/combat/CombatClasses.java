@@ -6,6 +6,7 @@ import net.minecraft.util.RandomSource;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class CombatClasses {
 
@@ -25,10 +26,14 @@ public final class CombatClasses {
         return id == null ? null : BY_ID.get(id);
     }
 
+    private static final Set<ResourceLocation> WARNED = ConcurrentHashMap.newKeySet();
+
     public static CombatClass getOrFallback(@Nullable ResourceLocation id) {
         CombatClass c = get(id);
         if (c != null) return c;
-        if (id != null) MagicRealms.LOGGER.warn("Unknown combat class {}, using fallback", id);
+        if (id != null && WARNED.add(id)) {
+            MagicRealms.LOGGER.warn("Unknown combat class {}, using fallback (further warnings suppressed)", id);
+        }
         return BY_ID.get(FALLBACK);
     }
 

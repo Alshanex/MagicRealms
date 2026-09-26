@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -72,6 +73,9 @@ public class ServerEvents {
             if (event.getSlot() == EquipmentSlot.OFFHAND) {
                 human.updateSpellbookSpells();
             }
+
+            if (ItemStack.isSameItem(event.getFrom(), event.getTo())) return;
+
             human.refreshSpellsAfterEquipmentChange();
         }
     }

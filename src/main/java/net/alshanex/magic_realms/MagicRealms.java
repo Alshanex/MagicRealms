@@ -1,7 +1,9 @@
 package net.alshanex.magic_realms;
 
 import com.mojang.logging.LogUtils;
+import net.alshanex.magic_realms.compat.GunArmPoser;
 import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
+import net.alshanex.magic_realms.entity.humans.client.HeldItemPosers;
 import net.alshanex.magic_realms.registry.*;
 import net.alshanex.magic_realms.util.humans.combat.*;
 import net.alshanex.magic_realms.util.humans.titles.TitleManager;
@@ -18,6 +20,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
@@ -135,6 +138,8 @@ public class MagicRealms
             CombatClasses.register(new WarriorClass());
             CombatClasses.register(new RogueClass());
             CombatClasses.register(new SupportMageClass());
+
+            OptionalCombatClasses.registerAll();
         });
     }
 
@@ -165,6 +170,16 @@ public class MagicRealms
                     }
                 }
                 return 0.0F;
+            });
+
+            event.enqueueWork(() -> {
+                if (ModList.get().isLoaded(OptionalCombatClasses.IRONS_ARTIFICE)) {
+                    try {
+                        HeldItemPosers.register(new GunArmPoser());
+                    } catch (Throwable t) {
+                        MagicRealms.LOGGER.error("Failed to register gun arm poser", t);
+                    }
+                }
             });
         }
     }

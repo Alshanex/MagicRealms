@@ -37,6 +37,7 @@ public class ModTags {
     public static final TagKey<Item> GEM_ARMOR = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "gem_armor"));
 
     public static final TagKey<Item> BOWS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "bows"));
+    public static final TagKey<Item> GUNS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "guns"));
 
     public static TagKey<AbstractSpell> COMMON_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/warrior/common"));
     public static TagKey<AbstractSpell> RARE_WARRIOR_SPELLS = create(ResourceLocation.fromNamespaceAndPath(MagicRealms.MODID, "classes/warrior/rare"));

@@ -388,6 +388,11 @@ public class ContractData implements INBTSerializable<CompoundTag> {
         }
     }
 
+    /** Game time at which a temporary contract ends. Matches hasActiveContract(): active while now < end. */
+    public long getContractEndTime() {
+        return isPermanent ? Long.MAX_VALUE : contractStartTime + totalContractDuration;
+    }
+
     @Override
     public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();

@@ -5,10 +5,7 @@ import net.alshanex.magic_realms.block.ChairBlock;
 import net.alshanex.magic_realms.data.ChairSittingData;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
-import net.alshanex.magic_realms.events.ArchetypeInteractionTickHandler;
-import net.alshanex.magic_realms.events.MagicAttributeGainsHandler;
-import net.alshanex.magic_realms.events.QuirkEffectHandler;
-import net.alshanex.magic_realms.events.TitleEffectTickHandler;
+import net.alshanex.magic_realms.events.*;
 import net.alshanex.magic_realms.particles.StunParticleEffect;
 import net.alshanex.magic_realms.registry.MRDataAttachments;
 import net.alshanex.magic_realms.util.humans.titles.TitleManager;
@@ -107,9 +104,7 @@ public final class MercenaryTickHandler {
         }
     }
 
-    // ==================================================================
     // Sub-handlers
-    // ==================================================================
 
     private static void handleSittingTick(AbstractMercenaryEntity entity) {
         ChairSittingData chair = entity.getChairData();
@@ -145,8 +140,7 @@ public final class MercenaryTickHandler {
     }
 
     /**
-     * If two mercenaries ended up on the same chair (rare race condition),
-     * evicts everyone except the first one found.
+     * If two mercenaries ended up on the same chair (rare race condition), evicts everyone except the first one found.
      */
     private static void resolveChairConflict(AbstractMercenaryEntity entity) {
         if (!(entity.level() instanceof ServerLevel serverLevel)) return;
@@ -220,12 +214,14 @@ public final class MercenaryTickHandler {
                     contractData.periodicTimeUpdate(entity.level());
                 }
             }
+            ContractedMercenaryTracker.refresh(entity);
             return;
         }
 
         // Contract just expired — notify the contractor.
         UUID previousContractorUUID = contractData.getContractorUUID();
         if (previousContractorUUID != null && !contractData.isPermanent()) {
+            ContractedMercenaryTracker.remove(entity);
             entity.clearContract();
 
             Player contractor = entity.level().getPlayerByUUID(previousContractorUUID);

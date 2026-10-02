@@ -180,4 +180,8 @@ public class MRItems {
 
     public static final DeferredHolder<Item, LoreArtifactItem> RESONANCE_CRYSTAL = ITEMS.register("resonance_crystal",
             () -> new LoreArtifactItem(new Item.Properties(), LoreArtifactItem.ArtifactType.ORDER_CRYSTAL));
+
+    public static final DeferredHolder<Item, MercenaryHornItem> MERCENARY_HORN =
+            ITEMS.register("mercenary_horn", () -> new MercenaryHornItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
 }

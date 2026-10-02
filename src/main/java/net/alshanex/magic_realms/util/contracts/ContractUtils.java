@@ -4,6 +4,7 @@ import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
 import net.alshanex.magic_realms.entity.humans.IExclusiveMercenary;
+import net.alshanex.magic_realms.events.ContractedMercenaryTracker;
 import net.alshanex.magic_realms.screens.ContractHumanInfoMenu;
 import net.alshanex.magic_realms.screens.ContractInventoryMenu;
 import net.alshanex.magic_realms.util.humans.mercenaries.EntityClass;
@@ -76,6 +77,7 @@ public class ContractUtils {
         }
 
         humanEntity.refreshDisplayName();
+        ContractedMercenaryTracker.refresh(humanEntity);
 
         if (player instanceof ServerPlayer serverPlayer) {
             DialogueManager.open(serverPlayer, ResourceLocation.fromNamespaceAndPath("magic_realms", "contract_already_permanent"), humanEntity);
@@ -131,6 +133,7 @@ public class ContractUtils {
         }
 
         humanEntity.refreshDisplayName();
+        ContractedMercenaryTracker.refresh(humanEntity);
 
         if (player instanceof ServerPlayer serverPlayer) {
             ResourceLocation dialogue = isRenewal

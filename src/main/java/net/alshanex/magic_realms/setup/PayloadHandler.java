@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 public class PayloadHandler {
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar payloadRegistrar = event.registrar(MagicRealms.MODID).versioned("1.0.4").optional();
+        final PayloadRegistrar payloadRegistrar = event.registrar(MagicRealms.MODID).versioned("1.0.5").optional();
 
         payloadRegistrar.playToServer(UpdateEntityNamePacket.TYPE, UpdateEntityNamePacket.STREAM_CODEC, UpdateEntityNamePacket::handle);
         payloadRegistrar.playToServer(SyncPresetNamePacket.TYPE, SyncPresetNamePacket.STREAM_CODEC, SyncPresetNamePacket::handle);
@@ -22,6 +22,7 @@ public class PayloadHandler {
         payloadRegistrar.playToServer(FloatingArrowModePacket.TYPE, FloatingArrowModePacket.STREAM_CODEC, FloatingArrowModePacket::handle);
         payloadRegistrar.playToServer(SetDisplayedTitlePacket.TYPE, SetDisplayedTitlePacket.STREAM_CODEC, SetDisplayedTitlePacket::handle);
         payloadRegistrar.playToServer(SaveBlueprintPayload.TYPE, SaveBlueprintPayload.STREAM_CODEC, SaveBlueprintPayload::handle);
+        payloadRegistrar.playToServer(TeleportMercenaryPacket.TYPE, TeleportMercenaryPacket.STREAM_CODEC, TeleportMercenaryPacket::handle);
 
         payloadRegistrar.playToClient(SyncSkinCatalogPacket.TYPE, SyncSkinCatalogPacket.STREAM_CODEC, SyncSkinCatalogPacket::handle);
         payloadRegistrar.playToClient(SyncHobbyCatalogPacket.TYPE, SyncHobbyCatalogPacket.STREAM_CODEC, SyncHobbyCatalogPacket::handle);
@@ -34,5 +35,6 @@ public class PayloadHandler {
         payloadRegistrar.playToClient(SyncTitleCatalogPacket.TYPE, SyncTitleCatalogPacket.STREAM_CODEC, SyncTitleCatalogPacket::handle);
         payloadRegistrar.playToClient(SyncChimeraAssemblyPayload.TYPE, SyncChimeraAssemblyPayload.STREAM_CODEC, SyncChimeraAssemblyPayload::handle);
         payloadRegistrar.playToClient(SyncPartRegistryPayload.TYPE, SyncPartRegistryPayload.STREAM_CODEC, SyncPartRegistryPayload::handle);
+        payloadRegistrar.playToClient(SyncContractedMercenariesPacket.TYPE, SyncContractedMercenariesPacket.STREAM_CODEC, SyncContractedMercenariesPacket::handle);
     }
 }

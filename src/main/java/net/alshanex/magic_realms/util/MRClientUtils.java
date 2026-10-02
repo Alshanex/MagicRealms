@@ -6,6 +6,7 @@ import net.alshanex.magic_realms.item.ChimeraCatalystItem;
 import net.alshanex.magic_realms.registry.ChimeraPartRegistry;
 import net.alshanex.magic_realms.registry.MRDataComponentRegistry;
 import net.alshanex.magic_realms.screens.ChimeraAssemblyScreen;
+import net.alshanex.magic_realms.screens.ContractedMercenariesScreen;
 import net.alshanex.magic_realms.screens.LoreArtifactScreen;
 import net.alshanex.magic_realms.screens.LostPagesBookScreen;
 import net.alshanex.magic_realms.util.chimera.ChimeraAssembly;
@@ -69,5 +70,11 @@ public class MRClientUtils {
 
     public static void playLoreSound(SoundEvent soundEvent) {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, 1.0F, 1.5F));
+    }
+
+    public static void openContractedMercenariesScreen() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.screen != null) return;
+        mc.setScreen(new ContractedMercenariesScreen());
     }
 }

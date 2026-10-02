@@ -159,6 +159,8 @@
   "item.magic_realms.lore_too_advanced": "You cannot comprehend this text yet. You are missing pieces of the past.",
   "item.magic_realms.crystal_locked": "Locked",
   "item.magic_realms.all_lore_found": "The ancient voices have already talked enough",
+  "item.magic_realms.mercenary_horn": "Mercenary Horn",
+  "tooltip.magic_realms.mercenary_horn": "Blow to call a contracted mercenary",
 
   "itemGroup.magic_realms.main_tab": "Magic Realms",
 
@@ -217,6 +219,11 @@
   "message.magic_realms.structure_memory_unlocked": "Memories from this place entered the Book of Remembrance: %s",
   "message.magic_realms.tavernkeep_lore_book": "%s Do you ever wonder why they bothered making us at all? ...Most people say 'because we were loved.' You didn't say anything. Your eyes tell me you already know the answer, and you know it isn't a kind one. Look over my wares before you leave - I might have something useful for your journey.",
   "message.magic_realms.generic": "%s",
+  "message.magic_realms.mercenaries.locating": "Locating %s...",
+  "message.magic_realms.mercenaries.not_found": "%s could not be found",
+  "message.magic_realms.mercenaries.no_longer_contracted": "%s is no longer under contract with you",
+  "message.magic_realms.mercenaries.cooldown": "Please wait before teleporting again",
+
   "tooltip.magic_realms.wisewood_chair": "Seats visiting Mercenaries",
   "tooltip.magic_realms.wisewood_chair_inert": "Safe for building",
   "tooltip.magic_realms.blood_pact": "Has the ability to bind two souls forever",
@@ -280,6 +287,11 @@
   "gui.magic_realms.human_info.class.support_mage": "Support Mage",
   "gui.magic_realms.human_info.class.gunslinger": "Gunslinger",
   "gui.magic_realms.human_info.class.unknown": "Unknown",
+  "gui.magic_realms.mercenaries.title": "Contracted Mercenaries",
+  "gui.magic_realms.mercenaries.empty": "No mercenaries available",
+  "gui.magic_realms.mercenaries.teleport": "Teleport to me",
+  "gui.magic_realms.mercenaries.permanent": "Permanent",
+  "gui.magic_realms.mercenaries.remaining": "%s min left",
 
   "spell.magic_realms.slime_rain": "Slime Rain",
   "spell.magic_realms.slime_rain.guide": "Summons Chuchu that fall from the sky.",

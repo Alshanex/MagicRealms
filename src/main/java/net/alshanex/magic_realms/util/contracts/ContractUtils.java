@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.util.contracts;
 
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.entity.humans.AbstractMercenaryEntity;
@@ -60,6 +61,7 @@ public class ContractUtils {
         }
 
         boolean isUpgrade = contractData.hasActiveContract(level) && contractData.isContractor(player.getUUID(), level);
+        if (!isUpgrade && refuseIfAtContractLimit(player)) return;
 
         boolean success = contractData.trySetPermanentContract(player.getUUID(), level, player.getAbilities().instabuild);
 
@@ -112,6 +114,7 @@ public class ContractUtils {
         }
 
         boolean isRenewal = contractData.isContractor(player.getUUID(), level);
+        if (!isRenewal && refuseIfAtContractLimit(player)) return;
 
         boolean success;
         if (isRenewal) {
@@ -249,6 +252,16 @@ public class ContractUtils {
                 : ResourceLocation.fromNamespaceAndPath("magic_realms", "introduction_dialogues");
 
         DialogueManager.open(serverPlayer, dialogue, humanEntity);
+    }
+
+    private static boolean refuseIfAtContractLimit(Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer)) return false;
+        if (!ContractedMercenaryTracker.hasReachedContractLimit(serverPlayer)) return false;
+
+        MutableComponent message = Component.translatable("ui.magic_realms.contract_limit_reached", Config.maxContractedMercenaries)
+                .withStyle(ChatFormatting.RED);
+        serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(message));
+        return true;
     }
 
     private static class ContractMenuProvider implements MenuProvider {

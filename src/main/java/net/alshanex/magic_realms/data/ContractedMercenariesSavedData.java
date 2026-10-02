@@ -107,6 +107,17 @@ public class ContractedMercenariesSavedData extends SavedData {
         return map == null ? List.of() : List.copyOf(map.values());
     }
 
+    /** Contracts this player holds in this level, ignoring ones that expired but haven't been pruned yet. */
+    public int countActiveFor(UUID playerId, long gameTime) {
+        Map<UUID, ContractedMercenaryEntry> map = byPlayer.get(playerId);
+        if (map == null) return 0;
+        int count = 0;
+        for (ContractedMercenaryEntry e : map.values()) {
+            if (!e.isExpired(gameTime)) count++;
+        }
+        return count;
+    }
+
     /** Returns and clears the players whose list changed. */
     public Set<UUID> drainSyncDirty() {
         if (syncDirty.isEmpty()) return Set.of();

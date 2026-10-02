@@ -1,5 +1,6 @@
 package net.alshanex.magic_realms.events;
 
+import net.alshanex.magic_realms.Config;
 import net.alshanex.magic_realms.MagicRealms;
 import net.alshanex.magic_realms.data.ContractData;
 import net.alshanex.magic_realms.data.ContractedMercenariesSavedData;
@@ -36,6 +37,7 @@ public final class ContractedMercenaryTracker {
 
     /**
      * Inserts/updates this mercenary in its current level's data, or removes it if it no longer has an active contract.
+     * Cheap enough to call every second.
      */
     public static void refresh(AbstractMercenaryEntity merc) {
         if (!(merc.level() instanceof ServerLevel level)) return;
@@ -56,6 +58,26 @@ public final class ContractedMercenaryTracker {
         if (merc.level() instanceof ServerLevel level) {
             ContractedMercenariesSavedData.get(level).removeMercenary(merc.getUUID());
         }
+    }
+
+    /** Total active contracts this player holds, across every dimension. */
+    public static int countContractedBy(MinecraftServer server, UUID playerId) {
+        int total = 0;
+        for (ServerLevel level : server.getAllLevels()) {
+            total += ContractedMercenariesSavedData.get(level).countActiveFor(playerId, level.getGameTime());
+        }
+        return total;
+    }
+
+    /**
+     * True when the player can't take on another new contract. Renewals and permanent upgrades of a mercenary the
+     * player already has don't add to the count, so callers should only ask this for new contracts.
+     * A configured limit of 0 means unlimited.
+     */
+    public static boolean hasReachedContractLimit(ServerPlayer player) {
+        int max = Config.maxContractedMercenaries;
+        if (max <= 0) return false;
+        return countContractedBy(player.server, player.getUUID()) >= max;
     }
 
     public static boolean isContractedTo(AbstractMercenaryEntity merc, UUID playerId) {

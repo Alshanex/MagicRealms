@@ -16,6 +16,10 @@ public class Config
 {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    private static final ModConfigSpec.IntValue MAX_CONTRACTED_MERCENARIES = BUILDER
+            .comment("Max number of mercenaries a single player can have under contract at once (all dimensions combined). 0 = no limit.")
+            .defineInRange("maxContractedMercenaries", 0, 0, Integer.MAX_VALUE);
+
     private static final ModConfigSpec.IntValue IMMORTAL_STUN_DURATION = BUILDER
             .comment("Duration in seconds that immortal entities are stunned after being knocked out")
             .defineInRange("immortalStunDuration", 10, 1, 60);
@@ -57,11 +61,11 @@ public class Config
     public static int minutesPerContract;
     public static int maxMercenariesInRadius;
     public static boolean attemptCastUnclassifiedSpells;
+    public static int maxContractedMercenaries;
 
     // Name lists
     public static List<String> maleNames;
     public static List<String> femaleNames;
-    public static List<String> tavernTips;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
@@ -72,6 +76,7 @@ public class Config
         minutesPerContract = MINUTES_PER_CONTRACT.get();
         maxMercenariesInRadius = MAX_MERCENARIES_IN_RADIUS.get();
         attemptCastUnclassifiedSpells = ATTEMPT_USE_UNCLASSIFIED_SPELLS.get();
+        maxContractedMercenaries = MAX_CONTRACTED_MERCENARIES.get();
 
         maleNames = MALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());
         femaleNames = FEMALE_NAMES.get().stream().map(String::valueOf).collect(Collectors.toList());

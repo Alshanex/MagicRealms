@@ -17,6 +17,7 @@ import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -65,42 +66,53 @@ public class MobSpawnHandler {
             event.setSpawnCancelled(true);
         }
     }
-
+/*
     @SubscribeEvent
     public static void onPillagerSpawn(FinalizeSpawnEvent event) {
         if (!(event.getEntity() instanceof Pillager pillager)) return;
 
-        // Only swap on natural/structure spawns. This excludes EVENT (raids), PATROL (patrol leaders), SPAWNER, MOB_SUMMONED, COMMAND, etc.
+        // Only swap on natural/structure spawns. This excludes EVENT (raids), PATROL, SPAWNER, MOB_SUMMONED, COMMAND, etc.
         MobSpawnType type = event.getSpawnType();
         if (type != MobSpawnType.NATURAL && type != MobSpawnType.STRUCTURE) return;
 
-        ServerLevelAccessor levelAccessor = event.getLevel();
-        if (!(levelAccessor.getLevel() instanceof ServerLevel serverLevel)) return;
-
+        // During worldgen this is a WorldGenRegion on a worldgen thread; at runtime it's the ServerLevel.
+        // All chunk/entity access must go through this accessor, never through accessor.getLevel().
+        ServerLevelAccessor accessor = event.getLevel();
         BlockPos pos = pillager.blockPosition();
 
-        // Confirm we're actually inside a Pillager Outpost.
-        Structure outpost = serverLevel.registryAccess()
+        Structure outpost = accessor.registryAccess()
                 .registryOrThrow(Registries.STRUCTURE)
                 .get(BuiltinStructures.PILLAGER_OUTPOST);
         if (outpost == null) return;
-
-        StructureStart outpostStart = serverLevel.structureManager()
-                .getStructureWithPieceAt(pos, outpost);
-        if (!outpostStart.isValid()) return;
+        if (!isInsideOutpost(accessor, pos, outpost)) return;
 
         // 10% roll
         if (pillager.getRandom().nextFloat() >= 0.10f) return;
 
-        HostileRandomHumanEntity bandit = new HostileRandomHumanEntity(serverLevel.getLevel(), "magic_realms:normal_bandit");
+        // Entities are always constructed with the real ServerLevel, even during worldgen (vanilla does the same).
+        HostileRandomHumanEntity bandit = new HostileRandomHumanEntity(accessor.getLevel(), "magic_realms:normal_bandit");
         bandit.moveTo(pillager.getX(), pillager.getY(), pillager.getZ(), pillager.getYRot(), pillager.getXRot());
-        bandit.finalizeSpawn(levelAccessor, serverLevel.getCurrentDifficultyAt(pos), MobSpawnType.STRUCTURE, null);
 
-        if (serverLevel.addFreshEntity(bandit)) {
+        // Use the difficulty the event already computed instead of asking the level for it.
+        bandit.finalizeSpawn(accessor, event.getDifficulty(), MobSpawnType.STRUCTURE, null);
+
+        // Add through the accessor: during worldgen this writes into the proto-chunk, at runtime into the world.
+        if (accessor.addFreshEntity(bandit)) {
             event.setSpawnCancelled(true);
         }
     }
 
+    private static boolean isInsideOutpost(ServerLevelAccessor accessor, BlockPos pos, Structure outpost) {
+        if (accessor instanceof ServerLevel level) {
+            // Live world on the main thread: the precise piece check is safe here.
+            return level.structureManager().getStructureWithPieceAt(pos, outpost).isValid();
+        }
+        // Worldgen: only touch the chunk currently being decorated, which is already past STRUCTURE_REFERENCES.
+        // A reference means this chunk intersects an outpost; template-placed pillagers are inside it by definition.
+        ChunkAccess chunk = accessor.getChunk(pos);
+        return !chunk.getReferencesForStructure(outpost).isEmpty();
+    }
+*/
     @SubscribeEvent
     public static void onBanditSpawn(FinalizeSpawnEvent event) {
         if (!(event.getEntity() instanceof HostileRandomHumanEntity bandit)) return;
@@ -111,8 +123,8 @@ public class MobSpawnHandler {
         // Command/structure spawns already carry an explicit profile — never override those.
         if (bandit.hasProfile()) return;
 
-        ServerLevel level = event.getLevel().getLevel();
-        Holder<Biome> biome = level.getBiome(
+        ServerLevelAccessor accessor = event.getLevel();
+        Holder<Biome> biome = accessor.getBiome(
                 BlockPos.containing(event.getX(), event.getY(), event.getZ()));
         RandomSource random = bandit.getRandom();
 
@@ -120,7 +132,7 @@ public class MobSpawnHandler {
         // Two modifiers can overlap a biome, and NaturalSpawner doesn't tell us which one it rolled.
         List<AddBanditSpawnsModifier> matches = new ArrayList<>();
         int totalSpawnWeight = 0;
-        for (BiomeModifier m : level.registryAccess().registryOrThrow(NeoForgeRegistries.Keys.BIOME_MODIFIERS)) {
+        for (BiomeModifier m : accessor.registryAccess().registryOrThrow(NeoForgeRegistries.Keys.BIOME_MODIFIERS)) {
             if (m instanceof AddBanditSpawnsModifier b
                     && b.totalProfileWeight() > 0
                     && b.biomes().contains(biome)) {

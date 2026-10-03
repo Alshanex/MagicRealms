@@ -226,16 +226,17 @@ public class RandomHumanEntity extends AbstractMercenaryEntity implements IChatF
 
     @Override
     protected void handlePostSpawnInitialization() {
-        // Just ensure appearance is initialized
+        // Fallback for entities that never went through finalizeSpawn; finalizeSpawn has already rolled star level and appearance before calling this.
         if (!isInitialized()) {
-            RandomSource randomSource = this.level().getRandom();
-            initializeStarLevel(randomSource);
-            initializeAppearance(randomSource);
+            RandomSource randomSource = this.getRandom();
+            if (!appearanceGenerated) {
+                initializeStarLevel(randomSource);
+                initializeAppearance(randomSource);
+            }
             setInitialized(true);
         }
 
         if (!this.level().isClientSide) {
-            // Schedule the name update to happen after all initialization is complete
             this.level().getServer().execute(() -> {
                 if (this.isAlive() && !this.isRemoved()) {
                     this.refreshDisplayName();
